@@ -158,6 +158,8 @@ int main()
         if(N_RESID != 0 && RESID != 0)
             res = !(i % N_RESID);
 
+        if(res || save)
+            checkCudaErrors(cudaStreamSynchronize(stream_lbm));
         bc_macr_collision_streaming(f1, f2, rho, ux,
             uy, uz, nt_map, save || msg || res || (i==N_STEPS), i-INI_STEP, &stream_lbm);
 
