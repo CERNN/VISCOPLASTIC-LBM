@@ -16,15 +16,16 @@
 
 /* --------------------- PRECISION AND VEL. SET DEFINES -------------------- */
 typedef double dfloat;      // single or double precision
-#define D3Q19               // velocity set to use
+#define D3Q27               // velocity set to use
 /* ------------------------------------------------------------------------- */
 
 
 #ifdef D3Q19
 #include "velocitySets/D3Q19.h"
-#elif D3Q27
+#endif // !D3Q19
+#ifdef D3Q27
 #include "velocitySets/D3Q27.h"
-#endif // !D3Q27 && !D3Q19
+#endif // !D3Q27
 
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
@@ -62,7 +63,7 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 /* --------------------------  SIMULATION DEFINES -------------------------- */
 constexpr int N_STEPS = 10000; // maximum number of time steps
 
-constexpr unsigned int N = 32;
+constexpr unsigned int N = 16;
 constexpr unsigned int NX = N;      // size x of the grid 
                                     // (multiple of 32 for better performance)
 constexpr unsigned int NY = N;      // size y of the grid
@@ -70,7 +71,7 @@ constexpr unsigned int NZ = N;      // size z of the grid
 
 constexpr dfloat FX = 0;    // force in x
 constexpr dfloat FY = 0;    // force in y
-constexpr dfloat FZ = 0;    // force in z
+constexpr dfloat FZ = 0.0005;    // force in z
 constexpr dfloat FX_D3 = FX/3;    // util for regularization
 constexpr dfloat FY_D3 = FY/3;    // util for regularization
 constexpr dfloat FZ_D3 = FZ/3;    // util for regularization

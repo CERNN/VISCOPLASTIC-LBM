@@ -149,11 +149,10 @@ void saveSimInfo(SimInfo* info)
         fprintf(outFile, "      Simulation ID: %s\n", ID_SIM);
         #ifdef D3Q19
         fprintf(outFile, "       Velocity set: D3Q19\n");
-        #elif D3Q27
+        #endif // !D3Q19
+        #ifdef D3Q27
         fprintf(outFile, "       Velocity set: D3Q27\n");
-        #elif
-        fprintf(outFile, "       Velocity set: non existing\n");
-        #endif
+        #endif // !D3Q27
         if(sizeof(dfloat) == sizeof(float))
             fprintf(outFile, "          Precision: float\n");
         else if(sizeof(dfloat) == sizeof(double))
@@ -201,11 +200,10 @@ void printParamInfo(
     printf("      Simulation ID: %s\n", ID_SIM);
 #ifdef D3Q19
     printf("       Velocity set: D3Q19\n");
-#elif D3Q27
+#endif // !D3Q19
+#ifdef D3Q27
     printf("       Velocity set: D3Q27\n");
-#elif
-    printf("       Velocity set: non existing\n");
-#endif
+#endif // !D3Q27
     printf("                 NX: %d\n", NX);
     printf("                 NY: %d\n", NY);
     printf("                 NZ: %d\n", NZ);

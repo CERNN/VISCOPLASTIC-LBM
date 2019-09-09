@@ -52,7 +52,8 @@ void gpuBCMacrCollisionStream(
         - (fAux[4] + fAux[8] + fAux[12] + fAux[13] + fAux[18]) + 0.5*FY) / rhoVar;
     const dfloat uzVar = ((fAux[5] + fAux[9] + fAux[11] + fAux[16] + fAux[18])
         - (fAux[6] + fAux[10] + fAux[12] + fAux[15] + fAux[17]) + 0.5*FZ) / rhoVar;
-#elif D3Q27
+#endif // !D3Q19
+#ifdef D3Q27
     const dfloat rhoVar = fAux[0] + fAux[1] + fAux[2] + fAux[3] + fAux[4] 
         + fAux[5] + fAux[6] + fAux[7] + fAux[8] + fAux[9] + fAux[10] 
         + fAux[11] + fAux[12] + fAux[13] + fAux[14] + fAux[15] + fAux[16] 
@@ -70,7 +71,7 @@ void gpuBCMacrCollisionStream(
         + fAux[19] + fAux[22] + fAux[23] + fAux[25])
         - (fAux[6] + fAux[10] + fAux[12] + fAux[15] + fAux[17] + fAux[20]
         + fAux[21] + fAux[24] + fAux[26]) + 0.5*FZ) / rhoVar;
-#endif
+#endif // !D3Q27
 
     if (save)
     {
@@ -149,7 +150,8 @@ void gpuBCMacrCollisionStream(
     const dfloat pineqXYt2 = (fneq[7] + fneq[8] - fneq[13] - fneq[14]) * 2;
     const dfloat pineqXZt2 = (fneq[9] + fneq[10] - fneq[15] - fneq[16]) * 2;
     const dfloat pineqYZt2 = (fneq[11] + fneq[12] - fneq[17] - fneq[18]) * 2;
-#elif D3Q27
+#endif // !D3Q19 
+#ifdef D3Q27
     const dfloat aux = fneq[19] + fneq[20] + fneq[21] + fneq[22] + fneq[23]
             + fneq[24] + fneq[25] + fneq[26];
     const dfloat pineqXXd3 = (fneq[1] + fneq[2] + fneq[7] + fneq[8] + fneq[9] 
@@ -167,7 +169,7 @@ void gpuBCMacrCollisionStream(
     const dfloat pineqYZt2 = (fneq[11] + fneq[12] - fneq[17] - fneq[18] + fneq[19]
             + fneq[20] - fneq[21] - fneq[22] - fneq[23] - fneq[24] + fneq[25]
             + fneq[26]) * 2;
-#endif
+#endif // !D3Q27
 
     // Calculate regularized population
     // fReg[i] = 4.5*w[i](Q[i, alfa, beta]*pi[i, alfa, beta] 
@@ -361,7 +363,8 @@ void gpuUpdateMacr(
         - (fAux[4] + fAux[8] + fAux[12] + fAux[13] + fAux[18])) / rhoVar;
     const dfloat uzVar = ((fAux[5] + fAux[9] + fAux[11] + fAux[16] + fAux[18])
         - (fAux[6] + fAux[10] + fAux[12] + fAux[15] + fAux[17])) / rhoVar;
-#elif D3Q27
+#endif // !D3Q19
+#ifdef D3Q27
     const dfloat rhoVar = fAux[0] + fAux[1] + fAux[2] + fAux[3] + fAux[4] 
         + fAux[5] + fAux[6] + fAux[7] + fAux[8] + fAux[9] + fAux[10] 
         + fAux[11] + fAux[12] + fAux[13] + fAux[14] + fAux[15] + fAux[16] 
@@ -370,16 +373,16 @@ void gpuUpdateMacr(
     const dfloat uxVar = ((fAux[1] + fAux[7] + fAux[9] + fAux[13] + fAux[15]
         + fAux[19] + fAux[21] + fAux[23] + fAux[26]) 
         - (fAux[2] + fAux[8] + fAux[10] + fAux[14] + fAux[16] + fAux[20]
-        + fAux[22] + fAux[24] + fAux[25])) / rhoVar;
+        + fAux[22] + fAux[24] + fAux[25]) + 0.5*FX) / rhoVar;
     const dfloat uyVar = ((fAux[3] + fAux[7] + fAux[11] + fAux[14] + fAux[17]
         + fAux[19] + fAux[21] + fAux[24] + fAux[25])
         - (fAux[4] + fAux[8] + fAux[12] + fAux[13] + fAux[18] + fAux[20]
-        + fAux[22] + fAux[23] + fAux[26])) / rhoVar;
+        + fAux[22] + fAux[23] + fAux[26]) + 0.5*FY) / rhoVar;
     const dfloat uzVar = ((fAux[5] + fAux[9] + fAux[11] + fAux[16] + fAux[18]
         + fAux[19] + fAux[22] + fAux[23] + fAux[25])
         - (fAux[6] + fAux[10] + fAux[12] + fAux[15] + fAux[17] + fAux[20]
-        + fAux[21] + fAux[24] + fAux[26])) / rhoVar;
-#endif
+        + fAux[21] + fAux[24] + fAux[26]) + 0.5*FZ) / rhoVar;
+#endif // !D3Q27
     macr->rho[idxScalar(x, y, z)] = rhoVar;
     macr->ux[idxScalar(x, y, z)] = uxVar;
     macr->uy[idxScalar(x, y, z)] = uyVar;

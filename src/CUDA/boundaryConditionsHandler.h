@@ -18,10 +18,11 @@
 #include "boundaryConditionsSchemes/D3Q19_VelBounceBack.h"
 #include "boundaryConditionsSchemes/D3Q19_VelZouHe.h"
 #include "boundaryConditionsSchemes/D3Q19_PresZouHe.h"
-#elif D3Q27
+#endif // !D3Q19
+#ifdef D3Q27
 #include "boundaryConditionsSchemes/D3Q27_BounceBack.h"
 #include "boundaryConditionsSchemes/D3Q27_FreeSlip.h"
-#endif
+#endif // !D3Q27
 
 
 /*
