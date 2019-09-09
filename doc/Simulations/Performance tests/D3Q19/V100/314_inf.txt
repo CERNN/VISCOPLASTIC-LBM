@@ -1,0 +1,20 @@
+SIMULATION INFORMATION:
+                 NX: 32
+                 NY: 32
+                 NZ: 32
+           Reynolds: 10.00
+                Tau: 9.000000e-01
+               Umax: 5.000000e-02
+           Residual: 1.000000e+00
+     Residual steps: 0
+         Save steps: 0
+             Nsteps: 9999
+              MLUPS: 3166.1
+          Bandwidht: 896.4 (Gb/s)
+
+CUDA INFORMATION
+               name: Tesla V100-SXM2-16GB
+    multiprocessors: 80
+ compute capability: 7.0
+        ECC enabled: 1
+            threads: (32, 1, 1)

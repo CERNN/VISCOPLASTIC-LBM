@@ -1,0 +1,17 @@
+SIMULATION INFORMATION:
+                 NX: 16
+                 NY: 16
+                 NZ: 16
+           Reynolds: 5.00
+                Tau: 7.400000e-01
+               Umax: 2.500000e-02
+           Residual: 1.000000e+00
+             Nsteps: 2800
+              MLUPS: 185.2
+          Bandwidht: 52.4 (Gb/s)
+
+CUDA INFORMATION
+               name: Tesla K20Xm
+    multiprocessors: 14
+ compute capability: 3.5
+        ECC enabled: 0
