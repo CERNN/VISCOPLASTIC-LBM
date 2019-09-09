@@ -46,7 +46,7 @@ The documentation of the source files is made in markDown files ([files.md](./do
 
 ## Post Processing
 
-Since the program exports macroscopics in binary format, it is necessary to process it. For that, Python source files are provided. The package dependecies are:
+Since the program exports macroscopics in binary format, it is necessary to process it. For that, Python source files are provided. _python3_ is required and the packages dependecies are:
 * glob
 * numpy
 * os
@@ -63,4 +63,4 @@ This software is provided under the [GPLv2 license](./LICENSE.txt).
 
 ## Contact
 
-For bug report or issue adressing, use of git resource is encouraged. Contact via email is: _waine@alunos.utfpr.edu.br_ and/or _cernn-ct@utfpr.edu.br_.
+For bug report or issue adressing, usage of git resources (issues/pull request) is encouraged. Contact via email: _waine@alunos.utfpr.edu.br_ and/or _cernn-ct@utfpr.edu.br_.
