@@ -1,8 +1,6 @@
 *.o
 *.json
 *.lastcodeanalysissucceeded
-/src/.vs/lbm/v15
-/src/lbm/Debug/lbm.tlog
 *.log
 *.obj
 *.pdb
@@ -11,22 +9,8 @@
 *.cache
 *.bin
 .vscode/
-/src/Windows/Sequential/.vs
-/src/Windows/Sequential/Debug
-/src/Windows/Sequential/x64
-/src/Windows/Sequential/lbm/x64
-/src/Post Processing/__pycache__
-/src/CUDA/post_processing/post_processing.pyproj
-/src/CUDA/post_processing/teste.csv
-/src/CUDA/simulations/dump
-/src/Windows/CUDA/LBM_D2Q9/.vs
-/src/Windows/CUDA/LBM_D2Q9/x64
-/src/CUDA/D2Q9/.vs/
-/src/CUDA/D2Q9/x64/
-/src/CUDA/D3Q19/.vs/
-/src/CUDA/D3Q19/x64/
-/src/CUDA/.vscode/
-/src/CUDA/D2Q9/.vscode/
-/src/CUDA/simulations/D3Q19/dump
-/src/CUDA/simulations/D2Q9/dump
-src/CUDA/tests/999_inf.txt
+*/__pycache__
+*.pyc
+doc/Reports/*
+doc/Requirements.docx
+doc/Simulations/*
