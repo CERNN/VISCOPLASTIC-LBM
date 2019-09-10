@@ -15,8 +15,8 @@ for x in range(0, info['NX']):
 # Save macroscopics to VTK format
 saveVTK3D(macr, "000macr")
 
-# Save uz in x=z=0.5 to csv
+# Save average uz(y, x=0.5, z=[0, 1]) to csv
 uz = macr['uz']
-uz = uz[info['NX']//2, info['NY']//2, :] # uz <= uz[x=NX/2, y=NY/2, z]
+uz = [np.average(uz[info['NX']//2, y, :]) for y in range(0, info['NY'])] # uz <= uz[x=NX/2, y=NY/2, z]
 saveMacrLineCsv("000uz.csv", uz)
 
