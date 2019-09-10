@@ -37,8 +37,8 @@ void gpuBCMacrCollisionStream(
     // Calculate macroscopics
     // rho = sum(f[i])
     // ux = (sum(f[i]*cx[i])+0.5*FX) / rho
-    // uy = (sum(f[i]*cy[i])+0.5*FX) / rho
-    // uz = (sum(f[i]*cz[i])+0.5*FX) / rho
+    // uy = (sum(f[i]*cy[i])+0.5*FY) / rho
+    // uz = (sum(f[i]*cz[i])+0.5*FZ) / rho
     
     
 #ifdef D3Q19

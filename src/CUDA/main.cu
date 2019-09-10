@@ -41,6 +41,9 @@ int main()
     SimInfo info;
     int step = INI_STEP;
 
+    // SETUP SABING FOLDER
+    folderSetup();
+
     // INITALIZE PROCESS DATA
     processData.step = &step;
     processData.macrCurr = &macrCPUCurrent;

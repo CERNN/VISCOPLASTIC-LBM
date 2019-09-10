@@ -21,6 +21,37 @@
 
 #include "lbmReport.h"
 
+
+void folderSetup()
+{
+// Windows
+#if defined(_WIN32)
+    std::string strPath;
+    strPath = PATH_FILES;
+    strPath += "\\\\"; // adds "\\"
+    strPath += ID_SIM;
+    std::string cmd = "md ";
+    cmd += strPath;
+    system(cmd.c_str());
+    return;
+#endif // !_WIN32
+
+// Unix
+#if defined(__APPLE__) || defined(__MACH__) || defined(__linux__)
+    std::string strPath;
+    strPath = PATH_FILES;
+    strPath += "/";
+    strPath += ID_SIM;
+    std::string cmd = "mkdir -p ";
+    cmd += strPath;
+    system(cmd.c_str());
+    return;
+#endif // !Unix
+    printf("I don't know how to setup folders for your operational system :(\n");
+    return;
+}
+
+
 std::string getVarFilename(
     const std::string varName, 
     unsigned int step,
@@ -35,8 +66,11 @@ std::string getVarFilename(
     else
         n_zeros = 6;
 
-    // generates the file name as "PATH/id_varName000000.bin"
+    // generates the file name as "PATH_FILES/id/id_varName000000.bin"
     std::string strFile = PATH_FILES;
+    strFile += "/";
+    strFile += ID_SIM;
+    strFile += "/";
     strFile += ID_SIM;
     strFile += "_";
     strFile += varName;
@@ -44,7 +78,7 @@ std::string getVarFilename(
         strFile += "0";
     strFile += std::to_string(step);
     strFile += ext;
-    
+
     return strFile;
 }
 
@@ -138,6 +172,9 @@ void saveAllMacrCsv(
 void saveSimInfo(SimInfo* info)
 {
     std::string strInf = PATH_FILES;
+    strInf += "/";
+    strInf += ID_SIM;
+    strInf += "/";
     strInf += ID_SIM;
     strInf += "_info.txt"; // generate file name (with path)
     FILE* outFile = nullptr;
@@ -161,7 +198,10 @@ void saveSimInfo(SimInfo* info)
         fprintf(outFile, "                 NY: %d\n", NY);
         fprintf(outFile, "                 NZ: %d\n", NZ);
         fprintf(outFile, "                Tau: %.6f\n", TAU);
-        fprintf(outFile, "               Umax: %.6e\n", U_MAX);  
+        fprintf(outFile, "               Umax: %.6e\n", U_MAX);
+        fprintf(outFile, "                 FX: %.6e\n", FX);
+        fprintf(outFile, "                 FY: %.6e\n", FY);
+        fprintf(outFile, "                 FZ: %.6e\n", FZ);  
         fprintf(outFile, "       Report steps: %d\n", DATA_REPORT);
         fprintf(outFile, "         Save steps: %d\n", MACR_SAVE);
         fprintf(outFile, "             Nsteps: %d\n", info->totalSteps);
@@ -208,7 +248,10 @@ void printParamInfo(
     printf("                 NY: %d\n", NY);
     printf("                 NZ: %d\n", NZ);
     printf("                Tau: %.6e\n", TAU);
-    printf("               Umax: %.6e\n", U_MAX);    
+    printf("               Umax: %.6e\n", U_MAX);
+    printf("                 FX: %.6e\n", FX);
+    printf("                 FY: %.6e\n", FY);
+    printf("                 FZ: %.6e\n", FZ);  
     printf("     Residual steps: %d\n", DATA_REPORT);
     printf("         Save steps: %d\n", MACR_SAVE);
     printf("             Nsteps: %d\n", info->totalSteps);
