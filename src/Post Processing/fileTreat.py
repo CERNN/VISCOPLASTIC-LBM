@@ -2,7 +2,7 @@ import os
 import glob
 import numpy as np
 
-PATH = "./../CUDA/bin/tests/"
+PATH = "./../CUDA/bin/parallelPlates/003/"
 
 '''
     @brief Get all macroscopics filenames from this folder
@@ -25,11 +25,16 @@ def getSimInfo():
         lines = f.readlines()
         linesTrim = [l.strip() for l in lines]
         info = dict()
+        info['ID'] = [str(txt.split(" ")[-1]) for txt in linesTrim \
+            if 'Simulation ID' in txt][0]
         info['NX'] = [int(txt.split(" ")[-1]) for txt in linesTrim if 'NX' in txt][0]
         info['NY'] = [int(txt.split(" ")[-1]) for txt in linesTrim if 'NY' in txt][0]
         info['NZ'] = [int(txt.split(" ")[-1]) for txt in linesTrim if 'NZ' in txt][0]
         info['Tau'] = [float(txt.split(" ")[-1]) for txt in linesTrim if 'Tau' in txt][0]
         info['Umax'] = [float(txt.split(" ")[-1]) for txt in linesTrim if 'Umax' in txt][0]
+        info['FX'] = [float(txt.split(" ")[-1]) for txt in linesTrim if 'FX' in txt][0]
+        info['FY'] = [float(txt.split(" ")[-1]) for txt in linesTrim if 'FY' in txt][0]
+        info['FZ'] = [float(txt.split(" ")[-1]) for txt in linesTrim if 'FZ' in txt][0]
         info['Nsteps'] = [int(txt.split(" ")[-1]) for txt in linesTrim if 'Nsteps' in txt][0]
         info['Prc'] = [txt.split(" ")[-1] for txt in linesTrim if 'Precision' in txt][0]
     return info

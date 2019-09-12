@@ -144,7 +144,8 @@ int main()
             checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
         gpuBCMacrCollisionStream<<<grid, threads, 0, streamsKernelLBM[0]>>>
             (pop->pop, pop->popAux, pop->mapBC, 
-            &macr[0], rep || save || (step==N_STEPS), step);
+            &macr[0], rep || save || ((step+1)>=(int)N_STEPS), step);
+
         getLastCudaError("lbm kernel error");
 
         checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
@@ -191,6 +192,7 @@ int main()
     info.timeElapsed *= 0.001;
 
     // SAVE FINAL MACROSCOPICS
+    macrCPUCurrent.copyMacr(&macr[0]); 
     saveAllMacrBin(&macrCPUCurrent, step);
 
     // SAVE FINAL POPULATIONS (IF REQUIRED)

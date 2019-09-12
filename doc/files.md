@@ -66,7 +66,7 @@ Functions to get simulation information and data (i.e. macroscopics). The config
 #### [Data Save](../src/Post\ Processing/dataSave.py)
 Functions to save simulations' information in VTK format or csv.
 
-#### [Plot](../src/Post\ Processing/exmapleVTK.py) and [VTK](../src/Post\ Processing/exmaplePlot.py)
+#### [examplePlot](../src/Post\ Processing/exmapleVTK.py) and [exampleVTK](../src/Post\ Processing/exmaplePlot.py)
 Examples of usage of the functions in the files above.
 
 Observations:

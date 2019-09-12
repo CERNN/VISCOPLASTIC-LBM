@@ -17,7 +17,7 @@ _[var.h](../src/CUDA/var.h)_
 4. Copy the file to the folder with the _[main.cu](../src/CUDA/main.cu)_. Remove any other boundary condition implementation from the folder _CUDA/_.
 
 ![images.png](./Images/directions.png)
-**Figure 1** - conversion from directions (north, south, east, west, front, back) to axis (x, y, z).
+**Figure 1** - Directions (north, south, east, west, front, back) and axis (x, y, z).
 
 Observations: 
 * The file _[nodeTypemap.h](../src/CUDA/structs/nodeTypeMap.h)_ contains the boundary conditions schemes (Zou-He, bounce back, free slip, etc.). The folder _CUDA/boundaryConditionsSchemes/_ contains its implementation. It should be noticed that not all schemes are available for D3Q27 nor all the combinations of schemes and directions (e.g. Zou-He is not available for edges or corners).
