@@ -1,6 +1,6 @@
 #include "lbm.h"
 
-__global__
+__global__ 
 void gpuBCMacrCollisionStream(
     dfloat* const pop,
     dfloat* const popAux,
@@ -33,7 +33,7 @@ void gpuBCMacrCollisionStream(
 #pragma unroll
     for (char i = 0; i < Q; i++)
         fAux[i] = pop[idxPop(x, y, z, i)];
-    
+
     // Calculate macroscopics
     // rho = sum(f[i])
     // ux = (sum(f[i]*cx[i])+0.5*FX) / rho
@@ -81,10 +81,6 @@ void gpuBCMacrCollisionStream(
         macr->uz[idxScalar(x, y, z)] = uzVar;
     }
 
-    // Equilibrium and non equilibrium populations
-    dfloat feq[Q];
-    dfloat fneq[Q];
-    
     // Calculate temporary variables
     const dfloat p1_muu15 = 1 - 1.5 * (uxVar * uxVar + 
         uyVar * uyVar + uzVar * uzVar);
@@ -100,56 +96,51 @@ void gpuBCMacrCollisionStream(
     const dfloat ux3 = 3 * uxVar;
     const dfloat uy3 = 3 * uyVar;
     const dfloat uz3 = 3 * uzVar;
-
-    // Calculate equilibrium populations
+    
+    // Calculate fneq
     // feq[i] = rho*w[i] * (1 - 1.5*u*u + 3*u*c[i] + 4.5*(u*c[i])^2) ->
-    feq[ 0] = gpu_f_eq(rhoW0, 0, p1_muu15);
-    feq[ 1] = gpu_f_eq(rhoW1,  ux3, p1_muu15);
-    feq[ 2] = gpu_f_eq(rhoW1, -ux3, p1_muu15);
-    feq[ 3] = gpu_f_eq(rhoW1,  uy3, p1_muu15);
-    feq[ 4] = gpu_f_eq(rhoW1, -uy3, p1_muu15);
-    feq[ 5] = gpu_f_eq(rhoW1,  uz3, p1_muu15);
-    feq[ 6] = gpu_f_eq(rhoW1, -uz3, p1_muu15);
-    feq[ 7] = gpu_f_eq(rhoW2,  ux3 + uy3, p1_muu15);
-    feq[ 8] = gpu_f_eq(rhoW2, -ux3 - uy3, p1_muu15);
-    feq[ 9] = gpu_f_eq(rhoW2,  ux3 + uz3, p1_muu15);
-    feq[10] = gpu_f_eq(rhoW2, -ux3 - uz3, p1_muu15);
-    feq[11] = gpu_f_eq(rhoW2,  uy3 + uz3, p1_muu15);
-    feq[12] = gpu_f_eq(rhoW2, -uy3 - uz3, p1_muu15);
-    feq[13] = gpu_f_eq(rhoW2,  ux3 - uy3, p1_muu15);
-    feq[14] = gpu_f_eq(rhoW2, -ux3 + uy3, p1_muu15);
-    feq[15] = gpu_f_eq(rhoW2,  ux3 - uz3, p1_muu15);
-    feq[16] = gpu_f_eq(rhoW2, -ux3 + uz3, p1_muu15);
-    feq[17] = gpu_f_eq(rhoW2,  uy3 - uz3, p1_muu15);
-    feq[18] = gpu_f_eq(rhoW2, -uy3 + uz3, p1_muu15);
+    // fneq[i] = f[i]-feq[i]
+    fAux[0] = fAux[0] - gpu_f_eq(rhoW0, 0, p1_muu15);
+    fAux[1] = fAux[1] - gpu_f_eq(rhoW1,  ux3, p1_muu15);
+    fAux[2] = fAux[2] - gpu_f_eq(rhoW1, -ux3, p1_muu15);
+    fAux[3] = fAux[3] - gpu_f_eq(rhoW1,  uy3, p1_muu15);
+    fAux[4] = fAux[4] - gpu_f_eq(rhoW1, -uy3, p1_muu15);
+    fAux[5] = fAux[5] - gpu_f_eq(rhoW1,  uz3, p1_muu15);
+    fAux[6] = fAux[6] - gpu_f_eq(rhoW1, -uz3, p1_muu15);
+    fAux[7] = fAux[7] - gpu_f_eq(rhoW2,  ux3 + uy3, p1_muu15);
+    fAux[8] = fAux[8] - gpu_f_eq(rhoW2, -ux3 - uy3, p1_muu15);
+    fAux[9] = fAux[9] - gpu_f_eq(rhoW2,  ux3 + uz3, p1_muu15);
+    fAux[10] = fAux[10] - gpu_f_eq(rhoW2, -ux3 - uz3, p1_muu15);
+    fAux[11] = fAux[11] - gpu_f_eq(rhoW2,  uy3 + uz3, p1_muu15);
+    fAux[12] = fAux[12] - gpu_f_eq(rhoW2, -uy3 - uz3, p1_muu15);
+    fAux[13] = fAux[13] - gpu_f_eq(rhoW2,  ux3 - uy3, p1_muu15);
+    fAux[14] = fAux[14] - gpu_f_eq(rhoW2, -ux3 + uy3, p1_muu15);
+    fAux[15] = fAux[15] - gpu_f_eq(rhoW2,  ux3 - uz3, p1_muu15);
+    fAux[16] = fAux[16] - gpu_f_eq(rhoW2, -ux3 + uz3, p1_muu15);
+    fAux[17] = fAux[17] - gpu_f_eq(rhoW2,  uy3 - uz3, p1_muu15);
+    fAux[18] = fAux[18] - gpu_f_eq(rhoW2, -uy3 + uz3, p1_muu15);
 #ifdef D3Q27
-    feq[19] = gpu_f_eq(rhoW3,  ux3 + uy3 + uz3, p1_muu15);
-    feq[20] = gpu_f_eq(rhoW3, -ux3 - uy3 - uz3, p1_muu15);
-    feq[21] = gpu_f_eq(rhoW3,  ux3 + uy3 - uz3, p1_muu15);
-    feq[22] = gpu_f_eq(rhoW3, -ux3 - uy3 + uz3, p1_muu15);
-    feq[23] = gpu_f_eq(rhoW3,  ux3 - uy3 + uz3, p1_muu15);
-    feq[24] = gpu_f_eq(rhoW3, -ux3 + uy3 - uz3, p1_muu15);
-    feq[25] = gpu_f_eq(rhoW3, -ux3 + uy3 + uz3, p1_muu15);
-    feq[26] = gpu_f_eq(rhoW3,  ux3 - uy3 - uz3, p1_muu15);
+    fAux[19] = fAux[19] - gpu_f_eq(rhoW3,  ux3 + uy3 + uz3, p1_muu15);
+    fAux[20] = fAux[20] - gpu_f_eq(rhoW3, -ux3 - uy3 - uz3, p1_muu15);
+    fAux[21] = fAux[21] - gpu_f_eq(rhoW3,  ux3 + uy3 - uz3, p1_muu15);
+    fAux[22] = fAux[22] - gpu_f_eq(rhoW3, -ux3 - uy3 + uz3, p1_muu15);
+    fAux[23] = fAux[23] - gpu_f_eq(rhoW3,  ux3 - uy3 + uz3, p1_muu15);
+    fAux[24] = fAux[24] - gpu_f_eq(rhoW3, -ux3 + uy3 - uz3, p1_muu15);
+    fAux[25] = fAux[25] - gpu_f_eq(rhoW3, -ux3 + uy3 + uz3, p1_muu15);
+    fAux[26] = fAux[26] - gpu_f_eq(rhoW3,  ux3 - uy3 - uz3, p1_muu15);
 #endif
-
-    // Calculate non equilibrium populations
-    // fneq = f - feq
-#pragma unroll
-    for(char i = 0; i < Q; i++)
-        fneq[i] = fAux[i] - feq[i];
 
     // Calculate pineq(alfa, beta)/3
 #ifdef D3Q19
-    const dfloat pineqXXd3 = (fneq[1] + fneq[2] + fneq[7] + fneq[8] + fneq[9] 
-            + fneq[10] + fneq[13] + fneq[14] + fneq[15] + fneq[16]) / 3;
-    const dfloat pineqYYd3 = (fneq[3] + fneq[4] + fneq[7] + fneq[8] + fneq[11]
-            + fneq[12] + fneq[13] + fneq[14] + fneq[17] + fneq[18]) / 3;
-    const dfloat pineqZZd3 = (fneq[5] + fneq[6] + fneq[9] + fneq[10] + fneq[11]
-            + fneq[12] + fneq[15] + fneq[16] + fneq[17] + fneq[18]) / 3;
-    const dfloat pineqXYt2 = (fneq[7] + fneq[8] - fneq[13] - fneq[14]) * 2;
-    const dfloat pineqXZt2 = (fneq[9] + fneq[10] - fneq[15] - fneq[16]) * 2;
-    const dfloat pineqYZt2 = (fneq[11] + fneq[12] - fneq[17] - fneq[18]) * 2;
+    const dfloat pineqXX = (fAux[1] + fAux[2] + fAux[7] + fAux[8] + fAux[9] 
+            + fAux[10] + fAux[13] + fAux[14] + fAux[15] + fAux[16]);
+    const dfloat pineqYY = (fAux[3] + fAux[4] + fAux[7] + fAux[8] + fAux[11]
+            + fAux[12] + fAux[13] + fAux[14] + fAux[17] + fAux[18]);
+    const dfloat pineqZZ = (fAux[5] + fAux[6] + fAux[9] + fAux[10] + fAux[11]
+            + fAux[12] + fAux[15] + fAux[16] + fAux[17] + fAux[18]);
+    const dfloat pineqXYt2 = (fAux[7] + fAux[8] - fAux[13] - fAux[14]) * 2;
+    const dfloat pineqXZt2 = (fAux[9] + fAux[10] - fAux[15] - fAux[16]) * 2;
+    const dfloat pineqYZt2 = (fAux[11] + fAux[12] - fAux[17] - fAux[18]) * 2;
 #endif // !D3Q19 
 #ifdef D3Q27
     const dfloat aux = fneq[19] + fneq[20] + fneq[21] + fneq[22] + fneq[23]
@@ -175,25 +166,65 @@ void gpuBCMacrCollisionStream(
     // fReg[i] = 4.5*w[i](Q[i, alfa, beta]*pi[i, alfa, beta] 
     //          - c[i, alfa]*F[alfa]/3)
     // Obs.: fAux is used as fReg
-    fAux[ 0] = 4.5*W0*(-pineqXXd3 - pineqYYd3 - pineqZZd3);
-    fAux[ 1] = W1t9d2*( FX_D3 + 2*pineqXXd3 - pineqYYd3 - pineqZZd3);
-    fAux[ 2] = W1t9d2*(-FX_D3 + 2*pineqXXd3 - pineqYYd3 - pineqZZd3);
-    fAux[ 3] = W1t9d2*( FY_D3 - pineqXXd3 + 2*pineqYYd3 - pineqZZd3);
-    fAux[ 4] = W1t9d2*(-FY_D3 - pineqXXd3 + 2*pineqYYd3 - pineqZZd3);
-    fAux[ 5] = W1t9d2*( FZ_D3 - pineqXXd3 - pineqYYd3 + 2*pineqZZd3);
-    fAux[ 6] = W1t9d2*(-FZ_D3 - pineqXXd3 - pineqYYd3 + 2*pineqZZd3);
-    fAux[ 7] = W2t9d2*( FX_D3 + FY_D3 + 2*pineqXXd3 + pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
-    fAux[ 8] = W2t9d2*(-FX_D3 - FY_D3 + 2*pineqXXd3 + pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
-    fAux[ 9] = W2t9d2*( FX_D3 + FZ_D3 + 2*pineqXXd3 + pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
-    fAux[10] = W2t9d2*(-FX_D3 - FZ_D3 + 2*pineqXXd3 + pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
-    fAux[11] = W2t9d2*( FY_D3 + FZ_D3 - pineqXXd3 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
-    fAux[12] = W2t9d2*(-FY_D3 - FZ_D3 - pineqXXd3 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
-    fAux[13] = W2t9d2*( FX_D3 - FY_D3 + 2*pineqXXd3 - pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
-    fAux[14] = W2t9d2*(-FX_D3 + FY_D3 + 2*pineqXXd3 - pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
-    fAux[15] = W2t9d2*( FX_D3 - FZ_D3 + 2*pineqXXd3 - pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
-    fAux[16] = W2t9d2*(-FX_D3 + FZ_D3 + 2*pineqXXd3 - pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
-    fAux[17] = W2t9d2*( FY_D3 - FZ_D3 - pineqXXd3 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
-    fAux[18] = W2t9d2*(-FY_D3 + FZ_D3 - pineqXXd3 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
+    dfloat regTerms; // Q[i, alfa, beta]*pi[i, alfa, beta] - c[i, alfa]*F[alfa]/3)
+    
+    regTerms = -pineqXX/3 - pineqYY/3 - pineqZZ/3;
+    fAux[0] = 4.5*W0*regTerms;
+
+    regTerms +=  FX_D3 + pineqXX;
+    fAux[1] = W1t9d2*regTerms;
+
+    regTerms += -2*FX_D3;
+    fAux[2] = W1t9d2*regTerms;
+
+    regTerms +=  FX_D3 + FY_D3 - pineqXX + pineqYY;
+    fAux[3] = W1t9d2*regTerms;
+
+    regTerms += -2*FY_D3;
+    fAux[4] = W1t9d2*regTerms;
+
+    regTerms +=  FY_D3 + FZ_D3 - pineqYY + pineqZZ;
+    fAux[5] = W1t9d2*regTerms;
+
+    regTerms += -2*FZ_D3;
+    fAux[6] = W1t9d2*regTerms;
+    
+    regTerms +=  FX_D3 + FY_D3 + FZ_D3 + pineqXX + pineqXYt2 + pineqYY - pineqZZ;
+    fAux[7] = W2t9d2*regTerms;
+
+    regTerms += -2*FX_D3 - 2*FY_D3;
+    fAux[8] = W2t9d2*regTerms;
+
+    regTerms +=  2*FX_D3 + FY_D3 + FZ_D3 - pineqXYt2 + pineqXZt2 - pineqYY + pineqZZ;
+    fAux[9] = W2t9d2*regTerms;
+
+    regTerms += -2*FX_D3 - 2*FZ_D3;
+    fAux[10] = W2t9d2*regTerms;
+
+    regTerms +=  FX_D3 + FY_D3 + 2*FZ_D3 - pineqXX - pineqXZt2 + pineqYY + pineqYZt2;
+    fAux[11] = W2t9d2*regTerms;
+
+    regTerms += -2*FY_D3 - 2*FZ_D3;
+    fAux[12] = W2t9d2*regTerms;
+
+    regTerms +=  FX_D3 + FZ_D3 + pineqXX - pineqXYt2 - pineqYZt2 - pineqZZ;
+    fAux[13] = W2t9d2*regTerms;
+
+    regTerms += -2*FX_D3 + 2*FY_D3;
+    fAux[14] = W2t9d2*regTerms;
+
+    regTerms +=  2*FX_D3 - FY_D3 - FZ_D3 + pineqXYt2 - pineqXZt2 - pineqYY + pineqZZ;
+    fAux[15] = W2t9d2*regTerms;
+
+    regTerms += -2*FX_D3 + 2*FZ_D3;
+    fAux[16] = W2t9d2*regTerms;
+
+    regTerms +=  FX_D3 + FY_D3 - 2*FZ_D3 - pineqXX + pineqXZt2 + pineqYY - pineqYZt2;
+    fAux[17] = W2t9d2*regTerms;
+
+    regTerms += -2*FY_D3 + 2*FZ_D3;
+    fAux[18] = W2t9d2*regTerms;
+
 #ifdef D3Q27
     fAux[19] = W3t9d2*( FX_D3 + FY_D3 + FZ_D3 + 2*pineqXXd3 + pineqXYt2 + pineqXZt2 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
     fAux[20] = W3t9d2*(-FX_D3 - FY_D3 - FZ_D3 + 2*pineqXXd3 + pineqXYt2 + pineqXZt2 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
@@ -205,7 +236,6 @@ void gpuBCMacrCollisionStream(
     fAux[26] = W3t9d2*( FX_D3 - FY_D3 - FZ_D3 + 2*pineqXXd3 - pineqXYt2 - pineqXZt2 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
 #endif
 
-
     // Collision to fAux
     // fAux = (1 - 1/TAU)*f1 + f_eq + (1 - 0.5/TAU)*force ->
     // fAux = (1 - OMEGA)*f1 + f_eq + (1 - 0.5*0MEGA)*force->
@@ -213,63 +243,63 @@ void gpuBCMacrCollisionStream(
     // Force term is:
     // Q[i, alfa, beta] = c[i, alfa]*c[i, beta] - d_kronecker[alfa, beta]/3
     // force[i] = w[i]*(3*c[i, alfa]+9*Q[i, alfa, beta]*u[beta])*F[alfa]
-    
-    fAux[ 0] = T_OMEGA * fAux[ 0] + feq[ 0] + 
-               TT_OMEGA * gpu_force_term(W0,-ux3,-uy3,-uz3);
-    
-    fAux[ 1] = T_OMEGA * fAux[ 1] + feq[ 1] + 
-               TT_OMEGA * gpu_force_term(W1, ux3*2+3,-uy3,-uz3);
-    
-    fAux[ 2] = T_OMEGA * fAux[ 2] + feq[ 2] + 
-               TT_OMEGA * gpu_force_term(W1, ux3*2-3,-uy3,-uz3);
-    
-    fAux[ 3] = T_OMEGA * fAux[ 3] + feq[ 3] + 
-               TT_OMEGA * gpu_force_term(W1,-ux3, uy3*2+3,-uz3);
-    
-    fAux[ 4] = T_OMEGA * fAux[ 4] + feq[ 4] + 
-               TT_OMEGA * gpu_force_term(W1,-ux3, uy3*2-3,-uz3);
-    
-    fAux[ 5] = T_OMEGA * fAux[ 5] + feq[ 5] + 
-               TT_OMEGA * gpu_force_term(W1,-ux3,-uy3, uz3*2+3);
-    
-    fAux[ 6] = T_OMEGA * fAux[ 6] + feq[ 6] + 
-               TT_OMEGA * gpu_force_term(W1,-ux3,-uy3, uz3*2-3);
-    
-    fAux[ 7] = T_OMEGA * fAux[ 7] + feq[ 7] + 
-               TT_OMEGA * gpu_force_term(W2, ux3*2+uy3*3+3, ux3*3+uy3*2+3,-uz3);
-    
-    fAux[ 8] = T_OMEGA * fAux[ 8] + feq[ 8] + 
-               TT_OMEGA * gpu_force_term(W2, ux3*2+uy3*3-3, ux3*3+uy3*2-3,-uz3);
-    
-    fAux[ 9] = T_OMEGA * fAux[ 9] + feq[ 9] + 
-               TT_OMEGA * gpu_force_term(W2, ux3*2+uz3*3+3,-uy3, ux3*3+uz3*2+3);
-    
-    fAux[10] = T_OMEGA * fAux[10] + feq[10] + 
-               TT_OMEGA * gpu_force_term(W2, ux3*2+uz3*3-3,-uy3, ux3*3+uz3*2-3);
-    
-    fAux[11] = T_OMEGA * fAux[11] + feq[11] + 
-               TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2+uz3*3+3, uy3*3+uz3*2+3);
-    
-    fAux[12] = T_OMEGA * fAux[12] + feq[12] + 
-               TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2+uz3*3-3, uy3*3+uz3*2-3);
-    
-    fAux[13] = T_OMEGA * fAux[13] + feq[13] + 
-               TT_OMEGA * gpu_force_term(W2, ux3*2-uy3*3+3,-ux3*3+uy3*2-3,-uz3);
-    
-    fAux[14] = T_OMEGA * fAux[14] + feq[14] + 
-               TT_OMEGA * gpu_force_term(W2, ux3*2-uy3*3-3,-ux3*3+uy3*2+3,-uz3);
-    
-    fAux[15] = T_OMEGA * fAux[15] + feq[15] + 
-               TT_OMEGA * gpu_force_term(W2, ux3*2-uz3*3+3,-uy3,-ux3*3+uz3*2-3);
-    
-    fAux[16] = T_OMEGA * fAux[16] + feq[16] + 
-               TT_OMEGA * gpu_force_term(W2, ux3*2-uz3*3-3,-uy3,-ux3*3+uz3*2+3);
-    
-    fAux[17] = T_OMEGA * fAux[17] + feq[17] + 
-               TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2-uz3*3+3,-uy3*3+uz3*2-3);
-    
-    fAux[18] = T_OMEGA * fAux[18] + feq[18] + 
-               TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2-uz3*3-3,-uy3*3+uz3*2+3);
+
+    fAux[ 0] = T_OMEGA * fAux[ 0] + gpu_f_eq(rhoW0, 0, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W0,-ux3,-uy3,-uz3);
+
+    fAux[ 1] = T_OMEGA * fAux[ 1] + gpu_f_eq(rhoW1,  ux3, p1_muu15) 
+               + TT_OMEGA * gpu_force_term(W1, ux3*2+3,-uy3,-uz3);
+
+    fAux[ 2] = T_OMEGA * fAux[ 2] + gpu_f_eq(rhoW1, -ux3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W1, ux3*2-3,-uy3,-uz3);
+
+    fAux[ 3] = T_OMEGA * fAux[ 3] + gpu_f_eq(rhoW1,  uy3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W1,-ux3, uy3*2+3,-uz3);
+
+    fAux[ 4] = T_OMEGA * fAux[ 4] + gpu_f_eq(rhoW1, -uy3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W1,-ux3, uy3*2-3,-uz3);
+
+    fAux[ 5] = T_OMEGA * fAux[ 5] + gpu_f_eq(rhoW1,  uz3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W1,-ux3,-uy3, uz3*2+3);
+
+    fAux[ 6] = T_OMEGA * fAux[ 6] + gpu_f_eq(rhoW1, -uz3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W1,-ux3,-uy3, uz3*2-3);
+
+    fAux[ 7] = T_OMEGA * fAux[ 7] + gpu_f_eq(rhoW2,  ux3 + uy3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2, ux3*2+uy3*3+3, ux3*3+uy3*2+3,-uz3);
+
+    fAux[ 8] = T_OMEGA * fAux[ 8] + gpu_f_eq(rhoW2, -ux3 - uy3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2, ux3*2+uy3*3-3, ux3*3+uy3*2-3,-uz3);
+
+    fAux[ 9] = T_OMEGA * fAux[ 9] + gpu_f_eq(rhoW2,  ux3 + uz3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2, ux3*2+uz3*3+3,-uy3, ux3*3+uz3*2+3);
+
+    fAux[10] = T_OMEGA * fAux[10] + gpu_f_eq(rhoW2, -ux3 - uz3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2, ux3*2+uz3*3-3,-uy3, ux3*3+uz3*2-3);
+
+    fAux[11] = T_OMEGA * fAux[11] + gpu_f_eq(rhoW2,  uy3 + uz3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2+uz3*3+3, uy3*3+uz3*2+3);
+
+    fAux[12] = T_OMEGA * fAux[12] + gpu_f_eq(rhoW2, -uy3 - uz3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2+uz3*3-3, uy3*3+uz3*2-3);
+
+    fAux[13] = T_OMEGA * fAux[13] + gpu_f_eq(rhoW2,  ux3 - uy3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2, ux3*2-uy3*3+3,-ux3*3+uy3*2-3,-uz3);
+
+    fAux[14] = T_OMEGA * fAux[14] + gpu_f_eq(rhoW2, -ux3 + uy3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2, ux3*2-uy3*3-3,-ux3*3+uy3*2+3,-uz3);
+
+    fAux[15] = T_OMEGA * fAux[15] + gpu_f_eq(rhoW2,  ux3 - uz3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2, ux3*2-uz3*3+3,-uy3,-ux3*3+uz3*2-3);
+
+    fAux[16] = T_OMEGA * fAux[16] + gpu_f_eq(rhoW2, -ux3 + uz3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2, ux3*2-uz3*3-3,-uy3,-ux3*3+uz3*2+3);
+
+    fAux[17] = T_OMEGA * fAux[17] + gpu_f_eq(rhoW2,  uy3 - uz3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2-uz3*3+3,-uy3*3+uz3*2-3);
+
+    fAux[18] = T_OMEGA * fAux[18] + gpu_f_eq(rhoW2, -uy3 + uz3, p1_muu15)
+               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2-uz3*3-3,-uy3*3+uz3*2+3);
 #ifdef D3Q27
     fAux[19] = T_OMEGA * fAux[19] + feq[19] + 
                TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3+uz3*3+3, ux3*3+uy3*2+uz3*3+3, ux3*3+uy3*3+uz3*2+3);

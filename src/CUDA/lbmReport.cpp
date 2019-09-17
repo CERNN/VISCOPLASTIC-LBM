@@ -244,6 +244,10 @@ void printParamInfo(
 #ifdef D3Q27
     printf("       Velocity set: D3Q27\n");
 #endif // !D3Q27
+    if(sizeof(dfloat) == sizeof(float))
+        printf("          Precision: float\n");
+    else if(sizeof(dfloat) == sizeof(double))
+        printf("          Precision: double\n");
     printf("                 NX: %d\n", NX);
     printf("                 NY: %d\n", NY);
     printf("                 NZ: %d\n", NZ);

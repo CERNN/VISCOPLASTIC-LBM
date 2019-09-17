@@ -69,7 +69,6 @@ int main()
     {
         checkCudaErrors(cudaSetDevice(i));
         checkCudaErrors(cudaGetDeviceProperties(&(info.devices[i]), i));
-        checkCudaErrors(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1)); // Set cache to prefer L1
         checkCudaErrors(cudaStreamCreate(&streamsKernelLBM[i]));
         pop[i].popAllocation();
         macr[i].macrAllocation(IN_VIRTUAL);

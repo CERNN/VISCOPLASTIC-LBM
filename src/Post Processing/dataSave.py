@@ -2,7 +2,6 @@ from pyevtk.hl import gridToVTK
 from fileTreat import *
 
 '''
-    TODO: add support to POINT DATA
     @brief Saves variables values to VTK format
     @param macrsDict (dict()): dict with variable values and name as key 
     @param filenameWrite (str): filename to write to (NO EXTENSION)
