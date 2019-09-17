@@ -13,18 +13,30 @@ from fileTreat import *
 '''
 def saveVTK3D(macrsDict, filenameWrite, points=True, normVal=0):
     info = getSimInfo()
+    
     if(normVal == 0):
         normVal = info['NX']
+        if(points == True):
+            normVal -= 1
+
     dx, dy, dz = 1.0/normVal, 1.0/normVal, 1.0/normVal
     if info['Prc'] == 'double':
         prc = 'float64'
     elif info['Prc'] == 'float':
         prc = 'float32'
-    # grid
-    x = np.arange(0, info['NX']/normVal+0.1*dx, dx, dtype=prc)
-    y = np.arange(0, info['NY']/normVal+0.1*dy, dy, dtype=prc)
-    z = np.arange(0, info['NZ']/normVal+0.1*dz, dz, dtype=prc)
-    gridToVTK(PATH+filenameWrite, x, y, z, cellData=macrsDict)
+    
+    if(points == False):
+        # grid
+        x = np.arange(0, info['NX']/normVal+0.1*dx, dx, dtype=prc)
+        y = np.arange(0, info['NY']/normVal+0.1*dy, dy, dtype=prc)
+        z = np.arange(0, info['NZ']/normVal+0.1*dz, dz, dtype=prc)
+        gridToVTK(PATH+filenameWrite, x, y, z, cellData=macrsDict)
+    else:
+        # grid
+        x = np.arange(0, (info['NX']-1)/normVal+0.1*dx, dx, dtype=prc)
+        y = np.arange(0, (info['NY']-1)/normVal+0.1*dy, dy, dtype=prc)
+        z = np.arange(0, (info['NZ']-1)/normVal+0.1*dz, dz, dtype=prc)
+        gridToVTK(PATH+filenameWrite, x, y, z, pointData=macrsDict)
 
 
 '''
