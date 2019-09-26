@@ -32,7 +32,9 @@ void folderSetup()
     strPath += ID_SIM;
     std::string cmd = "md ";
     cmd += strPath;
+    printf("comando\n"); fflush(stdout);
     system(cmd.c_str());
+    printf("saiu\n"); fflush(stdout);
     return;
 #endif // !_WIN32
 

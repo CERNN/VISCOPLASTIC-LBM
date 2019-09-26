@@ -24,6 +24,7 @@
 
 void treatData(MacrProc* processing)
 {
+    /* DATA TREATMENT EXAMPLE */
     dfloat denRes = 0.0, numRes = 0.0; // denominator and numerator for residual
     Macroscopics* macrCurr = processing->macrCurr; 
     Macroscopics* macrOld = processing->macrOld; 
@@ -90,6 +91,7 @@ bool stopSim(MacrProc* processing)
 
 void printTreatData(MacrProc* processing)
 {
+    /* PRINT TREATED DATA EXAMPLE */
     printf("\n--------------------------------- TREATED DATA ---------------------------------\n");
     printf("               Step: %d\n", *(processing->step));
     printf("           Residual: %.4e\n", processing->residual);
@@ -102,6 +104,7 @@ void printTreatData(MacrProc* processing)
 
 void saveTreatData(MacrProc* processing)
 {
+    /* SAVE TO CSV EXAMPLE */
     std::string strFileAvgUz;
     strFileAvgUz = getVarFilename("avgUz", *(processing->step), ".csv");
     
