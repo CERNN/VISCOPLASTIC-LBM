@@ -30,9 +30,14 @@ void gpuBCMacrCollisionStream(
     // Load populations
     dfloat fAux[Q];
     // Terms to use to recursive calculations
-    dfloat terms[Q];
+#ifdef D3Q19
+    dfloat terms[6];
+#endif 
+#ifdef D3Q27
+    dfloat terms[Q]; // TODO
+#endif
     dfloat multiplyTerm = 1;
-
+    dfloat auxTerm = 0;
 #pragma unroll
     for (char i = 0; i < Q; i++)
         fAux[i] = pop[idxPop(x, y, z, i)];
@@ -107,25 +112,16 @@ void gpuBCMacrCollisionStream(
     const dfloat uz3uz3d2 = uz3*uz3/2;
     
     // Calculate equilibrium terms (0.5*uc3^2 + uc3)
+    // terms[0] -> population 0
+    // terms[1] -> population 1
+    // terms[2] -> population 2
+    // terms[3] -> population 3
+    // terms[4] -> population 4
     terms[0] = p1_muu15;
     terms[1] = terms[0] + ( ux3 + ux3ux3d2);
     terms[2] = terms[0] + (-ux3 + ux3ux3d2);
     terms[3] = terms[0] + ( uy3 + uy3uy3d2);
     terms[4] = terms[0] + (-uy3 + uy3uy3d2);
-    terms[5] = terms[0] + ( uz3 + uz3uz3d2);
-    terms[6] = terms[0] + (-uz3 + uz3uz3d2);
-    terms[7] = terms[1] + ( uy3 + ux3uy3 + uy3uy3d2);
-    terms[8] = terms[2] + (-uy3 + ux3uy3 + uy3uy3d2);
-    terms[9] = terms[1] + ( uz3 + ux3uz3 + uz3uz3d2);
-    terms[10] = terms[2] + (-uz3 + ux3uz3 + uz3uz3d2);
-    terms[11] = terms[3] + ( uz3 + uy3uz3 + uz3uz3d2);
-    terms[12] = terms[4] + (-uz3 + uy3uz3 + uz3uz3d2);
-    terms[13] = terms[1] + (-uy3 - ux3uy3 + uy3uy3d2);
-    terms[14] = terms[2] + ( uy3 - ux3uy3 + uy3uy3d2);
-    terms[15] = terms[1] + (-uz3 - ux3uz3 + uz3uz3d2);
-    terms[16] = terms[2] + ( uz3 - ux3uz3 + uz3uz3d2);
-    terms[17] = terms[3] + (-uz3 - uy3uz3 + uz3uz3d2);
-    terms[18] = terms[4] + ( uz3 - uy3uz3 + uz3uz3d2);
 #ifdef D3Q27
     terms[19] = terms[7] + ( uz3 + ux3uz3 + uy3uz3 + uz3uz3d2);
     terms[20] = terms[8] + (-uz3 + ux3uz3 + uy3uz3 + uz3uz3d2);
@@ -139,29 +135,29 @@ void gpuBCMacrCollisionStream(
 
     // Calculate fneq
     // feq[i] = rho*w[i] * (1 - 1.5*u*u + 3*u*c[i] + 4.5*(u*c[i])^2) ->
-    // fneq[i] = f[i]-feq[i]
+    // fneq[i] = f[i]-feq[i] -> fi[i] -= feq[i]
     multiplyTerm = rhoW0;
-    fAux[0] = fAux[0] - multiplyTerm*terms[0];
+    fAux[0] -= multiplyTerm*terms[0];
     multiplyTerm = rhoW1;
-    fAux[1] = fAux[1] - multiplyTerm*terms[1];
-    fAux[2] = fAux[2] - multiplyTerm*terms[2];
-    fAux[3] = fAux[3] - multiplyTerm*terms[3];
-    fAux[4] = fAux[4] - multiplyTerm*terms[4];
-    fAux[5] = fAux[5] - multiplyTerm*terms[5];
-    fAux[6] = fAux[6] - multiplyTerm*terms[6];
+    fAux[1] -= multiplyTerm*terms[1];
+    fAux[2] -= multiplyTerm*terms[2];
+    fAux[3] -= multiplyTerm*terms[3];
+    fAux[4] -= multiplyTerm*terms[4];
+    fAux[5] -= multiplyTerm*(terms[0] + ( uz3 + uz3uz3d2));
+    fAux[6] -= multiplyTerm*(terms[0] + (-uz3 + uz3uz3d2));
     multiplyTerm = rhoW2;
-    fAux[7] = fAux[7] - multiplyTerm*terms[7];
-    fAux[8] = fAux[8] - multiplyTerm*terms[8];
-    fAux[9] = fAux[9] - multiplyTerm*terms[9];
-    fAux[10] = fAux[10] - multiplyTerm*terms[10];
-    fAux[11] = fAux[11] - multiplyTerm*terms[11];
-    fAux[12] = fAux[12] - multiplyTerm*terms[12];
-    fAux[13] = fAux[13] - multiplyTerm*terms[13];
-    fAux[14] = fAux[14] - multiplyTerm*terms[14];
-    fAux[15] = fAux[15] - multiplyTerm*terms[15];
-    fAux[16] = fAux[16] - multiplyTerm*terms[16];
-    fAux[17] = fAux[17] - multiplyTerm*terms[17];
-    fAux[18] = fAux[18] - multiplyTerm*terms[18];
+    fAux[7] -=  multiplyTerm*(terms[1] + ( uy3 + ux3uy3 + uy3uy3d2));
+    fAux[8] -=  multiplyTerm*(terms[2] + (-uy3 + ux3uy3 + uy3uy3d2));
+    fAux[9] -=  multiplyTerm*(terms[1] + ( uz3 + ux3uz3 + uz3uz3d2));
+    fAux[10] -= multiplyTerm*(terms[2] + (-uz3 + ux3uz3 + uz3uz3d2));
+    fAux[11] -= multiplyTerm*(terms[3] + ( uz3 + uy3uz3 + uz3uz3d2));
+    fAux[12] -= multiplyTerm*(terms[4] + (-uz3 + uy3uz3 + uz3uz3d2));
+    fAux[13] -= multiplyTerm*(terms[1] + (-uy3 - ux3uy3 + uy3uy3d2));
+    fAux[14] -= multiplyTerm*(terms[2] + ( uy3 - ux3uy3 + uy3uy3d2));
+    fAux[15] -= multiplyTerm*(terms[1] + (-uz3 - ux3uz3 + uz3uz3d2));
+    fAux[16] -= multiplyTerm*(terms[2] + ( uz3 - ux3uz3 + uz3uz3d2));
+    fAux[17] -= multiplyTerm*(terms[3] + (-uz3 - uy3uz3 + uz3uz3d2));
+    fAux[18] -= multiplyTerm*(terms[4] + ( uz3 - uy3uz3 + uz3uz3d2));
 #ifdef D3Q27
     multiplyTerm = rhoW3;
     fAux[19] = fAux[19] - multiplyTerm*terms[19];
@@ -208,34 +204,23 @@ void gpuBCMacrCollisionStream(
 
     // Calculate regularization terms 
     // Q[i, alfa, beta]*pi[i, alfa, beta] - c[i, alfa]*F[alfa]/3
+    // terms[0] -> population 0
+    // terms[1] -> population 1
+    // terms[2] -> population 2
+    // terms[3] -> population 3
+    // terms[4] -> population 4
     terms[0] = -pineqXX/3 - pineqYY/3 - pineqZZ/3;
     terms[1] = terms[0] + (-FX_D3 + pineqXX);
     terms[2] = terms[0] + ( FX_D3 + pineqXX);
     terms[3] = terms[0] + (-FY_D3 + pineqYY);
     terms[4] = terms[0] + ( FY_D3 + pineqYY);
-    terms[5] = terms[0] + (-FZ_D3 + pineqZZ);
-    terms[6] = terms[0] + ( FZ_D3 + pineqZZ);
+#ifdef D3Q27
     terms[7] = terms[1] + (-FY_D3 + pineqXYt2 + pineqYY);
     terms[8] = terms[2] + ( FY_D3 + pineqXYt2 + pineqYY);
     terms[9] = terms[1] + (-FZ_D3 + pineqXZt2 + pineqZZ);
     terms[10] = terms[2] + ( FZ_D3 + pineqXZt2 + pineqZZ);
     terms[11] = terms[3] + (-FZ_D3 + pineqYZt2 + pineqZZ);
     terms[12] = terms[4] + ( FZ_D3 + pineqYZt2 + pineqZZ);
-    terms[13] = terms[1] + ( FY_D3 - pineqXYt2 + pineqYY);
-    terms[14] = terms[2] + (-FY_D3 - pineqXYt2 + pineqYY);
-    terms[15] = terms[1] + ( FZ_D3 - pineqXZt2 + pineqZZ);
-    terms[16] = terms[2] + (-FZ_D3 - pineqXZt2 + pineqZZ);
-    terms[17] = terms[3] + ( FZ_D3 - pineqYZt2 + pineqZZ);
-    terms[18] = terms[4] + (-FZ_D3 - pineqYZt2 + pineqZZ);
-#ifdef D3Q27
-    terms[19] = terms[7] + (-FZ_D3 + pineqXZt2 + pineqYZt2 + pineqZZ);
-    terms[20] = terms[8] + ( FZ_D3 + pineqXZt2 + pineqYZt2 + pineqZZ);
-    terms[21] = terms[7] + ( FZ_D3 - pineqXZt2 - pineqYZt2 + pineqZZ);
-    terms[22] = terms[8] + (-FZ_D3 - pineqXZt2 - pineqYZt2 + pineqZZ);
-    terms[23] = terms[9] + ( FY_D3 - pineqXYt2 + pineqYY - pineqYZt2);
-    terms[24] = terms[10] + (-FY_D3 - pineqXYt2 + pineqYY - pineqYZt2);
-    terms[25] = terms[11] + ( FX_D3 + pineqXX - pineqXYt2 - pineqXZt2);
-    terms[26] = terms[12] + (-FX_D3 + pineqXX - pineqXYt2 - pineqXZt2);
 #endif
     
     // Calculate regularized population
@@ -249,21 +234,21 @@ void gpuBCMacrCollisionStream(
     fAux[2] = multiplyTerm*terms[2];
     fAux[3] = multiplyTerm*terms[3];
     fAux[4] = multiplyTerm*terms[4];
-    fAux[5] = multiplyTerm*terms[5];
-    fAux[6] = multiplyTerm*terms[6];
+    fAux[5] = multiplyTerm*(terms[0] + (-FZ_D3 + pineqZZ));
+    fAux[6] = multiplyTerm*(terms[0] + ( FZ_D3 + pineqZZ));
     multiplyTerm = W2t9d2;
-    fAux[7] = multiplyTerm*terms[7];
-    fAux[8] = multiplyTerm*terms[8];
-    fAux[9] = multiplyTerm*terms[9];
-    fAux[10] = multiplyTerm*terms[10];
-    fAux[11] = multiplyTerm*terms[11];
-    fAux[12] = multiplyTerm*terms[12];
-    fAux[13] = multiplyTerm*terms[13];
-    fAux[14] = multiplyTerm*terms[14];
-    fAux[15] = multiplyTerm*terms[15];
-    fAux[16] = multiplyTerm*terms[16];
-    fAux[17] = multiplyTerm*terms[17];
-    fAux[18] = multiplyTerm*terms[18];
+    fAux[7] = multiplyTerm*(terms[1] + (-FY_D3 + pineqXYt2 + pineqYY));
+    fAux[8] = multiplyTerm*(terms[2] + ( FY_D3 + pineqXYt2 + pineqYY));
+    fAux[9] = multiplyTerm*(terms[1] + (-FZ_D3 + pineqXZt2 + pineqZZ));
+    fAux[10] = multiplyTerm*(terms[2] + ( FZ_D3 + pineqXZt2 + pineqZZ));
+    fAux[11] = multiplyTerm*(terms[3] + (-FZ_D3 + pineqYZt2 + pineqZZ));
+    fAux[12] = multiplyTerm*(terms[4] + ( FZ_D3 + pineqYZt2 + pineqZZ));
+    fAux[13] = multiplyTerm*(terms[1] + ( FY_D3 - pineqXYt2 + pineqYY));
+    fAux[14] = multiplyTerm*(terms[2] + (-FY_D3 - pineqXYt2 + pineqYY));
+    fAux[15] = multiplyTerm*(terms[1] + ( FZ_D3 - pineqXZt2 + pineqZZ));
+    fAux[16] = multiplyTerm*(terms[2] + (-FZ_D3 - pineqXZt2 + pineqZZ));
+    fAux[17] = multiplyTerm*(terms[3] + ( FZ_D3 - pineqYZt2 + pineqZZ));
+    fAux[18] = multiplyTerm*(terms[4] + (-FZ_D3 - pineqYZt2 + pineqZZ));
 #ifdef D3Q27
     multiplyTerm = W3t9d2;
     fAux[19] = multiplyTerm*terms[19];
@@ -290,25 +275,16 @@ void gpuBCMacrCollisionStream(
         fAux[i] *= T_OMEGA;
 
     // Calculate equilibrium terms (0.5*uc3^2 + uc3)
+    // terms[0] -> population 0
+    // terms[1] -> population 1
+    // terms[2] -> population 2
+    // terms[3] -> population 3
+    // terms[4] -> population 4
     terms[0] = p1_muu15;
     terms[1] = terms[0] + ( ux3 + ux3ux3d2);
     terms[2] = terms[0] + (-ux3 + ux3ux3d2);
     terms[3] = terms[0] + ( uy3 + uy3uy3d2);
     terms[4] = terms[0] + (-uy3 + uy3uy3d2);
-    terms[5] = terms[0] + ( uz3 + uz3uz3d2);
-    terms[6] = terms[0] + (-uz3 + uz3uz3d2);
-    terms[7] = terms[1] + ( uy3 + ux3uy3 + uy3uy3d2);
-    terms[8] = terms[2] + (-uy3 + ux3uy3 + uy3uy3d2);
-    terms[9] = terms[1] + ( uz3 + ux3uz3 + uz3uz3d2);
-    terms[10] = terms[2] + (-uz3 + ux3uz3 + uz3uz3d2);
-    terms[11] = terms[3] + ( uz3 + uy3uz3 + uz3uz3d2);
-    terms[12] = terms[4] + (-uz3 + uy3uz3 + uz3uz3d2);
-    terms[13] = terms[1] + (-uy3 - ux3uy3 + uy3uy3d2);
-    terms[14] = terms[2] + ( uy3 - ux3uy3 + uy3uy3d2);
-    terms[15] = terms[1] + (-uz3 - ux3uz3 + uz3uz3d2);
-    terms[16] = terms[2] + ( uz3 - ux3uz3 + uz3uz3d2);
-    terms[17] = terms[3] + (-uz3 - uy3uz3 + uz3uz3d2);
-    terms[18] = terms[4] + ( uz3 - uy3uz3 + uz3uz3d2);
 #ifdef D3Q27
     terms[19] = terms[7] + ( uz3 + ux3uz3 + uy3uz3 + uz3uz3d2);
     terms[20] = terms[8] + (-uz3 + ux3uz3 + uy3uz3 + uz3uz3d2);
@@ -328,21 +304,21 @@ void gpuBCMacrCollisionStream(
     fAux[2] += multiplyTerm*terms[2];
     fAux[3] += multiplyTerm*terms[3];
     fAux[4] += multiplyTerm*terms[4];
-    fAux[5] += multiplyTerm*terms[5];
-    fAux[6] += multiplyTerm*terms[6];
+    fAux[5] += multiplyTerm*(terms[0] + ( uz3 + uz3uz3d2));
+    fAux[6] += multiplyTerm*(terms[0] + (-uz3 + uz3uz3d2));
     multiplyTerm = rhoW2;
-    fAux[7] += multiplyTerm*terms[7];
-    fAux[8] += multiplyTerm*terms[8];
-    fAux[9] += multiplyTerm*terms[9];
-    fAux[10] += multiplyTerm*terms[10];
-    fAux[11] += multiplyTerm*terms[11];
-    fAux[12] += multiplyTerm*terms[12];
-    fAux[13] += multiplyTerm*terms[13];
-    fAux[14] += multiplyTerm*terms[14];
-    fAux[15] += multiplyTerm*terms[15];
-    fAux[16] += multiplyTerm*terms[16];
-    fAux[17] += multiplyTerm*terms[17];
-    fAux[18] += multiplyTerm*terms[18];
+    fAux[7]  += multiplyTerm*(terms[1] + ( uy3 + ux3uy3 + uy3uy3d2));
+    fAux[8]  += multiplyTerm*(terms[2] + (-uy3 + ux3uy3 + uy3uy3d2));
+    fAux[9]  += multiplyTerm*(terms[1] + ( uz3 + ux3uz3 + uz3uz3d2));
+    fAux[10] += multiplyTerm*(terms[2] + (-uz3 + ux3uz3 + uz3uz3d2));
+    fAux[11] += multiplyTerm*(terms[3] + ( uz3 + uy3uz3 + uz3uz3d2));
+    fAux[12] += multiplyTerm*(terms[4] + (-uz3 + uy3uz3 + uz3uz3d2));
+    fAux[13] += multiplyTerm*(terms[1] + (-uy3 - ux3uy3 + uy3uy3d2));
+    fAux[14] += multiplyTerm*(terms[2] + ( uy3 - ux3uy3 + uy3uy3d2));
+    fAux[15] += multiplyTerm*(terms[1] + (-uz3 - ux3uz3 + uz3uz3d2));
+    fAux[16] += multiplyTerm*(terms[2] + ( uz3 - ux3uz3 + uz3uz3d2));
+    fAux[17] += multiplyTerm*(terms[3] + (-uz3 - uy3uz3 + uz3uz3d2));
+    fAux[18] += multiplyTerm*(terms[4] + ( uz3 - uy3uz3 + uz3uz3d2));
 #ifdef D3Q27
     multiplyTerm = rhoW3;
     fAux[19] += multiplyTerm*terms[19];
@@ -356,26 +332,21 @@ void gpuBCMacrCollisionStream(
 #endif
 
     // calculate force term
+    // term[0] -> population 0
+    // term[1] -> population 1
+    // term[2] -> population 3
+    // term[3] -> population 7
+    // term[4] -> population 9
+    // term[5] -> population 11
+    terms[0] = - FX*ux3 - FY*uy3 - FZ*uz3;
     terms[1] = terms[0] + (FX*( 3*ux3 + 3));
-    terms[2] = terms[1] + (FX*(-6));
-    terms[3] = terms[0] + (FY*( 3*uy3 + 3));
-    terms[4] = terms[3] + (FY*(-6));
-    terms[5] = terms[0] + (FZ*( 3*uz3 + 3));
-    terms[6] = terms[5] + (FZ*(-6));
-    terms[7] = terms[1] + (FX*( 3*uy3) + FY*( 3*ux3 + 3*uy3 + 3));
-    terms[8] = terms[7] + (FX*(-6) + FY*(-6));
-    terms[9] = terms[1] + (FX*( 3*uz3) + FZ*( 3*ux3 + 3*uz3 + 3));
-    terms[10] = terms[9] + (FX*(-6) + FZ*(-6));
-    terms[11] = terms[3] + (FY*( 3*uz3) + FZ*( 3*uy3 + 3*uz3 + 3));
-    terms[12] = terms[11] + (FY*(-6) + FZ*(-6));
-    terms[13] = terms[7] + (FX*(-6*uy3) + FY*(-6*ux3 - 6));
-    terms[14] = terms[13] + (FX*(-6) + FY*( 6));
-    terms[15] = terms[9] + (FX*(-6*uz3) + FZ*(-6*ux3 - 6));
-    terms[16] = terms[15] + (FX*(-6) + FZ*( 6));
-    terms[17] = terms[11] + (FY*(-6*uz3) + FZ*(-6*uy3 - 6));
-    terms[18] = terms[17] + (FY*(-6) + FZ*( 6));
+    terms[2] = terms[0] + (FY*( 3*uy3 + 3));
+    terms[3] = terms[1] + (FX*( 3*uy3) + FY*( 3*ux3 + 3*uy3 + 3));
+    terms[4] = terms[1] + (FX*( 3*uz3) + FZ*( 3*ux3 + 3*uz3 + 3));
+    terms[5] = terms[2] + (FY*( 3*uz3) + FZ*( 3*uy3 + 3*uz3 + 3));
+
 #ifdef D3Q27
-    terms[19] = terms[7] + (FX*( 3*uz3) + FY*( 3*uz3) + FZ*( 3*ux3 + 3*uy3 + 3*uz3 + 3));
+    terms[19] = terms[3] + (FX*( 3*uz3) + FY*( 3*uz3) + FZ*( 3*ux3 + 3*uy3 + 3*uz3 + 3));
     terms[20] = terms[19] + (FX*(-6) + FY*(-6) + FZ*(-6));
     terms[21] = terms[19] + (FX*(-6*uz3) + FY*(-6*uz3) + FZ*(-6*ux3 - 6*uy3 - 6));
     terms[22] = terms[21] + (FX*(-6) + FY*(-6) + FZ*( 6));
@@ -388,26 +359,33 @@ void gpuBCMacrCollisionStream(
     // add force term
     multiplyTerm = W0*TT_OMEGA;
     fAux[0] += multiplyTerm*terms[0];
+    
     multiplyTerm = W1*TT_OMEGA;
     fAux[1] += multiplyTerm*terms[1];
-    fAux[2] += multiplyTerm*terms[2];
-    fAux[3] += multiplyTerm*terms[3];
-    fAux[4] += multiplyTerm*terms[4];
-    fAux[5] += multiplyTerm*terms[5];
-    fAux[6] += multiplyTerm*terms[6];
+    fAux[2] += multiplyTerm*(terms[1] + (FX*(-6)));
+    fAux[3] += multiplyTerm*terms[2];
+    fAux[4] += multiplyTerm*(terms[2] + (FY*(-6)));
+    auxTerm = terms[0] + (FZ*( 3*uz3 + 3));
+    fAux[5] += multiplyTerm*auxTerm;
+    fAux[6] += multiplyTerm*(auxTerm + (FZ*(-6)));
+
     multiplyTerm = W2*TT_OMEGA;
-    fAux[7] += multiplyTerm*terms[7];
-    fAux[8] += multiplyTerm*terms[8];
-    fAux[9] += multiplyTerm*terms[9];
-    fAux[10] += multiplyTerm*terms[10];
-    fAux[11] += multiplyTerm*terms[11];
-    fAux[12] += multiplyTerm*terms[12];
-    fAux[13] += multiplyTerm*terms[13];
-    fAux[14] += multiplyTerm*terms[14];
-    fAux[15] += multiplyTerm*terms[15];
-    fAux[16] += multiplyTerm*terms[16];
-    fAux[17] += multiplyTerm*terms[17];
-    fAux[18] += multiplyTerm*terms[18];
+    fAux[7] += multiplyTerm*terms[3];
+    fAux[8] += multiplyTerm*(terms[3] + (FX*(-6) + FY*(-6)));
+    fAux[9] += multiplyTerm*terms[4];
+    fAux[10] += multiplyTerm*(terms[4] + (FX*(-6) + FZ*(-6)));
+    fAux[11] += multiplyTerm*(terms[5]);
+    fAux[12] += multiplyTerm*(terms[5] + (FY*(-6) + FZ*(-6)));
+    auxTerm = terms[3] + (FX*(-6*uy3) + FY*(-6*ux3 - 6));
+    fAux[13] += multiplyTerm*(auxTerm);
+    fAux[14] += multiplyTerm*(auxTerm + (FX*(-6) + FY*( 6)));
+    auxTerm = terms[4] + (FX*(-6*uz3) + FZ*(-6*ux3 - 6));
+    fAux[15] += multiplyTerm*auxTerm;
+    fAux[16] += multiplyTerm*(auxTerm + (FX*(-6) + FZ*( 6)));
+    auxTerm = terms[5] + (FY*(-6*uz3) + FZ*(-6*uy3 - 6));
+    fAux[17] += multiplyTerm*auxTerm;
+    fAux[18] += multiplyTerm*(auxTerm + (FY*(-6) + FZ*( 6)));
+
 #ifdef D3Q27
     multiplyTerm = W3*TT_OMEGA;
     fAux[19] += multiplyTerm*terms[19];
@@ -419,94 +397,10 @@ void gpuBCMacrCollisionStream(
     fAux[25] += multiplyTerm*terms[25];
     fAux[26] += multiplyTerm*terms[26];
 #endif
-    /*
-    fAux[ 0] = T_OMEGA * fAux[ 0] + gpu_f_eq(rhoW0, 0, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W0,-ux3,-uy3,-uz3);
-
-    fAux[ 1] = T_OMEGA * fAux[ 1] + gpu_f_eq(rhoW1,  ux3, p1_muu15) 
-               + TT_OMEGA * gpu_force_term(W1, ux3*2+3,-uy3,-uz3);
-
-    fAux[ 2] = T_OMEGA * fAux[ 2] + gpu_f_eq(rhoW1, -ux3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W1, ux3*2-3,-uy3,-uz3);
-
-    fAux[ 3] = T_OMEGA * fAux[ 3] + gpu_f_eq(rhoW1,  uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W1,-ux3, uy3*2+3,-uz3);
-
-    fAux[ 4] = T_OMEGA * fAux[ 4] + gpu_f_eq(rhoW1, -uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W1,-ux3, uy3*2-3,-uz3);
-
-    fAux[ 5] = T_OMEGA * fAux[ 5] + gpu_f_eq(rhoW1,  uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W1,-ux3,-uy3, uz3*2+3);
-
-    fAux[ 6] = T_OMEGA * fAux[ 6] + gpu_f_eq(rhoW1, -uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W1,-ux3,-uy3, uz3*2-3);
-
-    fAux[ 7] = T_OMEGA * fAux[ 7] + gpu_f_eq(rhoW2,  ux3 + uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2+uy3*3+3, ux3*3+uy3*2+3,-uz3);
-
-    fAux[ 8] = T_OMEGA * fAux[ 8] + gpu_f_eq(rhoW2, -ux3 - uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2+uy3*3-3, ux3*3+uy3*2-3,-uz3);
-
-    fAux[ 9] = T_OMEGA * fAux[ 9] + gpu_f_eq(rhoW2,  ux3 + uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2+uz3*3+3,-uy3, ux3*3+uz3*2+3);
-
-    fAux[10] = T_OMEGA * fAux[10] + gpu_f_eq(rhoW2, -ux3 - uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2+uz3*3-3,-uy3, ux3*3+uz3*2-3);
-
-    fAux[11] = T_OMEGA * fAux[11] + gpu_f_eq(rhoW2,  uy3 + uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2+uz3*3+3, uy3*3+uz3*2+3);
-
-    fAux[12] = T_OMEGA * fAux[12] + gpu_f_eq(rhoW2, -uy3 - uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2+uz3*3-3, uy3*3+uz3*2-3);
-
-    fAux[13] = T_OMEGA * fAux[13] + gpu_f_eq(rhoW2,  ux3 - uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2-uy3*3+3,-ux3*3+uy3*2-3,-uz3);
-
-    fAux[14] = T_OMEGA * fAux[14] + gpu_f_eq(rhoW2, -ux3 + uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2-uy3*3-3,-ux3*3+uy3*2+3,-uz3);
-
-    fAux[15] = T_OMEGA * fAux[15] + gpu_f_eq(rhoW2,  ux3 - uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2-uz3*3+3,-uy3,-ux3*3+uz3*2-3);
-
-    fAux[16] = T_OMEGA * fAux[16] + gpu_f_eq(rhoW2, -ux3 + uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2-uz3*3-3,-uy3,-ux3*3+uz3*2+3);
-
-    fAux[17] = T_OMEGA * fAux[17] + gpu_f_eq(rhoW2,  uy3 - uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2-uz3*3+3,-uy3*3+uz3*2-3);
-
-    fAux[18] = T_OMEGA * fAux[18] + gpu_f_eq(rhoW2, -uy3 + uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2-uz3*3-3,-uy3*3+uz3*2+3);
-#ifdef D3Q27
-    fAux[19] = T_OMEGA * fAux[19] + feq[19] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3+uz3*3+3, ux3*3+uy3*2+uz3*3+3, ux3*3+uy3*3+uz3*2+3);
-    
-    fAux[20] = T_OMEGA * fAux[20] + feq[20] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3+uz3*3-3, ux3*3+uy3*2+uz3*3-3, ux3*3+uy3*3+uz3*2-3); 
-    
-    fAux[21] = T_OMEGA * fAux[21] + feq[21] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3-uz3*3+3, ux3*3+uy3*2-uz3*3+3,-ux3*3-uy3*3+uz3*2-3); 
-    
-    fAux[22] = T_OMEGA * fAux[22] + feq[22] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3-uz3*3-3, ux3*3+uy3*2-uz3*3-3,-ux3*3-uy3*3+uz3*2+3);
-    
-    fAux[23] = T_OMEGA * fAux[23] + feq[23] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3+uz3*3+3,-ux3*3+uy3*2-uz3*3-3, ux3*3-uy3*3+uz3*2+3);
-    
-    fAux[24] = T_OMEGA * fAux[24] + feq[24] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3+uz3*3-3,-ux3*3+uy3*2-uz3*3+3, ux3*3-uy3*3+uz3*2-3);
-    
-    fAux[25] = T_OMEGA * fAux[25] + feq[25] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3-uz3*3-3,-ux3*3+uy3*2+uz3*3+3,-ux3*3+uy3*3+uz3*2+3);
-    
-    fAux[26] = T_OMEGA * fAux[26] + feq[26] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3-uz3*3+3,-ux3*3+uy3*2+uz3*3-3,-ux3*3+uy3*3+uz3*2-3);
-#endif
-    */
 
     // Streaming to popAux
     // popAux(x+cx, y+cy, z+cz, i) = pop(x, y, z, i) 
     // The populations that shoudn't be streamed will be changed by the boundary conditions
-
     popAux[idxPop(x, y, z, 0)] = fAux[0];
     popAux[idxPop(xp1, y, z, 1)] = fAux[1];
     popAux[idxPop(xm1, y, z, 2)] = fAux[2];

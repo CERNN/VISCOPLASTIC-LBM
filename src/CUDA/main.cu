@@ -57,27 +57,21 @@ int main()
     info.devices = (cudaDeviceProp*) malloc(sizeof(cudaDeviceProp)*N_GPUS);
     macrCPUCurrent.macrAllocation(IN_HOST);
     macrCPUOld.macrAllocation(IN_HOST);
-    printf("alocou\n "); fflush(stdout);
 
     // STREAMS AND MEMORY ALLOCATION FOR GPU
     cudaStream_t streamsKernelLBM[1]; // stream kernel for each GPU
     checkCudaErrors(cudaSetDevice(0));
     checkCudaErrors(cudaMallocManaged((void**)&pop, sizeof(Populations)*N_GPUS));
     checkCudaErrors(cudaMallocManaged((void**)&macr, sizeof(Macroscopics)*N_GPUS));
-    printf("alocou\n "); fflush(stdout);
 
     // ALLOCATION AND CONFIGURATION FOR EACH GPU
     for(int i = 0; i < N_GPUS; i++)
     {
-        
-        printf("alocou\n "); fflush(stdout);
         checkCudaErrors(cudaSetDevice(i));
         checkCudaErrors(cudaGetDeviceProperties(&(info.devices[i]), i));
         checkCudaErrors(cudaStreamCreate(&streamsKernelLBM[i]));
         pop[i].popAllocation();
         macr[i].macrAllocation(IN_VIRTUAL);
-        
-        printf("terminou alocar\n "); fflush(stdout);
     }
     
 
@@ -122,7 +116,6 @@ int main()
         gpuInitialization<<<grid, threads>>>(&pop[0], &macr[0], LOAD_MACR);
     }
     checkCudaErrors(cudaDeviceSynchronize());
-    printf("inicializou\n "); fflush(stdout);
 
     // TIMING
     cudaEvent_t start, stop;
@@ -130,7 +123,6 @@ int main()
     checkCudaErrors(cudaEventCreate(&stop));
 
     checkCudaErrors(cudaEventRecord(start, 0));
-    printf("contou\n "); fflush(stdout);
 
     // LBM
     for(step = INI_STEP; step < N_STEPS; step++)
@@ -146,8 +138,7 @@ int main()
             if(DATA_REPORT != 0)
                 rep = !(aux % DATA_REPORT);
         }
-        
-        printf("entrou "); fflush(stdout);
+
         // LBM SOLVER
         if(save || rep)
             checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
@@ -159,7 +150,7 @@ int main()
 
         checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
         pop[0].swapPop();
-        printf("passou\n"); fflush(stdout);
+
         // SYNCHRONIZING
         if(save || rep)
         {
