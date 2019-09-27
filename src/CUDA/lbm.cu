@@ -27,8 +27,9 @@ void gpuBCMacrCollisionStream(
     const unsigned short int ym1 = (NY + y - 1) % NY;
     const unsigned short int zm1 = (NZ + z - 1) % NZ;
 
-    // Load populations
+    // Auxiilary variable for populations
     dfloat fAux[Q];
+
     // Terms to use to recursive calculations
 #ifdef D3Q19
     dfloat terms[6];
@@ -37,7 +38,8 @@ void gpuBCMacrCollisionStream(
     dfloat terms[Q]; // TODO
 #endif
     dfloat multiplyTerm = 1;
-    dfloat auxTerm = 0;
+    dfloat auxTerm;
+
 #pragma unroll
     for (char i = 0; i < Q; i++)
         fAux[i] = pop[idxPop(x, y, z, i)];
@@ -47,19 +49,19 @@ void gpuBCMacrCollisionStream(
     // ux = (sum(f[i]*cx[i])+0.5*FX) / rho
     // uy = (sum(f[i]*cy[i])+0.5*FY) / rho
     // uz = (sum(f[i]*cz[i])+0.5*FZ) / rho
-    
-    
+
 #ifdef D3Q19
     const dfloat rhoVar = fAux[0] + fAux[1] + fAux[2] + fAux[3] + fAux[4] 
         + fAux[5] + fAux[6] + fAux[7] + fAux[8] + fAux[9] + fAux[10] 
         + fAux[11] + fAux[12] + fAux[13] + fAux[14] + fAux[15] + fAux[16] 
         + fAux[17] + fAux[18];
+    const dfloat invRho = 1/rhoVar;
     const dfloat uxVar = ((fAux[1] + fAux[7] + fAux[9] + fAux[13] + fAux[15])
-        - (fAux[2] + fAux[8] + fAux[10] + fAux[14] + fAux[16]) + 0.5*FX) / rhoVar;
+        - (fAux[2] + fAux[8] + fAux[10] + fAux[14] + fAux[16]) + 0.5*FX) * invRho;
     const dfloat uyVar = ((fAux[3] + fAux[7] + fAux[11] + fAux[14] + fAux[17])
-        - (fAux[4] + fAux[8] + fAux[12] + fAux[13] + fAux[18]) + 0.5*FY) / rhoVar;
+        - (fAux[4] + fAux[8] + fAux[12] + fAux[13] + fAux[18]) + 0.5*FY) * invRho;
     const dfloat uzVar = ((fAux[5] + fAux[9] + fAux[11] + fAux[16] + fAux[18])
-        - (fAux[6] + fAux[10] + fAux[12] + fAux[15] + fAux[17]) + 0.5*FZ) / rhoVar;
+        - (fAux[6] + fAux[10] + fAux[12] + fAux[15] + fAux[17]) + 0.5*FZ) * invRho;
 #endif // !D3Q19
 #ifdef D3Q27
     const dfloat rhoVar = fAux[0] + fAux[1] + fAux[2] + fAux[3] + fAux[4] 
@@ -67,18 +69,19 @@ void gpuBCMacrCollisionStream(
         + fAux[11] + fAux[12] + fAux[13] + fAux[14] + fAux[15] + fAux[16] 
         + fAux[17] + fAux[18] + fAux[19] + fAux[20] + fAux[21] + fAux[22]
         + fAux[23] + fAux[24] + fAux[25] + fAux[26];
+        const dfloat invRho = 1/rhoVar;
     const dfloat uxVar = ((fAux[1] + fAux[7] + fAux[9] + fAux[13] + fAux[15]
         + fAux[19] + fAux[21] + fAux[23] + fAux[26]) 
         - (fAux[2] + fAux[8] + fAux[10] + fAux[14] + fAux[16] + fAux[20]
-        + fAux[22] + fAux[24] + fAux[25]) + 0.5*FX) / rhoVar;
+        + fAux[22] + fAux[24] + fAux[25]) + 0.5*FX) * invRho;
     const dfloat uyVar = ((fAux[3] + fAux[7] + fAux[11] + fAux[14] + fAux[17]
         + fAux[19] + fAux[21] + fAux[24] + fAux[25])
         - (fAux[4] + fAux[8] + fAux[12] + fAux[13] + fAux[18] + fAux[20]
-        + fAux[22] + fAux[23] + fAux[26]) + 0.5*FY) / rhoVar;
+        + fAux[22] + fAux[23] + fAux[26]) + 0.5*FY) * invRho;
     const dfloat uzVar = ((fAux[5] + fAux[9] + fAux[11] + fAux[16] + fAux[18]
         + fAux[19] + fAux[22] + fAux[23] + fAux[25])
         - (fAux[6] + fAux[10] + fAux[12] + fAux[15] + fAux[17] + fAux[20]
-        + fAux[21] + fAux[24] + fAux[26]) + 0.5*FZ) / rhoVar;
+        + fAux[21] + fAux[24] + fAux[26]) + 0.5*FZ) * invRho;
 #endif // !D3Q27
 
     if (save)
@@ -95,8 +98,8 @@ void gpuBCMacrCollisionStream(
     const dfloat rhoW0 = rhoVar * W0;
     const dfloat rhoW1 = rhoVar * W1;
     const dfloat rhoW2 = rhoVar * W2;
-    const dfloat W1t9d2 = W1 * 9 / 2;
-    const dfloat W2t9d2 = W2 * 9 / 2;
+    const dfloat W1t9d2 = W1 * 4.5;
+    const dfloat W2t9d2 = W2 * 4.5;
 #ifdef D3Q27
     const dfloat rhoW3 = rhoVar * W3;
     const dfloat W3t9d2 = W3 * 9 / 2;
@@ -104,86 +107,37 @@ void gpuBCMacrCollisionStream(
     const dfloat ux3 = 3 * uxVar;
     const dfloat uy3 = 3 * uyVar;
     const dfloat uz3 = 3 * uzVar;
-    const dfloat ux3ux3d2 = ux3*ux3/2;
+    const dfloat ux3ux3d2 = ux3*ux3*0.5;
     const dfloat ux3uy3 = ux3*uy3;
     const dfloat ux3uz3 = ux3*uz3;
-    const dfloat uy3uy3d2 = uy3*uy3/2;
+    const dfloat uy3uy3d2 = uy3*uy3*0.5;
     const dfloat uy3uz3 = uy3*uz3;
-    const dfloat uz3uz3d2 = uz3*uz3/2;
-    
-    // Calculate equilibrium terms (0.5*uc3^2 + uc3)
-    // terms[0] -> population 0
-    // terms[1] -> population 1
-    // terms[2] -> population 2
-    // terms[3] -> population 3
-    // terms[4] -> population 4
-    terms[0] = p1_muu15;
-    terms[1] = terms[0] + ( ux3 + ux3ux3d2);
-    terms[2] = terms[0] + (-ux3 + ux3ux3d2);
-    terms[3] = terms[0] + ( uy3 + uy3uy3d2);
-    terms[4] = terms[0] + (-uy3 + uy3uy3d2);
-#ifdef D3Q27
-    terms[19] = terms[7] + ( uz3 + ux3uz3 + uy3uz3 + uz3uz3d2);
-    terms[20] = terms[8] + (-uz3 + ux3uz3 + uy3uz3 + uz3uz3d2);
-    terms[21] = terms[7] + (-uz3 - ux3uz3 - uy3uz3 + uz3uz3d2);
-    terms[22] = terms[8] + ( uz3 - ux3uz3 - uy3uz3 + uz3uz3d2);
-    terms[23] = terms[9] + (-uy3 - ux3uy3 + uy3uy3d2 - uy3uz3);
-    terms[24] = terms[10] + ( uy3 - ux3uy3 + uy3uy3d2 - uy3uz3);
-    terms[25] = terms[11] + (-ux3 + ux3ux3d2 - ux3uy3 - ux3uz3);
-    terms[26] = terms[12] + ( ux3 + ux3ux3d2 - ux3uy3 - ux3uz3);
-#endif
+    const dfloat uz3uz3d2 = uz3*uz3*0.5;
 
-    // Calculate fneq
-    // feq[i] = rho*w[i] * (1 - 1.5*u*u + 3*u*c[i] + 4.5*(u*c[i])^2) ->
-    // fneq[i] = f[i]-feq[i] -> fi[i] -= feq[i]
-    multiplyTerm = rhoW0;
-    fAux[0] -= multiplyTerm*terms[0];
-    multiplyTerm = rhoW1;
-    fAux[1] -= multiplyTerm*terms[1];
-    fAux[2] -= multiplyTerm*terms[2];
-    fAux[3] -= multiplyTerm*terms[3];
-    fAux[4] -= multiplyTerm*terms[4];
-    fAux[5] -= multiplyTerm*(terms[0] + ( uz3 + uz3uz3d2));
-    fAux[6] -= multiplyTerm*(terms[0] + (-uz3 + uz3uz3d2));
-    multiplyTerm = rhoW2;
-    fAux[7] -=  multiplyTerm*(terms[1] + ( uy3 + ux3uy3 + uy3uy3d2));
-    fAux[8] -=  multiplyTerm*(terms[2] + (-uy3 + ux3uy3 + uy3uy3d2));
-    fAux[9] -=  multiplyTerm*(terms[1] + ( uz3 + ux3uz3 + uz3uz3d2));
-    fAux[10] -= multiplyTerm*(terms[2] + (-uz3 + ux3uz3 + uz3uz3d2));
-    fAux[11] -= multiplyTerm*(terms[3] + ( uz3 + uy3uz3 + uz3uz3d2));
-    fAux[12] -= multiplyTerm*(terms[4] + (-uz3 + uy3uz3 + uz3uz3d2));
-    fAux[13] -= multiplyTerm*(terms[1] + (-uy3 - ux3uy3 + uy3uy3d2));
-    fAux[14] -= multiplyTerm*(terms[2] + ( uy3 - ux3uy3 + uy3uy3d2));
-    fAux[15] -= multiplyTerm*(terms[1] + (-uz3 - ux3uz3 + uz3uz3d2));
-    fAux[16] -= multiplyTerm*(terms[2] + ( uz3 - ux3uz3 + uz3uz3d2));
-    fAux[17] -= multiplyTerm*(terms[3] + (-uz3 - uy3uz3 + uz3uz3d2));
-    fAux[18] -= multiplyTerm*(terms[4] + ( uz3 - uy3uz3 + uz3uz3d2));
-#ifdef D3Q27
-    multiplyTerm = rhoW3;
-    fAux[19] = fAux[19] - multiplyTerm*terms[19];
-    fAux[20] = fAux[20] - multiplyTerm*terms[20];
-    fAux[21] = fAux[21] - multiplyTerm*terms[21];
-    fAux[22] = fAux[22] - multiplyTerm*terms[22];
-    fAux[23] = fAux[23] - multiplyTerm*terms[23];
-    fAux[24] = fAux[24] - multiplyTerm*terms[24];
-    fAux[25] = fAux[25] - multiplyTerm*terms[25];
-    fAux[26] = fAux[26] - multiplyTerm*terms[26];
-#endif
-
-    // Calculate pineq(alfa, beta)/3
+    // Calculate pineq(alfa, beta)
+    // pineqAB = pops - popsEquilibrium
 #ifdef D3Q19
     const dfloat pineqXX = (fAux[1] + fAux[2] + fAux[7] + fAux[8] + fAux[9] 
-            + fAux[10] + fAux[13] + fAux[14] + fAux[15] + fAux[16]);
+            + fAux[10] + fAux[13] + fAux[14] + fAux[15] + fAux[16]) -
+            (2*rhoW1*(p1_muu15 + ux3ux3d2) + 
+             2*rhoW2*(4*p1_muu15 + 2*ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
     const dfloat pineqYY = (fAux[3] + fAux[4] + fAux[7] + fAux[8] + fAux[11]
-            + fAux[12] + fAux[13] + fAux[14] + fAux[17] + fAux[18]);
+            + fAux[12] + fAux[13] + fAux[14] + fAux[17] + fAux[18]) -
+            (2*rhoW1*(p1_muu15 + uy3uy3d2) + 
+             2*rhoW2*(4*p1_muu15 + ux3ux3d2 + 2*uy3uy3d2 + uz3uz3d2)); 
     const dfloat pineqZZ = (fAux[5] + fAux[6] + fAux[9] + fAux[10] + fAux[11]
-            + fAux[12] + fAux[15] + fAux[16] + fAux[17] + fAux[18]);
-    const dfloat pineqXYt2 = (fAux[7] + fAux[8] - fAux[13] - fAux[14]) * 2;
-    const dfloat pineqXZt2 = (fAux[9] + fAux[10] - fAux[15] - fAux[16]) * 2;
-    const dfloat pineqYZt2 = (fAux[11] + fAux[12] - fAux[17] - fAux[18]) * 2;
+            + fAux[12] + fAux[15] + fAux[16] + fAux[17] + fAux[18]) -
+            (2*rhoW1*(p1_muu15 + uz3uz3d2) + 
+             2*rhoW2*(4*p1_muu15 + ux3ux3d2 + uy3uy3d2 + 2*uz3uz3d2));
+    const dfloat pineqXYt2 = ((fAux[7] + fAux[8] - fAux[13] - fAux[14]) - 
+            rhoW2*4*(p1_muu15 + ux3uy3)) * 2;
+    const dfloat pineqXZt2 = ((fAux[9] + fAux[10] - fAux[15] - fAux[16]) -
+            rhoW2*4*(p1_muu15 + ux3uy3)) * 2;
+    const dfloat pineqYZt2 = ((fAux[11] + fAux[12] - fAux[17] - fAux[18]) -
+            rhoW2*4*(p1_muu15 + ux3uy3))* 2;
 #endif // !D3Q19 
 #ifdef D3Q27
-    const dfloat aux = fneq[19] + faux[20] + faux[21] + faux[22] + faux[23]
+    const dfloat aux = faux[19] + faux[20] + faux[21] + faux[22] + faux[23]
             + faux[24] + faux[25] + faux[26];
     const dfloat pineqXXd3 = (faux[1] + faux[2] + faux[7] + faux[8] + faux[9] 
             + faux[10] + faux[13] + faux[14] + faux[15] + faux[16] + aux) / 3;
@@ -223,10 +177,9 @@ void gpuBCMacrCollisionStream(
     terms[12] = terms[4] + ( FZ_D3 + pineqYZt2 + pineqZZ);
 #endif
     
-    // Calculate regularized population
-    // fReg[i] = 4.5*w[i](Q[i, alfa, beta]*pi[i, alfa, beta] 
+    // Calculate regularized population to fAux
+    // fAux[i] = 4.5*w[i](Q[i, alfa, beta]*pi[i, alfa, beta] 
     //          - c[i, alfa]*F[alfa]/3)
-    // Obs.: fAux is used as fReg
     multiplyTerm = W0*4.5;
     fAux[0] = multiplyTerm*terms[0];
     multiplyTerm = W1t9d2;
@@ -261,15 +214,17 @@ void gpuBCMacrCollisionStream(
     fAux[26] = multiplyTerm*terms[26];
 #endif
 
+    // Collision to fAux:
+    // fAux = (1 - 1/TAU)*f1 + fEq + (1 - 0.5/TAU)*force ->
+    // fAux = (1 - OMEGA)*f1 + fEq + (1 - 0.5*0MEGA)*force->
+    // fAux = T_OMEGA * f1 + fEq + TT_OMEGA*force
     
-    // Collision to fAux
-    // fAux = (1 - 1/TAU)*f1 + f_eq + (1 - 0.5/TAU)*force ->
-    // fAux = (1 - OMEGA)*f1 + f_eq + (1 - 0.5*0MEGA)*force->
-    // fAux = T_OMEGA * f1 + f_eq + TT_OMEGA*force
-    // Force term is:
-    // Q[i, alfa, beta] = c[i, alfa]*c[i, beta] - d_kronecker[alfa, beta]/3
-    // force[i] = w[i]*(3*c[i, alfa]+9*Q[i, alfa, beta]*u[beta])*F[alfa]
+    // Sequence is:
+    // fAux *= T_OMEGA
+    // fAux += fEq
+    // fAux += TT_OMEGA*force
 
+    // fAux *= T_OMEGA
 #pragma unroll
     for(char i = 0; i < Q; i++)
         fAux[i] *= T_OMEGA;
@@ -296,7 +251,7 @@ void gpuBCMacrCollisionStream(
     terms[26] = terms[12] + ( ux3 + ux3ux3d2 - ux3uy3 - ux3uz3);
 #endif
 
-    // add equilibrium term
+    // fAux += fEq
     multiplyTerm = rhoW0;
     fAux[0] += multiplyTerm*terms[0];
     multiplyTerm = rhoW1;
@@ -356,10 +311,9 @@ void gpuBCMacrCollisionStream(
     terms[26] = terms[25] + (FX*( 6) + FY*(-6) + FZ*(-6));
 #endif
 
-    // add force term
+    // fAux += TT_OMEGA * force
     multiplyTerm = W0*TT_OMEGA;
     fAux[0] += multiplyTerm*terms[0];
-    
     multiplyTerm = W1*TT_OMEGA;
     fAux[1] += multiplyTerm*terms[1];
     fAux[2] += multiplyTerm*(terms[1] + (FX*(-6)));
@@ -368,7 +322,6 @@ void gpuBCMacrCollisionStream(
     auxTerm = terms[0] + (FZ*( 3*uz3 + 3));
     fAux[5] += multiplyTerm*auxTerm;
     fAux[6] += multiplyTerm*(auxTerm + (FZ*(-6)));
-
     multiplyTerm = W2*TT_OMEGA;
     fAux[7] += multiplyTerm*terms[3];
     fAux[8] += multiplyTerm*(terms[3] + (FX*(-6) + FY*(-6)));
@@ -455,15 +408,17 @@ void gpuUpdateMacr(
     // uy = sum(f[i]*cy[i]) / rho
     // uz = sum(f[i]*cz[i]) / rho
 #ifdef D3Q19
-    const dfloat rhoVar = fAux[0] + fAux[1] + fAux[2] + fAux[3] + fAux[4] + fAux[5] + fAux[6]
-        + fAux[7] + fAux[8] + fAux[9] + fAux[10] + fAux[11] + fAux[12] + fAux[13] + fAux[14]
-        + fAux[15] + fAux[16] + fAux[17] + fAux[18];
+    const dfloat rhoVar = fAux[0] + fAux[1] + fAux[2] + fAux[3] + fAux[4] 
+        + fAux[5] + fAux[6] + fAux[7] + fAux[8] + fAux[9] + fAux[10] 
+        + fAux[11] + fAux[12] + fAux[13] + fAux[14] + fAux[15] + fAux[16] 
+        + fAux[17] + fAux[18];
+    const dfloat invRho = 1/rhoVar;
     const dfloat uxVar = ((fAux[1] + fAux[7] + fAux[9] + fAux[13] + fAux[15])
-        - (fAux[2] + fAux[8] + fAux[10] + fAux[14] + fAux[16]) + 0.5*FX) / rhoVar;
+        - (fAux[2] + fAux[8] + fAux[10] + fAux[14] + fAux[16]) + 0.5*FX) * invRho;
     const dfloat uyVar = ((fAux[3] + fAux[7] + fAux[11] + fAux[14] + fAux[17])
-        - (fAux[4] + fAux[8] + fAux[12] + fAux[13] + fAux[18]) + 0.5*FY) / rhoVar;
+        - (fAux[4] + fAux[8] + fAux[12] + fAux[13] + fAux[18]) + 0.5*FY) * invRho;
     const dfloat uzVar = ((fAux[5] + fAux[9] + fAux[11] + fAux[16] + fAux[18])
-        - (fAux[6] + fAux[10] + fAux[12] + fAux[15] + fAux[17]) + 0.5*FZ) / rhoVar;
+        - (fAux[6] + fAux[10] + fAux[12] + fAux[15] + fAux[17]) + 0.5*FZ) * invRho;
 #endif // !D3Q19
 #ifdef D3Q27
     const dfloat rhoVar = fAux[0] + fAux[1] + fAux[2] + fAux[3] + fAux[4] 
@@ -471,18 +426,19 @@ void gpuUpdateMacr(
         + fAux[11] + fAux[12] + fAux[13] + fAux[14] + fAux[15] + fAux[16] 
         + fAux[17] + fAux[18] + fAux[19] + fAux[20] + fAux[21] + fAux[22]
         + fAux[23] + fAux[24] + fAux[25] + fAux[26];
+        const dfloat invRho = 1/rhoVar;
     const dfloat uxVar = ((fAux[1] + fAux[7] + fAux[9] + fAux[13] + fAux[15]
         + fAux[19] + fAux[21] + fAux[23] + fAux[26]) 
         - (fAux[2] + fAux[8] + fAux[10] + fAux[14] + fAux[16] + fAux[20]
-        + fAux[22] + fAux[24] + fAux[25]) + 0.5*FX) / rhoVar;
+        + fAux[22] + fAux[24] + fAux[25]) + 0.5*FX) * invRho;
     const dfloat uyVar = ((fAux[3] + fAux[7] + fAux[11] + fAux[14] + fAux[17]
         + fAux[19] + fAux[21] + fAux[24] + fAux[25])
         - (fAux[4] + fAux[8] + fAux[12] + fAux[13] + fAux[18] + fAux[20]
-        + fAux[22] + fAux[23] + fAux[26]) + 0.5*FY) / rhoVar;
+        + fAux[22] + fAux[23] + fAux[26]) + 0.5*FY) * invRho;
     const dfloat uzVar = ((fAux[5] + fAux[9] + fAux[11] + fAux[16] + fAux[18]
         + fAux[19] + fAux[22] + fAux[23] + fAux[25])
         - (fAux[6] + fAux[10] + fAux[12] + fAux[15] + fAux[17] + fAux[20]
-        + fAux[21] + fAux[24] + fAux[26]) + 0.5*FZ) / rhoVar;
+        + fAux[21] + fAux[24] + fAux[26]) + 0.5*FZ) * invRho;
 #endif // !D3Q27
     macr->rho[idxScalar(x, y, z)] = rhoVar;
     macr->ux[idxScalar(x, y, z)] = uxVar;
