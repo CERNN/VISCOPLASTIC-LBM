@@ -130,16 +130,16 @@ void gpuBCMacrCollisionStream(
             (2*rhoW1*(p1_muu15 + uz3uz3d2) + 
              4*rhoW2*(2*p1_muu15 + ux3ux3d2 + uy3uy3d2 + 2*uz3uz3d2));
     const dfloat pineqXYt2 = ((fAux[7] + fAux[8] - fAux[13] - fAux[14]) - 
-            (4*rhoW2*(p1_muu15 + ux3uy3))) * 2;
+            (4*rhoW2*(ux3uy3))) * 2;
     const dfloat pineqXZt2 = ((fAux[9] + fAux[10] - fAux[15] - fAux[16]) -
-            (4*rhoW2*(p1_muu15 + ux3uz3))) * 2;
+            (4*rhoW2*(ux3uz3))) * 2;
     const dfloat pineqYZt2 = ((fAux[11] + fAux[12] - fAux[17] - fAux[18]) -
-            (4*rhoW2*(p1_muu15 + uy3uz3))) * 2;
+            (4*rhoW2*(uy3uz3))) * 2;
 #endif // !D3Q19 
 #ifdef D3Q27
     const dfloat aux = (fAux[19] + fAux[20] + fAux[21] + fAux[22] + fAux[23]
             + fAux[24] + fAux[25] + fAux[26]) - 
-            (8*rhoW3*(p1_muu15 + ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
+            (8*rhoW3*(ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
     const dfloat pineqXX = (fAux[1] + fAux[2] + fAux[7] + fAux[8] + fAux[9] 
             + fAux[10] + fAux[13] + fAux[14] + fAux[15] + fAux[16] + aux) -
             (2*rhoW1*(p1_muu15 + ux3ux3d2) + 
@@ -147,23 +147,23 @@ void gpuBCMacrCollisionStream(
     const dfloat pineqYY = (fAux[3] + fAux[4] + fAux[7] + fAux[8] + fAux[11]
             + fAux[12] + fAux[13] + fAux[14] + fAux[17] + fAux[18] + aux) -
             (2*rhoW1*(p1_muu15 + uy3uy3d2) + 
-             4*rhoW2*(2*p1_muu15 + ux3ux3d2 + 2*uy3uy3d2 + uz3uz3d2)); 
+             4*rhoW2*(ux3ux3d2 + 2*uy3uy3d2 + uz3uz3d2)); 
     const dfloat pineqZZ = (fAux[5] + fAux[6] + fAux[9] + fAux[10] + fAux[11]
             + fAux[12] + fAux[15] + fAux[16] + fAux[17] + fAux[18] + aux) -
             (2*rhoW1*(p1_muu15 + uz3uz3d2) + 
-             4*rhoW2*(2*p1_muu15 + ux3ux3d2 + uy3uy3d2 + 2*uz3uz3d2));
+             4*rhoW2*(ux3ux3d2 + uy3uy3d2 + 2*uz3uz3d2));
     const dfloat pineqXYt2 = ((fAux[7] + fAux[8] - fAux[13] - fAux[14] + fAux[19]
             + fAux[20] + fAux[21] + fAux[22] - fAux[23] - fAux[24] - fAux[25]
             - fAux[26]) - 
-            (4*rhoW2*(p1_muu15 + ux3uy3) + 8*rhoW3*(p1_muu15 + ux3uy3))) * 2;
+            (4*rhoW2*(ux3uy3) + 8*rhoW3*(ux3uy3))) * 2;
     const dfloat pineqXZt2 = ((fAux[9] + fAux[10] - fAux[15] - fAux[16] + fAux[19]
             + fAux[20] - fAux[21] - fAux[22] + fAux[23] + fAux[24] - fAux[25]
             - fAux[26]) - 
-            (4*rhoW2*(p1_muu15 + ux3uz3) + 8*rhoW3*(p1_muu15 + ux3uz3))) * 2;
+            (4*rhoW2*(ux3uz3) + 8*rhoW3*(ux3uz3))) * 2;
     const dfloat pineqYZt2 = ((fAux[11] + fAux[12] - fAux[17] - fAux[18] + fAux[19]
             + fAux[20] - fAux[21] - fAux[22] - fAux[23] - fAux[24] + fAux[25]
             + fAux[26]) - 
-            (4*rhoW2*(p1_muu15 + uy3uz3) + 8*rhoW3*(p1_muu15 + uy3uz3))) * 2;
+            (4*rhoW2*(uy3uz3) + 8*rhoW3*(uy3uz3))) * 2;
 #endif // !D3Q27
 
     // Calculate regularization terms 
