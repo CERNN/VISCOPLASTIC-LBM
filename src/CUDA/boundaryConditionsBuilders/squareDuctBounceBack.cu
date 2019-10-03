@@ -84,7 +84,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap * const gpuMapBC)
     else if (y == (NY - 1) && x == (NX - 1) && z == (NZ - 1)) // NWF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH_EAST);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH_WEST);
     }
     else if (y == 0 && x == 0) // SW
     {
