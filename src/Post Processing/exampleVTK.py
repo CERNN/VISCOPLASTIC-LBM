@@ -17,9 +17,20 @@ for step in macr:
     # Save macroscopics to VTK format
     saveVTK3D(macr[step], info['ID'] + "macr" + str(step), points=True)
 
-    # Save average uz(x=[0, 1], y, z=NZ/2) to csv
-    uz = macr[step]['uz']
+    # Save uy(x=[0, 1], y=NY/2, z=0.5) to csv
+    uyX = macr[step]['uy']
+    uyZ = macr[step]['uy']
     # uz[y] <= average(uz[:, y, z=NZ/2])
-    uz = [np.average(uz[:, y, info['NZ']//2]) for y in range(0, info['NY'])] 
+    uyX = [(uy[x, info['NY']//2, info['NZ']//2]) for x in range(0, info['NX'])]
+    uyZ = [(uy[info['NX']//2, info['NY']//2, z]) for z in range(0, info['NZ'])]
 
-    saveMacrLineCsv(info['ID'] + "uz" + str(step) + ".csv", uz)
+    saveMacrLineCsv(info['ID'] + "uyX" + str(step) + ".csv", uyX)
+    saveMacrLineCsv(info['ID'] + "uyZ" + str(step) + ".csv", uyZ)
+    
+    # analytical solution for square duct
+    uyXAnalytical = np.zeros(uyX.shape)
+    uyZAnalytical = np.zeros(uyZ.shape)
+    for i in range(0, len(uyXAnalytical)):
+        x = (i + 0.5) / (info['NX']) # node is delocated 0.5
+        z = 0.5 + 0.5/info['NZ'] # node is delocated from center
+        uyXAnalytical[x]
