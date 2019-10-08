@@ -16,7 +16,7 @@
 
 /* --------------------- PRECISION AND VEL. SET DEFINES -------------------- */
 typedef double dfloat;      // single or double precision
-#define D3Q27               // velocity set to use
+#define D3Q19               // velocity set to use
 /* ------------------------------------------------------------------------- */
 
 
@@ -29,8 +29,8 @@ typedef double dfloat;      // single or double precision
 
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
-#define ID_SIM "004"            // prefix for simulation's files
-#define PATH_FILES "parallelPlates"  // path to save simulation's files, 
+#define ID_SIM "102"            // prefix for simulation's files
+#define PATH_FILES "lidDriven"  // path to save simulation's files,
                     // with ID_SIM as subfolder, so path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END
 #define MACR_SAVE 0             // saves macroscopics every MACR_SAVE steps
@@ -39,10 +39,10 @@ typedef double dfloat;      // single or double precision
 
 
 /* ------------------------- DATA TREATMENT DEFINES ------------------------ */
-#define DATA_REPORT 1000                // report every DATA_REPORT steps
-#define DATA_STOP false                 // stop condition by treated data
+#define DATA_REPORT 10000               // report every DATA_REPORT steps
+#define DATA_STOP false                  // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
-constexpr dfloat RESID_MAX = 1e-5;      // simulation maximal residual
+constexpr dfloat RESID_MAX = 1e-4;      // simulation maximal residual
 /* ------------------------------------------------------------------------- */
 
 
@@ -63,28 +63,28 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
-constexpr double SCALE = 0.5;
-constexpr int N_STEPS = 3000*SCALE*SCALE; // maximum number of time steps
+constexpr double SCALE = 4;
+constexpr int N_STEPS = 192000*SCALE*SCALE; // maximum number of time steps
 
-constexpr unsigned int N = 16*SCALE;
+constexpr unsigned int N = 256*SCALE;
 constexpr unsigned int NX = N;      // size x of the grid 
                                     // (multiple of 32 for better performance)
 constexpr unsigned int NY = N;      // size y of the grid
-constexpr unsigned int NZ = N;      // size z of the grid
+constexpr unsigned int NZ = 1;      // size z of the grid
 
-constexpr dfloat U_MAX = 0.05/SCALE;    // max velocity
+constexpr dfloat U_MAX = 0.05/SCALE;     // max velocity
 
-constexpr dfloat TAU = 0.9;             // relaxation time
+constexpr dfloat TAU = 0.5384;           // relaxation time
 
-constexpr dfloat OMEGA = 1.0 / TAU;     // (tau)^-1
-constexpr dfloat T_OMEGA = 1 - OMEGA;   // 1-omega, for collision
-constexpr dfloat TT_OMEGA = 1 - 0.5*OMEGA; // 1-0.5*omega, for force term
+constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
+constexpr dfloat T_OMEGA = 1-OMEGA;      // 1-omega, for collision
+constexpr dfloat TT_OMEGA = 1-0.5*OMEGA; // 1-0.5*omega, for force term
 
 constexpr dfloat RHO_0 = 1;         // initial rho
 
 constexpr dfloat FX = 0;    // force in x
-constexpr dfloat FY = 0;    // force in y
-constexpr dfloat FZ = (12*U_MAX*(TAU-0.5)/3)/NY/NY; // force in z for PP
+constexpr dfloat FY = 0;    // force in y for square duct
+constexpr dfloat FZ = 0;    // force in z
 constexpr dfloat FX_D3 = FX/3;    // util for regularization
 constexpr dfloat FY_D3 = FY/3;    // util for regularization
 constexpr dfloat FZ_D3 = FZ/3;    // util for regularization

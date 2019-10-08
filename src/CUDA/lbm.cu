@@ -167,7 +167,7 @@ void gpuBCMacrCollisionStream(
 #endif // !D3Q27
 
     // Calculate regularization terms 
-    // Q[i, alfa, beta]*pi[i, alfa, beta] - c[i, alfa]*F[alfa]/3
+    // terms[i] = Q[i, alfa, beta]*pi[i, alfa, beta] - c[i, alfa]*F[alfa]/3
     // terms[0] -> population 0
     // terms[1] -> population 1
     // terms[2] -> population 2
@@ -244,7 +244,8 @@ void gpuBCMacrCollisionStream(
     for(char i = 0; i < Q; i++)
         fAux[i] *= T_OMEGA;
 
-    // Calculate equilibrium terms (0.5*uc3^2 + uc3)
+    // Calculate equilibrium terms 
+    // terms = 0.5*uc3^2 + uc3
     // terms[0] -> population 0
     // terms[1] -> population 1
     // terms[2] -> population 2

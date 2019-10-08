@@ -39,16 +39,22 @@ def saveVTK3D(macrsDict, filenameWrite, points=True, normVal=0):
 
 
 '''
-    @brief Saves macroscopics in a line in a csv file
+    @brief Saves macroscopics in a csv file
     @param filenameWrite (str): filename to write to
-    @param macrLine (np.array()): array with line of macroscopics to save
-    @param normalize (bool): normalize distance or not
+    @param macr (np.array()): array with macroscopics to save (1D or 2D)
+    @param normalizeDist (bool): normalize distance or not for 1D
 '''
-def saveMacrLineCsv(filenameWrite, macrLine, normalize=False):
+def saveMacrCsv(filenameWrite, macr, normalizeDist=False):
     with open(PATH+filenameWrite, 'w') as f:
-        if(not normalize):
-            np.savetxt(f, [(i, macrLine[i]) for i in range(0, len(macrLine))], \
-                fmt=['%d', '%.6e'], delimiter=',')
+        if(len(macr.shape) == 1): # 1D
+            # csv is: position, value
+            if(not normalizeDist):
+                np.savetxt(f, [(i, macr[i]) for i in range(0, len(macr))], \
+                    fmt=['%d', '%.6e'], delimiter=',')
+            else:
+                np.savetxt(f, [(i/len(macr), macr[i]) for i in range(0, len(macr))], \
+                    fmt=['%d', '%.6e'], delimiter=',')
+        elif(len(macr.shape) == 2): # 2D
+            np.savetxt(f, macr, delimiter=',')
         else:
-            np.savetxt(f, [(i/len(macrLine), macrLine[i]) for i in range(0, len(macrLine))], \
-                fmt=['%d', '%.6e'], delimiter=',')
+            print("Input array for \"saveMacrCsv\" is not 2D or 1D")

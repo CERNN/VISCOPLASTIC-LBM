@@ -82,7 +82,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
 
     }
-    else if (y == (NY - 1) && x == (NX - 1) && z == (NZ - 1)) // NWF
+    else if (y == (NY - 1) && x == (NX - 1) && z == (NZ - 1)) // NEF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);

@@ -96,7 +96,7 @@ void printTreatData(MacrProc* processing)
     printf("               Step: %d\n", *(processing->step));
     printf("           Residual: %.4e\n", processing->residual);
     printf("       Avg. density: %.4e\n", processing->avgRho);
-    printf("      Avg. Uz (y=0): %.4e\n", processing->avgUzPlanXZ[0]);
+    printf("   Avg. Uz (y=NY/2): %.4e\n", processing->avgUzPlanXZ[NY/2]);
     printf("  ux(x=0, y=0, z=0): %.4e\n", processing->macrCurr->ux[idxScalar(0, 0, 0)]);
     printf("--------------------------------------------------------------------------------\n");
 }
