@@ -95,7 +95,7 @@ void gpuInitialization(
         // calculate equilibrium population and initialize populations to equilibrium
         dfloat feq = gpu_f_eq(w[i] * macr->rho[index],
             3 * (macr->ux[index] * cx[i] + macr->uy[index] * cy[i] + macr->uz[index] * cz[i]),
-            1 - (  macr->ux[index] * macr->ux[index] 
+            1 - 1.5*(  macr->ux[index] * macr->ux[index] 
                  + macr->uy[index] * macr->uy[index] 
                  + macr->uz[index] * macr->uz[index]));
         
