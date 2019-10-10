@@ -1,7 +1,7 @@
 /*
 *   @file bcFreeSlipD3Q27.h
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
-*   @brief Free slip boundary condition for D3Q19
+*   @brief Free slip boundary condition for D3Q27
 *   @version 0.2.0
 *   @date 16/08/2019
 */
@@ -13,7 +13,7 @@
 #include <cuda_runtime.h>
 
 /*
-*   @brief Applies free slip boundary condition on north virtual node
+*   @brief Applies free slip boundary condition on north symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations 
 *   @param x: node's x value
 *   @param y: node's y value
@@ -25,7 +25,7 @@ void gpuBCFreeSlipN(dfloat* f, const short unsigned int x, const short unsigned 
 
 
 /*
-*   @brief Applies free slip boundary condition on south virtual node
+*   @brief Applies free slip boundary condition on south symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations 
 *   @param x: node's x value
 *   @param y: node's y value
@@ -37,7 +37,7 @@ void gpuBCFreeSlipS(dfloat* f, const short unsigned int x, const short unsigned 
 
 
 /*
-*   @brief Applies free slip boundary condition on west virtual node
+*   @brief Applies free slip boundary condition on west symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations 
 *   @param x: node's x value
 *   @param y: node's y value
@@ -49,7 +49,7 @@ void gpuBCFreeSlipW(dfloat* f, const short unsigned int x, const short unsigned 
 
 
 /*
-*   @brief Applies free slip boundary condition on east virtual node
+*   @brief Applies free slip boundary condition on east symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations 
 *   @param x: node's x value
 *   @param y: node's y value
@@ -61,7 +61,7 @@ void gpuBCFreeSlipE(dfloat* f, const short unsigned int x, const short unsigned 
 
 
 /*
-*   @brief Applies free slip boundary condition on front virtual node
+*   @brief Applies free slip boundary condition on front symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations 
 *   @param x: node's x value
 *   @param y: node's y value
@@ -73,7 +73,7 @@ void gpuBCFreeSlipF(dfloat* f, const short unsigned int x, const short unsigned 
 
 
 /*
-*   @brief Applies free slip boundary condition on back virtual node
+*   @brief Applies free slip boundary condition on back symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations 
 *   @param x: node's x value
 *   @param y: node's y value
@@ -85,7 +85,7 @@ void gpuBCFreeSlipB(dfloat* f, const short unsigned int x, const short unsigned 
 
 
 /*
-*   @brief Applies free slip boundary condition on northwest virtual node
+*   @brief Applies free slip boundary condition on northwest symmetry node
 *          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
@@ -98,8 +98,7 @@ void gpuBCFreeSlipNW(dfloat* f, const short unsigned int x, const short unsigned
 
 
 /*
-*   @brief Applies free slip boundary condition on northeast virtual node
-*          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
+*   @brief Applies free slip boundary condition on northeast symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
 *   @param y: node's y value
@@ -111,8 +110,7 @@ void gpuBCFreeSlipNE(dfloat* f, const short unsigned int x, const short unsigned
 
 
 /*
-*   @brief Applies free slip boundary condition on north-front virtual node
-*          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
+*   @brief Applies free slip boundary condition on north-front symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
 *   @param y: node's y value
@@ -124,8 +122,7 @@ void gpuBCFreeSlipNF(dfloat* f, const short unsigned int x, const short unsigned
 
 
 /*
-*   @brief Applies free slip boundary condition on north-back virtual node
-*          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
+*   @brief Applies free slip boundary condition on north-back symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
 *   @param y: node's y value
@@ -137,8 +134,7 @@ void gpuBCFreeSlipNB(dfloat* f, const short unsigned int x, const short unsigned
 
 
 /*
-*   @brief Applies free slip boundary condition on southwest virtual node
-*          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
+*   @brief Applies free slip boundary condition on southwest symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
 *   @param y: node's y value
@@ -150,8 +146,7 @@ void gpuBCFreeSlipSW(dfloat* f, const short unsigned int x, const short unsigned
 
 
 /*
-*   @brief Applies free slip boundary condition on southeast virtual node
-*          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
+*   @brief Applies free slip boundary condition on southeast symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
 *   @param y: node's y value
@@ -163,8 +158,7 @@ void gpuBCFreeSlipSE(dfloat* f, const short unsigned int x, const short unsigned
 
 
 /*
-*   @brief Applies free slip boundary condition on south-front virtual node
-*          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
+*   @brief Applies free slip boundary condition on south-front symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
 *   @param y: node's y value
@@ -176,8 +170,7 @@ void gpuBCFreeSlipSF(dfloat* f, const short unsigned int x, const short unsigned
 
 
 /*
-*   @brief Applies free slip boundary condition on south-back virtual node
-*          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
+*   @brief Applies free slip boundary condition on south-back symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
 *   @param y: node's y value
@@ -189,8 +182,7 @@ void gpuBCFreeSlipSB(dfloat* f, const short unsigned int x, const short unsigned
 
 
 /*
-*   @brief Applies free slip boundary condition on west-front virtual node
-*          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
+*   @brief Applies free slip boundary condition on west-front symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
 *   @param y: node's y value
@@ -202,8 +194,7 @@ void gpuBCFreeSlipWF(dfloat* f, const short unsigned int x, const short unsigned
 
 
 /*
-*   @brief Applies free slip boundary condition on west-back virtual node
-*          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
+*   @brief Applies free slip boundary condition on west-back symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
 *   @param y: node's y value
@@ -215,8 +206,7 @@ void gpuBCFreeSlipWB(dfloat* f, const short unsigned int x, const short unsigned
 
 
 /*
-*   @brief Applies free slip boundary condition on east-front virtual node
-*          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
+*   @brief Applies free slip boundary condition on east-front symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
 *   @param y: node's y value
@@ -228,8 +218,7 @@ void gpuBCFreeSlipEF(dfloat* f, const short unsigned int x, const short unsigned
 
 
 /*
-*   @brief Applies free slip boundary condition on east-back virtual node
-*          CORRECTION TO DO, CORRECTNESS IS NOT GUARANTEED
+*   @brief Applies free slip boundary condition on east-back symmetry node
 *   @param f[(NX, NY, NZ, Q)]: grid of populations
 *   @param x: node's x value
 *   @param y: node's y value
