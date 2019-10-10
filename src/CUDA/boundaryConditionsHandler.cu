@@ -255,7 +255,8 @@ void gpuSchFreeSlip(NodeTypeMap* gpuNT, dfloat* f, const short unsigned int x, c
     case BACK:
         gpuBCFreeSlipB(f, x, y, z);
         break;
-
+    /*
+    ---------------------- CORRECTIONS TO DO, DO NOT USE ----------------------
     case NORTH_WEST:
         if (gpuNT->getGeometry() == CONCAVE)
             gpuBCFreeSlipNW(f, x, y, z);
@@ -315,6 +316,7 @@ void gpuSchFreeSlip(NodeTypeMap* gpuNT, dfloat* f, const short unsigned int x, c
         if (gpuNT->getGeometry() == CONCAVE)
             gpuBCFreeSlipEB(f, x, y, z);
         break;
+    */
     default:
         break;
     }

@@ -26,11 +26,11 @@ __device__
 void gpuBCFreeSlipN(dfloat* f, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 14)];
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 17)];
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 7)];
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 11)];
+    f[idxPop(x, y, z, 4)] = f[idxPop(x, y-1, z, 3)];
+    f[idxPop(x, y, z, 8)] = f[idxPop(x, y-1, z, 14)];
+    f[idxPop(x, y, z, 12)] = f[idxPop(x, y-1, z, 17)];
+    f[idxPop(x, y, z, 13)] = f[idxPop(x, y-1, z, 7)];
+    f[idxPop(x, y, z, 18)] = f[idxPop(x, y-1, z, 11)];
 }
 
 
@@ -38,11 +38,11 @@ __device__
 void gpuBCFreeSlipS(dfloat* f, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 13)];
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 18)];
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 8)];
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 12)];
+    f[idxPop(x, y, z, 3)] = f[idxPop(x, y+1, z, 4)];
+    f[idxPop(x, y, z, 7)] = f[idxPop(x, y+1, z, 13)];
+    f[idxPop(x, y, z, 11)] = f[idxPop(x, y+1, z, 18)];
+    f[idxPop(x, y, z, 14)] = f[idxPop(x, y+1, z, 8)];
+    f[idxPop(x, y, z, 17)] = f[idxPop(x, y+1, z, 12)];
 }
 
 
@@ -50,11 +50,11 @@ __device__
 void gpuBCFreeSlipW(dfloat* f, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 14)];
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 16)];
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 8)];
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 10)];
+    f[idxPop(x, y, z, 1)] = f[idxPop(x+1, y, z, 2)];
+    f[idxPop(x, y, z, 7)] = f[idxPop(x+1, y, z, 14)];
+    f[idxPop(x, y, z, 9)] = f[idxPop(x+1, y, z, 16)];
+    f[idxPop(x, y, z, 13)] = f[idxPop(x+1, y, z, 8)];
+    f[idxPop(x, y, z, 15)] = f[idxPop(x+1, y, z, 10)];
 }
 
 
@@ -62,11 +62,11 @@ __device__
 void gpuBCFreeSlipE(dfloat* f, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 13)];
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 15)];
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 7)];
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 9)];
+    f[idxPop(x, y, z, 2)] = f[idxPop(x-1, y, z, 1)];
+    f[idxPop(x, y, z, 8)] = f[idxPop(x-1, y, z, 13)];
+    f[idxPop(x, y, z, 10)] = f[idxPop(x-1, y, z, 15)];
+    f[idxPop(x, y, z, 14)] = f[idxPop(x-1, y, z, 7)];
+    f[idxPop(x, y, z, 16)] = f[idxPop(x-1, y, z, 9)];
 }
 
 
@@ -74,11 +74,11 @@ __device__
 void gpuBCFreeSlipF(dfloat* f, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 16)];
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 18)];
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 9)];
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 11)];
+    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z-1, 5)];
+    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z-1, 16)];
+    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z-1, 18)];
+    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z-1, 9)];
+    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z-1, 11)];
 }
 
 
@@ -86,11 +86,11 @@ __device__
 void gpuBCFreeSlipB(dfloat* f, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 15)];
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 17)];
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 10)];
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 12)];
+    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z+1, 6)];
+    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z+1, 15)];
+    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z+1, 17)];
+    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z+1, 10)];
+    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z+1, 12)];
 }
 
 

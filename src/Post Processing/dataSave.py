@@ -53,7 +53,7 @@ def saveMacrCsv(filenameWrite, macr, normalizeDist=False):
                     fmt=['%d', '%.6e'], delimiter=',')
             else:
                 np.savetxt(f, [(i/len(macr), macr[i]) for i in range(0, len(macr))], \
-                    fmt=['%d', '%.6e'], delimiter=',')
+                    fmt=['%.6e', '%.6e'], delimiter=',')
         elif(len(macr.shape) == 2): # 2D
             np.savetxt(f, macr, delimiter=',')
         else:

@@ -28,7 +28,7 @@
 --------------------------
 */
 
-constexpr unsigned char Q = 19;         // number of velocities
+constexpr unsigned char Q = 19;        // number of velocities
 constexpr dfloat W0 = 1.0 / 3;         // population 0 weight (0, 0, 0)
 constexpr dfloat W1 = 1.0 / 18;        // adjacent populations (1, 0, 0)
 constexpr dfloat W2 = 1.0 / 36;        // diagonal populations (1, 1, 0)
