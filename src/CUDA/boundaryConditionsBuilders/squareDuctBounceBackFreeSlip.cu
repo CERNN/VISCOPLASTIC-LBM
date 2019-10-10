@@ -47,12 +47,12 @@ void gpuBuildBoundaryConditions(NodeTypeMap * const gpuMapBC)
 
     if (y == 0 && x == 0 && z == 0) // SWB
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
         gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH_WEST);
     }
     else if (y == 0 && x == 0 && z == (NZ - 1)) // SWF
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
         gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH_WEST);
     }
     else if (y == 0 && x == (NX - 1) && z == 0) // SEB
@@ -77,18 +77,18 @@ void gpuBuildBoundaryConditions(NodeTypeMap * const gpuMapBC)
     }
     else if (y == (NY - 1) && x == (NX - 1) && z == 0) // NEB
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH_EAST);
 
     }
     else if (y == (NY - 1) && x == (NX - 1) && z == (NZ - 1)) // NEF
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH_EAST);
     }
     else if (y == 0 && x == 0) // SW
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
         gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH_WEST);
     }
     else if (y == 0 && x == (NX - 1)) // SE
@@ -103,7 +103,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap * const gpuMapBC)
     }
     else if (y == (NY - 1) && x == (NX - 1)) // NE
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH_EAST);
     }
     else if (y == 0 && z == 0) // SB
