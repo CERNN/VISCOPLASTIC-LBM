@@ -23,144 +23,138 @@
 
 
 __device__
-void gpuBCPresZouHeN(dfloat* f, const short unsigned int x, const short unsigned int y,
-    const short unsigned int z, const dfloat rho_w)
+void gpuBCPresZouHeN(dfloat* fNode, const dfloat rho_w)
 {
-    const dfloat uy_w = -1 + (1/rho_w) * (f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)]
-        + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 9)]
-        + f[idxPop(x, y, z, 15)] + f[idxPop(x, y, z, 16)] + f[idxPop(x, y, z, 10)]
-        + f[idxPop(x, y, z, 0)] + 2 * (f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 7)]
-            + f[idxPop(x, y, z, 14)] + f[idxPop(x, y, z, 11)] + f[idxPop(x, y, z, 17)]));
+    const dfloat uy_w = -1 + (1/rho_w) * (fNode[(1)] + fNode[(2)]
+        + fNode[(5)] + fNode[(6)] + fNode[(9)]
+        + fNode[(15)] + fNode[(16)] + fNode[(10)]
+        + fNode[(0)] + 2 * (fNode[(3)] + fNode[(7)]
+            + fNode[(14)] + fNode[(11)] + fNode[(17)]));
 
-    const dfloat nyx = 0.5 * (f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 9)] + f[idxPop(x, y, z, 15)]
-        - (f[idxPop(x, y, z, 2)] + f[idxPop(x, y, z, 16)] + f[idxPop(x, y, z, 10)]));
-    const dfloat nyz = 0.5 * (f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 9)] + f[idxPop(x, y, z, 16)]
-        - (f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 15)] + f[idxPop(x, y, z, 10)]));
+    const dfloat nyx = 0.5 * (fNode[(1)] + fNode[(9)] + fNode[(15)]
+        - (fNode[(2)] + fNode[(16)] + fNode[(10)]));
+    const dfloat nyz = 0.5 * (fNode[(5)] + fNode[(9)] + fNode[(16)]
+        - (fNode[(6)] + fNode[(15)] + fNode[(10)]));
 
-    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)] + rho_w * (-uy_w) / 3;
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)] + rho_w * (-uy_w) / 6 + nyx;
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)] + rho_w * (-uy_w) / 6 - nyx;
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)] + rho_w * (-uy_w) / 6 + nyz;
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)] + rho_w * (-uy_w) / 6 - nyz;
+    fNode[(4)] = fNode[(3)] + rho_w * (-uy_w) / 3;
+    fNode[(8)] = fNode[(7)] + rho_w * (-uy_w) / 6 + nyx;
+    fNode[(13)] = fNode[(14)] + rho_w * (-uy_w) / 6 - nyx;
+    fNode[(12)] = fNode[(11)] + rho_w * (-uy_w) / 6 + nyz;
+    fNode[(18)] = fNode[(17)] + rho_w * (-uy_w) / 6 - nyz;
 }
 
 
 __device__
-void gpuBCPresZouHeS(dfloat* f, const short unsigned int x, const short unsigned int y,
-    const short unsigned int z, const dfloat rho_w)
+void gpuBCPresZouHeS(dfloat* fNode, const dfloat rho_w)
 {
-    const dfloat uy_w = 1 - (1/rho_w) * (f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)]
-        + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 9)]
-        + f[idxPop(x, y, z, 15)] + f[idxPop(x, y, z, 16)] + f[idxPop(x, y, z, 10)]
-        + f[idxPop(x, y, z, 0)] + 2 * (f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 13)]
-            + f[idxPop(x, y, z, 8)] + f[idxPop(x, y, z, 18)] + f[idxPop(x, y, z, 12)]));
+    const dfloat uy_w = 1 - (1/rho_w) * (fNode[(1)] + fNode[(2)]
+        + fNode[(5)] + fNode[(6)] + fNode[(9)]
+        + fNode[(15)] + fNode[(16)] + fNode[(10)]
+        + fNode[(0)] + 2 * (fNode[(4)] + fNode[(13)]
+            + fNode[(8)] + fNode[(18)] + fNode[(12)]));
 
-    const dfloat nyx = 0.5 * (f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 9)] + f[idxPop(x, y, z, 15)]
-        - (f[idxPop(x, y, z, 2)] + f[idxPop(x, y, z, 16)] + f[idxPop(x, y, z, 10)]));
-    const dfloat nyz = 0.5 * (f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 9)] + f[idxPop(x, y, z, 16)]
-        - (f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 15)] + f[idxPop(x, y, z, 10)]));
+    const dfloat nyx = 0.5 * (fNode[(1)] + fNode[(9)] + fNode[(15)]
+        - (fNode[(2)] + fNode[(16)] + fNode[(10)]));
+    const dfloat nyz = 0.5 * (fNode[(5)] + fNode[(9)] + fNode[(16)]
+        - (fNode[(6)] + fNode[(15)] + fNode[(10)]));
 
-    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)] + rho_w * uy_w / 3;
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)] + rho_w * (uy_w) / 6 - nyx;
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)] + rho_w * (uy_w) / 6 + nyx;
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)] + rho_w * (uy_w) / 6 - nyz;
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)] + rho_w * (uy_w) / 6 + nyz;
+    fNode[(3)] = fNode[(4)] + rho_w * uy_w / 3;
+    fNode[(7)] = fNode[(8)] + rho_w * (uy_w) / 6 - nyx;
+    fNode[(14)] = fNode[(13)] + rho_w * (uy_w) / 6 + nyx;
+    fNode[(11)] = fNode[(12)] + rho_w * (uy_w) / 6 - nyz;
+    fNode[(17)] = fNode[(18)] + rho_w * (uy_w) / 6 + nyz;
 }
 
 
 __device__
-void gpuBCPresZouHeW(dfloat* f, const short unsigned int x, const short unsigned int y,
-    const short unsigned int z, const dfloat rho_w)
+void gpuBCPresZouHeW(dfloat* fNode, const dfloat rho_w)
 {
-    const dfloat ux_w = 1 - (1/rho_w) * (f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)]
-        + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 11)]
-        + f[idxPop(x, y, z, 17)] + f[idxPop(x, y, z, 18)] + f[idxPop(x, y, z, 12)]
-        + f[idxPop(x, y, z, 0)] + 2 * (f[idxPop(x, y, z, 2)] + f[idxPop(x, y, z, 14)]
-            + f[idxPop(x, y, z, 8)] + f[idxPop(x, y, z, 16)] + f[idxPop(x, y, z, 10)]));
+    const dfloat ux_w = 1 - (1/rho_w) * (fNode[(3)] + fNode[(4)]
+        + fNode[(5)] + fNode[(6)] + fNode[(11)]
+        + fNode[(17)] + fNode[(18)] + fNode[(12)]
+        + fNode[(0)] + 2 * (fNode[(2)] + fNode[(14)]
+            + fNode[(8)] + fNode[(16)] + fNode[(10)]));
 
-    const dfloat nxy = 0.5 * (f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 11)] + f[idxPop(x, y, z, 17)]
-        - (f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 18)] + f[idxPop(x, y, z, 12)]));
-    const dfloat nxz = 0.5 * (f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 18)] + f[idxPop(x, y, z, 11)]
-        - (f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 17)] + f[idxPop(x, y, z, 12)]));
+    const dfloat nxy = 0.5 * (fNode[(3)] + fNode[(11)] + fNode[(17)]
+        - (fNode[(4)] + fNode[(18)] + fNode[(12)]));
+    const dfloat nxz = 0.5 * (fNode[(5)] + fNode[(18)] + fNode[(11)]
+        - (fNode[(6)] + fNode[(17)] + fNode[(12)]));
 
-    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)] + rho_w * ux_w / 3;
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)] + rho_w * (ux_w) / 6 + nxy;
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)] + rho_w * (ux_w) / 6 - nxy;
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)] + rho_w * (ux_w) / 6 - nxz;
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)] + rho_w * (ux_w) / 6 + nxz;
+    fNode[(1)] = fNode[(2)] + rho_w * ux_w / 3;
+    fNode[(13)] = fNode[(14)] + rho_w * (ux_w) / 6 + nxy;
+    fNode[(7)] = fNode[(8)] + rho_w * (ux_w) / 6 - nxy;
+    fNode[(9)] = fNode[(10)] + rho_w * (ux_w) / 6 - nxz;
+    fNode[(15)] = fNode[(16)] + rho_w * (ux_w) / 6 + nxz;
 }
 
 
 __device__
-void gpuBCPresZouHeE(dfloat* f, const short unsigned int x, const short unsigned int y,
-    const short unsigned int z, const dfloat rho_w)
+void gpuBCPresZouHeE(dfloat* fNode, const dfloat rho_w)
 {
-    const dfloat ux_w = -1 + (1/rho_w) * (f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)]
-        + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 11)]
-        + f[idxPop(x, y, z, 17)] + f[idxPop(x, y, z, 18)] + f[idxPop(x, y, z, 12)]
-        + f[idxPop(x, y, z, 0)] + 2 * (f[idxPop(x, y, z, 2)] + f[idxPop(x, y, z, 14)]
-            + f[idxPop(x, y, z, 8)] + f[idxPop(x, y, z, 16)] + f[idxPop(x, y, z, 10)]));
+    const dfloat ux_w = -1 + (1/rho_w) * (fNode[(3)] + fNode[(4)]
+        + fNode[(5)] + fNode[(6)] + fNode[(11)]
+        + fNode[(17)] + fNode[(18)] + fNode[(12)]
+        + fNode[(0)] + 2 * (fNode[(2)] + fNode[(14)]
+            + fNode[(8)] + fNode[(16)] + fNode[(10)]));
 
-    const dfloat nxy = 0.5 * (f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 11)] + f[idxPop(x, y, z, 17)]
-        - (f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 18)] + f[idxPop(x, y, z, 12)]));
-    const dfloat nxz = 0.5 * (f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 18)] + f[idxPop(x, y, z, 11)]
-        - (f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 17)] + f[idxPop(x, y, z, 12)]));
+    const dfloat nxy = 0.5 * (fNode[(3)] + fNode[(11)] + fNode[(17)]
+        - (fNode[(4)] + fNode[(18)] + fNode[(12)]));
+    const dfloat nxz = 0.5 * (fNode[(5)] + fNode[(18)] + fNode[(11)]
+        - (fNode[(6)] + fNode[(17)] + fNode[(12)]));
 
-    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 2)] + rho_w * ux_w / 3;
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 14)] + rho_w * (ux_w) / 6 + nxy;
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 8)] + rho_w * (ux_w) / 6 - nxy;
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 10)] + rho_w * (ux_w) / 6 - nxz;
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 16)] + rho_w * (ux_w) / 6 + nxz;
+    fNode[(2)] = fNode[(2)] + rho_w * ux_w / 3;
+    fNode[(14)] = fNode[(14)] + rho_w * (ux_w) / 6 + nxy;
+    fNode[(8)] = fNode[(8)] + rho_w * (ux_w) / 6 - nxy;
+    fNode[(10)] = fNode[(10)] + rho_w * (ux_w) / 6 - nxz;
+    fNode[(16)] = fNode[(16)] + rho_w * (ux_w) / 6 + nxz;
 }
 
 
 __device__
-void gpuBCPresZouHeF(dfloat* f, const short unsigned int x, const short unsigned int y,
-    const short unsigned int z, const dfloat rho_w)
+void gpuBCPresZouHeF(dfloat* fNode, const dfloat rho_w)
 {
-    const dfloat uz_w = -1 + (1 / rho_w) * (f[idxPop(x, y, z, 1)]  + f[idxPop(x, y, z, 2)]
-        + f[idxPop(x, y, z, 3)]  + f[idxPop(x, y, z, 4)]  + f[idxPop(x, y, z, 7)]
-        + f[idxPop(x, y, z, 14)] + f[idxPop(x, y, z, 8)]  + f[idxPop(x, y, z, 13)]
-        + f[idxPop(x, y, z, 0)]  +2*(f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 9)]
-        + f[idxPop(x, y, z, 16)] + f[idxPop(x, y, z, 11)] + f[idxPop(x, y, z, 18)]));
+    const dfloat uz_w = -1 + (1 / rho_w) * (fNode[(1)]  + fNode[(2)]
+        + fNode[(3)]  + fNode[(4)]  + fNode[(7)]
+        + fNode[(14)] + fNode[(8)]  + fNode[(13)]
+        + fNode[(0)]  +2*(fNode[(5)] + fNode[(9)]
+        + fNode[(16)] + fNode[(11)] + fNode[(18)]));
     
-    const dfloat nzx = 0.5 * (f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 7)] + f[idxPop(x, y, z, 13)]
-        - (f[idxPop(x, y, z, 2)] + f[idxPop(x, y, z, 14)] + f[idxPop(x, y, z, 8)]));
+    const dfloat nzx = 0.5 * (fNode[(1)] + fNode[(7)] + fNode[(13)]
+        - (fNode[(2)] + fNode[(14)] + fNode[(8)]));
         // - rho_w*ux_w/3;
     
-    const dfloat nzy = 0.5 * (f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 7)] + f[idxPop(x, y, z, 14)]
-        - (f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 13)] + f[idxPop(x, y, z, 8)]));
+    const dfloat nzy = 0.5 * (fNode[(3)] + fNode[(7)] + fNode[(14)]
+        - (fNode[(4)] + fNode[(13)] + fNode[(8)]));
         // - rho_w*uy_w/3
 
-    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)] + rho_w*(-uz_w)/3;
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)] + rho_w*(-uz_w) / 6 - nzx;
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z,  9)] + rho_w*(-uz_w) / 6 + nzx;
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)] + rho_w*(-uz_w) / 6 - nzy;
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)] + rho_w*(-uz_w) / 6 + nzy;
+    fNode[(6)] = fNode[(5)] + rho_w*(-uz_w)/3;
+    fNode[(15)] = fNode[(16)] + rho_w*(-uz_w) / 6 - nzx;
+    fNode[(10)] = fNode[( 9)] + rho_w*(-uz_w) / 6 + nzx;
+    fNode[(17)] = fNode[(18)] + rho_w*(-uz_w) / 6 - nzy;
+    fNode[(12)] = fNode[(11)] + rho_w*(-uz_w) / 6 + nzy;
 }
 
 
 __device__
-void gpuBCPresZouHeB(dfloat* f, const short unsigned int x, const short unsigned int y,
-    const short unsigned int z, const dfloat rho_w)
+void gpuBCPresZouHeB(dfloat* fNode, const dfloat rho_w)
 {
-    const dfloat uz_w = 1 - (1 / rho_w) * (f[idxPop(x, y, z, 1)]  + f[idxPop(x, y, z, 2)]
-        + f[idxPop(x, y, z, 3)]  + f[idxPop(x, y, z, 4)]  + f[idxPop(x, y, z, 7)]
-        + f[idxPop(x, y, z, 14)] + f[idxPop(x, y, z, 8)]  + f[idxPop(x, y, z, 13)]
-        + f[idxPop(x, y, z, 0)]  +2*(f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 10)]
-        + f[idxPop(x, y, z, 12)] + f[idxPop(x, y, z, 15)] + f[idxPop(x, y, z, 17)]));
+    const dfloat uz_w = 1 - (1 / rho_w) * (fNode[(1)]  + fNode[(2)]
+        + fNode[(3)]  + fNode[(4)]  + fNode[(7)]
+        + fNode[(14)] + fNode[(8)]  + fNode[(13)]
+        + fNode[(0)]  +2*(fNode[(6)] + fNode[(10)]
+        + fNode[(12)] + fNode[(15)] + fNode[(17)]));
     
-    const dfloat nzx = 0.5 * (f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 7)] + f[idxPop(x, y, z, 13)]
-        - (f[idxPop(x, y, z, 2)] + f[idxPop(x, y, z, 14)] + f[idxPop(x, y, z, 8)]));
+    const dfloat nzx = 0.5 * (fNode[(1)] + fNode[(7)] + fNode[(13)]
+        - (fNode[(2)] + fNode[(14)] + fNode[(8)]));
         // - rho_w*ux_w/3;
     
-    const dfloat nzy = 0.5 * (f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 7)] + f[idxPop(x, y, z, 14)]
-        - (f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 13)] + f[idxPop(x, y, z, 8)]));
+    const dfloat nzy = 0.5 * (fNode[(3)] + fNode[(7)] + fNode[(14)]
+        - (fNode[(4)] + fNode[(13)] + fNode[(8)]));
         // - rho_w*uy_w/3
 
-    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)] + rho_w*uz_w/3;
-    f[idxPop(x, y, z,  9)] = f[idxPop(x, y, z, 10)] + rho_w*uz_w / 6 - nzx;
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)] + rho_w*uz_w / 6 + nzx;
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)] + rho_w*uz_w / 6 - nzy;
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)] + rho_w*uz_w / 6 + nzy;
+    fNode[(5)] = fNode[(6)] + rho_w*uz_w/3;
+    fNode[( 9)] = fNode[(10)] + rho_w*uz_w / 6 - nzx;
+    fNode[(16)] = fNode[(15)] + rho_w*uz_w / 6 + nzx;
+    fNode[(11)] = fNode[(12)] + rho_w*uz_w / 6 - nzy;
+    fNode[(18)] = fNode[(17)] + rho_w*uz_w / 6 + nzy;
 }

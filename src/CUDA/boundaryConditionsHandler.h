@@ -28,7 +28,8 @@
 /*
 *   @brief Applies boundary conditions given node type and its population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19 (used by non local boundary conditions)
+*   @param fNode[Q]: node's population to apply boundary conditions
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -36,22 +37,24 @@
 __device__
 void gpuBoundaryConditions(NodeTypeMap* gpuNT, 
     dfloat* f, 
+    dfloat* fNode,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
-
 
 /*
 *   @brief Applies specials boundaries conditions given node's population
 *   @param gpuNT: node's map
 *   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param fNode[Q]: node's population to apply boundary conditions
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
 */
 __device__
 void gpuSchSpecial(NodeTypeMap* gpuNT, 
-    dfloat* f, 
+    dfloat* f,
+    dfloat* fNode, 
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
@@ -60,40 +63,29 @@ void gpuSchSpecial(NodeTypeMap* gpuNT,
 /*
 *   @brief Applies bounce back boundary condition given node's population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
-*   @param x: node's x value
-*   @param y: node's y value
-*   @param z: node's z value
+*   @param fNode[Q]: node's population to apply boundary conditions
 */
 __device__
 void gpuSchBounceBack(NodeTypeMap* gpuNT, 
-    dfloat* f, 
-    const short unsigned int x,
-    const short unsigned int y,
-    const short unsigned int z);
+    dfloat* fNode);
 
 
 /*
 *   @brief Applies velocity bounce back boundary condition given node's 
 *          population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
-*   @param x: node's x value
-*   @param y: node's y value
-*   @param z: node's z value
+*   @param fNode[Q]: node's population to apply boundary conditions
 */
 __device__
 void gpuSchVelBounceBack(NodeTypeMap* gpuNT, 
-    dfloat* f, 
-    const short unsigned int x, 
-    const short unsigned int y, 
-    const short unsigned int z);
+    dfloat* fNode);
 
 
 /*
-*   @brief Applies free slip boundary condition given node's population
+*   @brief Applies free slip boundary condition (which is a special streming) given node's type
 *   @param gpuNT: node's map
 *   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param fNode[Q]: node's population to apply boundary conditions
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -101,6 +93,7 @@ void gpuSchVelBounceBack(NodeTypeMap* gpuNT,
 __device__
 void gpuSchFreeSlip(NodeTypeMap* gpuNT, 
     dfloat* f, 
+    dfloat* fNode, 
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
@@ -110,32 +103,20 @@ void gpuSchFreeSlip(NodeTypeMap* gpuNT,
 *   @brief Applies pressure non-equilibrium bounce back boundary condition 
 *          given node's population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
-*   @param x: node's x value
-*   @param y: node's y value
-*   @param z: node's z value
+*   @param fNode[Q]: node's population to apply boundary conditions
 */
 __device__
 void gpuSchPresZouHe(NodeTypeMap* gpuNT, 
-    dfloat* f, 
-    const short unsigned int x, 
-    const short unsigned int y, 
-    const short unsigned int z);
+    dfloat* fNode);
 
 
 /*
 *   @brief Applies velocity Zou-He boundary condition given node's population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
-*   @param x: node's x value
-*   @param y: node's y value
-*   @param z: node's z value
+*   @param fNode[Q]: node's population to apply boundary conditions
 */
 __device__
 void gpuSchVelZouHe(NodeTypeMap* gpuNT, 
-    dfloat* f, 
-    const short unsigned int x, 
-    const short unsigned int y, 
-    const short unsigned int z);
+    dfloat* fNode);
 
 #endif // !__BOUNDARY_CONDITIONS_HANDLER_H

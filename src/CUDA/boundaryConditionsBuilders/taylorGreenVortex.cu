@@ -50,7 +50,8 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
 
 __device__
 void gpuSchSpecial(NodeTypeMap* gpuNT, 
-    dfloat* f, 
+    dfloat* f,
+    dfloat* fNode, 
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z)
