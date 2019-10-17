@@ -1,0 +1,29 @@
+
+---------------------------- SIMULATION INFORMATION ----------------------------
+      Simulation ID: 403
+       Velocity set: D3Q27
+          Precision: double
+                 NX: 64
+                 NY: 64
+                 NZ: 64
+                Tau: 0.900000
+               Umax: 6.250000e-03
+                 FX: 0.000000e+00
+                 FY: 0.000000e+00
+                 FZ: 1.562500e-06
+       Report steps: 1800
+         Save steps: 0
+             Nsteps: 115200
+              MLUPS: 196.1
+          Bandwidht: 78.9 (Gb/s)
+       Time elapsed: 153.970 (s)
+            threads: (64, 1, 1)
+--------------------------------------------------------------------------------
+
+------------------------------- CUDA INFORMATION -------------------------------
+	      device number: 0
+	               name: Tesla K20Xm
+	    multiprocessors: 14
+	 compute capability: 3.5
+	        ECC enabled: 0
+--------------------------------------------------------------------------------

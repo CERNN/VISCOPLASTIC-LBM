@@ -255,66 +255,6 @@ void gpuSchFreeSlip(NodeTypeMap* gpuNT, dfloat* f, dfloat* fNode, const short un
     case BACK:
         gpuBCFreeSlipB(f, fNode, x, y, z);
         break;
-        
-    case NORTH_WEST:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipNW(f, fNode, x, y, z);
-        break;
-
-    case NORTH_EAST:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipNE(f, fNode, x, y, z);
-        break;
-
-    case NORTH_FRONT:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipNF(f, fNode, x, y, z);
-        break;
-
-    case NORTH_BACK:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipNB(f, fNode, x, y, z);
-        break;
-
-    case SOUTH_WEST:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipSW(f, fNode, x, y, z);
-        break;
-
-    case SOUTH_EAST:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipSE(f, fNode, x, y, z);
-        break;
-
-    case SOUTH_FRONT:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipSF(f, fNode, x, y, z);
-        break;
-
-    case SOUTH_BACK:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipSB(f, fNode, x, y, z);
-        break;
-
-    case WEST_FRONT:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipWF(f, fNode, x, y, z);
-        break;
-
-    case WEST_BACK:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipWB(f, fNode, x, y, z);
-        break;
-
-    case EAST_FRONT:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipEF(f, fNode, x, y, z);
-        break;
-
-    case EAST_BACK:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipEB(f, fNode, x, y, z);
-        break;
     default:
         break;
     }

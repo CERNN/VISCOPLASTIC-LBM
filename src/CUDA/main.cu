@@ -140,8 +140,6 @@ int main()
         }
 
         // LBM SOLVER
-        if(save || rep)
-            checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
         gpuBCMacrCollisionStream<<<grid, threads, 0, streamsKernelLBM[0]>>>
             (pop->pop, pop->popAux, pop->mapBC, 
             &macr[0], rep || save || ((step+1)>=(int)N_STEPS), step);
