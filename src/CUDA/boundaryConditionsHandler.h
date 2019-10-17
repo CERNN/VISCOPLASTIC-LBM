@@ -26,7 +26,23 @@
 
 
 /*
-*   @brief Applies boundary conditions given node type and its population
+*   @brief Applies local boundary conditions given node type and its population
+*   @param gpuNT: node's map
+*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
+*/
+__device__
+void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT, 
+    dfloat* f,
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z);
+
+
+/*
+*   @brief Applies non local boundary conditions given node type and its population
 *   @param gpuNT: node's map
 *   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19 (used by non local boundary conditions)
 *   @param fNode[Q]: node's population to apply boundary conditions
@@ -35,12 +51,13 @@
 *   @param z: node's z value
 */
 __device__
-void gpuBoundaryConditions(NodeTypeMap* gpuNT, 
+void gpuNonLocalBoundaryConditions(NodeTypeMap* gpuNT, 
     dfloat* f, 
     dfloat* fNode,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
+
 
 /*
 *   @brief Applies specials boundaries conditions given node's population
@@ -63,22 +80,67 @@ void gpuSchSpecial(NodeTypeMap* gpuNT,
 /*
 *   @brief Applies bounce back boundary condition given node's population
 *   @param gpuNT: node's map
-*   @param fNode[Q]: node's population to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__
 void gpuSchBounceBack(NodeTypeMap* gpuNT, 
-    dfloat* fNode);
+    dfloat* f, 
+    const short unsigned int x,
+    const short unsigned int y,
+    const short unsigned int z);
 
 
 /*
 *   @brief Applies velocity bounce back boundary condition given node's 
 *          population
 *   @param gpuNT: node's map
-*   @param fNode[Q]: node's population to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__
 void gpuSchVelBounceBack(NodeTypeMap* gpuNT, 
-    dfloat* fNode);
+    dfloat* f, 
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z);
+
+
+/*
+*   @brief Applies pressure non-equilibrium bounce back boundary condition 
+*          given node's population
+*   @param gpuNT: node's map
+*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
+*/
+__device__
+void gpuSchPresZouHe(NodeTypeMap* gpuNT, 
+    dfloat* f, 
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z);
+
+
+/*
+*   @brief Applies velocity Zou-He boundary condition given node's population
+*   @param gpuNT: node's map
+*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
+*/
+__device__
+void gpuSchVelZouHe(NodeTypeMap* gpuNT, 
+    dfloat* f, 
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z);
 
 
 /*
@@ -97,26 +159,5 @@ void gpuSchFreeSlip(NodeTypeMap* gpuNT,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
-
-
-/*
-*   @brief Applies pressure non-equilibrium bounce back boundary condition 
-*          given node's population
-*   @param gpuNT: node's map
-*   @param fNode[Q]: node's population to apply boundary conditions
-*/
-__device__
-void gpuSchPresZouHe(NodeTypeMap* gpuNT, 
-    dfloat* fNode);
-
-
-/*
-*   @brief Applies velocity Zou-He boundary condition given node's population
-*   @param gpuNT: node's map
-*   @param fNode[Q]: node's population to apply boundary conditions
-*/
-__device__
-void gpuSchVelZouHe(NodeTypeMap* gpuNT, 
-    dfloat* fNode);
 
 #endif // !__BOUNDARY_CONDITIONS_HANDLER_H

@@ -18,9 +18,11 @@
 
 
 /*
-*   @brief Applies boundary conditions, updates macroscopics and then performs
-*          collision and streaming
-*   @param pop: populations and boundary conditions to use
+*   @brief Applies local boundary conditions, updates macroscopics and then 
+*          performs collision and streaming
+*   @param pop: populations to use
+*   @param popAux: auxiliary populations to stream to
+*   @param mapBC: boundary conditions map
 *   @param macr: macroscopics to use/update
 *   @param save: save macroscopics
 *   @param step: simulation step
@@ -47,5 +49,37 @@ void gpuUpdateMacr(
     Macroscopics* macr
 );
 
+
+/*
+*   @brief Applies non local boundary conditions
+*   @param pop: populations to use
+*   @param mapBC: boundary conditions map
+*   @param auxNonLocal: auxiliary populations to keep the boundary conditions result
+*   @param idxNonLocal: scalar index of non local boundary conditions
+*   @param totalNonLocalBC: total number of nodes with non local boundary conditions
+*/
+__global__
+void gpuApplyNonLocalBC(dfloat* pop, 
+    NodeTypeMap* mapBC, 
+    dfloat* popAuxNonLocal, 
+    size_t* idxNonLocal,
+    size_t totalNonLocalBC
+);
+
+
+/*
+*   @brief Synchronize non local boundary conditions applied
+*   @param pop: populations to use
+*   @param mapBC: boundary conditions map
+*   @param auxNonLocal: auxiliary populations to keep the boundary conditions result
+*   @param idxNonLocal: scalar index of non local boundary conditions
+*   @param totalNonLocalBC: total number of nodes with non local boundary conditions
+*/
+__global__
+void gpuSynchronizeNonLocalBC(dfloat* pop,
+    dfloat* popAuxNonLocal,
+    size_t* idxNonLocal,
+    size_t totalNonLocalBC
+);
 
 #endif // __LBM_H

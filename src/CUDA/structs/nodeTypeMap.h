@@ -215,6 +215,14 @@ typedef struct nodeTypeMap {
     {
         return ((map & RHO_IDX_BITS) >> RHO_IDX_OFFSET);
     }
+
+    __device__ __host__
+    char isBCLocal()
+    {
+        return !(((map >> BC_SCHEME_OFFSET) & BC_SCHEME_FREE_SLIP) || 
+            ((map >> BC_SCHEME_OFFSET) & BC_SCHEME_SPECIAL));
+    }
+
 } NodeTypeMap;
 
 #endif // !__NODE_TYPE_MAP_H

@@ -28,6 +28,7 @@
 #include "lbm.h"
 #include "lbmInitialization.h"
 #include "boundaryConditionsBuilder.h"
+#include "structs/boundaryConditionsInfo.h"
 
 
 int main()
@@ -38,6 +39,7 @@ int main()
     Macroscopics macrCPUCurrent;
     Macroscopics macrCPUOld;
     MacrProc processData;
+    BoundaryConditionsInfo bcInfo;
     SimInfo info;
     int step = INI_STEP;
 
@@ -90,11 +92,13 @@ int main()
     dim3 threads(nThreads, 1, 1);
 
     // REPORT
-    printParamInfo(&info, true);
-    printGPUInfo(&info);
+    printParamInfo(&info, true); fflush(stdout);
+    printGPUInfo(&info); fflush(stdout);
 
     // BOUNDARY CONDITIONS INITIALIZATION
     gpuBuildBoundaryConditions<<<grid, threads>>>(pop[0].mapBC);
+    checkCudaErrors(cudaDeviceSynchronize());
+    bcInfo.setupBoundaryConditionsInfo(pop->mapBC);
 
     // LBM INITIALIZATION
     if(LOAD_POP)
@@ -123,12 +127,11 @@ int main()
     checkCudaErrors(cudaEventCreate(&stop));
 
     checkCudaErrors(cudaEventRecord(start, 0));
-
+    
     // LBM
     for(step = INI_STEP; step < N_STEPS; step++)
     {
         int aux = step-INI_STEP;
-
         // WHAT NEEDS TO BE DONE IN THIS TIME STEP
         bool save = false, rep = false;
         if(aux != 0)
@@ -143,8 +146,27 @@ int main()
         gpuBCMacrCollisionStream<<<grid, threads, 0, streamsKernelLBM[0]>>>
             (pop->pop, pop->popAux, pop->mapBC, 
             &macr[0], rep || save || ((step+1)>=(int)N_STEPS), step);
-
         getLastCudaError("lbm kernel error");
+        
+        // if there are non local boundary conditions
+        if(bcInfo.hasNonLocalBC())
+        {
+            dim3 threadsBC(32,1,1);
+            dim3 gridBC(bcInfo.totalNonLocalBCNodes/32, 1, 1);
+            if(bcInfo.totalNonLocalBCNodes%32)
+                gridBC.x++;
+            // applies to pop->pop (auxiliary populations) non local boundary conditions
+            gpuApplyNonLocalBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
+                (pop->popAux, pop->mapBC, pop->pop, 
+                bcInfo.idxNonLocalBCNodes, bcInfo.totalNonLocalBCNodes);
+            getLastCudaError("application of non local boundary conditions error");
+
+            // synchronizes the boundary conditions applied to pop->popAux (valid populations)
+            gpuSynchronizeNonLocalBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
+                (pop->popAux, pop->pop, 
+                bcInfo.idxNonLocalBCNodes, bcInfo.totalNonLocalBCNodes);
+            getLastCudaError("synchronization of non local boundary conditions error");
+        }
 
         checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
         pop[0].swapPop();
@@ -223,8 +245,9 @@ int main()
         checkCudaErrors(cudaSetDevice(i));
         checkCudaErrors(cudaStreamDestroy(streamsKernelLBM[i]));
         pop[i].popFree();
-        macr[i].macrFree();        
+        macr[i].macrFree();
     }
+    bcInfo.freeIdxNonLocal();
 
     // FREE GPU VARIABLES
     checkCudaErrors(cudaSetDevice(0));

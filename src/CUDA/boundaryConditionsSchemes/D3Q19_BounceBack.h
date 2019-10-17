@@ -15,210 +15,314 @@
 
 /*
 *   @brief Applies bounce back boundary condition on north wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackN(dfloat* fNode);
+void gpuBCBounceBackN(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on south wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackS(dfloat* fNode);
+void gpuBCBounceBackS(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on west wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackW(dfloat* fNode);
+void gpuBCBounceBackW(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on east wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackE(dfloat* fNode);
+void gpuBCBounceBackE(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on front wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackF(dfloat* fNode);
+void gpuBCBounceBackF(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on back wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackB(dfloat* fNode);
+void gpuBCBounceBackB(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on northwest wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackNW(dfloat* fNode);
+void gpuBCBounceBackNW(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on northeast wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackNE(dfloat* fNode);
+void gpuBCBounceBackNE(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on north-front wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackNF(dfloat* fNode);
+void gpuBCBounceBackNF(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on north-back wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackNB(dfloat* fNode);
+void gpuBCBounceBackNB(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on southwest wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackSW(dfloat* fNode);
+void gpuBCBounceBackSW(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on southeast wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackSE(dfloat* fNode);
+void gpuBCBounceBackSE(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on south-front wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackSF(dfloat* fNode);
+void gpuBCBounceBackSF(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on south-back wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackSB(dfloat* fNode);
+void gpuBCBounceBackSB(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on west-front wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackWF(dfloat* fNode);
+void gpuBCBounceBackWF(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on west-back wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackWB(dfloat* fNode);
+void gpuBCBounceBackWB(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on east-front wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackEF(dfloat* fNode);
+void gpuBCBounceBackEF(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on east-back wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackEB(dfloat* fNode);
+void gpuBCBounceBackEB(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on northwest-front wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackNWF(dfloat* fNode);
+void gpuBCBounceBackNWF(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on northwest-back wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackNWB(dfloat* fNode);
+void gpuBCBounceBackNWB(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on northeast-front wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackNEF(dfloat* fNode);
+void gpuBCBounceBackNEF(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on northeast-back wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackNEB(dfloat* fNode);
+void gpuBCBounceBackNEB(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on southwest-front wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackSWF(dfloat* fNode);
+void gpuBCBounceBackSWF(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on southwest-back wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackSWB(dfloat* fNode);
+void gpuBCBounceBackSWB(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on southeast-front wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackSEF(dfloat* fNode);
+void gpuBCBounceBackSEF(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 /*
 *   @brief Applies bounce back boundary condition on southeast-back wall node
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations 
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 */
 __device__ 
-void gpuBCBounceBackSEB(dfloat* fNode);
+void gpuBCBounceBackSEB(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z);
 
 
 #endif // !__BC_BOUNCE_BACK_D3Q19_H

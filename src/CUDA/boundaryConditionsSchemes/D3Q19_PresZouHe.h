@@ -15,56 +15,80 @@
 
 /*
 *   @brief Applies pressure Zou-He boundary condition on north wall node, given pressure
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 *   @param rho_w: node's densisty
 */
 __device__
-void gpuBCPresZouHeN(dfloat* fNode, const dfloat rho_w);
+void gpuBCPresZouHeN(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z, const dfloat rho_w);
 
 
 /*
 *   @brief Applies pressure Zou-He boundary condition on south wall node, given pressure
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 *   @param rho_w: node's densisty
 */
 __device__
-void gpuBCPresZouHeS(dfloat* fNode, const dfloat rho_w);
+void gpuBCPresZouHeS(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z, const dfloat rho_w);
 
 
 /*
 *   @brief Applies pressure Zou-He boundary condition on west wall node, given pressure
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 *   @param rho_w: node's densisty
 */
 __device__
-void gpuBCPresZouHeW(dfloat* fNode, const dfloat rho_w);
+void gpuBCPresZouHeW(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z, const dfloat rho_w);
 
 
 /*
 *   @brief Applies pressure Zou-He boundary condition on east wall node, given pressure
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 *   @param rho_w: node's densisty
 */
 __device__
-void gpuBCPresZouHeE(dfloat* fNode, const dfloat rho_w);
+void gpuBCPresZouHeE(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z, const dfloat rho_w);
 
 
 /*
 *   @brief Applies pressure Zou-He boundary condition on front wall node, given pressure
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 *   @param rho_w: node's densisty
 */
 __device__
-void gpuBCPresZouHeF(dfloat* fNode, const dfloat rho_w);
+void gpuBCPresZouHeF(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z, const dfloat rho_w);
 
 
 /*
 *   @brief Applies pressure Zou-He boundary condition on back wall node, given pressure
-*   @param fNode[Q]: populations to apply boundary conditions
+*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
 *   @param rho_w: node's densisty
 */
 __device__
-void gpuBCPresZouHeB(dfloat* fNode, const dfloat rho_w);
+void gpuBCPresZouHeB(dfloat* f, const short unsigned int x, const short unsigned int y,
+   const short unsigned int z, const dfloat rho_w);
 
 
 #endif // !__BC_PRES_ZOUHE_D3Q19_H

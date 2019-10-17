@@ -22,397 +22,423 @@
 #include "D3Q27_BounceBack.h"
 
 __device__ 
-void gpuBCBounceBackN(dfloat* fNode)
+void gpuBCBounceBackN(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(4)] = fNode[(3)];
-    fNode[(8)] = fNode[(7)];
-    fNode[(12)] = fNode[(11)];
-    fNode[(13)] = fNode[(14)];
-    fNode[(18)] = fNode[(17)];
-    fNode[(20)] = fNode[(19)];
-    fNode[(22)] = fNode[(21)];
-    fNode[(23)] = fNode[(24)];
-    fNode[(26)] = fNode[(25)];
+    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
+    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
+    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
+    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
+    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    f[idxPop(x, y, z, 20)] = f[idxPop(x, y, z, 19)];
+    f[idxPop(x, y, z, 22)] = f[idxPop(x, y, z, 21)];
+    f[idxPop(x, y, z, 23)] = f[idxPop(x, y, z, 24)];
+    f[idxPop(x, y, z, 26)] = f[idxPop(x, y, z, 25)];
 }
 
 
 __device__ 
-void gpuBCBounceBackS(dfloat* fNode)
+void gpuBCBounceBackS(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(3)] = fNode[(4)];
-    fNode[(7)] = fNode[(8)];
-    fNode[(11)] = fNode[(12)];
-    fNode[(14)] = fNode[(13)];
-    fNode[(17)] = fNode[(18)];
-    fNode[(19)] = fNode[(20)];
-    fNode[(21)] = fNode[(22)];
-    fNode[(24)] = fNode[(23)];
-    fNode[(25)] = fNode[(26)];
+    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
+    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
+    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
+    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
+    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    f[idxPop(x, y, z, 19)] = f[idxPop(x, y, z, 20)];
+    f[idxPop(x, y, z, 21)] = f[idxPop(x, y, z, 22)];
+    f[idxPop(x, y, z, 24)] = f[idxPop(x, y, z, 23)];
+    f[idxPop(x, y, z, 25)] = f[idxPop(x, y, z, 26)];
 }
 
 
 __device__ 
-void gpuBCBounceBackW(dfloat* fNode)
+void gpuBCBounceBackW(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(1)] = fNode[(2)];
-    fNode[(7)] = fNode[(8)];
-    fNode[(9)] = fNode[(10)];
-    fNode[(13)] = fNode[(14)];
-    fNode[(15)] = fNode[(16)];
-    fNode[(19)] = fNode[(20)];
-    fNode[(21)] = fNode[(22)];
-    fNode[(23)] = fNode[(24)];
-    fNode[(26)] = fNode[(25)];
+    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
+    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
+    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
+    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
+    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    f[idxPop(x, y, z, 19)] = f[idxPop(x, y, z, 20)];
+    f[idxPop(x, y, z, 21)] = f[idxPop(x, y, z, 22)];
+    f[idxPop(x, y, z, 23)] = f[idxPop(x, y, z, 24)];
+    f[idxPop(x, y, z, 26)] = f[idxPop(x, y, z, 25)];
 }
 
 
 __device__ 
-void gpuBCBounceBackE(dfloat* fNode)
+void gpuBCBounceBackE(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(2)] = fNode[(1)];
-    fNode[(8)] = fNode[(7)];
-    fNode[(10)] = fNode[(9)];
-    fNode[(14)] = fNode[(13)];
-    fNode[(16)] = fNode[(15)];
-    fNode[(20)] = fNode[(19)];
-    fNode[(22)] = fNode[(21)];
-    fNode[(24)] = fNode[(23)];
-    fNode[(25)] = fNode[(26)];
+    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
+    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
+    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
+    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
+    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    f[idxPop(x, y, z, 20)] = f[idxPop(x, y, z, 19)];
+    f[idxPop(x, y, z, 22)] = f[idxPop(x, y, z, 21)];
+    f[idxPop(x, y, z, 24)] = f[idxPop(x, y, z, 23)];
+    f[idxPop(x, y, z, 25)] = f[idxPop(x, y, z, 26)];
 }
 
 
 __device__ 
-void gpuBCBounceBackF(dfloat* fNode)
+void gpuBCBounceBackF(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(6)] = fNode[(5)];
-    fNode[(10)] = fNode[(9)];
-    fNode[(12)] = fNode[(11)];
-    fNode[(15)] = fNode[(16)];
-    fNode[(17)] = fNode[(18)];
-    fNode[(20)] = fNode[(19)];
-    fNode[(21)] = fNode[(22)];
-    fNode[(24)] = fNode[(23)];
-    fNode[(26)] = fNode[(25)];
+    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
+    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
+    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
+    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    f[idxPop(x, y, z, 20)] = f[idxPop(x, y, z, 19)];
+    f[idxPop(x, y, z, 21)] = f[idxPop(x, y, z, 22)];
+    f[idxPop(x, y, z, 24)] = f[idxPop(x, y, z, 23)];
+    f[idxPop(x, y, z, 26)] = f[idxPop(x, y, z, 25)];
 }
 
 
 __device__ 
-void gpuBCBounceBackB(dfloat* fNode)
+void gpuBCBounceBackB(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(5)] = fNode[(6)];
-    fNode[(9)] = fNode[(10)];
-    fNode[(11)] = fNode[(12)];
-    fNode[(16)] = fNode[(15)];
-    fNode[(18)] = fNode[(17)];
-    fNode[(19)] = fNode[(20)];
-    fNode[(22)] = fNode[(21)];
-    fNode[(23)] = fNode[(24)];
-    fNode[(25)] = fNode[(26)];
+    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
+    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
+    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
+    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    f[idxPop(x, y, z, 19)] = f[idxPop(x, y, z, 20)];
+    f[idxPop(x, y, z, 22)] = f[idxPop(x, y, z, 21)];
+    f[idxPop(x, y, z, 23)] = f[idxPop(x, y, z, 24)];
+    f[idxPop(x, y, z, 25)] = f[idxPop(x, y, z, 26)];
 }
 
 
 __device__ 
-void gpuBCBounceBackNW(dfloat* fNode)
+void gpuBCBounceBackNW(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(1)] = fNode[(2)];
-    fNode[(4)] = fNode[(3)];
-    fNode[(9)] = fNode[(10)];
-    fNode[(12)] = fNode[(11)];
-    fNode[(13)] = fNode[(14)];
-    fNode[(15)] = fNode[(16)];
-    fNode[(18)] = fNode[(17)];
-    fNode[(23)] = fNode[(24)];
-    fNode[(26)] = fNode[(25)];
+    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
+    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
+    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
+    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
+    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
+    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    f[idxPop(x, y, z, 23)] = f[idxPop(x, y, z, 24)];
+    f[idxPop(x, y, z, 26)] = f[idxPop(x, y, z, 25)];
     //Dead Pop are: [7, 8, 19, 20, 21, 22]
 }
 
 
 __device__ 
-void gpuBCBounceBackNE(dfloat* fNode)
+void gpuBCBounceBackNE(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(2)] = fNode[(1)];
-    fNode[(4)] = fNode[(3)];
-    fNode[(8)] = fNode[(7)];
-    fNode[(10)] = fNode[(9)];
-    fNode[(12)] = fNode[(11)];
-    fNode[(16)] = fNode[(15)];
-    fNode[(18)] = fNode[(17)];
-    fNode[(20)] = fNode[(19)];
-    fNode[(22)] = fNode[(21)];
+    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
+    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
+    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
+    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
+    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
+    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    f[idxPop(x, y, z, 20)] = f[idxPop(x, y, z, 19)];
+    f[idxPop(x, y, z, 22)] = f[idxPop(x, y, z, 21)];
     //Dead Pop are: [13, 14, 23, 24, 25, 26]
 }
 
 
 __device__ 
-void gpuBCBounceBackNF(dfloat* fNode)
+void gpuBCBounceBackNF(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(4)] = fNode[(3)];
-    fNode[(6)] = fNode[(5)];
-    fNode[(8)] = fNode[(7)];
-    fNode[(10)] = fNode[(9)];
-    fNode[(12)] = fNode[(11)];
-    fNode[(13)] = fNode[(14)];
-    fNode[(15)] = fNode[(16)];
-    fNode[(20)] = fNode[(19)];
-    fNode[(26)] = fNode[(25)];
+    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
+    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
+    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
+    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
+    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
+    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
+    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    f[idxPop(x, y, z, 20)] = f[idxPop(x, y, z, 19)];
+    f[idxPop(x, y, z, 26)] = f[idxPop(x, y, z, 25)];
     //Dead Pop are: [17, 18, 21, 22, 23, 24]
 }
 
 
 __device__ 
-void gpuBCBounceBackNB(dfloat* fNode)
+void gpuBCBounceBackNB(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(4)] = fNode[(3)];
-    fNode[(5)] = fNode[(6)];
-    fNode[(8)] = fNode[(7)];
-    fNode[(9)] = fNode[(10)];
-    fNode[(13)] = fNode[(14)];
-    fNode[(16)] = fNode[(15)];
-    fNode[(18)] = fNode[(17)];
-    fNode[(22)] = fNode[(21)];
-    fNode[(23)] = fNode[(24)];
+    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
+    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
+    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
+    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
+    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
+    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    f[idxPop(x, y, z, 22)] = f[idxPop(x, y, z, 21)];
+    f[idxPop(x, y, z, 23)] = f[idxPop(x, y, z, 24)];
     //Dead Pop are: [11, 12, 19, 20, 25, 26]
 }
 
 
 __device__ 
-void gpuBCBounceBackSW(dfloat* fNode)
+void gpuBCBounceBackSW(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(1)] = fNode[(2)];
-    fNode[(3)] = fNode[(4)];
-    fNode[(7)] = fNode[(8)];
-    fNode[(9)] = fNode[(10)];
-    fNode[(11)] = fNode[(12)];
-    fNode[(15)] = fNode[(16)];
-    fNode[(17)] = fNode[(18)];
-    fNode[(19)] = fNode[(20)];
-    fNode[(21)] = fNode[(22)];
+    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
+    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
+    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
+    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
+    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
+    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    f[idxPop(x, y, z, 19)] = f[idxPop(x, y, z, 20)];
+    f[idxPop(x, y, z, 21)] = f[idxPop(x, y, z, 22)];
     //Dead Pop are: [13, 14, 23, 24, 25, 26]
 }
 
 
 
 __device__ 
-void gpuBCBounceBackSE(dfloat* fNode)
+void gpuBCBounceBackSE(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(2)] = fNode[(1)];
-    fNode[(3)] = fNode[(4)];
-    fNode[(10)] = fNode[(9)];
-    fNode[(11)] = fNode[(12)];
-    fNode[(14)] = fNode[(13)];
-    fNode[(16)] = fNode[(15)];
-    fNode[(17)] = fNode[(18)];
-    fNode[(24)] = fNode[(23)];
-    fNode[(25)] = fNode[(26)];
+    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
+    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
+    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
+    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
+    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
+    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    f[idxPop(x, y, z, 24)] = f[idxPop(x, y, z, 23)];
+    f[idxPop(x, y, z, 25)] = f[idxPop(x, y, z, 26)];
     //Dead Pop are: [7, 8, 19, 20, 21, 22]
 }
 
 
 __device__ 
-void gpuBCBounceBackSF(dfloat* fNode)
+void gpuBCBounceBackSF(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(3)] = fNode[(4)];
-    fNode[(6)] = fNode[(5)];
-    fNode[(7)] = fNode[(8)];
-    fNode[(10)] = fNode[(9)];
-    fNode[(14)] = fNode[(13)];
-    fNode[(15)] = fNode[(16)];
-    fNode[(17)] = fNode[(18)];
-    fNode[(21)] = fNode[(22)];
-    fNode[(24)] = fNode[(23)];
+    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
+    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
+    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
+    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
+    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
+    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    f[idxPop(x, y, z, 21)] = f[idxPop(x, y, z, 22)];
+    f[idxPop(x, y, z, 24)] = f[idxPop(x, y, z, 23)];
     //Dead Pop are: [11, 12, 19, 20, 25, 26]
 }
 
 
 __device__ 
-void gpuBCBounceBackSB(dfloat* fNode)
+void gpuBCBounceBackSB(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(3)] = fNode[(4)];
-    fNode[(5)] = fNode[(6)];
-    fNode[(7)] = fNode[(8)];
-    fNode[(9)] = fNode[(10)];
-    fNode[(11)] = fNode[(12)];
-    fNode[(14)] = fNode[(13)];
-    fNode[(16)] = fNode[(15)];
-    fNode[(19)] = fNode[(20)];
-    fNode[(25)] = fNode[(26)];
+    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
+    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
+    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
+    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
+    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
+    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
+    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    f[idxPop(x, y, z, 19)] = f[idxPop(x, y, z, 20)];
+    f[idxPop(x, y, z, 25)] = f[idxPop(x, y, z, 26)];
     //Dead Pop are: [17, 18, 21, 22, 23, 24]
 }
 
 
 __device__ 
-void gpuBCBounceBackWF(dfloat* fNode)
+void gpuBCBounceBackWF(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(1)] = fNode[(2)];
-    fNode[(6)] = fNode[(5)];
-    fNode[(7)] = fNode[(8)];
-    fNode[(12)] = fNode[(11)];
-    fNode[(13)] = fNode[(14)];
-    fNode[(15)] = fNode[(16)];
-    fNode[(17)] = fNode[(18)];
-    fNode[(21)] = fNode[(22)];
-    fNode[(26)] = fNode[(25)];
+    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
+    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
+    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
+    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
+    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
+    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    f[idxPop(x, y, z, 21)] = f[idxPop(x, y, z, 22)];
+    f[idxPop(x, y, z, 26)] = f[idxPop(x, y, z, 25)];
     //Dead Pop are: [9, 10, 19, 20, 23, 24]
 }
 
 
 __device__ 
-void gpuBCBounceBackWB(dfloat* fNode)
+void gpuBCBounceBackWB(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(1)] = fNode[(2)];
-    fNode[(5)] = fNode[(6)];
-    fNode[(7)] = fNode[(8)];
-    fNode[(9)] = fNode[(10)];
-    fNode[(11)] = fNode[(12)];
-    fNode[(13)] = fNode[(14)];
-    fNode[(18)] = fNode[(17)];
-    fNode[(19)] = fNode[(20)];
-    fNode[(23)] = fNode[(24)];
+    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
+    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
+    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
+    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
+    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
+    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
+    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    f[idxPop(x, y, z, 19)] = f[idxPop(x, y, z, 20)];
+    f[idxPop(x, y, z, 23)] = f[idxPop(x, y, z, 24)];
     //Dead Pop are: [15, 16, 21, 22, 25, 26]
 
 }
 
 
 __device__ 
-void gpuBCBounceBackEF(dfloat* fNode)
+void gpuBCBounceBackEF(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(2)] = fNode[(1)];
-    fNode[(6)] = fNode[(5)];
-    fNode[(8)] = fNode[(7)];
-    fNode[(10)] = fNode[(9)];
-    fNode[(12)] = fNode[(11)];
-    fNode[(14)] = fNode[(13)];
-    fNode[(17)] = fNode[(18)];
-    fNode[(20)] = fNode[(19)];
-    fNode[(24)] = fNode[(23)];
+    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
+    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
+    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
+    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
+    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
+    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
+    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    f[idxPop(x, y, z, 20)] = f[idxPop(x, y, z, 19)];
+    f[idxPop(x, y, z, 24)] = f[idxPop(x, y, z, 23)];
     //Dead Pop are: [15, 16, 21, 22, 25, 26]
 }
 
 
 __device__ 
-void gpuBCBounceBackEB(dfloat* fNode)
+void gpuBCBounceBackEB(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(2)] = fNode[(1)];
-    fNode[(5)] = fNode[(6)];
-    fNode[(8)] = fNode[(7)];
-    fNode[(11)] = fNode[(12)];
-    fNode[(14)] = fNode[(13)];
-    fNode[(16)] = fNode[(15)];
-    fNode[(18)] = fNode[(17)];
-    fNode[(22)] = fNode[(21)];
-    fNode[(25)] = fNode[(26)];
+    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
+    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
+    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
+    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
+    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
+    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    f[idxPop(x, y, z, 22)] = f[idxPop(x, y, z, 21)];
+    f[idxPop(x, y, z, 25)] = f[idxPop(x, y, z, 26)];
     //Dead Pop are: [9, 10, 19, 20, 23, 24]
 }
 
 
 __device__ 
-void gpuBCBounceBackNWF(dfloat* fNode)
+void gpuBCBounceBackNWF(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(1)] = fNode[(2)];
-    fNode[(4)] = fNode[(3)];
-    fNode[(6)] = fNode[(5)];
-    fNode[(12)] = fNode[(11)];
-    fNode[(13)] = fNode[(14)];
-    fNode[(15)] = fNode[(16)];
-    fNode[(26)] = fNode[(25)];
+    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
+    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
+    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
+    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
+    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
+    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    f[idxPop(x, y, z, 26)] = f[idxPop(x, y, z, 25)];
     //Dead Pop are: [7, 8, 9, 10, 17, 18, 19, 20, 21, 22, 23, 24]
 }
 
 
 __device__ 
-void gpuBCBounceBackNWB(dfloat* fNode)
+void gpuBCBounceBackNWB(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(1)] = fNode[(2)];
-    fNode[(4)] = fNode[(3)];
-    fNode[(5)] = fNode[(6)];
-    fNode[(9)] = fNode[(10)];
-    fNode[(13)] = fNode[(14)];
-    fNode[(18)] = fNode[(17)];
-    fNode[(23)] = fNode[(24)];
+    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
+    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
+    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
+    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
+    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
+    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    f[idxPop(x, y, z, 23)] = f[idxPop(x, y, z, 24)];
     //Dead Pop are: [7, 8, 11, 12, 15, 16, 19, 20, 21, 22, 25, 26]
 }
 
 
 __device__ 
-void gpuBCBounceBackNEF(dfloat* fNode)
+void gpuBCBounceBackNEF(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(2)] = fNode[(1)];
-    fNode[(4)] = fNode[(3)];
-    fNode[(6)] = fNode[(5)];
-    fNode[(8)] = fNode[(7)];
-    fNode[(10)] = fNode[(9)];
-    fNode[(12)] = fNode[(11)];
-    fNode[(20)] = fNode[(19)];
+    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
+    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
+    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
+    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
+    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
+    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
+    f[idxPop(x, y, z, 20)] = f[idxPop(x, y, z, 19)];
     //Dead Pop are: [13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26]
 }
 
 
 __device__ 
-void gpuBCBounceBackNEB(dfloat* fNode)
+void gpuBCBounceBackNEB(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(2)] = fNode[(1)];
-    fNode[(4)] = fNode[(3)];
-    fNode[(5)] = fNode[(6)];
-    fNode[(8)] = fNode[(7)];
-    fNode[(16)] = fNode[(15)];
-    fNode[(18)] = fNode[(17)];
-    fNode[(22)] = fNode[(21)];
+    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
+    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
+    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
+    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
+    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    f[idxPop(x, y, z, 22)] = f[idxPop(x, y, z, 21)];
     //Dead Pop are: [9, 10, 11, 12, 13, 14, 19, 20, 23, 24, 25, 26]
 
 }
 
 
 __device__ 
-void gpuBCBounceBackSWF(dfloat* fNode)
+void gpuBCBounceBackSWF(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(1)] = fNode[(2)];
-    fNode[(3)] = fNode[(4)];
-    fNode[(6)] = fNode[(5)];
-    fNode[(7)] = fNode[(8)];
-    fNode[(15)] = fNode[(16)];
-    fNode[(17)] = fNode[(18)];
-    fNode[(21)] = fNode[(22)];
+    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
+    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
+    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
+    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
+    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    f[idxPop(x, y, z, 21)] = f[idxPop(x, y, z, 22)];
     //Dead Pop are: [9, 10, 11, 12, 13, 14, 19, 20, 23, 24, 25, 26]
 }
 
 
 __device__ 
-void gpuBCBounceBackSWB(dfloat* fNode)
+void gpuBCBounceBackSWB(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(1)] = fNode[(2)];
-    fNode[(3)] = fNode[(4)];
-    fNode[(5)] = fNode[(6)];
-    fNode[(7)] = fNode[(8)];
-    fNode[(9)] = fNode[(10)];
-    fNode[(11)] = fNode[(12)];
-    fNode[(19)] = fNode[(20)];
+    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
+    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
+    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
+    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
+    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
+    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
+    f[idxPop(x, y, z, 19)] = f[idxPop(x, y, z, 20)];
     //Dead Pop are: [13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26]
 }
 
 
 __device__ 
-void gpuBCBounceBackSEF(dfloat* fNode)
+void gpuBCBounceBackSEF(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(2)] = fNode[(1)];
-    fNode[(3)] = fNode[(4)];
-    fNode[(6)] = fNode[(5)];
-    fNode[(10)] = fNode[(9)];
-    fNode[(14)] = fNode[(13)];
-    fNode[(17)] = fNode[(18)];
-    fNode[(24)] = fNode[(23)];
+    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
+    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
+    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
+    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
+    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
+    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    f[idxPop(x, y, z, 24)] = f[idxPop(x, y, z, 23)];
     //Dead Pop are: [7, 8, 11, 12, 15, 16, 19, 20, 21, 22, 25, 26]
 }
 
 
 __device__ 
-void gpuBCBounceBackSEB(dfloat* fNode)
+void gpuBCBounceBackSEB(dfloat* f, const short unsigned int x, const short unsigned int y,
+    const short unsigned int z)
 {
-    fNode[(2)] = fNode[(1)];
-    fNode[(3)] = fNode[(4)];
-    fNode[(5)] = fNode[(6)];
-    fNode[(11)] = fNode[(12)];
-    fNode[(14)] = fNode[(13)];
-    fNode[(16)] = fNode[(15)];
-    fNode[(25)] = fNode[(26)];
+    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
+    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
+    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
+    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
+    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
+    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    f[idxPop(x, y, z, 25)] = f[idxPop(x, y, z, 26)];
     //Dead Pop are: [7, 8, 9, 10, 17, 18, 19, 20, 21, 22, 23, 24]
 }
