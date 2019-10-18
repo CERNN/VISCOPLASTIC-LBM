@@ -219,8 +219,9 @@ typedef struct nodeTypeMap {
     __device__ __host__
     char isBCLocal()
     {
-        return !(((map >> BC_SCHEME_OFFSET) & BC_SCHEME_FREE_SLIP) || 
-            ((map >> BC_SCHEME_OFFSET) & BC_SCHEME_SPECIAL));
+        // if it's not free slip nor special, is local
+        return !((this->getSchemeBC() == BC_SCHEME_FREE_SLIP) || 
+            (this->getSchemeBC() == BC_SCHEME_SPECIAL));
     }
 
 } NodeTypeMap;

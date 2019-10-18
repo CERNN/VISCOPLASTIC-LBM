@@ -64,18 +64,13 @@ typedef struct boundaryConditionsInfo{
     __host__
     void setupBoundaryConditionsInfo(NodeTypeMap* mapBC)
     {
-        printf("aqui\n"); fflush(stdout);
         totalBCNodes = 0;
         totalNonLocalBCNodes = 0;
 
-
         // get number of BC nodes
-        int x, y, z;
-        for(x = 0; x < NX; x++)
-        {    
-            for(y = 0; y < NY; y++)
-            {
-                for(z = 0; z < NZ; z++)
+        for(int z = 0; z < NZ; z++)
+            for(int y = 0; y < NY; y++)
+                for(int x = 0; x < NX; x++)
                 {
                     NodeTypeMap ntm = mapBC[idxScalar(x, y, z)];
                     if(ntm.getIsUsed())
@@ -86,9 +81,7 @@ typedef struct boundaryConditionsInfo{
                                 totalNonLocalBCNodes++;
                         }
                 }
-            }
-        }
-        
+
         if(totalNonLocalBCNodes <= 0)
             return;
 
@@ -97,9 +90,9 @@ typedef struct boundaryConditionsInfo{
 
         // update index of non local boundary conditions
         int i = 0;
-        for(int x = 0; x < NX; x++)
+        for(int z = 0; z < NZ; z++)
             for(int y = 0; y < NY; y++)
-                for(int z = 0; z < NZ; z++)
+                for(int x = 0; x < NX; x++)
                 {
                     NodeTypeMap ntm = mapBC[idxScalar(x, y, z)];
                     if(ntm.getIsUsed())
