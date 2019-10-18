@@ -358,7 +358,6 @@ void gpuApplyNonLocalBC(dfloat* pop,
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
     if(i >= totalNonLocalBC)
         return;
-
     // converts 1D index to 3D location
     const size_t idx = idxNonLocal[i];
     const unsigned int x = idx % NX;
@@ -368,7 +367,7 @@ void gpuApplyNonLocalBC(dfloat* pop,
 #pragma unroll
     for (unsigned char j = 0; j < Q; j++)
         popAuxNonLocal[i*Q+j] = pop[idxPop(x, y, z, j)];
-    
+
     gpuNonLocalBoundaryConditions(&(mapBC[idx]), pop, &(popAuxNonLocal[i*Q]), x, y, z);
 }
 

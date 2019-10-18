@@ -155,12 +155,15 @@ int main()
             dim3 gridBC(bcInfo.totalNonLocalBCNodes/32, 1, 1);
             if(bcInfo.totalNonLocalBCNodes%32)
                 gridBC.x++;
+            
+            checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
             // applies to pop->pop (auxiliary populations) non local boundary conditions
             gpuApplyNonLocalBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
                 (pop->popAux, pop->mapBC, pop->pop, 
                 bcInfo.idxNonLocalBCNodes, bcInfo.totalNonLocalBCNodes);
             getLastCudaError("application of non local boundary conditions error");
 
+            checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
             // synchronizes the boundary conditions applied to pop->popAux (valid populations)
             gpuSynchronizeNonLocalBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
                 (pop->popAux, pop->pop, 
