@@ -16,28 +16,31 @@
 
 /* --------------------- PRECISION AND VEL. SET DEFINES -------------------- */
 typedef double dfloat;      // single or double precision
-#define D3Q19               // velocity set to use
+#define D3Q27               // velocity set to use
 /* ------------------------------------------------------------------------- */
 
 
 #ifdef D3Q19
 #include "velocitySets/D3Q19.h"
-#elif D3Q27
+#endif // !D3Q19
+#ifdef D3Q27
 #include "velocitySets/D3Q27.h"
-#endif // !D3Q27 && !D3Q19
+#endif // !D3Q27
 
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
-#define ID_SIM "000"            // prefix for simulation's files
-#define PATH_FILES "./tests/"   // path to save simulation's files
+#define ID_SIM "001"            // prefix for simulation's files
+#define PATH_FILES "parallelPlatesHWBB"  // path to save simulation's files
+                    // the final path is PATH_FILES/ID_SIM
+                    // DO NOT ADD "/" AT THE END OF PATH_FILES
 #define MACR_SAVE 0             // saves macroscopics every MACR_SAVE steps
-#define POP_SAVE false          // saves last step's population
+#define POP_SAVE false           // saves last step's population
 /* ------------------------------------------------------------------------- */
 
 
 /* ------------------------- DATA TREATMENT DEFINES ------------------------ */
 #define DATA_REPORT 1000                // report every DATA_REPORT steps
-#define DATA_STOP true                 // stop condition by treated data
+#define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
 constexpr dfloat RESID_MAX = 1e-5;      // simulation maximal residual
 /* ------------------------------------------------------------------------- */
@@ -45,9 +48,9 @@ constexpr dfloat RESID_MAX = 1e-5;      // simulation maximal residual
 
 /* --------------------- INITIALIZATION LOADING DEFINES -------------------- */
 constexpr int INI_STEP = 0; // initial simulation step (0 default)
-#define LOAD_POP false      // loads population from binary file (file names  
+#define LOAD_POP false      // loads population from binary file (file names
                             // defined below; LOAD_MACR must be false)
-#define LOAD_MACR false     // loads macroscopics from binary file (file names  
+#define LOAD_MACR false     // loads macroscopics from binary file (file names
                             // defined below; LOAD_POP must be false)
 
 // file names to load
@@ -60,35 +63,35 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
-constexpr int N_STEPS = 10000; // maximum number of time steps
+constexpr int N_STEPS = 10000;      // maximum number of time steps
 
 constexpr unsigned int N = 32;
-constexpr unsigned int NX = N;      // size x of the grid 
-                                    // (multiple of 32 for better performance)
-constexpr unsigned int NY = N;      // size y of the grid
-constexpr unsigned int NZ = N;      // size z of the grid
+constexpr unsigned int NX = N;        // size x of the grid 
+                                      // (32 multiple for better performance)
+constexpr unsigned int NY = N;        // size y of the grid
+constexpr unsigned int NZ = N;        // size z of the grid
 
-constexpr dfloat FX = 0;    // force in x
-constexpr dfloat FY = 0;    // force in y
-constexpr dfloat FZ = 0;    // force in z
-constexpr dfloat FX_D3 = FX/3;    // util for regularization
-constexpr dfloat FY_D3 = FY/3;    // util for regularization
-constexpr dfloat FZ_D3 = FZ/3;    // util for regularization
+constexpr dfloat U_MAX = 0.05;        // max velocity
 
-constexpr dfloat U_MAX = 0.05;    // max velocity
+constexpr dfloat TAU = 0.9;              // relaxation time
 
-constexpr dfloat TAU = 0.9;             // relaxation time
+constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
+constexpr dfloat T_OMEGA = 1-OMEGA;      // 1-omega, for collision
+constexpr dfloat TT_OMEGA = 1-0.5*OMEGA; // 1-0.5*omega, for force term
 
-constexpr dfloat OMEGA = 1.0 / TAU;     // (tau)^-1
-constexpr dfloat T_OMEGA = 1 - OMEGA;   // 1-omega, for collision
-constexpr dfloat TT_OMEGA = 1 - 0.5*OMEGA; // 1-0.5*omega, for force term
+constexpr dfloat RHO_0 = 0.5;         // initial rho
 
-constexpr dfloat RHO_0 = 1;         // initial rho
+constexpr dfloat FX = 0;              // force in x
+constexpr dfloat FY = 0;              // force in y
+constexpr dfloat FZ = 0;              // force in z
+constexpr dfloat FX_D3 = FX/3;        // util for regularization
+constexpr dfloat FY_D3 = FY/3;        // util for regularization
+constexpr dfloat FZ_D3 = FZ/3;        // util for regularization
 
 // values options for boundary conditions
 __device__ const dfloat uxBC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
 __device__ const dfloat uyBC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
-__device__ const dfloat uzBC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
+__device__ const dfloat uzBC[8] = { 0, U_MAX/2, -U_MAX/2, 0, 0, 0, 0, 0 };
 __device__ const dfloat rhoBC[8] = { RHO_0, 1, 1, 1, 1, 1, 1, 1 };
 /* ------------------------------------------------------------------------- */
 

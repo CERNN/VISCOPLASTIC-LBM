@@ -1,0 +1,20 @@
+SIMULATION INFORMATION:
+                 NX: 128
+                 NY: 128
+                 NZ: 128
+           Reynolds: 10.00
+                Tau: 9.000000e-01
+               Umax: 5.000000e-02
+           Residual: 1.000000e+00
+     Residual steps: 0
+         Save steps: 1000
+             Nsteps: 9999
+              MLUPS: 1561.1
+          Bandwidht: 442.0 (Gb/s)
+
+CUDA INFORMATION
+               name: Tesla P100-PCIE-16GB
+    multiprocessors: 56
+ compute capability: 6.0
+        ECC enabled: 1
+            threads: (64, 1, 1)

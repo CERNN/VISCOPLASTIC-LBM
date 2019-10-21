@@ -83,7 +83,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
 
     }
-    else if (y == (NY - 1) && x == (NX - 1) && z == (NZ - 1)) // NWF
+    else if (y == (NY - 1) && x == (NX - 1) && z == (NZ - 1)) // NEF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
@@ -169,7 +169,8 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
 
 __device__
 void gpuSchSpecial(NodeTypeMap* gpuNT, 
-    dfloat* f, 
+    dfloat* f,
+    dfloat* fNode, 
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z)

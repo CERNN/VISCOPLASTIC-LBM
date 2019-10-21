@@ -1,8 +1,9 @@
 /*
 *   @file parallelPlatesZouHe.cu
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
-*   @brief Parallel plates using force in Z and bounce boundary conditions
-*          N, S: wall; B: periodic; F: periodic; W, E: periodic
+*   @brief Parallel plates using bounce boundary conditions in walls,
+*          periodic condition in flow direction and force in Z
+*          N, S: wall; B, F: periodic; W, E: periodic
 *   @version 0.2.0
 *   @date 16/08/2019
 */
@@ -82,7 +83,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
 
     }
-    else if (y == (NY - 1) && x == (NX - 1) && z == (NZ - 1)) // NWF
+    else if (y == (NY - 1) && x == (NX - 1) && z == (NZ - 1)) // NEF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
@@ -168,7 +169,8 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
 
 __device__
 void gpuSchSpecial(NodeTypeMap* gpuNT, 
-    dfloat* f, 
+    dfloat* f,
+    dfloat* fNode, 
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z)

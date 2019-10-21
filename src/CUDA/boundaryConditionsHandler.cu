@@ -23,7 +23,11 @@
 
 
 __device__
-void gpuBoundaryConditions(NodeTypeMap* gpuNT, dfloat * f, const short unsigned int x, const short unsigned int y, const short unsigned int z)
+void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT, 
+    dfloat* f,
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z)
 {
     /*
     -> BC_SCHEME
@@ -32,28 +36,43 @@ void gpuBoundaryConditions(NodeTypeMap* gpuNT, dfloat * f, const short unsigned 
     */
     switch(gpuNT->getSchemeBC())
     {
-    case BC_NULL:
-        return;
     case BC_SCHEME_BOUNCE_BACK:
         gpuSchBounceBack(gpuNT, f, x, y, z);
-        break;
-    case BC_SCHEME_FREE_SLIP:
-        gpuSchFreeSlip(gpuNT, f, x, y, z);
         break;
     case BC_SCHEME_VEL_BOUNCE_BACK:
         gpuSchVelBounceBack(gpuNT, f, x, y, z);
         break;  
     case BC_SCHEME_VEL_ZOUHE:
         gpuSchVelZouHe(gpuNT, f, x, y, z);
-            break;
+        break;
     case BC_SCHEME_PRES_ZOUHE:
         gpuSchPresZouHe(gpuNT, f, x, y, z);
-    case BC_SCHEME_SPECIAL:
-        gpuSchSpecial(gpuNT, f, x, y, z);
     default:
         break;
     }
 }
+
+
+__device__
+void gpuNonLocalBoundaryConditions(NodeTypeMap* gpuNT, dfloat * f, dfloat* fNode, const short unsigned int x, const short unsigned int y, const short unsigned int z)
+{
+    /*
+    -> BC_SCHEME
+        -> DIRECTION
+            -> GEOMETRY
+    */
+    switch(gpuNT->getSchemeBC())
+    {
+    case BC_SCHEME_FREE_SLIP:
+        gpuSchFreeSlip(gpuNT, f, fNode, x, y, z);
+        break;
+    case BC_SCHEME_SPECIAL:
+        gpuSchSpecial(gpuNT, f, fNode, x, y, z);
+    default:
+        break;
+    }
+}
+
 
 __device__
 void gpuSchBounceBack(NodeTypeMap* gpuNT, dfloat* f, const short unsigned int x, const short unsigned int y, const short unsigned int z)
@@ -228,100 +247,6 @@ void gpuSchVelBounceBack(NodeTypeMap* gpuNT, dfloat* f, const short unsigned int
 
 
 __device__
-void gpuSchFreeSlip(NodeTypeMap* gpuNT, dfloat* f, const short unsigned int x, const short unsigned int y, const short unsigned int z)
-{
-    switch (gpuNT->getDirection())
-    {
-    case NORTH:
-        gpuBCFreeSlipN(f, x, y, z);
-        break;
-
-    case SOUTH:
-        gpuBCFreeSlipS(f, x, y, z);
-        break;
-
-    case WEST:
-        gpuBCFreeSlipW(f, x, y, z);
-        break;
-
-    case EAST:
-        gpuBCFreeSlipE(f, x, y, z);
-        break;
-
-    case FRONT:
-        gpuBCFreeSlipF(f, x, y, z);
-        break;
-
-    case BACK:
-        gpuBCFreeSlipB(f, x, y, z);
-        break;
-
-    case NORTH_WEST:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipNW(f, x, y, z);
-        break;
-
-    case NORTH_EAST:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipNE(f, x, y, z);
-        break;
-
-    case NORTH_FRONT:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipNF(f, x, y, z);
-        break;
-
-    case NORTH_BACK:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipNB(f, x, y, z);
-        break;
-
-    case SOUTH_WEST:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipSW(f, x, y, z);
-        break;
-
-    case SOUTH_EAST:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipSE(f, x, y, z);
-        break;
-
-    case SOUTH_FRONT:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipSF(f, x, y, z);
-        break;
-
-    case SOUTH_BACK:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipSB(f, x, y, z);
-        break;
-
-    case WEST_FRONT:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipWF(f, x, y, z);
-        break;
-
-    case WEST_BACK:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipWB(f, x, y, z);
-        break;
-
-    case EAST_FRONT:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipEF(f, x, y, z);
-        break;
-
-    case EAST_BACK:
-        if (gpuNT->getGeometry() == CONCAVE)
-            gpuBCFreeSlipEB(f, x, y, z);
-        break;
-    default:
-        break;
-    }
-}
-
-
-__device__
 void gpuSchPresZouHe(NodeTypeMap* gpuNT, dfloat * f, const short unsigned int x, const short unsigned int y, const short unsigned int z)
 {
 #ifdef D3Q19 // support only for D3Q19
@@ -396,4 +321,38 @@ void gpuSchVelZouHe(NodeTypeMap * gpuNT, dfloat * f, const short unsigned int x,
         break;
     }
 #endif
+}
+
+
+__device__
+void gpuSchFreeSlip(NodeTypeMap* gpuNT, dfloat* f, dfloat* fNode, const short unsigned int x, const short unsigned int y, const short unsigned int z)
+{
+    switch (gpuNT->getDirection())
+    {
+    case NORTH:
+        gpuBCFreeSlipN(f, fNode, x, y, z);
+        break;
+
+    case SOUTH:
+        gpuBCFreeSlipS(f, fNode, x, y, z);
+        break;
+
+    case WEST:
+        gpuBCFreeSlipW(f, fNode, x, y, z);
+        break;
+
+    case EAST:
+        gpuBCFreeSlipE(f, fNode, x, y, z);
+        break;
+
+    case FRONT:
+        gpuBCFreeSlipF(f, fNode, x, y, z);
+        break;
+
+    case BACK:
+        gpuBCFreeSlipB(f, fNode, x, y, z);
+        break;
+    default:
+        break;
+    }
 }

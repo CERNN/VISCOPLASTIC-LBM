@@ -18,14 +18,15 @@
 #include "boundaryConditionsSchemes/D3Q19_VelBounceBack.h"
 #include "boundaryConditionsSchemes/D3Q19_VelZouHe.h"
 #include "boundaryConditionsSchemes/D3Q19_PresZouHe.h"
-#elif D3Q27
+#endif // !D3Q19
+#ifdef D3Q27
 #include "boundaryConditionsSchemes/D3Q27_BounceBack.h"
 #include "boundaryConditionsSchemes/D3Q27_FreeSlip.h"
-#endif
+#endif // !D3Q27
 
 
 /*
-*   @brief Applies boundary conditions given node type and its population
+*   @brief Applies local boundary conditions given node type and its population
 *   @param gpuNT: node's map
 *   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
 *   @param x: node's x value
@@ -33,8 +34,26 @@
 *   @param z: node's z value
 */
 __device__
-void gpuBoundaryConditions(NodeTypeMap* gpuNT, 
+void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT, 
+    dfloat* f,
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z);
+
+
+/*
+*   @brief Applies non local boundary conditions given node type and its population
+*   @param gpuNT: node's map
+*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19 (used by non local boundary conditions)
+*   @param fNode[Q]: node's population to apply boundary conditions
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
+*/
+__device__
+void gpuNonLocalBoundaryConditions(NodeTypeMap* gpuNT, 
     dfloat* f, 
+    dfloat* fNode,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
@@ -44,13 +63,15 @@ void gpuBoundaryConditions(NodeTypeMap* gpuNT,
 *   @brief Applies specials boundaries conditions given node's population
 *   @param gpuNT: node's map
 *   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param fNode[Q]: node's population to apply boundary conditions
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
 */
 __device__
 void gpuSchSpecial(NodeTypeMap* gpuNT, 
-    dfloat* f, 
+    dfloat* f,
+    dfloat* fNode, 
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
@@ -90,22 +111,6 @@ void gpuSchVelBounceBack(NodeTypeMap* gpuNT,
 
 
 /*
-*   @brief Applies free slip boundary condition given node's population
-*   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
-*   @param x: node's x value
-*   @param y: node's y value
-*   @param z: node's z value
-*/
-__device__
-void gpuSchFreeSlip(NodeTypeMap* gpuNT, 
-    dfloat* f, 
-    const short unsigned int x, 
-    const short unsigned int y, 
-    const short unsigned int z);
-
-
-/*
 *   @brief Applies pressure non-equilibrium bounce back boundary condition 
 *          given node's population
 *   @param gpuNT: node's map
@@ -133,6 +138,24 @@ void gpuSchPresZouHe(NodeTypeMap* gpuNT,
 __device__
 void gpuSchVelZouHe(NodeTypeMap* gpuNT, 
     dfloat* f, 
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z);
+
+
+/*
+*   @brief Applies free slip boundary condition (which is a special streming) given node's type
+*   @param gpuNT: node's map
+*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param fNode[Q]: node's population to apply boundary conditions
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
+*/
+__device__
+void gpuSchFreeSlip(NodeTypeMap* gpuNT, 
+    dfloat* f, 
+    dfloat* fNode, 
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);

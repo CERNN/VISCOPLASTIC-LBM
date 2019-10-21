@@ -1,7 +1,7 @@
 /*
-*   @file bcBounceBackD3Q19.h
+*   @file bcBounceBackD3Q27.h
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
-*   @brief Bounce back boundary condition for D3Q19
+*   @brief Bounce back boundary condition for D3Q27
 *   @version 0.2.0
 *   @date 16/08/2019
 */

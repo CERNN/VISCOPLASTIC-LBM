@@ -24,6 +24,7 @@
 
 void treatData(MacrProc* processing)
 {
+    /* DATA TREATMENT EXAMPLE */
     dfloat denRes = 0.0, numRes = 0.0; // denominator and numerator for residual
     Macroscopics* macrCurr = processing->macrCurr; 
     Macroscopics* macrOld = processing->macrOld; 
@@ -80,6 +81,7 @@ void treatData(MacrProc* processing)
 
 bool stopSim(MacrProc* processing)
 {
+    /* SIMULATIONS STOP CONDITIONS EXAMPLE */
     if(processing->residual < RESID_MAX)
         return true;
     if(processing->avgRho < 0)
@@ -90,11 +92,12 @@ bool stopSim(MacrProc* processing)
 
 void printTreatData(MacrProc* processing)
 {
+    /* PRINT TREATED DATA EXAMPLE */
     printf("\n--------------------------------- TREATED DATA ---------------------------------\n");
     printf("               Step: %d\n", *(processing->step));
     printf("           Residual: %.4e\n", processing->residual);
     printf("       Avg. density: %.4e\n", processing->avgRho);
-    printf("      Avg. Uz (y=0): %.4e\n", processing->avgUzPlanXZ[0]);
+    printf("   Avg. Uz (y=NY/2): %.4e\n", processing->avgUzPlanXZ[NY/2]);
     printf("  ux(x=0, y=0, z=0): %.4e\n", processing->macrCurr->ux[idxScalar(0, 0, 0)]);
     printf("--------------------------------------------------------------------------------\n");
 }
@@ -102,6 +105,7 @@ void printTreatData(MacrProc* processing)
 
 void saveTreatData(MacrProc* processing)
 {
+    /* SAVE TO CSV EXAMPLE */
     std::string strFileAvgUz;
     strFileAvgUz = getVarFilename("avgUz", *(processing->step), ".csv");
     

@@ -1,0 +1,20 @@
+SIMULATION INFORMATION:
+                 NX: 128
+                 NY: 128
+                 NZ: 128
+           Reynolds: 10.00
+                Tau: 9.000000e-01
+               Umax: 5.000000e-02
+           Residual: 2.526858e+00
+     Residual steps: 100
+         Save steps: 0
+             Nsteps: 1000
+              MLUPS: 485.6
+          Bandwidht: 137.5 (Gb/s)
+
+CUDA INFORMATION
+               name: Tesla K20Xm
+    multiprocessors: 14
+ compute capability: 3.5
+        ECC enabled: 0
+            threads: (64, 1, 1)

@@ -31,8 +31,12 @@ void initializationPop(
     if (filePop != NULL)
     {
         fread(tmp, memSizePop, 1, filePop);
-        checkCudaErrors(cudaMemcpy(pop->pop, tmp, memSizePop, cudaMemcpyHostToDevice));
-        checkCudaErrors(cudaMemcpy(pop->popAux, tmp, memSizePop, cudaMemcpyHostToDevice));
+        
+        for(size_t idx = 0; idx < numberNodes*Q; idx++)
+        {
+            pop->pop[idx] = tmp[idx];
+            pop->popAux[idx] = tmp[idx];
+        }
     }
     free(tmp);
 }
@@ -50,22 +54,26 @@ void initializationMacr(
     if (fileRho != NULL)
     {
         fread(tmp, memSizeScalar, 1, fileRho);
-        checkCudaErrors(cudaMemcpy(macr->rho, tmp, memSizeScalar, cudaMemcpyHostToDevice));
+        for(size_t idx = 0; idx < numberNodes; idx++)
+            macr->rho[idx] = tmp[idx];
     }
     if (fileUx != NULL)
     {
         fread(tmp, memSizeScalar, 1, fileUx);
-        checkCudaErrors(cudaMemcpy(macr->ux, tmp, memSizeScalar, cudaMemcpyHostToDevice));
+        for(size_t idx = 0; idx < numberNodes; idx++)
+            macr->ux[idx] = tmp[idx];
     }
     if (fileUy != NULL)
     {
         fread(tmp, memSizeScalar, 1, fileUy);
-        checkCudaErrors(cudaMemcpy(macr->uy, tmp, memSizeScalar, cudaMemcpyHostToDevice));
+        for(size_t idx = 0; idx < numberNodes; idx++)
+            macr->uy[idx] = tmp[idx];
     }
     if (fileUz != NULL)
     {
         fread(tmp, memSizeScalar, 1, fileUz);
-        checkCudaErrors(cudaMemcpy(macr->uz, tmp, memSizeScalar, cudaMemcpyHostToDevice));
+        for(size_t idx = 0; idx < numberNodes; idx++)
+            macr->uz[idx] = tmp[idx];
     }
     free(tmp);
 }
@@ -95,7 +103,7 @@ void gpuInitialization(
         // calculate equilibrium population and initialize populations to equilibrium
         dfloat feq = gpu_f_eq(w[i] * macr->rho[index],
             3 * (macr->ux[index] * cx[i] + macr->uy[index] * cy[i] + macr->uz[index] * cz[i]),
-            1 - (  macr->ux[index] * macr->ux[index] 
+            1 - 1.5*(  macr->ux[index] * macr->ux[index] 
                  + macr->uy[index] * macr->uy[index] 
                  + macr->uz[index] * macr->uz[index]));
         

@@ -215,6 +215,15 @@ typedef struct nodeTypeMap {
     {
         return ((map & RHO_IDX_BITS) >> RHO_IDX_OFFSET);
     }
+
+    __device__ __host__
+    char isBCLocal()
+    {
+        // if it's not free slip nor special, is local
+        return !((this->getSchemeBC() == BC_SCHEME_FREE_SLIP) || 
+            (this->getSchemeBC() == BC_SCHEME_SPECIAL));
+    }
+
 } NodeTypeMap;
 
 #endif // !__NODE_TYPE_MAP_H

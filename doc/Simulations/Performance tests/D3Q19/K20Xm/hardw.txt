@@ -1,0 +1,7 @@
+Nome do Sistema Operacional	Microsoft Windows 10 Pro
+Versão	10.0.16299 Compilação 16299
+Processador	Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz, 4201 Mhz, 4 Núcleo(s), 8 Processador(es) Lógico(s)
+Memória Física (RAM) Instalada	16,0 GB
+Endereço de memória 0xF6000000-0xF6FFFFFF	NVIDIA Tesla K20Xm
+Modelo	KINGSTON SA400S37240G
+Tamanho	223,57 GB (240.054.796.800 bytes)

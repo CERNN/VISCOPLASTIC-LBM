@@ -3,8 +3,12 @@ import matplotlib.pyplot as plt
 import matplotlib.colors
 import matplotlib.ticker
 
-# get macroscopics info
-macr = getEachMacr3D()
+# get macroscopics info from step saved
+macrAll = getAllMacr3D()
+steps = macrAll.keys()
+# get "last" step from dictionary keys 
+macr = macrAll[[step for step in steps][-1]]
+
 info = getSimInfo()
 
 
@@ -19,7 +23,7 @@ fig, uzPlot = plt.subplots()
 y = np.arange(0, 1+1e-10, 1/(info['NY']-1))
 uzPlot.plot(y, avgUz)
 # configure labels and axis limits
-uzPlot.set(xlabel='y', ylabel='uz',xlim=(0,1), ylim=(0, max(avgUz)*1.1))
+uzPlot.set(xlabel='y', ylabel='uz',xlim=(0,1), ylim=(min(avgUz)*1.1, max(avgUz)*1.1))
 # configure ticks (print value) for x axis
 plt.xticks([0, 0.5, 1.0])
 

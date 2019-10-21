@@ -28,6 +28,7 @@
 #include "lbm.h"
 #include "lbmInitialization.h"
 #include "boundaryConditionsBuilder.h"
+#include "structs/boundaryConditionsInfo.h"
 
 
 int main()
@@ -38,8 +39,12 @@ int main()
     Macroscopics macrCPUCurrent;
     Macroscopics macrCPUOld;
     MacrProc processData;
+    BoundaryConditionsInfo bcInfo;
     SimInfo info;
     int step = INI_STEP;
+
+    // SETUP SABING FOLDER
+    folderSetup();
 
     // INITALIZE PROCESS DATA
     processData.step = &step;
@@ -48,7 +53,7 @@ int main()
     
     // NUMBER OF DEVICES
     checkCudaErrors(cudaGetDeviceCount(&info.numDevices));
-    const int N_GPUS = info.numDevices;
+    const int N_GPUS = 1;
 
     // ALLOCATION FOR CPU
     info.devices = (cudaDeviceProp*) malloc(sizeof(cudaDeviceProp)*N_GPUS);
@@ -60,17 +65,17 @@ int main()
     checkCudaErrors(cudaSetDevice(0));
     checkCudaErrors(cudaMallocManaged((void**)&pop, sizeof(Populations)*N_GPUS));
     checkCudaErrors(cudaMallocManaged((void**)&macr, sizeof(Macroscopics)*N_GPUS));
-    
+
     // ALLOCATION AND CONFIGURATION FOR EACH GPU
     for(int i = 0; i < N_GPUS; i++)
     {
         checkCudaErrors(cudaSetDevice(i));
         checkCudaErrors(cudaGetDeviceProperties(&(info.devices[i]), i));
-        checkCudaErrors(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1)); // Set cache to prefer L1
         checkCudaErrors(cudaStreamCreate(&streamsKernelLBM[i]));
         pop[i].popAllocation();
         macr[i].macrAllocation(IN_VIRTUAL);
     }
+    
 
 /*  
     ---------------------------------------------------------------------------
@@ -87,16 +92,23 @@ int main()
     dim3 threads(nThreads, 1, 1);
 
     // REPORT
-    printParamInfo(&info, true);
-    printGPUInfo(&info);
+    printParamInfo(&info, true); fflush(stdout);
+    printGPUInfo(&info); fflush(stdout);
 
     // BOUNDARY CONDITIONS INITIALIZATION
     gpuBuildBoundaryConditions<<<grid, threads>>>(pop[0].mapBC);
+    checkCudaErrors(cudaDeviceSynchronize());
+    bcInfo.setupBoundaryConditionsInfo(pop->mapBC);
 
     // LBM INITIALIZATION
     if(LOAD_POP)
     {
-        FILE* filePop = fopen(STR_POP, "r");
+        FILE* filePop = fopen(STR_POP, "rb");
+        if(filePop == nullptr)
+        {
+            printf("Error reading population file\n");
+            return -1;
+        }
         initializationPop(&pop[0], filePop);
         gpuUpdateMacr<<<grid, threads>>>(&pop[0], &macr[0]);
     }
@@ -104,11 +116,20 @@ int main()
     {
         if(LOAD_MACR)
         {   
-            FILE* fileRho = fopen(STR_RHO, "r");
-            FILE* fileUx = fopen(STR_UX, "r");
-            FILE* fileUy = fopen(STR_UY, "r");
-            FILE* fileUz = fopen(STR_UZ, "r");
+            FILE* fileRho = fopen(STR_RHO, "rb");
+            FILE* fileUx = fopen(STR_UX, "rb");
+            FILE* fileUy = fopen(STR_UY, "rb");
+            FILE* fileUz = fopen(STR_UZ, "rb");
+            if(fileRho == nullptr || fileUz == nullptr || fileUy == nullptr || fileUx == nullptr)
+            {
+                printf("Error reading macroscopics files\n");
+                return -1;
+            }
             initializationMacr(&macr[0], fileRho, fileUx, fileUy, fileUz);
+            fclose (fileRho);
+            fclose (fileUx);
+            fclose (fileUy);
+            fclose (fileUz);
         }
         gpuInitialization<<<grid, threads>>>(&pop[0], &macr[0], LOAD_MACR);
     }
@@ -125,7 +146,6 @@ int main()
     for(step = INI_STEP; step < N_STEPS; step++)
     {
         int aux = step-INI_STEP;
-
         // WHAT NEEDS TO BE DONE IN THIS TIME STEP
         bool save = false, rep = false;
         if(aux != 0)
@@ -137,15 +157,36 @@ int main()
         }
 
         // LBM SOLVER
-        if(save || rep)
-            checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
         gpuBCMacrCollisionStream<<<grid, threads, 0, streamsKernelLBM[0]>>>
             (pop->pop, pop->popAux, pop->mapBC, 
-            &macr[0], rep || save || (step==N_STEPS), step);
-        getLastCudaError("lbm kernel error");
-
+            &macr[0], rep || save || ((step+1)>=(int)N_STEPS), step);
         checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
+        getLastCudaError("lbm kernel error");
+        
         pop[0].swapPop();
+
+        // if there are non local boundary conditions
+        if(bcInfo.hasNonLocalBC())
+        {
+            dim3 threadsBC(32,1,1);
+            dim3 gridBC(bcInfo.totalNonLocalBCNodes/32, 1, 1);
+            if(bcInfo.totalNonLocalBCNodes%32)
+                gridBC.x++;
+            
+            // applies to pop->pop (auxiliary populations) non local boundary conditions
+            gpuApplyNonLocalBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
+                (pop->pop, pop->mapBC, pop->popAux, 
+                bcInfo.idxNonLocalBCNodes, bcInfo.totalNonLocalBCNodes);
+            checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
+            getLastCudaError("application of non local boundary conditions error");
+
+            // synchronizes the boundary conditions applied to pop->popAux (valid populations)
+            gpuSynchronizeNonLocalBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
+                (pop->pop, pop->popAux, 
+                bcInfo.idxNonLocalBCNodes, bcInfo.totalNonLocalBCNodes);
+            checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
+            getLastCudaError("synchronization of non local boundary conditions error");
+        }
 
         // SYNCHRONIZING
         if(save || rep)
@@ -188,6 +229,7 @@ int main()
     info.timeElapsed *= 0.001;
 
     // SAVE FINAL MACROSCOPICS
+    macrCPUCurrent.copyMacr(&macr[0]); 
     saveAllMacrBin(&macrCPUCurrent, step);
 
     // SAVE FINAL POPULATIONS (IF REQUIRED)
@@ -220,8 +262,9 @@ int main()
         checkCudaErrors(cudaSetDevice(i));
         checkCudaErrors(cudaStreamDestroy(streamsKernelLBM[i]));
         pop[i].popFree();
-        macr[i].macrFree();        
+        macr[i].macrFree();
     }
+    bcInfo.freeIdxNonLocal();
 
     // FREE GPU VARIABLES
     checkCudaErrors(cudaSetDevice(0));
