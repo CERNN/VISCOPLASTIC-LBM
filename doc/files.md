@@ -3,7 +3,7 @@
 Below is described a brief of the content of the headers/source files in _CUDA/_ folder.
 
 #### [LBM](../src/CUDA/lbm.h)
-LBM collision, streaming and macroscopics update.
+LBM collision, streaming and macroscopics update. Special treatment for non local boundary conditions.
 #### [LBM Initialization](../src/CUDA/lbmInitialization.h)
 LBM  initial field of macroscopics, initial populations, methods for loading macroscopics or populations from binary files.
 #### [LBM Report](../src/CUDA/lbmReport.h)
@@ -19,7 +19,7 @@ Simulation's options and variables.
 #### [Global Functions](../src/CUDA/globalFunctions.cu)
 Inline functions used by many functions, as index calculation, equilibrium population, etc.
 #### [Main](../src/CUDA/main.cu)
-Main implementation.
+Implementation of _main()_ function.
 
 ## Velocity sets
 

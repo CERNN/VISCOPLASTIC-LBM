@@ -1,6 +1,8 @@
 # LBM CERNN
 
-LBM (Lattice Boltzmann method) project for flow simulation, using C/C++ and CUDA API. The velocity sets supported are D3Q19 and D3Q27.
+This is a LBM (Lattice Boltzmann method) project for flow simulation, using C/C++ and CUDA API. The velocity sets supported are D3Q19 and D3Q27. 
+
+If you are not familiarized with the method, we strongly recommend the book _The Lattice Boltzmann Method: Principles and Practice_ by Kruger et al. as a guide.
 
 ## Features
 
