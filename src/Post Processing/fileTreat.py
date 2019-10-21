@@ -3,7 +3,7 @@ import glob
 import numpy as np
 
 # ALL FILES IN THE FOLDER MUST BE FROM THE SAME SIMULATION
-PATH = "./../CUDA/bin/squareDuctHWBB/010/"
+PATH = "./../CUDA/bin/parallelPlatesHWBB/001/"
 #PATH = "./"
 
 __info__ = dict()

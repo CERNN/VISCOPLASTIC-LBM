@@ -10,12 +10,12 @@ for step in macr:
     # Save macroscopics to VTK format
     saveVTK3D(macr[step], info['ID'] + "macr" + str(step), points=False)
 
-    '''
+
     # COUETTE/PARALLEL PLATES PROCESSING
     uz = np.array([np.average(macr[step]['uz'][:, y, info['NZ']//2]) for y in range(0, info['NY'])])
     saveMacrCsv(info['ID'] + "uz" + str(step) + ".csv", uz)
-    '''
-    
+
+
     '''
     # LID DRIVEN PROCESSING
     
@@ -27,6 +27,7 @@ for step in macr:
     saveMacrCsv(info['ID'] + "ux" + str(step) + ".csv", ux)
     '''
 
+    '''
     # SQUARE DUCT PROCESSING
     
     # get uz(x=[0, 1], y=[0, 1], z=NZ/2)
@@ -36,7 +37,7 @@ for step in macr:
     uz /= uzMean # normalize
 
     # analytical solution for square duct
-    dx = 1/(info['NX']*2-1) # for free slip
+    dx = 1/(info['NX']-1) # for free slip
     x = np.arange(dx/2, 0.5+0.1*dx, dx) # x
     y = np.arange(dx/2, 0.5+0.1*dx, dx) # y
     uzAnalytical = np.zeros((len(x), len(y)))
@@ -62,3 +63,4 @@ for step in macr:
     print("Max. Analytical:", maxAnalytical)
     print("Error:", str((maxNumerical-maxAnalytical)/maxAnalytical*100) + "%")
     saveMacrCsv(info['ID'] + "uzAnalytical" + str(step) + ".csv", uzAnalytical)
+    '''
