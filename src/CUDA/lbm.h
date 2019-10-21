@@ -54,7 +54,7 @@ void gpuUpdateMacr(
 *   @brief Applies non local boundary conditions
 *   @param pop: populations to use
 *   @param mapBC: boundary conditions map
-*   @param auxNonLocal: auxiliary populations to keep the boundary conditions result
+*   @param popAuxNonLocal: auxiliary populations to keep the boundary conditions result
 *   @param idxNonLocal: scalar index of non local boundary conditions
 *   @param totalNonLocalBC: total number of nodes with non local boundary conditions
 */
@@ -69,9 +69,8 @@ void gpuApplyNonLocalBC(dfloat* pop,
 
 /*
 *   @brief Synchronize non local boundary conditions applied
-*   @param pop: populations to use
-*   @param mapBC: boundary conditions map
-*   @param auxNonLocal: auxiliary populations to keep the boundary conditions result
+*   @param pop: populations to copy to
+*   @param popAuxNonLocal: auxiliary populations to copy from
 *   @param idxNonLocal: scalar index of non local boundary conditions
 *   @param totalNonLocalBC: total number of nodes with non local boundary conditions
 */

@@ -81,6 +81,7 @@ void treatData(MacrProc* processing)
 
 bool stopSim(MacrProc* processing)
 {
+    /* SIMULATIONS STOP CONDITIONS EXAMPLE */
     if(processing->residual < RESID_MAX)
         return true;
     if(processing->avgRho < 0)
