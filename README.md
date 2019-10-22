@@ -4,7 +4,7 @@ This is a LBM (Lattice Boltzmann method) project for flow simulation, using C/C+
 
 If you are not familiarized with the method, we strongly recommend the book _The Lattice Boltzmann Method: Principles and Practice_ by Kruger et al. as a guide.
 
-For software citation use _PERFORMANCE ANALYSIS OF THE LATTICE BOLTZMANN METHOD IMPLEMENTATION ON GPU_, by Oliveira et al., XL CILAMCE ([site]([https://www.cilamce2019.com.br]))
+For software citation use _PERFORMANCE ANALYSIS OF THE LATTICE BOLTZMANN METHOD IMPLEMENTATION ON GPU_, by Oliveira et al., XL CILAMCE ([CILAMCE site](https://www.cilamce2019.com.br))
 
 ## Features
 
