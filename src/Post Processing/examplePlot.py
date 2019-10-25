@@ -4,10 +4,8 @@ import matplotlib.colors
 import matplotlib.ticker
 
 # get macroscopics info from step saved
-macrAll = getAllMacr3D()
-steps = macrAll.keys()
-# get "last" step from dictionary keys 
-macr = macrAll[[step for step in steps][-1]]
+steps = getMacrSteps()# get macroscopics from last step
+macr = getMacrsFromStep(steps[-1])
 
 info = getSimInfo()
 
@@ -21,6 +19,7 @@ avgUz = np.divide(avgUz, info['Umax'])
 fig, uzPlot = plt.subplots()
 # configure y values, normalized to (0, 1)
 y = np.arange(0, 1+1e-10, 1/(info['NY']-1))
+
 uzPlot.plot(y, avgUz)
 # configure labels and axis limits
 uzPlot.set(xlabel='y', ylabel='uz',xlim=(0,1), ylim=(min(avgUz)*1.1, max(avgUz)*1.1))

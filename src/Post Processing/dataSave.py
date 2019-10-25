@@ -49,11 +49,11 @@ def saveMacrCsv(filenameWrite, macr, normalizeDist=False):
         if(len(macr.shape) == 1): # 1D
             # csv is: position, value
             if(not normalizeDist):
-                np.savetxt(f, [(i, macr[i]) for i in range(0, len(macr))], \
-                    fmt=['%d', '%.6e'], delimiter=',')
+                array = [[i, macr[i]] for i in range(0, len(macr))]
+                np.savetxt(f, array, fmt=['%d', '%.6e'], delimiter=',')
             else:
-                np.savetxt(f, [(i/len(macr), macr[i]) for i in range(0, len(macr))], \
-                    fmt=['%.6e', '%.6e'], delimiter=',')
+                array = [(i/len(macr), macr[i]) for i in range(0, len(macr))]
+                np.savetxt(f, array, fmt=['%.6e', '%.6e'], delimiter=',')
         elif(len(macr.shape) == 2): # 2D
             np.savetxt(f, macr, delimiter=',')
         else:

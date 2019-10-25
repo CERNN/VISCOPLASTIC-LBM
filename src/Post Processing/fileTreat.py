@@ -3,13 +3,14 @@ import glob
 import numpy as np
 
 # ALL FILES IN THE FOLDER MUST BE FROM THE SAME SIMULATION
-PATH = "./../CUDA/bin/parallelPlatesHWBB/001/"
-#PATH = "./"
+PATH = "./"
+#PATH = "./../CUDA/bin/parallelPlatesHWBB/001/"
+__macr_names__ = ['ux', 'uy', 'uz', 'rho']
 
 __info__ = dict()
 
 '''
-    @brief Get all macroscopics filenames from this folder
+    @brief Get all macroscopics filenames from the folder
     @param macrName (str): macroscopic name ('ux', 'uy', 'uz', 'rho')
     @return list of macroscopics filenames
 '''
@@ -17,6 +18,24 @@ def getFilenamesMacr(macrName):
     listFiles = glob.glob(PATH+"*"+macrName+"*.bin")
     listFiles.sort()
     return listFiles
+
+
+'''
+    @brief Get all macroscopics steps from the folder
+    @return sorted list of steps values
+'''
+def getMacrSteps():
+    listFiles = getFilenamesMacr(__macr_names__[0])
+    setMacrSteps = set()
+    for i in listFiles:
+        macrStep = i.split(__macr_names__[0])[-1] # get everything after the macr name
+        macrStep = macrStep[:-4] # take off ".bin"
+        macrStep = int(macrStep) # convert to int
+        setMacrSteps.add(macrStep) # add macr step to set
+    listMacrSteps = list(setMacrSteps)
+    listMacrSteps.sort()
+    return listMacrSteps
+
 
 
 '''
@@ -90,49 +109,70 @@ def getSimInfo():
 
 
 '''
-    @brief Get the macroscopic array in 3D
+    @brief Read the binary file and returns its content as a 3D matrix
     @param macrFilename (str): filename of the macroscopic
-    @param prcNp (str): precision of the macroscopic ('d': double, 'f': float)
     @return macroscopic array (np.array([x, y, z]))
 '''
-def getMacr3D(macrFilename, prcNp):
-    info = getSimInfo()
-    with open(macrFilename, "r") as f:
-        vec = np.fromfile(f, prcNp)
-        vec3D = np.reshape(vec, (info['NZ'], info['NY'], info['NX']), 'C')
-        return np.swapaxes(vec3D, 0, 2)
-
-
-'''
-    @brief Get array for all macroscopics in folder for compatibility all 
-            macrs must have the same number of files and same steps for each
-    @return Dictionary with list of macroscopics  (dict(list(np.array())))
-'''
-def getAllMacr3D():
+def readFileMacr3D(macrFilename):
     info = getSimInfo()
     if info['Prc'] == 'double':
         prc = 'd'
     elif info['Prc'] == 'float':
         prc = 'f'
+    with open(macrFilename, "r") as f:
+        vec = np.fromfile(f, prc)
+        vec3D = np.reshape(vec, (info['NZ'], info['NY'], info['NX']), 'C')
+        return np.swapaxes(vec3D, 0, 2)
+
+
+'''
+    @brief Get all macroscopics in the folder from the step specified
+    @param step: step of the macroscopics
+    @return Dictionary with list of macroscopics  (dict(np.array()))
+'''
+def getMacrsFromStep(step):
+    macr = dict()
+    listFilename = list()
+    for macrName in __macr_names__:
+        listFilename.append(getFilenamesMacr(macrName))
+    # flatten list
+    listFilenameFlat = [j for i in range(0, len(listFilename)) \
+        for j in listFilename[i]]
+    # get all filenames of the step
+    listFilenameStep = [i for i in listFilenameFlat if (str(step)+".bin") in i]
+    # if there is no macroscopic from that step
+    if len(listFilenameStep) == 0:
+        return None
+
+    for filename in listFilenameStep:
+        for macrName in __macr_names__:
+            if macrName in filename:
+                macr[macrName] = readFileMacr3D(filename)
+
+    return macr
+
+'''
+    @brief Get array for all macroscopics in folder. For compatibility all 
+            macrs must have the same number of files and same steps for each
+    @return Dictionary with list of macroscopics  (dict(list(np.array())))
+'''
+def getAllMacrs():
     macr = dict()
 
-    fileNames = dict()
-    fileNames['ux'] = getFilenamesMacr('ux')
-    fileNames['uy'] = getFilenamesMacr('uy')
-    fileNames['uz'] = getFilenamesMacr('uz')
-    fileNames['rho'] = getFilenamesMacr('rho')
+    filenames = dict()
+    for macrName in __macr_names__:
+        filenames[macrName] = getFilenamesMacr(macrName)
 
-    for i in range(0, min(len(fileNames[i]) for i in fileNames)):
+    for i in range(0, min(len(filenames[i]) for i in filenames)):
         # getting simulation step
-        macrStep = fileNames['ux'][i].split("ux")[-1]
+        macrStep = filenames[__macr_names__[0]][i].split(__macr_names__[0])[-1]
         macrStep = macrStep[:-4] # take off ".bin"
         macrStep = int(macrStep)
         
         # save macroscopics from simulation step
         macr[macrStep] = dict()
-        for macrName in fileNames:
-            macr[macrStep][macrName] = getMacr3D(fileNames[macrName][i], prc)
+        for macrName in filenames:
+            macr[macrStep][macrName] = readFileMacr3D(filenames[macrName][i])
     
     return macr
 
-    
