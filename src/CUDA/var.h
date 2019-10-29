@@ -79,7 +79,7 @@ constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
 constexpr dfloat T_OMEGA = 1-OMEGA;      // 1-omega, for collision
 constexpr dfloat TT_OMEGA = 1-0.5*OMEGA; // 1-0.5*omega, for force term
 
-constexpr dfloat RHO_0 = 0.5;         // initial rho
+constexpr dfloat RHO_0 = 1;         // initial rho
 
 constexpr dfloat FX = 0;              // force in x
 constexpr dfloat FY = 0;              // force in y

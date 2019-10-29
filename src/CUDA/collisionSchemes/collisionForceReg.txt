@@ -1,3 +1,7 @@
+    // Equilibrium and non equilibrium populations
+    dfloat feq[Q];
+    dfloat fneq[Q];
+    
     // Calculate temporary variables
     const dfloat p1_muu15 = 1 - 1.5 * (uxVar * uxVar + 
         uyVar * uyVar + uzVar * uzVar);
@@ -13,99 +17,111 @@
     const dfloat ux3 = 3 * uxVar;
     const dfloat uy3 = 3 * uyVar;
     const dfloat uz3 = 3 * uzVar;
-    const dfloat ux3ux3d2 = ux3*ux3*0.5;
-    const dfloat ux3uy3 = ux3*uy3;
-    const dfloat ux3uz3 = ux3*uz3;
-    const dfloat uy3uy3d2 = uy3*uy3*0.5;
-    const dfloat uy3uz3 = uy3*uz3;
-    const dfloat uz3uz3d2 = uz3*uz3*0.5;
 
-
-    // Calculate pineq(alfa, beta)
-    // pineqAB = pops - popsEquilibrium
-#ifdef D3Q19
-    const dfloat pineqXX = (fNode[1] + fNode[2] + fNode[7] + fNode[8] + fNode[9] 
-            + fNode[10] + fNode[13] + fNode[14] + fNode[15] + fNode[16]) -
-            (2*rhoW1*(p1_muu15 + ux3ux3d2) + 
-             4*rhoW2*(2*p1_muu15 + 2*ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
-    const dfloat pineqYY = (fNode[3] + fNode[4] + fNode[7] + fNode[8] + fNode[11]
-            + fNode[12] + fNode[13] + fNode[14] + fNode[17] + fNode[18]) -
-            (2*rhoW1*(p1_muu15 + uy3uy3d2) + 
-             4*rhoW2*(2*p1_muu15 + ux3ux3d2 + 2*uy3uy3d2 + uz3uz3d2)); 
-    const dfloat pineqZZ = (fNode[5] + fNode[6] + fNode[9] + fNode[10] + fNode[11]
-            + fNode[12] + fNode[15] + fNode[16] + fNode[17] + fNode[18]) -
-            (2*rhoW1*(p1_muu15 + uz3uz3d2) + 
-             4*rhoW2*(2*p1_muu15 + ux3ux3d2 + uy3uy3d2 + 2*uz3uz3d2));
-    const dfloat pineqXYt2 = ((fNode[7] + fNode[8] - fNode[13] - fNode[14]) - 
-            (4*rhoW2*(ux3uy3))) * 2;
-    const dfloat pineqXZt2 = ((fNode[9] + fNode[10] - fNode[15] - fNode[16]) -
-            (4*rhoW2*(ux3uz3))) * 2;
-    const dfloat pineqYZt2 = ((fNode[11] + fNode[12] - fNode[17] - fNode[18]) -
-            (4*rhoW2*(uy3uz3))) * 2;
-#endif // !D3Q19 
+    // Calculate equilibrium populations
+    // feq[i] = rho*w[i] * (1 - 1.5*u*u + 3*u*c[i] + 4.5*(u*c[i])^2) ->
+    feq[ 0] = gpu_f_eq(rhoW0, 0, p1_muu15);
+    feq[ 1] = gpu_f_eq(rhoW1,  ux3, p1_muu15);
+    feq[ 2] = gpu_f_eq(rhoW1, -ux3, p1_muu15);
+    feq[ 3] = gpu_f_eq(rhoW1,  uy3, p1_muu15);
+    feq[ 4] = gpu_f_eq(rhoW1, -uy3, p1_muu15);
+    feq[ 5] = gpu_f_eq(rhoW1,  uz3, p1_muu15);
+    feq[ 6] = gpu_f_eq(rhoW1, -uz3, p1_muu15);
+    feq[ 7] = gpu_f_eq(rhoW2,  ux3 + uy3, p1_muu15);
+    feq[ 8] = gpu_f_eq(rhoW2, -ux3 - uy3, p1_muu15);
+    feq[ 9] = gpu_f_eq(rhoW2,  ux3 + uz3, p1_muu15);
+    feq[10] = gpu_f_eq(rhoW2, -ux3 - uz3, p1_muu15);
+    feq[11] = gpu_f_eq(rhoW2,  uy3 + uz3, p1_muu15);
+    feq[12] = gpu_f_eq(rhoW2, -uy3 - uz3, p1_muu15);
+    feq[13] = gpu_f_eq(rhoW2,  ux3 - uy3, p1_muu15);
+    feq[14] = gpu_f_eq(rhoW2, -ux3 + uy3, p1_muu15);
+    feq[15] = gpu_f_eq(rhoW2,  ux3 - uz3, p1_muu15);
+    feq[16] = gpu_f_eq(rhoW2, -ux3 + uz3, p1_muu15);
+    feq[17] = gpu_f_eq(rhoW2,  uy3 - uz3, p1_muu15);
+    feq[18] = gpu_f_eq(rhoW2, -uy3 + uz3, p1_muu15);
 #ifdef D3Q27
-    const dfloat aux = (fNode[19] + fNode[20] + fNode[21] + fNode[22] + fNode[23]
-            + fNode[24] + fNode[25] + fNode[26]) - 
-            (8*rhoW3*(ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
-    const dfloat pineqXXd3 = ((fNode[1] + fNode[2] + fNode[7] + fNode[8] + fNode[9] 
-            + fNode[10] + fNode[13] + fNode[14] + fNode[15] + fNode[16] + aux) -
-            (2*rhoW1*(p1_muu15 + ux3ux3d2) + 
-             4*rhoW2*(2*p1_muu15 + 2*ux3ux3d2 + uy3uy3d2 + uz3uz3d2)))/3;
-    const dfloat pineqYYd3 = ((fNode[3] + fNode[4] + fNode[7] + fNode[8] + fNode[11]
-            + fNode[12] + fNode[13] + fNode[14] + fNode[17] + fNode[18] + aux) -
-            (2*rhoW1*(p1_muu15 + uy3uy3d2) + 
-             4*rhoW2*(ux3ux3d2 + 2*uy3uy3d2 + uz3uz3d2)))/3; 
-    const dfloat pineqZZd3 = ((fNode[5] + fNode[6] + fNode[9] + fNode[10] + fNode[11]
-            + fNode[12] + fNode[15] + fNode[16] + fNode[17] + fNode[18] + aux) -
-            (2*rhoW1*(p1_muu15 + uz3uz3d2) + 
-             4*rhoW2*(ux3ux3d2 + uy3uy3d2 + 2*uz3uz3d2)))/3;
-    const dfloat pineqXYt2 = ((fNode[7] + fNode[8] - fNode[13] - fNode[14] + fNode[19]
-            + fNode[20] + fNode[21] + fNode[22] - fNode[23] - fNode[24] - fNode[25]
-            - fNode[26]) - 
-            (4*rhoW2*(ux3uy3) + 8*rhoW3*(ux3uy3))) * 2;
-    const dfloat pineqXZt2 = ((fNode[9] + fNode[10] - fNode[15] - fNode[16] + fNode[19]
-            + fNode[20] - fNode[21] - fNode[22] + fNode[23] + fNode[24] - fNode[25]
-            - fNode[26]) - 
-            (4*rhoW2*(ux3uz3) + 8*rhoW3*(ux3uz3))) * 2;
-    const dfloat pineqYZt2 = ((fNode[11] + fNode[12] - fNode[17] - fNode[18] + fNode[19]
-            + fNode[20] - fNode[21] - fNode[22] - fNode[23] - fNode[24] + fNode[25]
-            + fNode[26]) - 
-            (4*rhoW2*(uy3uz3) + 8*rhoW3*(uy3uz3))) * 2;
-#endif // !D3Q27
+    feq[19] = gpu_f_eq(rhoW3,  ux3 + uy3 + uz3, p1_muu15);
+    feq[20] = gpu_f_eq(rhoW3, -ux3 - uy3 - uz3, p1_muu15);
+    feq[21] = gpu_f_eq(rhoW3,  ux3 + uy3 - uz3, p1_muu15);
+    feq[22] = gpu_f_eq(rhoW3, -ux3 - uy3 + uz3, p1_muu15);
+    feq[23] = gpu_f_eq(rhoW3,  ux3 - uy3 + uz3, p1_muu15);
+    feq[24] = gpu_f_eq(rhoW3, -ux3 + uy3 - uz3, p1_muu15);
+    feq[25] = gpu_f_eq(rhoW3, -ux3 + uy3 + uz3, p1_muu15);
+    feq[26] = gpu_f_eq(rhoW3,  ux3 - uy3 - uz3, p1_muu15);
+#endif
+
+    // Calculate non equilibrium populations
+    // fneq = f - feq
+#pragma unroll
+    for(char i = 0; i < Q; i++)
+        fneq[i] = fNode[i] - feq[i];
+
+    // Calculate pineq(alfa, beta)/3
+#ifdef D3Q19
+    const dfloat pineqXXd3 = (fneq[1] + fneq[2] + fneq[7] + fneq[8] + fneq[9] 
+            + fneq[10] + fneq[13] + fneq[14] + fneq[15] + fneq[16]) / 3;
+    const dfloat pineqYYd3 = (fneq[3] + fneq[4] + fneq[7] + fneq[8] + fneq[11]
+            + fneq[12] + fneq[13] + fneq[14] + fneq[17] + fneq[18]) / 3;
+    const dfloat pineqZZd3 = (fneq[5] + fneq[6] + fneq[9] + fneq[10] + fneq[11]
+            + fneq[12] + fneq[15] + fneq[16] + fneq[17] + fneq[18]) / 3;
+    const dfloat pineqXYt2 = (fneq[7] + fneq[8] - fneq[13] - fneq[14]) * 2;
+    const dfloat pineqXZt2 = (fneq[9] + fneq[10] - fneq[15] - fneq[16]) * 2;
+    const dfloat pineqYZt2 = (fneq[11] + fneq[12] - fneq[17] - fneq[18]) * 2;
+#elif D3Q27
+    const dfloat aux = fneq[19] + fneq[20] + fneq[21] + fneq[22] + fneq[23]
+            + fneq[24] + fneq[25] + fneq[26];
+    const dfloat pineqXXd3 = (fneq[1] + fneq[2] + fneq[7] + fneq[8] + fneq[9] 
+            + fneq[10] + fneq[13] + fneq[14] + fneq[15] + fneq[16] + aux) / 3;
+    const dfloat pineqYYd3 = (fneq[3] + fneq[4] + fneq[7] + fneq[8] + fneq[11]
+            + fneq[12] + fneq[13] + fneq[14] + fneq[17] + fneq[18] + aux) / 3;
+    const dfloat pineqZZd3 = (fneq[5] + fneq[6] + fneq[9] + fneq[10] + fneq[11]
+            + fneq[12] + fneq[15] + fneq[16] + fneq[17] + fneq[18] + aux) / 3;
+    const dfloat pineqXYt2 = (fneq[7] + fneq[8] - fneq[13] - fneq[14] + fneq[19]
+            + fneq[20] + fneq[21] + fneq[22] - fneq[23] - fneq[24] - fneq[25]
+            - fneq[26]) * 2;
+    const dfloat pineqXZt2 = (fneq[9] + fneq[10] - fneq[15] - fneq[16] + fneq[19]
+            + fneq[20] - fneq[21] - fneq[22] + fneq[23] + fneq[24] - fneq[25]
+            - fneq[26]) * 2;
+    const dfloat pineqYZt2 = (fneq[11] + fneq[12] - fneq[17] - fneq[18] + fneq[19]
+            + fneq[20] - fneq[21] - fneq[22] - fneq[23] - fneq[24] + fneq[25]
+            + fneq[26]) * 2;
+#endif
 
     // Calculate regularized population
     // fReg[i] = 4.5*w[i](Q[i, alfa, beta]*pi[i, alfa, beta] 
     //          - c[i, alfa]*F[alfa]/3)
     // Obs.: fNode is used as fReg
-    fNode[0] = 4.5*W0*(-pineqXXd3 - pineqYYd3 - pineqZZd3);
-    fNode[1] = 4.5*W1*(-FX_D3 + 2*pineqXXd3 - pineqYYd3 - pineqZZd3);
-    fNode[2] = 4.5*W1*( FX_D3 + 2*pineqXXd3 - pineqYYd3 - pineqZZd3);
-    fNode[3] = 4.5*W1*(-FY_D3 - pineqXXd3 + 2*pineqYYd3 - pineqZZd3);
-    fNode[4] = 4.5*W1*( FY_D3 - pineqXXd3 + 2*pineqYYd3 - pineqZZd3);
-    fNode[5] = 4.5*W1*(-FZ_D3 - pineqXXd3 - pineqYYd3 + 2*pineqZZd3);
-    fNode[6] = 4.5*W1*( FZ_D3 - pineqXXd3 - pineqYYd3 + 2*pineqZZd3);
-    fNode[7] = 4.5*W2*(-FX_D3 - FY_D3 + 2*pineqXXd3 + pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
-    fNode[8] = 4.5*W2*( FX_D3 + FY_D3 + 2*pineqXXd3 + pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
-    fNode[9] = 4.5*W2*(-FX_D3 - FZ_D3 + 2*pineqXXd3 + pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
-    fNode[10] = 4.5*W2*( FX_D3 + FZ_D3 + 2*pineqXXd3 + pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
-    fNode[11] = 4.5*W2*(-FY_D3 - FZ_D3 - pineqXXd3 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
-    fNode[12] = 4.5*W2*( FY_D3 + FZ_D3 - pineqXXd3 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
-    fNode[13] = 4.5*W2*(-FX_D3 + FY_D3 + 2*pineqXXd3 - pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
-    fNode[14] = 4.5*W2*( FX_D3 - FY_D3 + 2*pineqXXd3 - pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
-    fNode[15] = 4.5*W2*(-FX_D3 + FZ_D3 + 2*pineqXXd3 - pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
-    fNode[16] = 4.5*W2*( FX_D3 - FZ_D3 + 2*pineqXXd3 - pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
-    fNode[17] = 4.5*W2*(-FY_D3 + FZ_D3 - pineqXXd3 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
-    fNode[18] = 4.5*W2*( FY_D3 - FZ_D3 - pineqXXd3 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
+    fNode[ 0] = 4.5*W0*(-pineqXXd3 - pineqYYd3 - pineqZZd3);
+    fNode[ 1] = W1t9d2*(-FX_D3 + 2*pineqXXd3 - pineqYYd3 - pineqZZd3);
+    fNode[ 2] = W1t9d2*(+FX_D3 + 2*pineqXXd3 - pineqYYd3 - pineqZZd3);
+    fNode[ 3] = W1t9d2*(-FY_D3 - pineqXXd3 + 2*pineqYYd3 - pineqZZd3);
+    fNode[ 4] = W1t9d2*(+FY_D3 - pineqXXd3 + 2*pineqYYd3 - pineqZZd3);
+    fNode[ 5] = W1t9d2*(-FZ_D3 - pineqXXd3 - pineqYYd3 + 2*pineqZZd3);
+    fNode[ 6] = W1t9d2*(+FZ_D3 - pineqXXd3 - pineqYYd3 + 2*pineqZZd3);
+    fNode[ 7] = W2t9d2*(-FX_D3 - FY_D3 + 2*pineqXXd3 + pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
+    fNode[ 8] = W2t9d2*(+FX_D3 + FY_D3 + 2*pineqXXd3 + pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
+    fNode[ 9] = W2t9d2*(-FX_D3 - FZ_D3 + 2*pineqXXd3 + pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
+    fNode[10] = W2t9d2*(+FX_D3 + FZ_D3 + 2*pineqXXd3 + pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
+    fNode[11] = W2t9d2*(-FY_D3 - FZ_D3 - pineqXXd3 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
+    fNode[12] = W2t9d2*(+FY_D3 + FZ_D3 - pineqXXd3 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
+    fNode[13] = W2t9d2*(-FX_D3 + FY_D3 + 2*pineqXXd3 - pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
+    fNode[14] = W2t9d2*(+FX_D3 - FY_D3 + 2*pineqXXd3 - pineqXYt2 + 2*pineqYYd3 - pineqZZd3);
+    fNode[15] = W2t9d2*(-FX_D3 + FZ_D3 + 2*pineqXXd3 - pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
+    fNode[16] = W2t9d2*(+FX_D3 - FZ_D3 + 2*pineqXXd3 - pineqXZt2 - pineqYYd3 + 2*pineqZZd3);
+    fNode[17] = W2t9d2*(-FY_D3 + FZ_D3 - pineqXXd3 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
+    fNode[18] = W2t9d2*(+FY_D3 - FZ_D3 - pineqXXd3 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
 #ifdef D3Q27
-    fNode[19] = 4.5*W3*(-FX_D3 - FY_D3 - FZ_D3 + 2*pineqXXd3 + pineqXYt2 + pineqXZt2 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
-    fNode[20] = 4.5*W3*( FX_D3 + FY_D3 + FZ_D3 + 2*pineqXXd3 + pineqXYt2 + pineqXZt2 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
-    fNode[21] = 4.5*W3*(-FX_D3 - FY_D3 + FZ_D3 + 2*pineqXXd3 + pineqXYt2 - pineqXZt2 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
-    fNode[22] = 4.5*W3*( FX_D3 + FY_D3 - FZ_D3 + 2*pineqXXd3 + pineqXYt2 - pineqXZt2 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
-    fNode[23] = 4.5*W3*(-FX_D3 + FY_D3 - FZ_D3 + 2*pineqXXd3 - pineqXYt2 + pineqXZt2 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
-    fNode[24] = 4.5*W3*( FX_D3 - FY_D3 + FZ_D3 + 2*pineqXXd3 - pineqXYt2 + pineqXZt2 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
-    fNode[25] = 4.5*W3*( FX_D3 - FY_D3 - FZ_D3 + 2*pineqXXd3 - pineqXYt2 - pineqXZt2 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
-    fNode[26] = 4.5*W3*(-FX_D3 + FY_D3 + FZ_D3 + 2*pineqXXd3 - pineqXYt2 - pineqXZt2 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
+    fNode[19] = W3t9d2*(-FX_D3 - FY_D3 - FZ_D3 + 2*pineqXXd3 + pineqXYt2 + pineqXZt2 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
+    fNode[20] = W3t9d2*(+FX_D3 + FY_D3 + FZ_D3 + 2*pineqXXd3 + pineqXYt2 + pineqXZt2 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
+    fNode[21] = W3t9d2*(-FX_D3 - FY_D3 + FZ_D3 + 2*pineqXXd3 + pineqXYt2 - pineqXZt2 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
+    fNode[22] = W3t9d2*(+FX_D3 + FY_D3 - FZ_D3 + 2*pineqXXd3 + pineqXYt2 - pineqXZt2 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
+    fNode[23] = W3t9d2*(-FX_D3 + FY_D3 - FZ_D3 + 2*pineqXXd3 - pineqXYt2 + pineqXZt2 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
+    fNode[24] = W3t9d2*(+FX_D3 - FY_D3 + FZ_D3 + 2*pineqXXd3 - pineqXYt2 + pineqXZt2 + 2*pineqYYd3 - pineqYZt2 + 2*pineqZZd3);
+    fNode[25] = W3t9d2*(+FX_D3 - FY_D3 - FZ_D3 + 2*pineqXXd3 - pineqXYt2 - pineqXZt2 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
+    fNode[26] = W3t9d2*(-FX_D3 + FY_D3 + FZ_D3 + 2*pineqXXd3 - pineqXYt2 - pineqXZt2 + 2*pineqYYd3 + pineqYZt2 + 2*pineqZZd3);
 #endif
+
+
     // Collision to fNode
     // fNode = (1 - 1/TAU)*f1 + f_eq + (1 - 0.5/TAU)*force ->
     // fNode = (1 - OMEGA)*f1 + f_eq + (1 - 0.5*0MEGA)*force->
@@ -113,85 +129,85 @@
     // Force term is:
     // Q[i, alfa, beta] = c[i, alfa]*c[i, beta] - d_kronecker[alfa, beta]/3
     // force[i] = w[i]*(3*c[i, alfa]+9*Q[i, alfa, beta]*u[beta])*F[alfa]
-
-    fNode[ 0] = T_OMEGA * fNode[ 0] + gpu_f_eq(rhoW0, 0, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W0,-ux3,-uy3,-uz3);
-
-    fNode[ 1] = T_OMEGA * fNode[ 1] + gpu_f_eq(rhoW1,  ux3, p1_muu15) 
-               + TT_OMEGA * gpu_force_term(W1, ux3*2+3,-uy3,-uz3);
-
-    fNode[ 2] = T_OMEGA * fNode[ 2] + gpu_f_eq(rhoW1, -ux3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W1, ux3*2-3,-uy3,-uz3);
-
-    fNode[ 3] = T_OMEGA * fNode[ 3] + gpu_f_eq(rhoW1,  uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W1,-ux3, uy3*2+3,-uz3);
-
-    fNode[ 4] = T_OMEGA * fNode[ 4] + gpu_f_eq(rhoW1, -uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W1,-ux3, uy3*2-3,-uz3);
-
-    fNode[ 5] = T_OMEGA * fNode[ 5] + gpu_f_eq(rhoW1,  uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W1,-ux3,-uy3, uz3*2+3);
-
-    fNode[ 6] = T_OMEGA * fNode[ 6] + gpu_f_eq(rhoW1, -uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W1,-ux3,-uy3, uz3*2-3);
-
-    fNode[ 7] = T_OMEGA * fNode[ 7] + gpu_f_eq(rhoW2,  ux3 + uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2+uy3*3+3, ux3*3+uy3*2+3,-uz3);
-
-    fNode[ 8] = T_OMEGA * fNode[ 8] + gpu_f_eq(rhoW2, -ux3 - uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2+uy3*3-3, ux3*3+uy3*2-3,-uz3);
-
-    fNode[ 9] = T_OMEGA * fNode[ 9] + gpu_f_eq(rhoW2,  ux3 + uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2+uz3*3+3,-uy3, ux3*3+uz3*2+3);
-
-    fNode[10] = T_OMEGA * fNode[10] + gpu_f_eq(rhoW2, -ux3 - uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2+uz3*3-3,-uy3, ux3*3+uz3*2-3);
-
-    fNode[11] = T_OMEGA * fNode[11] + gpu_f_eq(rhoW2,  uy3 + uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2+uz3*3+3, uy3*3+uz3*2+3);
-
-    fNode[12] = T_OMEGA * fNode[12] + gpu_f_eq(rhoW2, -uy3 - uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2+uz3*3-3, uy3*3+uz3*2-3);
-
-    fNode[13] = T_OMEGA * fNode[13] + gpu_f_eq(rhoW2,  ux3 - uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2-uy3*3+3,-ux3*3+uy3*2-3,-uz3);
-
-    fNode[14] = T_OMEGA * fNode[14] + gpu_f_eq(rhoW2, -ux3 + uy3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2-uy3*3-3,-ux3*3+uy3*2+3,-uz3);
-
-    fNode[15] = T_OMEGA * fNode[15] + gpu_f_eq(rhoW2,  ux3 - uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2-uz3*3+3,-uy3,-ux3*3+uz3*2-3);
-
-    fNode[16] = T_OMEGA * fNode[16] + gpu_f_eq(rhoW2, -ux3 + uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2, ux3*2-uz3*3-3,-uy3,-ux3*3+uz3*2+3);
-
-    fNode[17] = T_OMEGA * fNode[17] + gpu_f_eq(rhoW2,  uy3 - uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2-uz3*3+3,-uy3*3+uz3*2-3);
-
-    fNode[18] = T_OMEGA * fNode[18] + gpu_f_eq(rhoW2, -uy3 + uz3, p1_muu15)
-               + TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2-uz3*3-3,-uy3*3+uz3*2+3);
+    
+    fNode[ 0] = T_OMEGA * fNode[ 0] + feq[ 0] + 
+               TT_OMEGA * gpu_force_term(W0,-ux3,-uy3,-uz3,FX,FY,FZ);
+    
+    fNode[ 1] = T_OMEGA * fNode[ 1] + feq[ 1] + 
+               TT_OMEGA * gpu_force_term(W1, ux3*2+3,-uy3,-uz3,FX,FY,FZ);
+    
+    fNode[ 2] = T_OMEGA * fNode[ 2] + feq[ 2] + 
+               TT_OMEGA * gpu_force_term(W1, ux3*2-3,-uy3,-uz3,FX,FY,FZ);
+    
+    fNode[ 3] = T_OMEGA * fNode[ 3] + feq[ 3] + 
+               TT_OMEGA * gpu_force_term(W1,-ux3, uy3*2+3,-uz3,FX,FY,FZ);
+    
+    fNode[ 4] = T_OMEGA * fNode[ 4] + feq[ 4] + 
+               TT_OMEGA * gpu_force_term(W1,-ux3, uy3*2-3,-uz3,FX,FY,FZ);
+    
+    fNode[ 5] = T_OMEGA * fNode[ 5] + feq[ 5] + 
+               TT_OMEGA * gpu_force_term(W1,-ux3,-uy3, uz3*2+3,FX,FY,FZ);
+    
+    fNode[ 6] = T_OMEGA * fNode[ 6] + feq[ 6] + 
+               TT_OMEGA * gpu_force_term(W1,-ux3,-uy3, uz3*2-3,FX,FY,FZ);
+    
+    fNode[ 7] = T_OMEGA * fNode[ 7] + feq[ 7] + 
+               TT_OMEGA * gpu_force_term(W2, ux3*2+uy3*3+3, ux3*3+uy3*2+3,-uz3,FX,FY,FZ);
+    
+    fNode[ 8] = T_OMEGA * fNode[ 8] + feq[ 8] + 
+               TT_OMEGA * gpu_force_term(W2, ux3*2+uy3*3-3, ux3*3+uy3*2-3,-uz3,FX,FY,FZ);
+    
+    fNode[ 9] = T_OMEGA * fNode[ 9] + feq[ 9] + 
+               TT_OMEGA * gpu_force_term(W2, ux3*2+uz3*3+3,-uy3, ux3*3+uz3*2+3,FX,FY,FZ);
+    
+    fNode[10] = T_OMEGA * fNode[10] + feq[10] + 
+               TT_OMEGA * gpu_force_term(W2, ux3*2+uz3*3-3,-uy3, ux3*3+uz3*2-3,FX,FY,FZ);
+    
+    fNode[11] = T_OMEGA * fNode[11] + feq[11] + 
+               TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2+uz3*3+3, uy3*3+uz3*2+3,FX,FY,FZ);
+    
+    fNode[12] = T_OMEGA * fNode[12] + feq[12] + 
+               TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2+uz3*3-3, uy3*3+uz3*2-3,FX,FY,FZ);
+    
+    fNode[13] = T_OMEGA * fNode[13] + feq[13] + 
+               TT_OMEGA * gpu_force_term(W2, ux3*2-uy3*3+3,-ux3*3+uy3*2-3,-uz3,FX,FY,FZ);
+    
+    fNode[14] = T_OMEGA * fNode[14] + feq[14] + 
+               TT_OMEGA * gpu_force_term(W2, ux3*2-uy3*3-3,-ux3*3+uy3*2+3,-uz3,FX,FY,FZ);
+    
+    fNode[15] = T_OMEGA * fNode[15] + feq[15] + 
+               TT_OMEGA * gpu_force_term(W2, ux3*2-uz3*3+3,-uy3,-ux3*3+uz3*2-3,FX,FY,FZ);
+    
+    fNode[16] = T_OMEGA * fNode[16] + feq[16] + 
+               TT_OMEGA * gpu_force_term(W2, ux3*2-uz3*3-3,-uy3,-ux3*3+uz3*2+3,FX,FY,FZ);
+    
+    fNode[17] = T_OMEGA * fNode[17] + feq[17] + 
+               TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2-uz3*3+3,-uy3*3+uz3*2-3,FX,FY,FZ);
+    
+    fNode[18] = T_OMEGA * fNode[18] + feq[18] + 
+               TT_OMEGA * gpu_force_term(W2,-ux3, uy3*2-uz3*3-3,-uy3*3+uz3*2+3,FX,FY,FZ);
 #ifdef D3Q27
     fNode[19] = T_OMEGA * fNode[19] + feq[19] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3+uz3*3+3, ux3*3+uy3*2+uz3*3+3, ux3*3+uy3*3+uz3*2+3);
+               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3+uz3*3+3, ux3*3+uy3*2+uz3*3+3, ux3*3+uy3*3+uz3*2+3,FX,FY,FZ);
     
     fNode[20] = T_OMEGA * fNode[20] + feq[20] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3+uz3*3-3, ux3*3+uy3*2+uz3*3-3, ux3*3+uy3*3+uz3*2-3); 
+               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3+uz3*3-3, ux3*3+uy3*2+uz3*3-3, ux3*3+uy3*3+uz3*2-3,FX,FY,FZ); 
     
     fNode[21] = T_OMEGA * fNode[21] + feq[21] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3-uz3*3+3, ux3*3+uy3*2-uz3*3+3,-ux3*3-uy3*3+uz3*2-3); 
+               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3-uz3*3+3, ux3*3+uy3*2-uz3*3+3,-ux3*3-uy3*3+uz3*2-3,FX,FY,FZ); 
     
     fNode[22] = T_OMEGA * fNode[22] + feq[22] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3-uz3*3-3, ux3*3+uy3*2-uz3*3-3,-ux3*3-uy3*3+uz3*2+3);
+               TT_OMEGA * gpu_force_term(W3, ux3*2+uy3*3-uz3*3-3, ux3*3+uy3*2-uz3*3-3,-ux3*3-uy3*3+uz3*2+3,FX,FY,FZ);
     
     fNode[23] = T_OMEGA * fNode[23] + feq[23] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3+uz3*3+3,-ux3*3+uy3*2-uz3*3-3, ux3*3-uy3*3+uz3*2+3);
+               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3+uz3*3+3,-ux3*3+uy3*2-uz3*3-3, ux3*3-uy3*3+uz3*2+3,FX,FY,FZ);
     
     fNode[24] = T_OMEGA * fNode[24] + feq[24] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3+uz3*3-3,-ux3*3+uy3*2-uz3*3+3, ux3*3-uy3*3+uz3*2-3);
+               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3+uz3*3-3,-ux3*3+uy3*2-uz3*3+3, ux3*3-uy3*3+uz3*2-3,FX,FY,FZ);
     
     fNode[25] = T_OMEGA * fNode[25] + feq[25] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3-uz3*3-3,-ux3*3+uy3*2+uz3*3+3,-ux3*3+uy3*3+uz3*2+3);
+               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3-uz3*3-3,-ux3*3+uy3*2+uz3*3+3,-ux3*3+uy3*3+uz3*2+3,FX,FY,FZ);
     
     fNode[26] = T_OMEGA * fNode[26] + feq[26] + 
-               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3-uz3*3+3,-ux3*3+uy3*2+uz3*3-3,-ux3*3+uy3*3+uz3*2-3);
+               TT_OMEGA * gpu_force_term(W3, ux3*2-uy3*3-uz3*3+3,-ux3*3+uy3*2+uz3*3-3,-ux3*3+uy3*3+uz3*2-3,FX,FY,FZ);
 #endif
