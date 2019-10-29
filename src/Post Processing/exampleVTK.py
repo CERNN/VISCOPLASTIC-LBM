@@ -1,18 +1,19 @@
 from dataSave import *
+from fileTreat import *
 import math
 
 # Get the macroscopics in the folder
-macr = getAllMacr3D()
+macrSteps = getMacrSteps()
 info = getSimInfo()
 
 # for all steps saved
-for step in macr:
+for step in macrSteps:
+    macr = getMacrsFromStep(step)
     # Save macroscopics to VTK format
-    saveVTK3D(macr[step], info['ID'] + "macr" + str(step), points=False)
-
+    saveVTK3D(macr, info['ID'] + "macr" + str(step), points=False)
 
     # COUETTE/PARALLEL PLATES PROCESSING
-    uz = np.array([np.average(macr[step]['uz'][:, y, info['NZ']//2]) for y in range(0, info['NY'])])
+    uz = np.array([np.average(macr['uz'][:, y, info['NZ']//2]) for y in range(0, info['NY'])])
     saveMacrCsv(info['ID'] + "uz" + str(step) + ".csv", uz)
 
 
@@ -20,8 +21,8 @@ for step in macr:
     # LID DRIVEN PROCESSING
     
     # get uy(x=[0, 1], y=NY/2, z=NZ/2) and uy(x=NX/2, y=[0, 1], z=NZ/2)
-    uy = macr[step]['uy'][:, info['NY']//2, info['NZ']//2]
-    ux = macr[step]['ux'][info['NX']//2, :, info['NZ']//2]
+    uy = macr['uy'][:, info['NY']//2, info['NZ']//2]
+    ux = macr['ux'][info['NX']//2, :, info['NZ']//2]
     
     saveMacrCsv(info['ID'] + "uy" + str(step) + ".csv", uy)
     saveMacrCsv(info['ID'] + "ux" + str(step) + ".csv", ux)
@@ -31,7 +32,7 @@ for step in macr:
     # SQUARE DUCT PROCESSING
     
     # get uz(x=[0, 1], y=[0, 1], z=NZ/2)
-    uz = macr[step]['uz'][:,:,info['NZ']//2]
+    uz = macr['uz'][:,:,info['NZ']//2]
     # mean corrected for free slip in y=0 and x=1
     uzMean = np.average(uz)
     uz /= uzMean # normalize
