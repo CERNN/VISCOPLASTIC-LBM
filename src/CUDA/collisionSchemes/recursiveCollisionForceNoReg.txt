@@ -4,11 +4,8 @@
     const dfloat rhoW0 = rhoVar * W0;
     const dfloat rhoW1 = rhoVar * W1;
     const dfloat rhoW2 = rhoVar * W2;
-    const dfloat W1t9d2 = W1 * 4.5;
-    const dfloat W2t9d2 = W2 * 4.5;
 #ifdef D3Q27
     const dfloat rhoW3 = rhoVar * W3;
-    const dfloat W3t9d2 = W3 * 4.5;
 #endif
     const dfloat ux3 = 3 * uxVar;
     const dfloat uy3 = 3 * uyVar;
@@ -71,17 +68,17 @@
     terms[10] = terms[4] + (-uz3 + uy3uz3 + uz3uz3d2);
 #endif
 
-    // fNode += fEq*OMEGA
-    multiplyTerm = rhoW0*OMEGA;
+    // fNode += OMEGA*fEq
+    multiplyTerm = OMEGA*rhoW0;
     fNode[0] += multiplyTerm*terms[0];
-    multiplyTerm = rhoW1;
+    multiplyTerm = OMEGA*rhoW1;
     fNode[1] += multiplyTerm*terms[1];
     fNode[2] += multiplyTerm*terms[2];
     fNode[3] += multiplyTerm*terms[3];
     fNode[4] += multiplyTerm*terms[4];
     fNode[5] += multiplyTerm*(terms[0] + ( uz3 + uz3uz3d2));
     fNode[6] += multiplyTerm*(terms[0] + (-uz3 + uz3uz3d2));
-    multiplyTerm = rhoW2*OMEGA;
+    multiplyTerm = OMEGA*rhoW2;
     fNode[7]  += multiplyTerm*(terms[1] + ( uy3 + ux3uy3 + uy3uy3d2));
     fNode[8]  += multiplyTerm*(terms[2] + (-uy3 + ux3uy3 + uy3uy3d2));
     fNode[9]  += multiplyTerm*(terms[1] + ( uz3 + ux3uz3 + uz3uz3d2));
@@ -95,7 +92,7 @@
     fNode[17] += multiplyTerm*(terms[3] + (-uz3 - uy3uz3 + uz3uz3d2));
     fNode[18] += multiplyTerm*(terms[4] + ( uz3 - uy3uz3 + uz3uz3d2));
 #ifdef D3Q27
-    multiplyTerm = rhoW3*OMEGA;
+    multiplyTerm = OMEGA*rhoW3;
     fNode[19] += multiplyTerm*(terms[5] + ( uz3 + ux3uz3 + uy3uz3 + uz3uz3d2));
     fNode[20] += multiplyTerm*(terms[6] + (-uz3 + ux3uz3 + uy3uz3 + uz3uz3d2));
     fNode[21] += multiplyTerm*(terms[5] + (-uz3 - ux3uz3 - uy3uz3 + uz3uz3d2));
