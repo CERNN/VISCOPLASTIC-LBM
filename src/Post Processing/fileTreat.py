@@ -139,7 +139,7 @@ def getMacrsFromStep(step):
     listFilenameFlat = [j for i in range(0, len(listFilename)) \
         for j in listFilename[i]]
     # get all filenames of the step
-    listFilenameStep = [i for i in listFilenameFlat if (str(step)+".bin") in i]
+    listFilenameStep = [i for i in listFilenameFlat if (("%05d" % step)+".bin") in i]
     # if there is no macroscopic from that step
     if len(listFilenameStep) == 0:
         return None
