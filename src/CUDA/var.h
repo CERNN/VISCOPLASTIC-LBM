@@ -97,7 +97,7 @@ __device__ const dfloat rhoBC[8] = { RHO_0, 1, 1, 1, 1, 1, 1, 1 };
 
 
 // ------------------------------ GPU DEFINES ------------------------------ */
-const int nThreads = (NX%64?((NX%32||!(NX<32))?NX:32):64); // NX or 32 or 64 
+const int nThreads = (NX%64?((NX%32||(NX<32))?NX:32):64); // NX or 32 or 64 
                                     // multiple of 32 for better performance.
 const int CURAND_SEED = 0;          // seed for random numbers for CUDA
 /* ------------------------------------------------------------------------- */
