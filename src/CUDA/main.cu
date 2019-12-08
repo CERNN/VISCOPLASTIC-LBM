@@ -117,6 +117,8 @@ int main()
         }
         initializationPop(&pop[0], filePop);
         gpuUpdateMacr<<<grid, threads>>>(&pop[0], &macr[0]);
+        checkCudaErrors(cudaDeviceSynchronize());
+        getLastCudaError("Update macroscopics error");
     }
     else 
     {
@@ -139,8 +141,9 @@ int main()
             fclose (fileUz);
         }
         gpuInitialization<<<grid, threads>>>(&pop[0], &macr[0], LOAD_MACR, randomNumbers);
+        checkCudaErrors(cudaDeviceSynchronize());
+        getLastCudaError("Initialization error");
     }
-    checkCudaErrors(cudaDeviceSynchronize());
 
     // TIMING
     cudaEvent_t start, stop;
