@@ -23,7 +23,7 @@
 
 
 __device__
-void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT, 
+void gpuBoundaryConditions(NodeTypeMap* gpuNT, 
     dfloat* fPostStream,
     dfloat* fPostCol,
     const short unsigned int x, 
@@ -48,32 +48,13 @@ void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT,
         break;
     case BC_SCHEME_PRES_ZOUHE:
         gpuSchPresZouHe(gpuNT, fPostStream, fPostCol, x, y, z);
-    default:
         break;
-    }
-}
-
-
-__device__
-void gpuNonLocalBoundaryConditions(NodeTypeMap* gpuNT, 
-    dfloat* f, 
-    dfloat* fNode, 
-    const short unsigned int x, 
-    const short unsigned int y, 
-    const short unsigned int z)
-{
-    /*
-    -> BC_SCHEME
-        -> DIRECTION
-            -> GEOMETRY
-    */
-    switch(gpuNT->getSchemeBC())
-    {
     case BC_SCHEME_FREE_SLIP:
-        gpuSchFreeSlip(gpuNT, f, fNode, x, y, z);
+        gpuSchFreeSlip(gpuNT, fPostStream, fPostCol, x, y, z);
         break;
     case BC_SCHEME_SPECIAL:
-        gpuSchSpecial(gpuNT, f, fNode, x, y, z);
+        gpuSchSpecial(gpuNT, fPostStream, fPostCol, x, y, z);
+        break;
     default:
         break;
     }
@@ -82,8 +63,8 @@ void gpuNonLocalBoundaryConditions(NodeTypeMap* gpuNT,
 
 __device__
 void gpuSchFreeSlip(NodeTypeMap* gpuNT, 
-    dfloat* f, 
-    dfloat* fNode, 
+    dfloat* fPostStream,
+    dfloat* fPostCol,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z)
@@ -91,27 +72,27 @@ void gpuSchFreeSlip(NodeTypeMap* gpuNT,
     switch (gpuNT->getDirection())
     {
     case NORTH:
-        gpuBCFreeSlipN(f, fNode, x, y, z);
+        gpuBCFreeSlipN(fPostStream, fPostCol, x, y, z);
         break;
 
     case SOUTH:
-        gpuBCFreeSlipS(f, fNode, x, y, z);
+        gpuBCFreeSlipS(fPostStream, fPostCol, x, y, z);
         break;
 
     case WEST:
-        gpuBCFreeSlipW(f, fNode, x, y, z);
+        gpuBCFreeSlipW(fPostStream, fPostCol, x, y, z);
         break;
 
     case EAST:
-        gpuBCFreeSlipE(f, fNode, x, y, z);
+        gpuBCFreeSlipE(fPostStream, fPostCol, x, y, z);
         break;
 
     case FRONT:
-        gpuBCFreeSlipF(f, fNode, x, y, z);
+        gpuBCFreeSlipF(fPostStream, fPostCol, x, y, z);
         break;
 
     case BACK:
-        gpuBCFreeSlipB(f, fNode, x, y, z);
+        gpuBCFreeSlipB(fPostStream, fPostCol, x, y, z);
         break;
     default:
         break;

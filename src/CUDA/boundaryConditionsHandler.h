@@ -44,55 +44,36 @@ void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT,
 
 
 /*
-*   @brief Applies non local boundary conditions given node type and its population
-*   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations (used by non local boundary conditions)
-*   @param fNode[Q]: node's population to apply boundary conditions
-*   @param x: node's x value
-*   @param y: node's y value
-*   @param z: node's z value
-*/
-__device__
-void gpuNonLocalBoundaryConditions(NodeTypeMap* gpuNT, 
-    dfloat* f, 
-    dfloat* fNode,
-    const short unsigned int x, 
-    const short unsigned int y, 
-    const short unsigned int z);
-
-
-/*
 *   @brief Applies specials boundaries conditions given node's population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations (used by non local boundary conditions)
-*   @param fNode[Q]: node's population to apply boundary conditions
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
 */
 __device__
-void gpuSchSpecial(NodeTypeMap* gpuNT, 
-    dfloat* f,
-    dfloat* fNode, 
+void gpuSchSpecial(NodeTypeMap* gpuNT,
+    dfloat* fPostStream,
+    dfloat* fPostCol,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
 
 
 /*
-*   @brief Applies free slip boundary condition (which is a special streming) given node's type
+*   @brief Applies free slip boundary condition given node's type
 *   @param gpuNT: node's map
 *   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
-*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step 
-*   @param fNode[Q]: node's population to apply boundary conditions
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
 */
 __device__
 void gpuSchFreeSlip(NodeTypeMap* gpuNT,
-    dfloat* f,
-    dfloat* fNode, 
+    dfloat* fPostStream,
+    dfloat* fPostCol,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);

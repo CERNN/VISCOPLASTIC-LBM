@@ -18,8 +18,7 @@
 
 
 /*
-*   @brief Applies local boundary conditions, updates macroscopics and then 
-*          performs collision and streaming
+*   @brief Updates macroscopics and then performs collision and streaming
 *   @param pop: populations to use
 *   @param popAux: auxiliary populations to stream to
 *   @param mapBC: boundary conditions map
@@ -28,7 +27,7 @@
 *   @param step: simulation step
 */
 __global__
-void gpuBCMacrCollisionStream(
+void gpuMacrCollisionStream(
     dfloat* const pop,
     dfloat* const popAux,
     NodeTypeMap* const mapBC,
@@ -51,34 +50,20 @@ void gpuUpdateMacr(
 
 
 /*
-*   @brief Applies non local boundary conditions
-*   @param pop: populations to use
+*   @brief Applies boundary conditions
 *   @param mapBC: boundary conditions map
-*   @param popAuxNonLocal: auxiliary populations to keep the boundary conditions result
-*   @param idxNonLocal: scalar index of non local boundary conditions
-*   @param totalNonLocalBC: total number of nodes with non local boundary conditions
+*   @param popPostStream: populations post streaming to update
+*   @param popPostCol: populations post collision to use
+*   @param idxsBCNodes: vector of scalar indexes of boundary conditions
+*   @param totalBCNodes: total number of nodes boundary conditions
 */
 __global__
-void gpuApplyNonLocalBC(dfloat* pop, 
-    NodeTypeMap* mapBC, 
-    dfloat* popAuxNonLocal, 
-    size_t* idxNonLocal,
-    size_t totalNonLocalBC
+void gpuApplyBC(NodeTypeMap* mapBC, 
+    dfloat* popPostStream,
+    dfloat* popPostCol,
+    size_t* idxsBCNodes,
+    size_t totalBCNodes
 );
 
-
-/*
-*   @brief Synchronize non local boundary conditions applied
-*   @param pop: populations to copy to
-*   @param popAuxNonLocal: auxiliary populations to copy from
-*   @param idxNonLocal: scalar index of non local boundary conditions
-*   @param totalNonLocalBC: total number of nodes with non local boundary conditions
-*/
-__global__
-void gpuSynchronizeNonLocalBC(dfloat* pop,
-    dfloat* popAuxNonLocal,
-    size_t* idxNonLocal,
-    size_t totalNonLocalBC
-);
 
 #endif // __LBM_H

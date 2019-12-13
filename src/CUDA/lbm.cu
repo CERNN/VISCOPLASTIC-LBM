@@ -1,7 +1,7 @@
 #include "lbm.h"
 
 __global__ 
-void gpuBCMacrCollisionStream(
+void gpuMacrCollisionStream(
     dfloat* const pop,
     dfloat* const popAux,
     NodeTypeMap* const mapBC,
@@ -24,13 +24,6 @@ void gpuBCMacrCollisionStream(
     const unsigned short int xm1 = (NX + x - 1) % NX;
     const unsigned short int ym1 = (NY + y - 1) % NY;
     const unsigned short int zm1 = (NZ + z - 1) % NZ;
-
-    // Apply boundary conditions to fNode, using post collision from last step
-    if(mapBC[idxScalar(x, y, z)].getSchemeBC() != BC_NULL)
-    {
-        if(mapBC[idxScalar(x, y, z)].isBCLocal())
-            gpuLocalBoundaryConditions(&(mapBC[idxScalar(x, y, z)]), pop, popAux, x, y, z);
-    }
 
     // Node populations
     dfloat fNode[Q];
@@ -375,12 +368,9 @@ void gpuBCMacrCollisionStream(
     // Save post collision populations of boundary conditions nodes
     if(mapBC[idxScalar(x, y, z)].getSchemeBC() != BC_NULL)  
     {
-        if(mapBC[idxScalar(x, y, z)].isBCLocal())
-        {
-            #pragma unroll
-            for (char i = 0; i < Q; i++)
-                pop[idxPop(x, y, z, i)] = fNode[i];
-        }
+        #pragma unroll
+        for (char i = 0; i < Q; i++)
+            pop[idxPop(x, y, z, i)] = fNode[i];
     }
 
     // Streaming to popAux
@@ -480,46 +470,21 @@ void gpuUpdateMacr(
 
 
 __global__
-void gpuApplyNonLocalBC(dfloat* pop, 
-    NodeTypeMap* mapBC, 
-    dfloat* popAuxNonLocal, 
-    size_t* idxNonLocal,
-    size_t totalNonLocalBC)
+void gpuApplyBC(NodeTypeMap* mapBC,  
+    dfloat* popPostStream,
+    dfloat* popPostCol,
+    size_t* idxsBCNodes,
+    size_t totalBCNodes)
 {
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
+
     if(i >= totalNonLocalBC)
         return;
     // converts 1D index to 3D location
-    const size_t idx = idxNonLocal[i];
+    const size_t idx = idxsBCNodes[i];
     const unsigned int x = idx % NX;
     const unsigned int y = (idx/NX) % NY;
     const unsigned int z = idx/(NX*NY);
 
-    #pragma unroll
-    for (unsigned char j = 0; j < Q; j++)
-        popAuxNonLocal[i*Q+j] = pop[idxPop(x, y, z, j)];
-
-    gpuNonLocalBoundaryConditions(&(mapBC[idx]), pop, &(popAuxNonLocal[i*Q]), x, y, z);
-}
-
-
-__global__
-void gpuSynchronizeNonLocalBC(dfloat* pop,
-    dfloat* popAuxNonLocal,
-    size_t* idxNonLocal,
-    size_t totalNonLocalBC)
-{
-    const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
-    if(i >= totalNonLocalBC)
-        return;
-
-    // converts 1D index to 3D location
-    const size_t idx = idxNonLocal[i];
-    const unsigned int x = idx % NX;
-    const unsigned int y = (idx/NX) % NY;
-    const unsigned int z = idx/(NX*NY);
-
-    #pragma unroll
-    for (unsigned char j = 0; j < Q; j++)
-        pop[idxPop(x, y, z, j)] = popAuxNonLocal[i*Q+j] ;
+    gpuBoundaryConditions(&(mapBC[idx]), popPostStream, popPostCol, x, y, z);
 }
