@@ -12,6 +12,7 @@
 #include <string>
 #include <math.h>
 #include <cuda.h>
+#include <curand.h>
 #include <cuda_runtime.h>
 #include <builtin_types.h>
 #include <device_launch_parameters.h>
@@ -50,17 +51,32 @@ void initializationMacr(
 
 
 /*
+*   @brief Initializes random numbers (useful to initialize turbulence)
+*   @param randomNumbers: vector of random numbers (size is NX*NY*NZ)
+*   @param seed: seed to use for generation
+*/
+__host__
+void initializationRandomNumbers(
+    float* randomNumbers, 
+    int seed
+);
+
+
+/*
 *   @brief Initializes populations with equilibrium population, with density 
 *          and velocity defined by "gpuMacrInitValue"
 *   @param pop: populations to be initialized in equilibrium
 *   @param macr: macroscopics to be initialized by "gpuMacrInitValue"
 *   @param isMacrInit: macroscopics are already initialized or not
+*   @param randomNumbers: vector of random numbers (size is NX*NY*NZ)
+*                         useful for turbulence 
 */
 __global__
 void gpuInitialization(
     Populations* pop,
     Macroscopics* macr,
-    bool isMacrInit
+    bool isMacrInit,
+    float* randomNumbers
 );
 
 
@@ -68,11 +84,14 @@ void gpuInitialization(
 *   @brief Initializes macroscopics value in function of its location.
 *          To be called in "gpuInitialization"
 *   @param macr: macroscopics to initialize
+*   @param randomNumbers: vector of random numbers (size is NX*NY*NZ)
+*                         useful for turbulence
 *   @param x, y, z: location
 */
 __device__
 void gpuMacrInitValue(
     Macroscopics* macr,
+    float* randomNumbers,
     int x, int y, int z
 );
 

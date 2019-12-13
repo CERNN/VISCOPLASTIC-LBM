@@ -79,11 +79,35 @@ void initializationMacr(
 }
 
 
+__host__
+void initializationRandomNumbers(
+    float* randomNumbers, int seed)
+{
+    curandGenerator_t gen;
+
+    // Create pseudo-random number generator
+    checkCurandStatus(curandCreateGenerator(&gen,
+        CURAND_RNG_PSEUDO_DEFAULT));
+    
+    // Set generator seed
+    checkCurandStatus(curandSetPseudoRandomGeneratorSeed(gen,
+        CURAND_SEED));
+    
+    // Generate NX*NY*NZ floats on device, using normal distribution
+    // with mean=0 and std_dev=NORMAL_STD_DEV
+    checkCurandStatus(curandGenerateNormal(gen, randomNumbers, numberNodes,
+        0, CURAND_STD_DEV));
+
+    checkCurandStatus(curandDestroyGenerator(gen));
+}
+
+
 __global__
 void gpuInitialization(
     Populations* pop,
     Macroscopics* macr,
-    bool isMacrInit)
+    bool isMacrInit,
+    float* randomNumbers)
 {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
@@ -95,7 +119,7 @@ void gpuInitialization(
 
     if (!isMacrInit)
     {
-        gpuMacrInitValue(macr, x, y, z);
+        gpuMacrInitValue(macr, randomNumbers, x, y, z);
     }
 
     for (int i = 0; i < Q; i++)
@@ -116,6 +140,7 @@ void gpuInitialization(
 __device__
 void gpuMacrInitValue(
     Macroscopics* macr,
+    float* randomNumbers,
     int x, int y, int z)
 {
     macr->rho[idxScalar(x, y, z)] = RHO_0;

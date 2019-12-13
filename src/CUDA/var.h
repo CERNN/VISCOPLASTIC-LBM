@@ -47,6 +47,9 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 #define LOAD_MACR false     // loads macroscopics from binary file (file names
                             // defined below; LOAD_POP must be false)
 
+#define RANDOM_NUMBERS false // to generate random numbers 
+                            // (useful for turbulence)
+
 // file names to load
 #define STR_POP "pop.bin"
 #define STR_RHO "rho.bin"
@@ -94,6 +97,8 @@ constexpr dfloat RESID_MAX = 1e-5;      // maximal residual
 const int nThreads = (NX%64?((NX%32||(NX<32))?NX:32):64); // NX or 32 or 64 
                                     // multiple of 32 for better performance.
 const int CURAND_SEED = 0;          // seed for random numbers for CUDA
+constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers 
+                                    // in normal distribution
 /* ------------------------------------------------------------------------- */
 
 

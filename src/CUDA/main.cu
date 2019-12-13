@@ -41,6 +41,7 @@ int main()
     MacrProc processData;
     BoundaryConditionsInfo bcInfo;
     SimInfo info;
+    float* randomNumbers = nullptr; // useful for turbulence
     int step = INI_STEP;
 
     // SETUP SABING FOLDER
@@ -63,8 +64,10 @@ int main()
     // STREAMS AND MEMORY ALLOCATION FOR GPU
     cudaStream_t streamsKernelLBM[1]; // stream kernel for each GPU
     checkCudaErrors(cudaSetDevice(0));
-    checkCudaErrors(cudaMallocManaged((void**)&pop, sizeof(Populations)*N_GPUS));
-    checkCudaErrors(cudaMallocManaged((void**)&macr, sizeof(Macroscopics)*N_GPUS));
+    checkCudaErrors(cudaMallocManaged((void**)&pop, 
+        sizeof(Populations)*N_GPUS));
+    checkCudaErrors(cudaMallocManaged((void**)&macr, 
+        sizeof(Macroscopics)*N_GPUS));
 
     // ALLOCATION AND CONFIGURATION FOR EACH GPU
     for(int i = 0; i < N_GPUS; i++)
@@ -74,6 +77,9 @@ int main()
         checkCudaErrors(cudaStreamCreate(&streamsKernelLBM[i]));
         pop[i].popAllocation();
         macr[i].macrAllocation(IN_VIRTUAL);
+        if(RANDOM_NUMBERS)
+            checkCudaErrors(cudaMallocManaged((void**)&randomNumbers, 
+                sizeof(float)*numberNodes));
     }
     
 
@@ -111,6 +117,8 @@ int main()
         }
         initializationPop(&pop[0], filePop);
         gpuUpdateMacr<<<grid, threads>>>(&pop[0], &macr[0]);
+        checkCudaErrors(cudaDeviceSynchronize());
+        getLastCudaError("Update macroscopics error");
     }
     else 
     {
@@ -120,7 +128,8 @@ int main()
             FILE* fileUx = fopen(STR_UX, "rb");
             FILE* fileUy = fopen(STR_UY, "rb");
             FILE* fileUz = fopen(STR_UZ, "rb");
-            if(fileRho == nullptr || fileUz == nullptr || fileUy == nullptr || fileUx == nullptr)
+            if(fileRho == nullptr || fileUz == nullptr 
+                || fileUy == nullptr || fileUx == nullptr)
             {
                 printf("Error reading macroscopics files\n");
                 return -1;
@@ -131,9 +140,10 @@ int main()
             fclose (fileUy);
             fclose (fileUz);
         }
-        gpuInitialization<<<grid, threads>>>(&pop[0], &macr[0], LOAD_MACR);
+        gpuInitialization<<<grid, threads>>>(&pop[0], &macr[0], LOAD_MACR, randomNumbers);
+        checkCudaErrors(cudaDeviceSynchronize());
+        getLastCudaError("Initialization error");
     }
-    checkCudaErrors(cudaDeviceSynchronize());
 
     // TIMING
     cudaEvent_t start, stop;
@@ -173,15 +183,18 @@ int main()
             if(bcInfo.totalNonLocalBCNodes%32)
                 gridBC.x++;
             
-            // applies to pop->pop (auxiliary populations) non local boundary conditions
+            // applies to pop->pop (auxiliary populations) 
+            // non local boundary conditions
             gpuApplyNonLocalBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
                 (pop->pop, pop->mapBC, pop->popAux, 
                 bcInfo.idxNonLocalBCNodes, bcInfo.totalNonLocalBCNodes);
             checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
             getLastCudaError("application of non local boundary conditions error");
 
-            // synchronizes the boundary conditions applied to pop->popAux (valid populations)
-            gpuSynchronizeNonLocalBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
+            // synchronizes the boundary conditions 
+            // applied to pop->popAux (valid populations)
+            gpuSynchronizeNonLocalBC<<<gridBC, threadsBC, 0, 
+                                       streamsKernelLBM[0]>>>
                 (pop->pop, pop->popAux, 
                 bcInfo.idxNonLocalBCNodes, bcInfo.totalNonLocalBCNodes);
             checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
@@ -241,7 +254,8 @@ int main()
     size_t nodesUpdated = info.totalSteps * numberNodes;
     info.MLUPS = (nodesUpdated / 1e6) / info.timeElapsed;
     // bandwidth for AB scheme and does not consider macroscopics transfers
-    info.bandwidth = memSizePop * 2.0 / (info.timeElapsed*BYTES_PER_GB) * info.totalSteps;
+    info.bandwidth = memSizePop*2.0 / (info.timeElapsed*BYTES_PER_GB) 
+        * info.totalSteps;
 
     // SIMULATION INFO
     saveSimInfo(&info);

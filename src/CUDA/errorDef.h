@@ -2,6 +2,7 @@
 #define __ERROR_DEF_H
 
 #include <cuda.h>
+#include <curand.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
@@ -11,6 +12,18 @@
 
 #define checkCudaErrors(err)  __checkCudaErrors(err,#err,__FILE__,__LINE__)
 #define getLastCudaError(msg)  __getLastCudaError(msg,__FILE__,__LINE__)
+#define checkCurandStatus(status) __checkCurandStatus(status, __FILE__, __LINE__)
+
+
+inline void __checkCurandStatus(curandStatus_t status, const char* const file, const int line)
+{
+    if(status != CURAND_STATUS_SUCCESS) 
+    {
+        printf("Curand error at %s(%d)\n",__FILE__,__LINE__);
+        exit(-1);
+    }
+}
+
 
 inline void __checkCudaErrors(cudaError_t err, const char *const func, const char *const file, const int line)
 {
