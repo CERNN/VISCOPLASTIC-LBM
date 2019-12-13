@@ -15,7 +15,8 @@
 /*
 *   @brief Applies velocity bounce-back boundary condition on north wall node, 
 *          given pressure
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -24,13 +25,14 @@
 *   @param uz_w: wall's z velocity
 */
 __device__
-void gpuBCVelBounceBackN(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackN(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z,  const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 
 /*
 *   @brief Applies velocity bounce-back boundary condition on south wall node, given pressure
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -39,13 +41,14 @@ void gpuBCVelBounceBackN(dfloat* f, const short unsigned int x, const short unsi
 *   @param uz_w: wall's z velocity
 */
 __device__
-void gpuBCVelBounceBackS(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackS(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z,  const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 
 /*
 *   @brief Applies velocity bounce-back boundary condition on west wall node, given pressure
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -54,13 +57,14 @@ void gpuBCVelBounceBackS(dfloat* f, const short unsigned int x, const short unsi
 *   @param uz_w: wall's z velocity
 */
 __device__
-void gpuBCVelBounceBackW(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackW(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z,  const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 
 /*
 *   @brief Applies velocity bounce-back boundary condition on east wall node, given pressure
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -69,13 +73,14 @@ void gpuBCVelBounceBackW(dfloat* f, const short unsigned int x, const short unsi
 *   @param uz_w: wall's z velocity
 */
 __device__
-void gpuBCVelBounceBackE(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackE(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z,  const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 
 /*
 *   @brief Applies velocity bounce-back boundary condition on front wall node, given pressure
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -84,13 +89,14 @@ void gpuBCVelBounceBackE(dfloat* f, const short unsigned int x, const short unsi
 *   @param uz_w: wall's z velocity
 */
 __device__
-void gpuBCVelBounceBackF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z,  const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 
 /*
 *   @brief Applies velocity bounce-back boundary condition on back wall node, given pressure
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -99,7 +105,7 @@ void gpuBCVelBounceBackF(dfloat* f, const short unsigned int x, const short unsi
 *   @param uz_w: wall's z velocity
 */
 __device__
-void gpuBCVelBounceBackB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z,  const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 #endif // !__BC_VEL_BOUNCE_BACK_D3Q19_H

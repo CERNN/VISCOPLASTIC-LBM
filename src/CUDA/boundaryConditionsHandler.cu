@@ -24,7 +24,8 @@
 
 __device__
 void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT, 
-    dfloat* f,
+    dfloat* fPostStream,
+    dfloat* fPostCol,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z)
@@ -37,16 +38,16 @@ void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT,
     switch(gpuNT->getSchemeBC())
     {
     case BC_SCHEME_BOUNCE_BACK:
-        gpuSchBounceBack(gpuNT, f, x, y, z);
+        gpuSchBounceBack(gpuNT, fPostStream, fPostCol, x, y, z);
         break;
     case BC_SCHEME_VEL_BOUNCE_BACK:
-        gpuSchVelBounceBack(gpuNT, f, x, y, z);
+        gpuSchVelBounceBack(gpuNT, fPostStream, fPostCol, x, y, z);
         break;  
     case BC_SCHEME_VEL_ZOUHE:
-        gpuSchVelZouHe(gpuNT, f, x, y, z);
+        gpuSchVelZouHe(gpuNT, fPostStream, fPostCol, x, y, z);
         break;
     case BC_SCHEME_PRES_ZOUHE:
-        gpuSchPresZouHe(gpuNT, f, x, y, z);
+        gpuSchPresZouHe(gpuNT, fPostStream, fPostCol, x, y, z);
     default:
         break;
     }
@@ -54,7 +55,12 @@ void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT,
 
 
 __device__
-void gpuNonLocalBoundaryConditions(NodeTypeMap* gpuNT, dfloat * f, dfloat* fNode, const short unsigned int x, const short unsigned int y, const short unsigned int z)
+void gpuNonLocalBoundaryConditions(NodeTypeMap* gpuNT, 
+    dfloat* f, 
+    dfloat* fNode, 
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z)
 {
     /*
     -> BC_SCHEME
@@ -75,257 +81,12 @@ void gpuNonLocalBoundaryConditions(NodeTypeMap* gpuNT, dfloat * f, dfloat* fNode
 
 
 __device__
-void gpuSchBounceBack(NodeTypeMap* gpuNT, dfloat* f, const short unsigned int x, const short unsigned int y, const short unsigned int z)
-{
-    switch(gpuNT->getDirection())
-    {
-    case NORTH:
-        gpuBCBounceBackN(f, x, y, z);
-        break;
-
-    case SOUTH:
-        gpuBCBounceBackS(f, x, y, z);
-        break;
-
-    case WEST:
-        gpuBCBounceBackW(f, x, y, z);
-        break;
-
-    case EAST:
-        gpuBCBounceBackE(f, x, y, z);
-        break;
-
-    case FRONT:
-        gpuBCBounceBackF(f, x, y, z);
-        break;
-
-    case BACK:
-        gpuBCBounceBackB(f, x, y, z);
-        break;
-
-    case NORTH_WEST:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackNW(f, x, y, z);
-        break;
-
-    case NORTH_EAST:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackNE(f, x, y, z);
-        break;
-
-    case NORTH_FRONT:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackNF(f, x, y, z);
-        break;
-
-    case NORTH_BACK:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackNB(f, x, y, z);
-        break;
-
-    case SOUTH_WEST:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackSW(f, x, y, z);
-        break;
-
-    case SOUTH_EAST:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackSE(f, x, y, z);
-        break;
-
-    case SOUTH_FRONT:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackSF(f, x, y, z);
-        break;
-
-    case SOUTH_BACK:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackSB(f, x, y, z);
-        break;
-
-    case WEST_FRONT:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackWF(f, x, y, z);
-        break;
-
-    case WEST_BACK:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackWB(f, x, y, z);
-        break;
-
-    case EAST_FRONT:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackEF(f, x, y, z);
-        break;
-
-    case EAST_BACK:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackEB(f, x, y, z);
-        break;
-
-    case NORTH_WEST_FRONT:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackNWF(f, x, y, z);
-        break;
-
-    case NORTH_WEST_BACK:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackNWB(f, x, y, z);
-        break;
-
-    case NORTH_EAST_FRONT:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackNEF(f, x, y, z);
-        break;
-
-    case NORTH_EAST_BACK:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackNEB(f, x, y, z);
-        break;
-
-    case SOUTH_WEST_FRONT:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackSWF(f, x, y, z);
-        break;
-
-    case SOUTH_WEST_BACK:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackSWB(f, x, y, z);
-        break;
-
-    case SOUTH_EAST_FRONT:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackSEF(f, x, y, z);
-        break;
-
-    case SOUTH_EAST_BACK:
-        if(gpuNT->getGeometry() == CONCAVE)
-            gpuBCBounceBackSEB(f, x, y, z);
-        break;
-
-    default:
-        break;
-    }
-}
-
-
-__device__
-void gpuSchVelBounceBack(NodeTypeMap* gpuNT, dfloat* f, const short unsigned int x, const short unsigned int y, const short unsigned int z)
-{
-#ifdef D3Q19 // support only for D3Q19
-    switch (gpuNT->getDirection())
-    {
-    case NORTH:
-        gpuBCVelBounceBackN(f, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-
-    case SOUTH:
-        gpuBCVelBounceBackS(f, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-
-    case WEST:
-        gpuBCVelBounceBackW(f, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-
-    case EAST:
-        gpuBCVelBounceBackE(f, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-
-    case FRONT:
-        gpuBCVelBounceBackF(f, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-
-    case BACK:
-        gpuBCVelBounceBackB(f, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-
-    default:
-        break;
-    }
-#endif
-}
-
-
-__device__
-void gpuSchPresZouHe(NodeTypeMap* gpuNT, dfloat * f, const short unsigned int x, const short unsigned int y, const short unsigned int z)
-{
-#ifdef D3Q19 // support only for D3Q19
-    switch (gpuNT->getDirection())
-    {
-    case NORTH:
-        gpuBCPresZouHeN(f, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
-        break;
-
-    case SOUTH:
-        gpuBCPresZouHeS(f, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
-        break;
-
-    case WEST:
-        gpuBCPresZouHeW(f, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
-        break;
-
-    case EAST:
-        gpuBCPresZouHeE(f, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
-        break;
-
-    case FRONT:
-        gpuBCPresZouHeF(f, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
-        break;
-
-    case BACK:
-        gpuBCPresZouHeB(f, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
-        break;
-    default:
-        break;
-    }
-#endif
-}
-
-
-__device__
-void gpuSchVelZouHe(NodeTypeMap * gpuNT, dfloat * f, const short unsigned int x, const short unsigned int y, const short unsigned int z)
-{
-#ifdef D3Q19 // support only for D3Q19
-    switch (gpuNT->getDirection())
-    {
-    case NORTH:
-        gpuBCVelZouHeN(f, x, y, z, uxBC[gpuNT->getUxIdx()], 
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-
-    case SOUTH:
-        gpuBCVelZouHeS(f, x, y, z, uxBC[gpuNT->getUxIdx()],
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-
-    case WEST:
-        gpuBCVelZouHeW(f, x, y, z, uxBC[gpuNT->getUxIdx()],
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-
-    case EAST:
-        gpuBCVelZouHeE(f, x, y, z, uxBC[gpuNT->getUxIdx()],
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-
-    case FRONT:
-        gpuBCVelZouHeF(f, x, y, z, uxBC[gpuNT->getUxIdx()],
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-
-    case BACK:
-        gpuBCVelZouHeB(f, x, y, z, uxBC[gpuNT->getUxIdx()],
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
-        break;
-    default:
-        break;
-    }
-#endif
-}
-
-
-__device__
-void gpuSchFreeSlip(NodeTypeMap* gpuNT, dfloat* f, dfloat* fNode, const short unsigned int x, const short unsigned int y, const short unsigned int z)
+void gpuSchFreeSlip(NodeTypeMap* gpuNT, 
+    dfloat* f, 
+    dfloat* fNode, 
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z)
 {
     switch (gpuNT->getDirection())
     {
@@ -355,4 +116,273 @@ void gpuSchFreeSlip(NodeTypeMap* gpuNT, dfloat* f, dfloat* fNode, const short un
     default:
         break;
     }
+}
+
+
+__device__
+void gpuSchBounceBack(NodeTypeMap* gpuNT, 
+    dfloat* fPostStream,
+    dfloat* fPostCol,
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z)
+{
+    switch(gpuNT->getDirection())
+    {
+    case NORTH:
+        gpuBCBounceBackN(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case SOUTH:
+        gpuBCBounceBackS(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case WEST:
+        gpuBCBounceBackW(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case EAST:
+        gpuBCBounceBackE(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case FRONT:
+        gpuBCBounceBackF(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case BACK:
+        gpuBCBounceBackB(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case NORTH_WEST:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackNW(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case NORTH_EAST:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackNE(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case NORTH_FRONT:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackNF(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case NORTH_BACK:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackNB(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case SOUTH_WEST:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackSW(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case SOUTH_EAST:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackSE(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case SOUTH_FRONT:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackSF(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case SOUTH_BACK:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackSB(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case WEST_FRONT:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackWF(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case WEST_BACK:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackWB(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case EAST_FRONT:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackEF(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case EAST_BACK:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackEB(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case NORTH_WEST_FRONT:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackNWF(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case NORTH_WEST_BACK:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackNWB(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case NORTH_EAST_FRONT:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackNEF(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case NORTH_EAST_BACK:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackNEB(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case SOUTH_WEST_FRONT:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackSWF(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case SOUTH_WEST_BACK:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackSWB(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case SOUTH_EAST_FRONT:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackSEF(fPostStream, fPostCol, x, y, z);
+        break;
+
+    case SOUTH_EAST_BACK:
+        if(gpuNT->getGeometry() == CONCAVE)
+            gpuBCBounceBackSEB(fPostStream, fPostCol, x, y, z);
+        break;
+
+    default:
+        break;
+    }
+}
+
+
+__device__
+void gpuSchVelBounceBack(NodeTypeMap* gpuNT, 
+    dfloat* fPostStream,
+    dfloat* fPostCol,
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z)
+{
+#ifdef D3Q19 // support only for D3Q19
+    switch (gpuNT->getDirection())
+    {
+    case NORTH:
+        gpuBCVelBounceBackN(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+
+    case SOUTH:
+        gpuBCVelBounceBackS(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+
+    case WEST:
+        gpuBCVelBounceBackW(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+
+    case EAST:
+        gpuBCVelBounceBackE(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+
+    case FRONT:
+        gpuBCVelBounceBackF(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+
+    case BACK:
+        gpuBCVelBounceBackB(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+
+    default:
+        break;
+    }
+#endif
+}
+
+
+__device__
+void gpuSchPresZouHe(NodeTypeMap* gpuNT, 
+    dfloat * f, 
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z)
+{
+#ifdef D3Q19 // support only for D3Q19
+    switch (gpuNT->getDirection())
+    {
+    case NORTH:
+        gpuBCPresZouHeN(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        break;
+
+    case SOUTH:
+        gpuBCPresZouHeS(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        break;
+
+    case WEST:
+        gpuBCPresZouHeW(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        break;
+
+    case EAST:
+        gpuBCPresZouHeE(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        break;
+
+    case FRONT:
+        gpuBCPresZouHeF(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        break;
+
+    case BACK:
+        gpuBCPresZouHeB(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        break;
+    default:
+        break;
+    }
+#endif
+}
+
+
+__device__
+void gpuSchVelZouHe(NodeTypeMap* gpuNT, 
+    dfloat* fPostStream,
+    dfloat* fPostCol,
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z)
+{
+#ifdef D3Q19 // support only for D3Q19
+    switch (gpuNT->getDirection())
+    {
+    case NORTH:
+        gpuBCVelZouHeN(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], 
+            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+
+    case SOUTH:
+        gpuBCVelZouHeS(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()],
+            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+
+    case WEST:
+        gpuBCVelZouHeW(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()],
+            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+
+    case EAST:
+        gpuBCVelZouHeE(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()],
+            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+
+    case FRONT:
+        gpuBCVelZouHeF(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()],
+            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+
+    case BACK:
+        gpuBCVelZouHeB(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()],
+            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        break;
+    default:
+        break;
+    }
+#endif
 }

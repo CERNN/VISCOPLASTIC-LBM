@@ -23,9 +23,10 @@
 
 
 __device__
-void gpuBCVelBounceBackN(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackN(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     // uses node's rho as the wall's rho
     const dfloat rho_w = f[idxPop(x, y, z, 0)] + f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)] +
         f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] +
@@ -44,9 +45,10 @@ void gpuBCVelBounceBackN(dfloat* f, const short unsigned int x, const short unsi
 
 
 __device__
-void gpuBCVelBounceBackS(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackS(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     // uses node's rho as the wall's rho
     const dfloat rho_w = f[idxPop(x, y, z, 0)] + f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)] +
         f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] +
@@ -63,9 +65,10 @@ void gpuBCVelBounceBackS(dfloat* f, const short unsigned int x, const short unsi
 
 
 __device__
-void gpuBCVelBounceBackW(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackW(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     // uses node's rho as the wall's rho
     const dfloat rho_w = f[idxPop(x, y, z, 0)] + f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)] +
         f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] +
@@ -82,9 +85,10 @@ void gpuBCVelBounceBackW(dfloat* f, const short unsigned int x, const short unsi
 
 
 __device__
-void gpuBCVelBounceBackE(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackE(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     // uses node's rho as the wall's rho
     const dfloat rho_w = f[idxPop(x, y, z, 0)] + f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)] +
         f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] +
@@ -101,9 +105,10 @@ void gpuBCVelBounceBackE(dfloat* f, const short unsigned int x, const short unsi
 
 
 __device__
-void gpuBCVelBounceBackF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     // uses node's rho as the wall's rho
     const dfloat rho_w = f[idxPop(x, y, z, 0)] + f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)] +
         f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] +
@@ -121,9 +126,10 @@ void gpuBCVelBounceBackF(dfloat* f, const short unsigned int x, const short unsi
 
 
 __device__
-void gpuBCVelBounceBackB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelBounceBackB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     // uses node's rho as the wall's rho
     const dfloat rho_w = f[idxPop(x, y, z, 0)] + f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)] +
         f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] +

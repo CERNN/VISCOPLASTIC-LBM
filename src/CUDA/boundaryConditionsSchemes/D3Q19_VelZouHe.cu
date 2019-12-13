@@ -23,9 +23,10 @@
 
 
 __device__
-void gpuBCVelZouHeN(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeN(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     const dfloat rho_w = (1 / (1 + uy_w)) * (f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)]
         + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 9)]
         + f[idxPop(x, y, z, 15)] + f[idxPop(x, y, z, 16)] + f[idxPop(x, y, z, 10)]
@@ -46,9 +47,10 @@ void gpuBCVelZouHeN(dfloat* f, const short unsigned int x, const short unsigned 
 
 
 __device__
-void gpuBCVelZouHeS(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeS(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     const dfloat rho_w = (1 / (1 - uy_w)) * (f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)]
         + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 9)]
         + f[idxPop(x, y, z, 15)] + f[idxPop(x, y, z, 16)] + f[idxPop(x, y, z, 10)]
@@ -69,9 +71,10 @@ void gpuBCVelZouHeS(dfloat* f, const short unsigned int x, const short unsigned 
 
 
 __device__
-void gpuBCVelZouHeW(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeW(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     const dfloat rho_w = (1 / (1 - ux_w)) * (f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)]
         + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 11)]
         + f[idxPop(x, y, z, 17)] + f[idxPop(x, y, z, 18)] + f[idxPop(x, y, z, 12)]
@@ -92,9 +95,10 @@ void gpuBCVelZouHeW(dfloat* f, const short unsigned int x, const short unsigned 
 
 
 __device__
-void gpuBCVelZouHeE(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeE(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     const dfloat rho_w = (1 / (1 + ux_w)) * (f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)]
         + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] + f[idxPop(x, y, z, 11)]
         + f[idxPop(x, y, z, 17)] + f[idxPop(x, y, z, 18)] + f[idxPop(x, y, z, 12)]
@@ -115,9 +119,10 @@ void gpuBCVelZouHeE(dfloat* f, const short unsigned int x, const short unsigned 
 
 
 __device__
-void gpuBCVelZouHeF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     const dfloat rho_w = (1 / (1 + uz_w)) * (f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)]
         + f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 7)]
         + f[idxPop(x, y, z, 14)] + f[idxPop(x, y, z, 8)] + f[idxPop(x, y, z, 13)]
@@ -135,14 +140,14 @@ void gpuBCVelZouHeF(dfloat* f, const short unsigned int x, const short unsigned 
     f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)] + rho_w * (-uz_w - ux_w) / 6 + nzx;
     f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)] + rho_w * (-uz_w + uy_w) / 6 - nzy;
     f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)] + rho_w * (-uz_w - uy_w) / 6 + nzy;
-
 }
 
 
 __device__
-void gpuBCVelZouHeB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w)
 {
+    dfloat* f = fPostStream;
     const dfloat rho_w = (1 / (1 + uz_w)) * (f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)]
         + f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 7)]
         + f[idxPop(x, y, z, 14)] + f[idxPop(x, y, z, 8)] + f[idxPop(x, y, z, 13)]
@@ -160,5 +165,4 @@ void gpuBCVelZouHeB(dfloat* f, const short unsigned int x, const short unsigned 
     f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)] + rho_w * (uz_w - ux_w) / 6 + nzx;
     f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)] + rho_w * (uz_w + ux_w) / 6 - nzy;
     f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)] + rho_w * (uz_w - ux_w) / 6 + nzy;
-
 }

@@ -15,7 +15,8 @@
 
 /*
 *   @brief Applies velocity Zou-He boundary condition on north wall node, given velocities
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -24,13 +25,14 @@
 *   @param uz_w: node's z velocity
 */
 __device__
-void gpuBCVelZouHeN(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeN(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
    const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 
 /*
 *   @brief Applies velocity Zou-He boundary condition on south wall node, given velocities
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -39,13 +41,14 @@ void gpuBCVelZouHeN(dfloat* f, const short unsigned int x, const short unsigned 
 *   @param uz_w: node's z velocity
 */
 __device__
-void gpuBCVelZouHeS(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeS(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
    const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 
 /*
 *   @brief Applies velocity Zou-He boundary condition on west wall node, given velocities
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -54,13 +57,14 @@ void gpuBCVelZouHeS(dfloat* f, const short unsigned int x, const short unsigned 
 *   @param uz_w: node's z velocity
 */
 __device__
-void gpuBCVelZouHeW(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeW(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
    const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 
 /*
 *   @brief Applies velocity Zou-He boundary condition on east wall node, given velocities
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -69,13 +73,14 @@ void gpuBCVelZouHeW(dfloat* f, const short unsigned int x, const short unsigned 
 *   @param uz_w: node's z velocity
 */
 __device__
-void gpuBCVelZouHeE(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeE(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
    const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 
 /*
 *   @brief Applies velocity Zou-He boundary condition on front wall node, given velocities
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -84,13 +89,14 @@ void gpuBCVelZouHeE(dfloat* f, const short unsigned int x, const short unsigned 
 *   @param uz_w: node's z velocity
 */
 __device__
-void gpuBCVelZouHeF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
    const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 
 /*
 *   @brief Applies velocity Zou-He boundary condition on back wall node, given velocities
-*   @param f[(NX, NY, NZ, Q)]: grid of populations
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
@@ -99,7 +105,7 @@ void gpuBCVelZouHeF(dfloat* f, const short unsigned int x, const short unsigned 
 *   @param uz_w: node's z velocity
 */
 __device__
-void gpuBCVelZouHeB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCVelZouHeB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
    const short unsigned int z, const dfloat ux_w, const dfloat uy_w, const dfloat uz_w);
 
 

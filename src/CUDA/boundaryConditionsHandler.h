@@ -28,14 +28,16 @@
 /*
 *   @brief Applies local boundary conditions given node type and its population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step 
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
 */
 __device__
 void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT, 
-    dfloat* f,
+    dfloat* fPostStream,
+    dfloat* fPostCol,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
@@ -44,7 +46,7 @@ void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT,
 /*
 *   @brief Applies non local boundary conditions given node type and its population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19 (used by non local boundary conditions)
+*   @param f[(NX, NY, NZ, Q)]: grid of populations (used by non local boundary conditions)
 *   @param fNode[Q]: node's population to apply boundary conditions
 *   @param x: node's x value
 *   @param y: node's y value
@@ -62,7 +64,7 @@ void gpuNonLocalBoundaryConditions(NodeTypeMap* gpuNT,
 /*
 *   @brief Applies specials boundaries conditions given node's population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param f[(NX, NY, NZ, Q)]: grid of populations (used by non local boundary conditions)
 *   @param fNode[Q]: node's population to apply boundary conditions
 *   @param x: node's x value
 *   @param y: node's y value
@@ -78,16 +80,37 @@ void gpuSchSpecial(NodeTypeMap* gpuNT,
 
 
 /*
+*   @brief Applies free slip boundary condition (which is a special streming) given node's type
+*   @param gpuNT: node's map
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step 
+*   @param fNode[Q]: node's population to apply boundary conditions
+*   @param x: node's x value
+*   @param y: node's y value
+*   @param z: node's z value
+*/
+__device__
+void gpuSchFreeSlip(NodeTypeMap* gpuNT,
+    dfloat* f,
+    dfloat* fNode, 
+    const short unsigned int x, 
+    const short unsigned int y, 
+    const short unsigned int z);
+
+
+/*
 *   @brief Applies bounce back boundary condition given node's population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step 
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
 */
 __device__
 void gpuSchBounceBack(NodeTypeMap* gpuNT, 
-    dfloat* f, 
+    dfloat* fPostStream,
+    dfloat* fPostCol,
     const short unsigned int x,
     const short unsigned int y,
     const short unsigned int z);
@@ -97,14 +120,16 @@ void gpuSchBounceBack(NodeTypeMap* gpuNT,
 *   @brief Applies velocity bounce back boundary condition given node's 
 *          population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step 
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
 */
 __device__
 void gpuSchVelBounceBack(NodeTypeMap* gpuNT, 
-    dfloat* f, 
+    dfloat* fPostStream,
+    dfloat* fPostCol,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
@@ -114,14 +139,16 @@ void gpuSchVelBounceBack(NodeTypeMap* gpuNT,
 *   @brief Applies pressure non-equilibrium bounce back boundary condition 
 *          given node's population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step 
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
 */
 __device__
 void gpuSchPresZouHe(NodeTypeMap* gpuNT, 
-    dfloat* f, 
+    dfloat* fPostStream,
+    dfloat* fPostCol,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
@@ -130,34 +157,19 @@ void gpuSchPresZouHe(NodeTypeMap* gpuNT,
 /*
 *   @brief Applies velocity Zou-He boundary condition given node's population
 *   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
+*   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
+*   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step 
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
 */
 __device__
 void gpuSchVelZouHe(NodeTypeMap* gpuNT, 
-    dfloat* f, 
+    dfloat* fPostStream,
+    dfloat* fPostCol,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z);
 
-
-/*
-*   @brief Applies free slip boundary condition (which is a special streming) given node's type
-*   @param gpuNT: node's map
-*   @param f[(NX, NY, NZ, Q)]: grid of populations from 0 to 19
-*   @param fNode[Q]: node's population to apply boundary conditions
-*   @param x: node's x value
-*   @param y: node's y value
-*   @param z: node's z value
-*/
-__device__
-void gpuSchFreeSlip(NodeTypeMap* gpuNT, 
-    dfloat* f, 
-    dfloat* fNode, 
-    const short unsigned int x, 
-    const short unsigned int y, 
-    const short unsigned int z);
 
 #endif // !__BOUNDARY_CONDITIONS_HANDLER_H

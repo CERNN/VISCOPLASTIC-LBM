@@ -16,16 +16,8 @@
 
 /* --------------------- PRECISION AND VEL. SET DEFINES -------------------- */
 typedef double dfloat;      // single or double precision
-#define D3Q27               // velocity set to use
+#define D3Q19               // velocity set to use
 /* ------------------------------------------------------------------------- */
-
-
-#ifdef D3Q19
-#include "velocitySets/D3Q19.h"
-#endif // !D3Q19
-#ifdef D3Q27
-#include "velocitySets/D3Q27.h"
-#endif // !D3Q27
 
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
@@ -33,16 +25,18 @@ typedef double dfloat;      // single or double precision
 #define PATH_FILES "parallelPlatesHWBB"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
-#define MACR_SAVE 0             // saves macroscopics every MACR_SAVE steps
-#define POP_SAVE false           // saves last step's population
 /* ------------------------------------------------------------------------- */
 
 
-/* ------------------------- DATA TREATMENT DEFINES ------------------------ */
+/* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
+constexpr int N_STEPS = 10000;          // maximum number of time steps
+#define MACR_SAVE 0                     // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT 1000                // report every DATA_REPORT steps
+
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
-constexpr dfloat RESID_MAX = 1e-5;      // simulation maximal residual
+
+#define POP_SAVE false                  // saves last step's population
 /* ------------------------------------------------------------------------- */
 
 
@@ -63,8 +57,6 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
-constexpr int N_STEPS = 10000;      // maximum number of time steps
-
 constexpr unsigned int N = 32;
 constexpr unsigned int NX = N;        // size x of the grid 
                                       // (32 multiple for better performance)
@@ -93,10 +85,12 @@ __device__ const dfloat uxBC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
 __device__ const dfloat uyBC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
 __device__ const dfloat uzBC[8] = { 0, U_MAX/2, -U_MAX/2, 0, 0, 0, 0, 0 };
 __device__ const dfloat rhoBC[8] = { RHO_0, 1, 1, 1, 1, 1, 1, 1 };
+
+constexpr dfloat RESID_MAX = 1e-5;      // maximal residual
 /* ------------------------------------------------------------------------- */
 
 
-// ------------------------------ GPU DEFINES ------------------------------ */
+/* ------------------------------ GPU DEFINES ------------------------------ */
 const int nThreads = (NX%64?((NX%32||(NX<32))?NX:32):64); // NX or 32 or 64 
                                     // multiple of 32 for better performance.
 const int CURAND_SEED = 0;          // seed for random numbers for CUDA
@@ -109,6 +103,12 @@ const int CURAND_SEED = 0;          // seed for random numbers for CUDA
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 
+#ifdef D3Q19
+#include "velocitySets/D3Q19.h"
+#endif // !D3Q19
+#ifdef D3Q27
+#include "velocitySets/D3Q27.h"
+#endif // !D3Q27
 
 /* --------------------------- AUXILIARY DEFINES --------------------------- */ 
 #define IN_HOST 1       // variable accessible only for host

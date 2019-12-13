@@ -22,367 +22,367 @@
 #include "D3Q19_BounceBack.h"
 
 __device__ 
-void gpuBCBounceBackN(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackN(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    fPostStream[idxPop(x, y, z, 4)] = fPostCol[idxPop(x, y, z, 3)];
+    fPostStream[idxPop(x, y, z, 8)] = fPostCol[idxPop(x, y, z, 7)];
+    fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
+    fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
+    fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
 }
 
 
 __device__ 
-void gpuBCBounceBackS(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackS(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    fPostStream[idxPop(x, y, z, 3)] = fPostCol[idxPop(x, y, z, 4)];
+    fPostStream[idxPop(x, y, z, 7)] = fPostCol[idxPop(x, y, z, 8)];
+    fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
+    fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
+    fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
 }
 
 
 __device__ 
-void gpuBCBounceBackW(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackW(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    fPostStream[idxPop(x, y, z, 1)] = fPostCol[idxPop(x, y, z, 2)];
+    fPostStream[idxPop(x, y, z, 7)] = fPostCol[idxPop(x, y, z, 8)];
+    fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
+    fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
+    fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
 }
 
 
 __device__ 
-void gpuBCBounceBackE(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackE(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    fPostStream[idxPop(x, y, z, 2)] = fPostCol[idxPop(x, y, z, 1)];
+    fPostStream[idxPop(x, y, z, 8)] = fPostCol[idxPop(x, y, z, 7)];
+    fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
+    fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
+    fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
 }
 
 
 __device__ 
-void gpuBCBounceBackF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    fPostStream[idxPop(x, y, z, 6)] = fPostCol[idxPop(x, y, z, 5)];
+    fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
+    fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
+    fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
+    fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
 }
 
 
 __device__ 
-void gpuBCBounceBackB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    fPostStream[idxPop(x, y, z, 5)] = fPostCol[idxPop(x, y, z, 6)];
+    fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
+    fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
+    fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
+    fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
 }
 
 
 __device__ 
-void gpuBCBounceBackNW(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackNW(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
-    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    fPostStream[idxPop(x, y, z, 1)] = fPostCol[idxPop(x, y, z, 2)];
+    fPostStream[idxPop(x, y, z, 4)] = fPostCol[idxPop(x, y, z, 3)];
+    fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
+    fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
+    fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
+    fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
+    fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
     //Dead Pop are: [7, 8]
 }
 
 
 __device__ 
-void gpuBCBounceBackNE(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackNE(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
-    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    fPostStream[idxPop(x, y, z, 2)] = fPostCol[idxPop(x, y, z, 1)];
+    fPostStream[idxPop(x, y, z, 4)] = fPostCol[idxPop(x, y, z, 3)];
+    fPostStream[idxPop(x, y, z, 8)] = fPostCol[idxPop(x, y, z, 7)];
+    fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
+    fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
+    fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
+    fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
     //Dead Pop are: [13, 14]
 }
 
 
 __device__ 
-void gpuBCBounceBackNF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackNF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
-    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    fPostStream[idxPop(x, y, z, 4)] = fPostCol[idxPop(x, y, z, 3)];
+    fPostStream[idxPop(x, y, z, 6)] = fPostCol[idxPop(x, y, z, 5)];
+    fPostStream[idxPop(x, y, z, 8)] = fPostCol[idxPop(x, y, z, 7)];
+    fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
+    fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
+    fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
+    fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
     //Dead Pop are: [17, 18]
 }
 
 
 __device__ 
-void gpuBCBounceBackNB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackNB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
-    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    fPostStream[idxPop(x, y, z, 4)] = fPostCol[idxPop(x, y, z, 3)];
+    fPostStream[idxPop(x, y, z, 5)] = fPostCol[idxPop(x, y, z, 6)];
+    fPostStream[idxPop(x, y, z, 8)] = fPostCol[idxPop(x, y, z, 7)];
+    fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
+    fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
+    fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
+    fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
     //Dead Pop are: [11, 12]
 }
 
 
 __device__ 
-void gpuBCBounceBackSW(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackSW(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
-    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    fPostStream[idxPop(x, y, z, 1)] = fPostCol[idxPop(x, y, z, 2)];
+    fPostStream[idxPop(x, y, z, 3)] = fPostCol[idxPop(x, y, z, 4)];
+    fPostStream[idxPop(x, y, z, 7)] = fPostCol[idxPop(x, y, z, 8)];
+    fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
+    fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
+    fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
+    fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
     //Dead Pop are: [13, 14]
 }
 
 
 
 __device__ 
-void gpuBCBounceBackSE(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackSE(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
-    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    fPostStream[idxPop(x, y, z, 2)] = fPostCol[idxPop(x, y, z, 1)];
+    fPostStream[idxPop(x, y, z, 3)] = fPostCol[idxPop(x, y, z, 4)];
+    fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
+    fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
+    fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
+    fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
+    fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
     //Dead Pop are: [7, 8]
 }
 
 
 __device__ 
-void gpuBCBounceBackSF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackSF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
-    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    fPostStream[idxPop(x, y, z, 3)] = fPostCol[idxPop(x, y, z, 4)];
+    fPostStream[idxPop(x, y, z, 6)] = fPostCol[idxPop(x, y, z, 5)];
+    fPostStream[idxPop(x, y, z, 7)] = fPostCol[idxPop(x, y, z, 8)];
+    fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
+    fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
+    fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
+    fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
     //Dead Pop are: [11, 12]
 }
 
 
 __device__ 
-void gpuBCBounceBackSB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackSB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
-    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    fPostStream[idxPop(x, y, z, 3)] = fPostCol[idxPop(x, y, z, 4)];
+    fPostStream[idxPop(x, y, z, 5)] = fPostCol[idxPop(x, y, z, 6)];
+    fPostStream[idxPop(x, y, z, 7)] = fPostCol[idxPop(x, y, z, 8)];
+    fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
+    fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
+    fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
+    fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
     //Dead Pop are: [17, 18]
 }
 
 
 __device__ 
-void gpuBCBounceBackWF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackWF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
-    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    fPostStream[idxPop(x, y, z, 1)] = fPostCol[idxPop(x, y, z, 2)];
+    fPostStream[idxPop(x, y, z, 6)] = fPostCol[idxPop(x, y, z, 5)];
+    fPostStream[idxPop(x, y, z, 7)] = fPostCol[idxPop(x, y, z, 8)];
+    fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
+    fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
+    fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
+    fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
     //Dead Pop are: [9, 10]
 }
 
 
 __device__ 
-void gpuBCBounceBackWB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackWB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
-    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    fPostStream[idxPop(x, y, z, 1)] = fPostCol[idxPop(x, y, z, 2)];
+    fPostStream[idxPop(x, y, z, 5)] = fPostCol[idxPop(x, y, z, 6)];
+    fPostStream[idxPop(x, y, z, 7)] = fPostCol[idxPop(x, y, z, 8)];
+    fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
+    fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
+    fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
+    fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
     //Dead Pop are: [15, 16]
 
 }
 
 
 __device__ 
-void gpuBCBounceBackEF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackEF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
-    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    fPostStream[idxPop(x, y, z, 2)] = fPostCol[idxPop(x, y, z, 1)];
+    fPostStream[idxPop(x, y, z, 6)] = fPostCol[idxPop(x, y, z, 5)];
+    fPostStream[idxPop(x, y, z, 8)] = fPostCol[idxPop(x, y, z, 7)];
+    fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
+    fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
+    fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
+    fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
     //Dead Pop are: [15, 16]
 }
 
 
 __device__ 
-void gpuBCBounceBackEB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackEB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
-    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    fPostStream[idxPop(x, y, z, 2)] = fPostCol[idxPop(x, y, z, 1)];
+    fPostStream[idxPop(x, y, z, 5)] = fPostCol[idxPop(x, y, z, 6)];
+    fPostStream[idxPop(x, y, z, 8)] = fPostCol[idxPop(x, y, z, 7)];
+    fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
+    fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
+    fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
+    fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
     //Dead Pop are: [9, 10]
 }
 
 
 __device__ 
-void gpuBCBounceBackNWF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackNWF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
-    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
-    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
+    fPostStream[idxPop(x, y, z, 1)] = fPostCol[idxPop(x, y, z, 2)];
+    fPostStream[idxPop(x, y, z, 4)] = fPostCol[idxPop(x, y, z, 3)];
+    fPostStream[idxPop(x, y, z, 6)] = fPostCol[idxPop(x, y, z, 5)];
+    fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
+    fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
+    fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
     //Dead Pop are: [7, 8, 9, 10, 17, 18]
 }
 
 
 __device__ 
-void gpuBCBounceBackNWB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackNWB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
-    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
-    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
-    f[idxPop(x, y, z, 13)] = f[idxPop(x, y, z, 14)];
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    fPostStream[idxPop(x, y, z, 1)] = fPostCol[idxPop(x, y, z, 2)];
+    fPostStream[idxPop(x, y, z, 4)] = fPostCol[idxPop(x, y, z, 3)];
+    fPostStream[idxPop(x, y, z, 5)] = fPostCol[idxPop(x, y, z, 6)];
+    fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
+    fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
+    fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
     //Dead Pop are: [7, 8, 11, 12, 15, 16]
 }
 
 
 __device__ 
-void gpuBCBounceBackNEF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackNEF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
-    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
-    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
-    f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)];
+    fPostStream[idxPop(x, y, z, 2)] = fPostCol[idxPop(x, y, z, 1)];
+    fPostStream[idxPop(x, y, z, 4)] = fPostCol[idxPop(x, y, z, 3)];
+    fPostStream[idxPop(x, y, z, 6)] = fPostCol[idxPop(x, y, z, 5)];
+    fPostStream[idxPop(x, y, z, 8)] = fPostCol[idxPop(x, y, z, 7)];
+    fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
+    fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
     //Dead Pop are: [13, 14, 15, 16, 17, 18]
 }
 
 
 __device__ 
-void gpuBCBounceBackNEB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackNEB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
-    f[idxPop(x, y, z, 4)] = f[idxPop(x, y, z, 3)];
-    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
-    f[idxPop(x, y, z, 8)] = f[idxPop(x, y, z, 7)];
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
-    f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)];
+    fPostStream[idxPop(x, y, z, 2)] = fPostCol[idxPop(x, y, z, 1)];
+    fPostStream[idxPop(x, y, z, 4)] = fPostCol[idxPop(x, y, z, 3)];
+    fPostStream[idxPop(x, y, z, 5)] = fPostCol[idxPop(x, y, z, 6)];
+    fPostStream[idxPop(x, y, z, 8)] = fPostCol[idxPop(x, y, z, 7)];
+    fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
+    fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
     //Dead Pop are: [9, 10, 11, 12, 13, 14]
 
 }
 
 
 __device__ 
-void gpuBCBounceBackSWF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackSWF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
-    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
-    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
-    f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)];
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    fPostStream[idxPop(x, y, z, 1)] = fPostCol[idxPop(x, y, z, 2)];
+    fPostStream[idxPop(x, y, z, 3)] = fPostCol[idxPop(x, y, z, 4)];
+    fPostStream[idxPop(x, y, z, 6)] = fPostCol[idxPop(x, y, z, 5)];
+    fPostStream[idxPop(x, y, z, 7)] = fPostCol[idxPop(x, y, z, 8)];
+    fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
+    fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
     //Dead Pop are: [9, 10, 11, 12, 13, 14]
 }
 
 
 __device__ 
-void gpuBCBounceBackSWB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackSWB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 1)] = f[idxPop(x, y, z, 2)];
-    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
-    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
-    f[idxPop(x, y, z, 7)] = f[idxPop(x, y, z, 8)];
-    f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)];
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
+    fPostStream[idxPop(x, y, z, 1)] = fPostCol[idxPop(x, y, z, 2)];
+    fPostStream[idxPop(x, y, z, 3)] = fPostCol[idxPop(x, y, z, 4)];
+    fPostStream[idxPop(x, y, z, 5)] = fPostCol[idxPop(x, y, z, 6)];
+    fPostStream[idxPop(x, y, z, 7)] = fPostCol[idxPop(x, y, z, 8)];
+    fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
+    fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
     //Dead Pop are: [13, 14, 15, 16, 17, 18]
 }
 
 
 __device__ 
-void gpuBCBounceBackSEF(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackSEF(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
-    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
-    f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)];
-    f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)];
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
-    f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)];
+    fPostStream[idxPop(x, y, z, 2)] = fPostCol[idxPop(x, y, z, 1)];
+    fPostStream[idxPop(x, y, z, 3)] = fPostCol[idxPop(x, y, z, 4)];
+    fPostStream[idxPop(x, y, z, 6)] = fPostCol[idxPop(x, y, z, 5)];
+    fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
+    fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
+    fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
     //Dead Pop are: [7, 8, 11, 12, 15, 16]
 }
 
 
 __device__ 
-void gpuBCBounceBackSEB(dfloat* f, const short unsigned int x, const short unsigned int y,
+void gpuBCBounceBackSEB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
 {
-    f[idxPop(x, y, z, 2)] = f[idxPop(x, y, z, 1)];
-    f[idxPop(x, y, z, 3)] = f[idxPop(x, y, z, 4)];
-    f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)];
-    f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)];
-    f[idxPop(x, y, z, 14)] = f[idxPop(x, y, z, 13)];
-    f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)];
+    fPostStream[idxPop(x, y, z, 2)] = fPostCol[idxPop(x, y, z, 1)];
+    fPostStream[idxPop(x, y, z, 3)] = fPostCol[idxPop(x, y, z, 4)];
+    fPostStream[idxPop(x, y, z, 5)] = fPostCol[idxPop(x, y, z, 6)];
+    fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
+    fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
+    fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
     //Dead Pop are: [7, 8, 9, 10, 17, 18]
 }
