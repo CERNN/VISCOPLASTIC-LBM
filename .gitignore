@@ -11,6 +11,8 @@
 .vscode/
 */__pycache__
 *.pyc
+*.exp
+*.lib
 doc/Reports/*
 doc/Requirements.docx
 doc/Simulations/*

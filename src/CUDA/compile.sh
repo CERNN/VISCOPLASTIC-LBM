@@ -13,10 +13,10 @@ CC=35
 
 if [ "$1" = "D3Q19" ]
 then
-    nvcc -gencode arch=compute_${CC},code=sm_${CC} -rdc=true --ptxas-options=-v -O3 ./boundaryConditionsSchemes/$1*.cu boundaryConditionsSchemes/freeSlip.cu boundaryConditionsSchemes/bounceBack.cu *.cu *.cpp -lcudadevrt -lcurand -o ./bin/$2sim_$1_sm${CC}
+    nvcc -gencode arch=compute_${CC},code=sm_${CC} -rdc=true --ptxas-options=-v -O3 ./boundaryConditionsSchemes/$1*.cu boundaryConditionsSchemes/freeSlip.cu boundaryConditionsSchemes/bounceBack.cu *.cu *.cpp -lcudadevrt -lcurand -o ./../../bin/$2sim_$1_sm${CC}
 elif [ "$1" = "D3Q27" ]
 then
-    nvcc -gencode arch=compute_${CC},code=sm_${CC} -rdc=true --ptxas-options=-v -O3 ./boundaryConditionsSchemes/$1*.cu boundaryConditionsSchemes/freeSlip.cu boundaryConditionsSchemes/bounceBack.cu *.cu *.cpp -lcudadevrt -lcurand -o ./bin/$2sim_$1_sm${CC}
+    nvcc -gencode arch=compute_${CC},code=sm_${CC} -rdc=true --ptxas-options=-v -O3 ./boundaryConditionsSchemes/freeSlip.cu boundaryConditionsSchemes/bounceBack.cu *.cu *.cpp -lcudadevrt -lcurand -o ./../../bin/$2sim_$1_sm${CC}
 else
     echo "Input error, example of usage is:" 
     echo "sh compile.sh D3Q19 011"

@@ -3,8 +3,8 @@ import glob
 import numpy as np
 
 # ALL FILES IN THE FOLDER MUST BE FROM THE SAME SIMULATION
-PATH = "./"
-#PATH = "./../CUDA/bin/parallelPlatesHWBB/001/"
+PATH = "../../bin/parallelPlatesHWBB/001/"
+
 __macr_names__ = ['ux', 'uy', 'uz', 'rho']
 
 __info__ = dict()
