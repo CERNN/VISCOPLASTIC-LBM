@@ -19,7 +19,7 @@
 *   Contact: cernn-ct@utfpr.edu.br and waine@alunos.utfpr.edu.br
 */
 
-#include "D3Q27_BounceBack.h"
+#include "bounceBack.h"
 
 __device__ 
 void gpuBCBounceBackN(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
@@ -30,10 +30,12 @@ void gpuBCBounceBackN(dfloat* fPostStream, dfloat* fPostCol, const short unsigne
     fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
     fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
     fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 20)] = fPostCol[idxPop(x, y, z, 19)];
     fPostStream[idxPop(x, y, z, 22)] = fPostCol[idxPop(x, y, z, 21)];
     fPostStream[idxPop(x, y, z, 23)] = fPostCol[idxPop(x, y, z, 24)];
     fPostStream[idxPop(x, y, z, 26)] = fPostCol[idxPop(x, y, z, 25)];
+    #endif
 }
 
 
@@ -46,10 +48,12 @@ void gpuBCBounceBackS(dfloat* fPostStream, dfloat* fPostCol, const short unsigne
     fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
     fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
     fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 19)] = fPostCol[idxPop(x, y, z, 20)];
     fPostStream[idxPop(x, y, z, 21)] = fPostCol[idxPop(x, y, z, 22)];
     fPostStream[idxPop(x, y, z, 24)] = fPostCol[idxPop(x, y, z, 23)];
     fPostStream[idxPop(x, y, z, 25)] = fPostCol[idxPop(x, y, z, 26)];
+    #endif
 }
 
 
@@ -62,10 +66,12 @@ void gpuBCBounceBackW(dfloat* fPostStream, dfloat* fPostCol, const short unsigne
     fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
     fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
     fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 19)] = fPostCol[idxPop(x, y, z, 20)];
     fPostStream[idxPop(x, y, z, 21)] = fPostCol[idxPop(x, y, z, 22)];
     fPostStream[idxPop(x, y, z, 23)] = fPostCol[idxPop(x, y, z, 24)];
     fPostStream[idxPop(x, y, z, 26)] = fPostCol[idxPop(x, y, z, 25)];
+    #endif
 }
 
 
@@ -78,10 +84,12 @@ void gpuBCBounceBackE(dfloat* fPostStream, dfloat* fPostCol, const short unsigne
     fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
     fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
     fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 20)] = fPostCol[idxPop(x, y, z, 19)];
     fPostStream[idxPop(x, y, z, 22)] = fPostCol[idxPop(x, y, z, 21)];
     fPostStream[idxPop(x, y, z, 24)] = fPostCol[idxPop(x, y, z, 23)];
     fPostStream[idxPop(x, y, z, 25)] = fPostCol[idxPop(x, y, z, 26)];
+    #endif
 }
 
 
@@ -94,10 +102,12 @@ void gpuBCBounceBackF(dfloat* fPostStream, dfloat* fPostCol, const short unsigne
     fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
     fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
     fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 20)] = fPostCol[idxPop(x, y, z, 19)];
     fPostStream[idxPop(x, y, z, 21)] = fPostCol[idxPop(x, y, z, 22)];
     fPostStream[idxPop(x, y, z, 24)] = fPostCol[idxPop(x, y, z, 23)];
     fPostStream[idxPop(x, y, z, 26)] = fPostCol[idxPop(x, y, z, 25)];
+    #endif
 }
 
 
@@ -110,10 +120,12 @@ void gpuBCBounceBackB(dfloat* fPostStream, dfloat* fPostCol, const short unsigne
     fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
     fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
     fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 19)] = fPostCol[idxPop(x, y, z, 20)];
     fPostStream[idxPop(x, y, z, 22)] = fPostCol[idxPop(x, y, z, 21)];
     fPostStream[idxPop(x, y, z, 23)] = fPostCol[idxPop(x, y, z, 24)];
     fPostStream[idxPop(x, y, z, 25)] = fPostCol[idxPop(x, y, z, 26)];
+    #endif
 }
 
 
@@ -128,8 +140,10 @@ void gpuBCBounceBackNW(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
     fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
     fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 23)] = fPostCol[idxPop(x, y, z, 24)];
     fPostStream[idxPop(x, y, z, 26)] = fPostCol[idxPop(x, y, z, 25)];
+    #endif
     //Dead Pop are: [7, 8, 19, 20, 21, 22]
 }
 
@@ -145,8 +159,10 @@ void gpuBCBounceBackNE(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
     fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
     fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 20)] = fPostCol[idxPop(x, y, z, 19)];
     fPostStream[idxPop(x, y, z, 22)] = fPostCol[idxPop(x, y, z, 21)];
+    #endif
     //Dead Pop are: [13, 14, 23, 24, 25, 26]
 }
 
@@ -162,8 +178,10 @@ void gpuBCBounceBackNF(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
     fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
     fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 20)] = fPostCol[idxPop(x, y, z, 19)];
     fPostStream[idxPop(x, y, z, 26)] = fPostCol[idxPop(x, y, z, 25)];
+    #endif
     //Dead Pop are: [17, 18, 21, 22, 23, 24]
 }
 
@@ -179,8 +197,10 @@ void gpuBCBounceBackNB(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
     fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
     fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 22)] = fPostCol[idxPop(x, y, z, 21)];
     fPostStream[idxPop(x, y, z, 23)] = fPostCol[idxPop(x, y, z, 24)];
+    #endif
     //Dead Pop are: [11, 12, 19, 20, 25, 26]
 }
 
@@ -196,8 +216,10 @@ void gpuBCBounceBackSW(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
     fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
     fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 19)] = fPostCol[idxPop(x, y, z, 20)];
     fPostStream[idxPop(x, y, z, 21)] = fPostCol[idxPop(x, y, z, 22)];
+    #endif
     //Dead Pop are: [13, 14, 23, 24, 25, 26]
 }
 
@@ -214,8 +236,10 @@ void gpuBCBounceBackSE(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
     fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
     fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 24)] = fPostCol[idxPop(x, y, z, 23)];
     fPostStream[idxPop(x, y, z, 25)] = fPostCol[idxPop(x, y, z, 26)];
+    #endif
     //Dead Pop are: [7, 8, 19, 20, 21, 22]
 }
 
@@ -231,8 +255,10 @@ void gpuBCBounceBackSF(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
     fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
     fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 21)] = fPostCol[idxPop(x, y, z, 22)];
     fPostStream[idxPop(x, y, z, 24)] = fPostCol[idxPop(x, y, z, 23)];
+    #endif
     //Dead Pop are: [11, 12, 19, 20, 25, 26]
 }
 
@@ -248,8 +274,10 @@ void gpuBCBounceBackSB(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
     fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
     fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 19)] = fPostCol[idxPop(x, y, z, 20)];
     fPostStream[idxPop(x, y, z, 25)] = fPostCol[idxPop(x, y, z, 26)];
+    #endif
     //Dead Pop are: [17, 18, 21, 22, 23, 24]
 }
 
@@ -265,8 +293,10 @@ void gpuBCBounceBackWF(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
     fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
     fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 21)] = fPostCol[idxPop(x, y, z, 22)];
     fPostStream[idxPop(x, y, z, 26)] = fPostCol[idxPop(x, y, z, 25)];
+    #endif
     //Dead Pop are: [9, 10, 19, 20, 23, 24]
 }
 
@@ -282,8 +312,10 @@ void gpuBCBounceBackWB(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
     fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
     fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 19)] = fPostCol[idxPop(x, y, z, 20)];
     fPostStream[idxPop(x, y, z, 23)] = fPostCol[idxPop(x, y, z, 24)];
+    #endif
     //Dead Pop are: [15, 16, 21, 22, 25, 26]
 
 }
@@ -300,8 +332,10 @@ void gpuBCBounceBackEF(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
     fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
     fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 20)] = fPostCol[idxPop(x, y, z, 19)];
     fPostStream[idxPop(x, y, z, 24)] = fPostCol[idxPop(x, y, z, 23)];
+    #endif
     //Dead Pop are: [15, 16, 21, 22, 25, 26]
 }
 
@@ -317,8 +351,10 @@ void gpuBCBounceBackEB(dfloat* fPostStream, dfloat* fPostCol, const short unsign
     fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
     fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
     fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 22)] = fPostCol[idxPop(x, y, z, 21)];
     fPostStream[idxPop(x, y, z, 25)] = fPostCol[idxPop(x, y, z, 26)];
+    #endif
     //Dead Pop are: [9, 10, 19, 20, 23, 24]
 }
 
@@ -333,7 +369,9 @@ void gpuBCBounceBackNWF(dfloat* fPostStream, dfloat* fPostCol, const short unsig
     fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
     fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
     fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 26)] = fPostCol[idxPop(x, y, z, 25)];
+    #endif
     //Dead Pop are: [7, 8, 9, 10, 17, 18, 19, 20, 21, 22, 23, 24]
 }
 
@@ -348,7 +386,9 @@ void gpuBCBounceBackNWB(dfloat* fPostStream, dfloat* fPostCol, const short unsig
     fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
     fPostStream[idxPop(x, y, z, 13)] = fPostCol[idxPop(x, y, z, 14)];
     fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 23)] = fPostCol[idxPop(x, y, z, 24)];
+    #endif
     //Dead Pop are: [7, 8, 11, 12, 15, 16, 19, 20, 21, 22, 25, 26]
 }
 
@@ -363,7 +403,9 @@ void gpuBCBounceBackNEF(dfloat* fPostStream, dfloat* fPostCol, const short unsig
     fPostStream[idxPop(x, y, z, 8)] = fPostCol[idxPop(x, y, z, 7)];
     fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
     fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 20)] = fPostCol[idxPop(x, y, z, 19)];
+    #endif
     //Dead Pop are: [13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26]
 }
 
@@ -378,7 +420,9 @@ void gpuBCBounceBackNEB(dfloat* fPostStream, dfloat* fPostCol, const short unsig
     fPostStream[idxPop(x, y, z, 8)] = fPostCol[idxPop(x, y, z, 7)];
     fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
     fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 22)] = fPostCol[idxPop(x, y, z, 21)];
+    #endif
     //Dead Pop are: [9, 10, 11, 12, 13, 14, 19, 20, 23, 24, 25, 26]
 
 }
@@ -394,7 +438,9 @@ void gpuBCBounceBackSWF(dfloat* fPostStream, dfloat* fPostCol, const short unsig
     fPostStream[idxPop(x, y, z, 7)] = fPostCol[idxPop(x, y, z, 8)];
     fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)];
     fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 21)] = fPostCol[idxPop(x, y, z, 22)];
+    #endif
     //Dead Pop are: [9, 10, 11, 12, 13, 14, 19, 20, 23, 24, 25, 26]
 }
 
@@ -409,7 +455,9 @@ void gpuBCBounceBackSWB(dfloat* fPostStream, dfloat* fPostCol, const short unsig
     fPostStream[idxPop(x, y, z, 7)] = fPostCol[idxPop(x, y, z, 8)];
     fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)];
     fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 19)] = fPostCol[idxPop(x, y, z, 20)];
+    #endif
     //Dead Pop are: [13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26]
 }
 
@@ -424,7 +472,9 @@ void gpuBCBounceBackSEF(dfloat* fPostStream, dfloat* fPostCol, const short unsig
     fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)];
     fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
     fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 24)] = fPostCol[idxPop(x, y, z, 23)];
+    #endif
     //Dead Pop are: [7, 8, 11, 12, 15, 16, 19, 20, 21, 22, 25, 26]
 }
 
@@ -439,6 +489,8 @@ void gpuBCBounceBackSEB(dfloat* fPostStream, dfloat* fPostCol, const short unsig
     fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)];
     fPostStream[idxPop(x, y, z, 14)] = fPostCol[idxPop(x, y, z, 13)];
     fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)];
+    #ifdef D3Q27
     fPostStream[idxPop(x, y, z, 25)] = fPostCol[idxPop(x, y, z, 26)];
+    #endif
     //Dead Pop are: [7, 8, 9, 10, 17, 18, 19, 20, 21, 22, 23, 24]
 }

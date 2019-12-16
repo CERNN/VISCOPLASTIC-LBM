@@ -478,7 +478,7 @@ void gpuApplyBC(NodeTypeMap* mapBC,
 {
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
 
-    if(i >= totalNonLocalBC)
+    if(i >= totalBCNodes)
         return;
     // converts 1D index to 3D location
     const size_t idx = idxsBCNodes[i];

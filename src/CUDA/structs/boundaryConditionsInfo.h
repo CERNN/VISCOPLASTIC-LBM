@@ -15,8 +15,7 @@
 #include <cuda.h>
 
 /* 
-*   Struct for boundary conditions info, used mainly to apply non local 
-*   boundary conditions
+*   Struct for boundary conditions info
 */
 typedef struct boundaryConditionsInfo{
     // Number of boundary conditions nodes
@@ -24,7 +23,7 @@ typedef struct boundaryConditionsInfo{
     // Number of non local boundary conditions nodes
     size_t totalNonLocalBCNodes;
     // Index of non local boundary conditions nodes
-    size_t* idxNonLocalBCNodes;
+    size_t* idxBCNodes;
 
     /* Constructor */
     __host__
@@ -32,7 +31,7 @@ typedef struct boundaryConditionsInfo{
     {
         totalBCNodes = 0;
         totalNonLocalBCNodes = 0;
-        idxNonLocalBCNodes = nullptr;
+        idxBCNodes = nullptr;
     }
 
     /* Destructor */
@@ -41,24 +40,25 @@ typedef struct boundaryConditionsInfo{
     {
         totalBCNodes = 0;
         totalNonLocalBCNodes = 0;
-        idxNonLocalBCNodes = nullptr;
+        idxBCNodes = nullptr;
     }
 
     __host__
-    void allocateIdxNonLocal()
+    void allocateIdxBC()
     {
-        if(totalNonLocalBCNodes <= 0)
+        if(totalBCNodes <= 0)
             return;
-        size_t memSizeIdxNonLocal = totalNonLocalBCNodes*sizeof(size_t);
-        checkCudaErrors(cudaMallocManaged((void**)&(this->idxNonLocalBCNodes), memSizeIdxNonLocal));
+        size_t memSizeIdxBC = totalBCNodes*sizeof(size_t);
+        checkCudaErrors(cudaMallocManaged((void**)&(this->idxBCNodes), memSizeIdxBC));
     }
 
     __host__
-    void freeIdxNonLocal()
+    void freeIdxBC()
     {
-        if(idxNonLocalBCNodes == nullptr)
+        if(idxBCNodes == nullptr)
             return;
-        checkCudaErrors(cudaFree(this->idxNonLocalBCNodes));
+        checkCudaErrors(cudaFree(this->idxBCNodes));
+        idxBCNodes = nullptr;
     }
 
     __host__
@@ -82,11 +82,11 @@ typedef struct boundaryConditionsInfo{
                         }
                 }
 
-        if(totalNonLocalBCNodes <= 0)
+        if(totalBCNodes <= 0)
             return;
 
         // allocate memory for idx
-        allocateIdxNonLocal();
+        allocateIdxBC();
 
         // update index of non local boundary conditions
         int i = 0;
@@ -97,18 +97,11 @@ typedef struct boundaryConditionsInfo{
                     NodeTypeMap ntm = mapBC[idxScalar(x, y, z)];
                     if(ntm.getIsUsed())
                         if(ntm.getSchemeBC() != BC_NULL)
-                            if(!(ntm.isBCLocal()))
-                            {
-                                idxNonLocalBCNodes[i] = idxScalar(x, y, z);
-                                i++;
-                            }
+                        {
+                            idxBCNodes[i] = idxScalar(x, y, z);
+                            i++;
+                        }
                 }
-    }
-
-    __host__ __device__
-    bool hasNonLocalBC()
-    {
-        return totalNonLocalBCNodes > 0;
     }
 
 }BoundaryConditionsInfo;

@@ -1,7 +1,7 @@
 /*
-*   @file bcVelZouHeD3Q19.h
+*   @file D3Q19_VelZouHe.h
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
-*   @brief Zou-He
+*   @brief Zou-He velocity boundary condition for D3Q19
 *   @version 0.2.0
 *   @date 16/08/2019
 */

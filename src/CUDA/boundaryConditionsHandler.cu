@@ -248,7 +248,7 @@ void gpuSchVelBounceBack(NodeTypeMap* gpuNT,
     const short unsigned int y, 
     const short unsigned int z)
 {
-#ifdef D3Q19 // support only for D3Q19
+    #ifdef D3Q19 // support only for D3Q19
     switch (gpuNT->getDirection())
     {
     case NORTH:
@@ -278,18 +278,19 @@ void gpuSchVelBounceBack(NodeTypeMap* gpuNT,
     default:
         break;
     }
-#endif
+    #endif
 }
 
 
 __device__
 void gpuSchPresZouHe(NodeTypeMap* gpuNT, 
-    dfloat * f, 
+    dfloat* fPostStream, 
+    dfloat* fPostCol, 
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z)
 {
-#ifdef D3Q19 // support only for D3Q19
+    #ifdef D3Q19 // support only for D3Q19
     switch (gpuNT->getDirection())
     {
     case NORTH:
@@ -318,7 +319,7 @@ void gpuSchPresZouHe(NodeTypeMap* gpuNT,
     default:
         break;
     }
-#endif
+    #endif
 }
 
 
@@ -330,7 +331,7 @@ void gpuSchVelZouHe(NodeTypeMap* gpuNT,
     const short unsigned int y, 
     const short unsigned int z)
 {
-#ifdef D3Q19 // support only for D3Q19
+    #ifdef D3Q19 // support only for D3Q19
     switch (gpuNT->getDirection())
     {
     case NORTH:
@@ -365,5 +366,5 @@ void gpuSchVelZouHe(NodeTypeMap* gpuNT,
     default:
         break;
     }
-#endif
+    #endif
 }

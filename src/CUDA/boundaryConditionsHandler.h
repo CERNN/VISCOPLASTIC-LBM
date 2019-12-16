@@ -12,21 +12,16 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include "structs/populations.h"
+#include "boundaryConditionsSchemes/bounceBack.h"
+#include "boundaryConditionsSchemes/freeSlip.h"
 #ifdef D3Q19
-#include "boundaryConditionsSchemes/D3Q19_BounceBack.h"
-#include "boundaryConditionsSchemes/D3Q19_FreeSlip.h"
 #include "boundaryConditionsSchemes/D3Q19_VelBounceBack.h"
 #include "boundaryConditionsSchemes/D3Q19_VelZouHe.h"
 #include "boundaryConditionsSchemes/D3Q19_PresZouHe.h"
 #endif // !D3Q19
-#ifdef D3Q27
-#include "boundaryConditionsSchemes/D3Q27_BounceBack.h"
-#include "boundaryConditionsSchemes/D3Q27_FreeSlip.h"
-#endif // !D3Q27
-
 
 /*
-*   @brief Applies local boundary conditions given node type and its population
+*   @brief Applies boundary conditions given node type and its population
 *   @param gpuNT: node's map
 *   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
 *   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step 
@@ -35,7 +30,7 @@
 *   @param z: node's z value
 */
 __device__
-void gpuLocalBoundaryConditions(NodeTypeMap* gpuNT, 
+void gpuBoundaryConditions(NodeTypeMap* gpuNT, 
     dfloat* fPostStream,
     dfloat* fPostCol,
     const short unsigned int x, 

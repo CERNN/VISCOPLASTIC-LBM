@@ -1,5 +1,5 @@
 /*
-*   @file bcPresZouHeD3Q19.h
+*   @file D3Q19_PresZouHe.h
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Zou-He pressure boundary condition for D3Q19
 *   @version 0.2.0

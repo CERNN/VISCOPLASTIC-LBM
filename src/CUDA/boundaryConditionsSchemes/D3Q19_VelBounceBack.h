@@ -1,5 +1,5 @@
 /*
-*   @file bcVelBounceBackD3Q19.h
+*   @file D3Q19_VelBounceBack.h
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Bounce back velocity boundary condition for D3Q19
 *   @version 0.2.0

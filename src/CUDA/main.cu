@@ -42,7 +42,6 @@ int main()
     BoundaryConditionsInfo bcInfo;
     SimInfo info;
     float* randomNumbers = nullptr; // useful for turbulence
-    dfloat* boundCondAux = nullptr; // aux vector for non local boundary conditions
     int step = INI_STEP;
 
     // SETUP SAVING FOLDER
@@ -83,11 +82,6 @@ int main()
                 sizeof(float)*numberNodes));
     }
 
-    // Allocation of vector for non local boundary conditions
-    checkCudaErrors(cudaSetDevice(0));
-    checkCudaErrors(cudaMallocManaged((void**)&boundCondAux, 
-                sizeof(dfloat)*bcInfo.totalNonLocalBCNodes*Q))
-
 /*  
     ---------------------------------------------------------------------------
     ---------------------------------------------------------------------------
@@ -97,7 +91,7 @@ int main()
     ---------------------------------------------------------------------------
 */
 
-    // GRID AND THREADS DEFINITION
+    // GRID AND THREADS DEFINITION FOR LBM
     dim3 grid(((NX%nThreads)? (NX/nThreads+1) : (NX/nThreads)), NY, NZ);
     // threads in block
     dim3 threads(nThreads, 1, 1);
@@ -150,10 +144,14 @@ int main()
         getLastCudaError("Initialization error");
     }
 
+    // GRID AND THREAD DEFINITION FOR BOUNDARY CONDITIONS
+    dim3 gridBC(((bcInfo.totalBCNodes%32)? (bcInfo.totalBCNodes/32+1) : 
+        (bcInfo.totalBCNodes/32)), 1, 1); // TODO
+    dim3 threadsBC(32, 1, 1);
+
     if(RANDOM_NUMBERS)
         for(int i = 0; i < N_GPUS; i++)
             checkCudaErrors(cudaFree(randomNumbers));
-
 
     // TIMING
     cudaEvent_t start, stop;
@@ -180,13 +178,15 @@ int main()
         gpuMacrCollisionStream<<<grid, threads, 0, streamsKernelLBM[0]>>>
             (pop->pop, pop->popAux, pop->mapBC, 
             &macr[0], rep || save || ((step+1)>=(int)N_STEPS), step);
-        gpuApplyBC(mapBC, pop->popAux, pop->pop, bcInfo.idxBC, bcInfo.totalBCNodes);
+        checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
+        // BOUNDARY CONDITIONS
+        gpuApplyBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
+            (pop->mapBC, pop->popAux, pop->pop, 
+            bcInfo.idxBCNodes, bcInfo.totalBCNodes);
         checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
         getLastCudaError("lbm/BC kernel error");
-        
-        pop[0].swapPop();
 
-    
+        pop[0].swapPop();
 
         // SYNCHRONIZING
         if(save || rep)
@@ -265,7 +265,8 @@ int main()
         pop[i].popFree();
         macr[i].macrFree();
     }
-    bcInfo.freeIdxNonLocal();
+
+    bcInfo.freeIdxBC();
 
     // FREE GPU VARIABLES
     checkCudaErrors(cudaSetDevice(0));
