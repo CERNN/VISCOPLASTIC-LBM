@@ -366,7 +366,7 @@ void gpuMacrCollisionStream(
     #endif
 
     // Save post collision populations of boundary conditions nodes
-    if(mapBC[idxScalar(x, y, z)].getSchemeBC() != BC_NULL)  
+    if(mapBC[idxScalar(x, y, z)].getSavePostCol())  
     {
         #pragma unroll
         for (char i = 0; i < Q; i++)

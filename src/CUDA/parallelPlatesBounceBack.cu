@@ -39,7 +39,9 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     const unsigned int y = threadIdx.y + blockDim.y * blockIdx.y;
     const unsigned int z = threadIdx.z + blockDim.z * blockIdx.z;
 
-    gpuMapBC[idxScalar(x, y, z)].setIsUsed(true); //set all nodes fluid inicially and no bc
+    gpuMapBC[idxScalar(x, y, z)].setIsUsed(true); // set all nodes fluid inicially and no bc
+    gpuMapBC[idxScalar(x, y, z)].setSavePostCol(false); // set all nodes to not save post 
+                                                    // collision population (just stream)
     gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_NULL);
     gpuMapBC[idxScalar(x, y, z)].setGeometry(CONCAVE);
     gpuMapBC[idxScalar(x, y, z)].setUxIdx(0); // manually assigned (index of ux=0)
@@ -48,9 +50,9 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     gpuMapBC[idxScalar(x, y, z)].setRhoIdx(0); // manually assigned (index of rho=RHO_0)
 
 
-    else if (y == 0) // S
+    if (y == 0) // S
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
         gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
     else if (y == (NY - 1)) // N
@@ -60,12 +62,12 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     }
     else if (x == 0) // W
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
+        //gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
         gpuMapBC[idxScalar(x, y, z)].setDirection(WEST);
     }
     else if (x == (NX - 1)) // E
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
+        //gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
         gpuMapBC[idxScalar(x, y, z)].setDirection(EAST);
     }
     else if (z == 0) // B
@@ -79,8 +81,8 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
 
 __device__
 void gpuSchSpecial(NodeTypeMap* gpuNT, 
-    dfloat* f,
-    dfloat* fNode, 
+    dfloat* fPostStream,
+    dfloat* fPostCol,
     const short unsigned int x, 
     const short unsigned int y, 
     const short unsigned int z)

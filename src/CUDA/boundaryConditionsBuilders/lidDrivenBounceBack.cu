@@ -39,6 +39,8 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     const unsigned int z = threadIdx.z + blockDim.z * blockIdx.z;
     
     gpuMapBC[idxScalar(x, y, z)].setIsUsed(true); //set all nodes fluid inicially and no bc
+    gpuMapBC[idxScalar(x, y, z)].setSavePostCol(false); // set all nodes to not save post 
+                                                    // collision population (just stream)
     gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_NULL);
     gpuMapBC[idxScalar(x, y, z)].setGeometry(CONCAVE);
     gpuMapBC[idxScalar(x, y, z)].setUxIdx(0); // manually assigned (index of ux=0)

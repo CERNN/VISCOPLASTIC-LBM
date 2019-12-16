@@ -13,6 +13,7 @@
 #include <stdint.h>
 
 // OFFSET DEFINES
+#define SAVE_POST_COL_OFFSET 22
 #define IS_USED_OFFSET 21
 #define BC_SCHEME_OFFSET 18
 #define DIRECTION_OFFSET 13
@@ -24,6 +25,9 @@
 
 // USED DEFINE
 #define IS_USED (0b1 << IS_USED_OFFSET)
+
+// SAVE POST COLLISION DEFINE
+#define SAVE_POST_COL (0b1 << SAVE_POST_COL_OFFSET)
 
 // BC SCHEME DEFINES
 #define BC_SCHEME_BITS (0b111 << BC_SCHEME_OFFSET)
@@ -114,11 +118,27 @@ typedef struct nodeTypeMap {
     void setIsUsed(const bool isUsed)
     {
         if (isUsed)
-            map |= (1 << IS_USED_OFFSET);
+            map |= (0x1 << IS_USED_OFFSET);
         else
-            map &= ~IS_USED_OFFSET;
+            map &= ~(0x1 << IS_USED_OFFSET);
     }
 
+    __device__ __host__
+    bool getSavePostCol()
+    {
+        return (((map & SAVE_POST_COL) >> SAVE_POST_COL_OFFSET) 
+            || (getSchemeBC() != BC_NULL));
+    }
+
+    __device__ __host__
+    void setSavePostCol(const bool savePostCol)
+    {
+        if (savePostCol)
+            map |= (0x1 << SAVE_POST_COL_OFFSET);
+        else
+            map &= ~(0x1 << SAVE_POST_COL_OFFSET);
+    }
+    
     __device__ __host__
     bool getIsUsed()
     {
