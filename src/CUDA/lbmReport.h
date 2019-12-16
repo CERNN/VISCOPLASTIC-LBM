@@ -2,8 +2,8 @@
 *   @file lbmReport.h
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Report (save and print) simulation information
-*   @version 0.2.0
-*   @date 16/08/2019
+*   @version 0.3.0
+*   @date 16/12/2019
 */
 
 #ifndef __LBM_REPORT_H

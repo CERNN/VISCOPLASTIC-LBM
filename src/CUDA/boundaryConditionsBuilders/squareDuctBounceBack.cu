@@ -3,8 +3,8 @@
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Square duct bounce back boundary conditions, force required
 *          N,S,E,W: wall; F,B: periodic
-*   @version 0.2.0
-*   @date 16/08/2019
+*   @version 0.3.0
+*   @date 16/12/2019
 */
 
 /*

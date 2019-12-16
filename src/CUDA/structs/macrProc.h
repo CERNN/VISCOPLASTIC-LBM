@@ -2,8 +2,8 @@
 *   @file macrProc.h
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Struct to process/treat macroscopics
-*   @version 0.2.0
-*   @date 16/08/2019
+*   @version 0.3.0
+*   @date 16/12/2019
 */
 
 #ifndef __MACR_PROC_H

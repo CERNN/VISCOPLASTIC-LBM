@@ -3,8 +3,8 @@
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Parallel plates using pressure and Zou-He boundary conditions
 *          N, S: wall; B: RHO_IN; F: RHO_OUT; W, E: periodic
-*   @version 0.2.0
-*   @date 16/08/2019
+*   @version 0.3.0
+*   @date 16/12/2019
 */
 
 /*

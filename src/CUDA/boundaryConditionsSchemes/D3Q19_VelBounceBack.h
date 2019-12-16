@@ -2,8 +2,8 @@
 *   @file D3Q19_VelBounceBack.h
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Bounce back velocity boundary condition for D3Q19
-*   @version 0.2.0
-*   @date 16/08/2019
+*   @version 0.3.0
+*   @date 16/12/2019
 */
 
 #ifndef __BC_VEL_BOUNCE_BACK_D3Q19_H

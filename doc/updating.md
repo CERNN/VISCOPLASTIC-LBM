@@ -28,7 +28,7 @@ Observations:
 ## Changing collision
 
 _[lbm.cu](../src/CUDA/treatData.cu)_
-* The folder _CUDA/collisionSchemes/_ has the implementation for collision schemes. Copy and paste the content of the file with the desired collision to the function `gpuBCMacrCollisionStream()`, between the macroscopics saving (after `if(save){...}`) and the streaming.
+* The folder _CUDA/collisionSchemes/_ has the implementation for collision schemes. Copy and paste the content of the file with the desired collision to the function `gpuMacrCollisionStream()`, between the macroscopics saving (after `if(save){...}`) and the streaming.
 * Compatibility between the boundary conditions and the collision must be checked (e.g. Zou-He not compatible with force).
 
 ## Changing initialization
@@ -60,7 +60,7 @@ _[macroscopics.h](../src/CUDA/structs/macroscopics.h)_
 * Update `copyMacr()`.
 
 _[lbm.cu](../src/CUDA/lbm.cu)_
-* Update LBM bulk (`gpuBCMacrCollisionStream()` and `gpuUpdateMacr()`).
+* Update LBM bulk (`gpuMacrCollisionStream()` and `gpuUpdateMacr()`).
 
 _[lbmInitialization.cu](../src/CUDA/lbmInitialization.cu)_
 * Update LBM initalization (`gpuMacrInitValue()` and `gpuInitialization()`).

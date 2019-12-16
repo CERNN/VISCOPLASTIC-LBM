@@ -3,8 +3,8 @@
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Couette flow using Zou-He velocity boundary conditions
 *          N, S: moving wall; B, F, W, E: periodic
-*   @version 0.2.0
-*   @date 16/08/2019
+*   @version 0.3.0
+*   @date 16/12/2019
 */
 
 /*

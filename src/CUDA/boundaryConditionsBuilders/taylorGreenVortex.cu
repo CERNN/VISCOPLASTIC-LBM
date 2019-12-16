@@ -3,8 +3,8 @@
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Taylor-Green Vortex boundary conditions
 *          All directoins periodic
-*   @version 0.2.0
-*   @date 16/08/2019
+*   @version 0.3.0
+*   @date 16/12/2019
 */
 
 /*

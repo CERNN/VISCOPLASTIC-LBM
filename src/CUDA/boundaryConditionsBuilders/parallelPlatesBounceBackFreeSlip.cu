@@ -4,8 +4,8 @@
 *   @brief Parallel plates using bounce boundary conditions in walls,
 *          periodic condition in flow direction and force in Z
 *          N: wall; S: symmetry (Free Slip); B,F,W,E: periodic
-*   @version 0.2.0
-*   @date 16/08/2019
+*   @version 0.3.0
+*   @date 16/12/2019
 */
 
 /*

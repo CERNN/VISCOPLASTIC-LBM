@@ -3,8 +3,8 @@
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Free slip boundary condition
            For usage example, see templates
-*   @version 0.2.0
-*   @date 16/08/2019
+*   @version 0.3.0
+*   @date 16/12/2019
 */
 
 #ifndef __BC_FREE_SLIP_H

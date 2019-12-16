@@ -2,8 +2,8 @@
 *   @file boundaryConditionsInfo.h
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Struct to provide information about the boundary conditions
-*   @version 0.2.0
-*   @date 17/10/2019
+*   @version 0.3.0
+*   @date 16/12/2019
 */
 
 #ifndef __BOUNDARY_CONDITIONS_INFO_H

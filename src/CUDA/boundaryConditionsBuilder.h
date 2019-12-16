@@ -2,8 +2,8 @@
 *   @file boundaryConditionsBuilder.h
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Build boundary condition grid
-*   @version 0.2.0
-*   @date 16/08/2019
+*   @version 0.3.0
+*   @date 16/12/2019
 */
 
 #ifndef __BOUNDARY_CONDITIONS_BUILDER_H
