@@ -13,6 +13,7 @@
 #include <stdint.h>
 
 // OFFSET DEFINES
+#define SPC_INTERP_BB_OFFSET 23
 #define SAVE_POST_COL_OFFSET 22
 #define IS_USED_OFFSET 21
 #define BC_SCHEME_OFFSET 18
@@ -37,7 +38,8 @@
 #define BC_SCHEME_PRES_ZOUHE (0b011)
 #define BC_SCHEME_FREE_SLIP (0b100)
 #define BC_SCHEME_BOUNCE_BACK (0b101)
-#define BC_SCHEME_SPECIAL (0b110)
+#define BC_SCHEME_INTERP_BOUNCE_BACK (0b110)
+#define BC_SCHEME_SPECIAL (0b111)
 
 // DIRECTION DEFINES
 #define DIRECTION_BITS (0b11111 << DIRECTION_OFFSET)
@@ -79,17 +81,21 @@
 #define UZ_IDX_BITS (0b111 << UZ_IDX_OFFSET)
 #define RHO_IDX_BITS (0b111 << RHO_IDX_OFFSET)
 
+// INTERPOLATED BOUNCE BACK SPECIAL DEFINES
+#define SPC_INTERP_BB_BITS (0b11111111 << SPC_INTERP_BB_OFFSET)
 
 /*
-*   Struct for mapping the type of each node using 32-bit variable for each node
-*   The struct is organized as:
-*   USED (1b) - BC SCHEME (3b) - DIRECTION (5b) - GEOMETRY (1b)- UX_VAL_IDX (3b)
-*   - UY_VAL_IDX (3b) - UZ_VAL_IDX (3b) - RHO_VAL_IDX (3b)
+*   Struct for mapping the type of each node using 32-bit variable for 
+*   each node. The struct is organized as:
+*   USED (1b) - SAVE_POST_COL (1b) - BC SCHEME (3b) - DIRECTION (5b) 
+*   - GEOMETRY (1b) - UX_VAL_IDX (3b) - UY_VAL_IDX (3b) - UZ_VAL_IDX (3b) 
+*   - RHO_VAL_IDX (3b) - SPC_INTERP_BB_BITS (8b)
 *
-*   With USED being the MSB and RHO_VAL_IDX[0] the LSB. The bit sets meaning are
-*   explained below:
+*   With SPC_INTERP_BB_BITS being the MSB and RHO_VAL_IDX[0] the LSB. 
+*   The bit sets meaning are explained below:
 *
 *   USED: node is used
+*   SAVE_POST_COL: save post collision populations or not
 *   BC SCHEME: scheme of boundary condition (null, Zou-He, bounce-back, etc.)
 *   DIRECTION: normal direction of the node (N, S, W, E, F, B and possible 
 *              combinations)
@@ -98,6 +104,9 @@
 *   UY_VAL_IDX: index for global array with the uy value for the node
 *   UZ_VAL_IDX: index for global array with the uz value for the node
 *   RHO_VAL_IDX: index for global array with the rho value for the node
+*   SCP_INTERP_BC_BITS: bits to represent the known populations for the in
+*       the direction bounce back interpolated boundary condition normal 
+*
 */
 typedef struct nodeTypeMap {
     uint32_t map;
@@ -242,6 +251,19 @@ typedef struct nodeTypeMap {
         // if it's not free slip nor special, is local
         return !((this->getSchemeBC() == BC_SCHEME_FREE_SLIP) || 
             (this->getSchemeBC() == BC_SCHEME_SPECIAL));
+    }
+
+    __device__ __host__
+    void setBitsInterpBB(const char bits)
+    {
+        if (bits <= (SPC_INTERP_BB_BITS >> SPC_INTERP_BB_OFFSET))
+            map = (bits & ~SPC_INTERP_BB_BITS) | (bits << SPC_INTERP_BB_OFFSET);
+    }
+
+    __device__ __host__
+    char getBitsInterpBB()
+    {
+        return ((map & SPC_INTERP_BB_BITS) >> SPC_INTERP_BB_OFFSET);
     }
 
 } NodeTypeMap;
