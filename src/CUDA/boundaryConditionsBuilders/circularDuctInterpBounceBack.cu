@@ -1,7 +1,7 @@
 /*
 *   @file parallelPlatesZouHe.cu
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
-*   @brief Parallel plates using bounce boundary conditions in walls,
+*   @brief Circular duct interpolated bounce boundary conditions in walls,
 *          periodic condition in flow direction and force in Z
 *          N, S: wall; B, F: periodic; W, E: periodic
 *   @version 0.3.0
@@ -39,7 +39,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     const unsigned int y = threadIdx.y + blockDim.y * blockIdx.y;
     const unsigned int z = threadIdx.z + blockDim.z * blockIdx.z;
 
-    gpuMapBC[idxScalar(x, y, z)].setIsUsed(true); // set all nodes fluid inicially and no bc
+    gpuMapBC[idxScalar(x, y, z)].setIsUsed(true); //set all nodes fluid inicially and no bc
     gpuMapBC[idxScalar(x, y, z)].setSavePostCol(false); // set all nodes to not save post 
                                                     // collision population (just stream)
     gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_NULL);
@@ -49,32 +49,69 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     gpuMapBC[idxScalar(x, y, z)].setUzIdx(0); // manually assigned (index of uz=0)
     gpuMapBC[idxScalar(x, y, z)].setRhoIdx(0); // manually assigned (index of rho=RHO_0)
 
+    // Cilinder values
+    dfloat radius = (NY/2.0);
+    dfloat xCenter = (NX/2.0+0.5);
+    dfloat yCenter = (NY/2.0+0.5);
 
-    if (y == 0) // S
+    // Node values
+    dfloat xNode = x+0.5;
+    dfloat yNode = y+0.5;
+    dfloat zNode = z+0.5;
+
+    // Axial direction of the cilinder
+    gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
+
+    dfloat distNode = distPoints2D(xNode, yNode, xCenter, yCenter);
+    
+    // if the point is out of the cilinder
+    if(distNode > R)
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
+        gpuMapBC[idxScalar(x, y, z)].setIsUsed(false);
     }
-    else if (y == (NY - 1)) // N
+    else
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
+        // if the point is a boundary node
+        if(distNode > (R-sqrt(2)))
+        {
+            gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_INTERP_BOUNCE_BACK);
+        }
+        // if the point is next to a boundary node
+        else if(distNode > (R-2*sqrt(2)))
+        {
+            gpuMapBC[idxScalar(x, y, z)].setSavePostCol(true);
+        }
     }
-    else if (x == 0) // W
+
+    // Process the adjacent coordinates (fluid or non fluid)
+    
+    // Directions in [x, y] (same as D2Q9, without the population 0)
+    char dirs[8][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}, 
+                       {1, 1}, {-1, 1}, {-1, -1}, {1, -1}}
+
+    char i;
+    // char popUnknown = 0b0;
+    for(i = 0; i < 8; i++)
     {
-        //gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(WEST);
-    }
-    else if (x == (NX - 1)) // E
-    {
-        //gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_FREE_SLIP);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(EAST);
-    }
-    else if (z == 0) // B
-    {
-    }
-    else if (z == (NZ - 1)) // F
-    {
+        // Adjacent node coordinates (where the population comes from)
+        dfloat xAdj = xNode - dirs[i][0];
+        dfloat yAdj = yNode - dirs[i][1];
+        // if the adjancent node is in boundaries
+        if(xAdj < NX && xAdj > 0 && yAdj < NY && yAdj > 0)
+        {
+            dfloat distAdj = distPoints2D(xAdj, yAdj, xCenter, yCenter);
+            if(distAdj > R)
+            {
+                // set population as unknown
+                // popUnknown |= (0b1 << i);
+                gpuMapBC[idxScalar(x, y, z)].setUnknowPopInterpBB(i);
+            }
+        }
+        else
+        {
+            // set population as unknown
+            gpuMapBC[idxScalar(x, y, z)].setUnknowPopInterpBB(i);
+        }
     }
 }
 

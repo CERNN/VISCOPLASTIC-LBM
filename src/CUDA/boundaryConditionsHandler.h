@@ -14,6 +14,7 @@
 #include "structs/populations.h"
 #include "boundaryConditionsSchemes/bounceBack.h"
 #include "boundaryConditionsSchemes/freeSlip.h"
+#include "boundaryConditionsSchemes/interpolatedBounceBack.h"
 #ifdef D3Q19
 #include "boundaryConditionsSchemes/D3Q19_VelBounceBack.h"
 #include "boundaryConditionsSchemes/D3Q19_VelZouHe.h"

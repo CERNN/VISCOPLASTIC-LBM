@@ -55,6 +55,10 @@ void gpuBoundaryConditions(NodeTypeMap* gpuNT,
     case BC_SCHEME_SPECIAL:
         gpuSchSpecial(gpuNT, fPostStream, fPostCol, x, y, z);
         break;
+    case BC_SCHEME_INTERP_BOUNCE_BACK:
+        gpuBCInterpolatedBounceBack((unsigned char)(gpuNT->getBitsUnknownPopsInterpBB()), 
+            fPostStream, fPostCol, x, y, z);
+        break;
     default:
         break;
     }

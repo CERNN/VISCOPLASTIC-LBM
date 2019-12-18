@@ -125,8 +125,23 @@ size_t __forceinline__ idxScalar(unsigned int x, unsigned int y, unsigned int z)
 */
 __host__ __device__
 size_t __forceinline__ idxPop(const unsigned int x, const unsigned int y, const unsigned int z, const unsigned int d)
-{   
+{
     return NX*(NY*(NZ*d + z) + y) + x;
+}
+
+
+/*
+*   @brief Evaluate the distance between a point in 2D and another
+*   @param x1: point 1 x value
+*   @param y1: point 1 y value
+*   @param x2: point 2 x value
+*   @param y2: point 2 y value
+*   @return euclidian distance between the two points 
+*/
+__host__ __device__
+size_t __forceinline__ distPoints2D(const dfloat x1, const dfloat y1, const dfloat x2, const dfloat y2)
+{   
+    return sqrt((float)(x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
 
 

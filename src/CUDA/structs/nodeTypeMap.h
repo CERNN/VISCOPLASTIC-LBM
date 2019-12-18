@@ -83,6 +83,14 @@
 
 // INTERPOLATED BOUNCE BACK SPECIAL DEFINES
 #define SPC_INTERP_BB_BITS (0b11111111 << SPC_INTERP_BB_OFFSET)
+#define UNKNOWN_POP_1 (0b00000001) // [x, y] = ( 1,  0)
+#define UNKNOWN_POP_2 (0b00000010) // [x, y] = ( 0,  1)
+#define UNKNOWN_POP_3 (0b00000100) // [x, y] = (-1,  0)
+#define UNKNOWN_POP_4 (0b00001000) // [x, y] = ( 0, -1)
+#define UNKNOWN_POP_5 (0b00010000) // [x, y] = ( 1,  1)
+#define UNKNOWN_POP_6 (0b00100000) // [x, y] = (-1,  1)
+#define UNKNOWN_POP_7 (0b01000000) // [x, y] = (-1, -1)
+#define UNKNOWN_POP_8 (0b10000000) // [x, y] = ( 1, -1)
 
 /*
 *   Struct for mapping the type of each node using 32-bit variable for 
@@ -254,14 +262,23 @@ typedef struct nodeTypeMap {
     }
 
     __device__ __host__
-    void setBitsInterpBB(const char bits)
+    void setBitsUnknownPopsInterpBB(const char bits)
     {
         if (bits <= (SPC_INTERP_BB_BITS >> SPC_INTERP_BB_OFFSET))
             map = (bits & ~SPC_INTERP_BB_BITS) | (bits << SPC_INTERP_BB_OFFSET);
     }
+    
+    __device__ __host__
+    void setUnknowPopInterpBB(const char pop)
+    {
+        // number of populations, excluding 0 (pop 1 is 0, pop 2 is 1, etc.)
+        // D2Q9 scheme used (velocities described in UNKNOWN_POP defines)
+        if (pop < 8)
+            map |= ((0b1 << pop) << SPC_INTERP_BB_OFFSET);
+    }
 
     __device__ __host__
-    char getBitsInterpBB()
+    char getBitsUnknownPopsInterpBB()
     {
         return ((map & SPC_INTERP_BB_BITS) >> SPC_INTERP_BB_OFFSET);
     }
