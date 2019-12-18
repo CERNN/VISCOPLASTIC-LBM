@@ -147,4 +147,26 @@ void gpuMacrInitValue(
     macr->ux[idxScalar(x, y, z)] = 0;
     macr->uy[idxScalar(x, y, z)] = 0;
     macr->uz[idxScalar(x, y, z)] = 0;
+
+    // Example of usage of random numbers for turbulence in parallel plates flow in z
+
+    /*
+    dfloat y_visc = 6.59, ub_f = 15.6, uc_f = 18.2;
+​
+    // logaritimic velocity profile
+    dfloat uz_log, pos = (y < NY/2 ? y + 0.5 : NY - (y + 0.5));
+    uz_log = (uc_f*U_TAU)*(pos/del)*(pos/del);
+​
+    macr->uz[idxScalar(x, y, z)] = uz_log;
+    macr->ux[idxScalar(x, y, z)] = 0.0;
+    macr->uy[idxScalar(x, y, z)] = 0.0;
+    macr->rho[idxScalar(x, y, z)] = RHO_0;
+​
+    // perturbation
+    dfloat pert = 0.1;
+    int l = idxScalar(x, y, z), Nt = numberNodes;
+    macr->uz[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NZ - Nt*((l + NZ) / Nt)];
+    macr->ux[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NX - Nt*((l + NX) / Nt)];
+    macr->uy[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NY - Nt*((l + NY) / Nt)];
+    */
 }

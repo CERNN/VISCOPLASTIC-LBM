@@ -77,9 +77,17 @@ int main()
         checkCudaErrors(cudaStreamCreate(&streamsKernelLBM[i]));
         pop[i].popAllocation();
         macr[i].macrAllocation(IN_VIRTUAL);
-        if(RANDOM_NUMBERS)
-            checkCudaErrors(cudaMallocManaged((void**)&randomNumbers, 
-                sizeof(float)*numberNodes));
+    }
+
+    checkCudaErrors(cudaSetDevice(0));
+
+    // ALLOCATION AND INITIALIZATION OF RANDOM NUMBERS
+    if(RANDOM_NUMBERS)
+    {
+        checkCudaErrors(cudaMallocManaged((void**)&randomNumbers, sizeof(float)*numberNodes));
+        initializationRandomNumbers(randomNumbers, CURAND_SEED);
+        checkCudaErrors(cudaDeviceSynchronize());
+        getLastCudaError("random numbers transfer error");
     }
 
 /*  
@@ -104,6 +112,8 @@ int main()
     gpuBuildBoundaryConditions<<<grid, threads>>>(pop[0].mapBC);
     checkCudaErrors(cudaDeviceSynchronize());
     bcInfo.setupBoundaryConditionsInfo(pop->mapBC);
+
+    
 
     // LBM INITIALIZATION
     if(LOAD_POP)
@@ -150,8 +160,7 @@ int main()
     dim3 threadsBC(32, 1, 1);
 
     if(RANDOM_NUMBERS)
-        for(int i = 0; i < N_GPUS; i++)
-            checkCudaErrors(cudaFree(randomNumbers));
+        checkCudaErrors(cudaFree(randomNumbers));
 
     // TIMING
     cudaEvent_t start, stop;
