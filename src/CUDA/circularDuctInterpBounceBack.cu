@@ -50,7 +50,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     gpuMapBC[idxScalar(x, y, z)].setRhoIdx(0); // manually assigned (index of rho=RHO_0)
 
     // Cilinder values
-    dfloat R = (NY/2.0);
+    dfloat R = NY/2.0-5;
     dfloat xCenter = (NX/2.0+0.5);
     dfloat yCenter = (NY/2.0+0.5);
 
