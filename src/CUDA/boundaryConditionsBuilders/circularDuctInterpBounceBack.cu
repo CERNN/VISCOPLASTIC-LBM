@@ -50,9 +50,11 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     gpuMapBC[idxScalar(x, y, z)].setRhoIdx(0); // manually assigned (index of rho=RHO_0)
 
     // Cilinder values
-    dfloat radius = (NY/2.0);
-    dfloat xCenter = (NX/2.0+0.5);
-    dfloat yCenter = (NY/2.0+0.5);
+    // THIS RADIUS MUST BE THE SAME AS IN 
+    // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
+    dfloat R = NY/2.0-1;
+    dfloat xCenter = (NX/2.0);
+    dfloat yCenter = (NY/2.0);
 
     // Node values
     dfloat xNode = x+0.5;
@@ -72,12 +74,12 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     else
     {
         // if the point is a boundary node
-        if(distNode > (R-sqrt(2)))
+        if(distNode > (R-sqrt((float)2)))
         {
             gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_INTERP_BOUNCE_BACK);
         }
         // if the point is next to a boundary node
-        else if(distNode > (R-2*sqrt(2)))
+        else if(distNode > (R-2*sqrt((float)2)))
         {
             gpuMapBC[idxScalar(x, y, z)].setSavePostCol(true);
         }
@@ -87,11 +89,10 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     
     // Directions in [x, y] (same as D2Q9, without the population 0)
     char dirs[8][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}, 
-                       {1, 1}, {-1, 1}, {-1, -1}, {1, -1}}
+                       {1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
 
-    char i;
     // char popUnknown = 0b0;
-    for(i = 0; i < 8; i++)
+    for(char i = 0; i < 8; i++)
     {
         // Adjacent node coordinates (where the population comes from)
         dfloat xAdj = xNode - dirs[i][0];

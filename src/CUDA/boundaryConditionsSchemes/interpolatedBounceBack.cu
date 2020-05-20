@@ -11,7 +11,8 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     dfloat q, R;
     const unsigned short int zp1 = (z + 1) % NZ;
     const unsigned short int zm1 = (NZ + z - 1) % NZ;
-    R = NY/2.0-5;
+    // THIS RADIUS MUST BE THE SAME AS IN THE BOUNDARY CONDITION BUILDER
+    R = NY/2.0-1;
     q = R - distPoints2D(x+0.5, y+0.5, NX/2.0, NY/2.0);
 
     if(unknownPops & UNKNOWN_POP_1)

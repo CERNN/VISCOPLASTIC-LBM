@@ -14,6 +14,8 @@
 *.exp
 *.lib
 *.exe
+*.txt
 doc/Reports/*
 doc/Requirements.docx
 doc/Simulations/*
+bin/*

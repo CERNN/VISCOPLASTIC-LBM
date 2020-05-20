@@ -22,7 +22,7 @@ typedef double dfloat;      // single or double precision
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
 #define ID_SIM "001"            // prefix for simulation's files
-#define PATH_FILES "parallelPlatesHWBB"  // path to save simulation's files
+#define PATH_FILES "circularDuctInterp"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
 /* ------------------------------------------------------------------------- */
@@ -30,7 +30,7 @@ typedef double dfloat;      // single or double precision
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
 constexpr int N_STEPS = 10000;          // maximum number of time steps
-#define MACR_SAVE 0                     // saves macroscopics every MACR_SAVE steps
+#define MACR_SAVE 1000                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT 1000                // report every DATA_REPORT steps
 
 #define DATA_STOP false                 // stop condition by treated data
@@ -64,7 +64,7 @@ constexpr unsigned int N = 32;
 constexpr unsigned int NX = N;        // size x of the grid 
                                       // (32 multiple for better performance)
 constexpr unsigned int NY = N;        // size y of the grid
-constexpr unsigned int NZ = N;        // size z of the grid
+constexpr unsigned int NZ = 10;        // size z of the grid
 
 constexpr dfloat U_MAX = 0.05;        // max velocity
 
@@ -76,12 +76,12 @@ constexpr dfloat TT_OMEGA = 1-0.5*OMEGA; // 1-0.5*omega, for force term
 
 constexpr dfloat RHO_0 = 1;         // initial rho
 
-constexpr dfloat FX = 0;              // force in x
-constexpr dfloat FY = 0;              // force in y
-constexpr dfloat FZ = 0;              // force in z
-constexpr dfloat FX_D3 = FX/3;        // util for regularization
-constexpr dfloat FY_D3 = FY/3;        // util for regularization
-constexpr dfloat FZ_D3 = FZ/3;        // util for regularization
+constexpr dfloat FX = 0;        // force in x
+constexpr dfloat FY = 0;        // force in y
+constexpr dfloat FZ = 1e-5;     // force in z (flow direction in most cases)
+constexpr dfloat FX_D3 = FX/3;  // util for regularization
+constexpr dfloat FY_D3 = FY/3;  // util for regularization
+constexpr dfloat FZ_D3 = FZ/3;  // util for regularization
 
 // values options for boundary conditions
 __device__ const dfloat uxBC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };

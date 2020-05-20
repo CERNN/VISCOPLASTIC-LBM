@@ -50,9 +50,11 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     gpuMapBC[idxScalar(x, y, z)].setRhoIdx(0); // manually assigned (index of rho=RHO_0)
 
     // Cilinder values
-    dfloat R = NY/2.0-5;
-    dfloat xCenter = (NX/2.0+0.5);
-    dfloat yCenter = (NY/2.0+0.5);
+    // THIS RADIUS MUST BE THE SAME AS IN 
+    // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
+    dfloat R = NY/2.0-1;
+    dfloat xCenter = (NX/2.0);
+    dfloat yCenter = (NY/2.0);
 
     // Node values
     dfloat xNode = x+0.5;
