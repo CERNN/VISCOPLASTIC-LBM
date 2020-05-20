@@ -139,7 +139,7 @@ size_t __forceinline__ idxPop(const unsigned int x, const unsigned int y, const 
 *   @return euclidian distance between the two points 
 */
 __host__ __device__
-size_t __forceinline__ distPoints2D(const dfloat x1, const dfloat y1, const dfloat x2, const dfloat y2)
+dfloat __forceinline__ distPoints2D(const dfloat x1, const dfloat y1, const dfloat x2, const dfloat y2)
 {   
     return sqrt((float)(x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
