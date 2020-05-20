@@ -3,7 +3,7 @@ import glob
 import numpy as np
 
 # ALL FILES IN THE FOLDER MUST BE FROM THE SAME SIMULATION
-PATH = "../../bin/parallelPlatesHWBB/001/"
+PATH = "../../bin/circularDuctInterp/001/"
 
 __macr_names__ = ['ux', 'uy', 'uz', 'rho']
 

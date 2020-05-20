@@ -1,10 +1,10 @@
-# LBM CERNN
+# LBM Viscoplastic
 
 This is a LBM (Lattice Boltzmann method) project for flow simulation, using C/C++ and CUDA API. The velocity sets supported are D3Q19 and D3Q27. 
 
 If you are not familiarized with the method, we strongly recommend the book _The Lattice Boltzmann Method: Principles and Practice_ by Kruger et al. as a guide.
 
-For software citation use _PERFORMANCE ANALYSIS OF THE LATTICE BOLTZMANN METHOD IMPLEMENTATION ON GPU_, by Oliveira et al., XL CILAMCE ([CILAMCE site](https://www.cilamce2019.com.br))
+For software citation use _PERFORMANCE ANALYSIS OF THE LATTICE BOLTZMANN METHOD IMPLEMENTATION ON GPU_, by Oliveira et al., XL CILAMCE ([CILAMCE site](https://www.cilamce2019.com.br), [Research gate](https://www.researchgate.net/publication/341522565_PERFORMANCE_ANALYSIS_OF_THE_LATTICE_BOLTZMANN_METHOD_IMPLEMENTATION_ON_GPU))
 
 ## Features
 
