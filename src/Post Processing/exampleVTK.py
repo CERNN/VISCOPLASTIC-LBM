@@ -12,10 +12,29 @@ for step in macrSteps:
     # Save macroscopics to VTK format
     saveVTK3D(macr, info['ID'] + "macr" + str(step), points=False)
 
+    '''
     # COUETTE/PARALLEL PLATES PROCESSING
     uz = np.array([np.average(macr['uz'][:, y, info['NZ']//2]) for y in range(0, info['NY'])])
     saveMacrCsv(info['ID'] + "uz" + str(step) + ".csv", uz)
+    '''
 
+    '''
+    # CIRCULAR DUCT PROCESSING
+    R = info['NY']//2
+    print(info['NX']//2)
+    uz1 = np.array([np.average(macr['uz'][info['NX']//2, y, :]) for y in range(0, info['NY'])])
+    saveMacrCsv(info['ID'] + "uz" + str(step) + ".csv", uz1)
+
+    uz_transv = []
+    for x in np.arange(0, info['NX'], 1):
+        for y in np.arange(0, info['NY'], 1):
+            dist = ((x-info['NX']/2)**2+(y-info['NY']/2)**2)**0.5
+            if(dist-1e-10 < R):
+                # z = 0
+                uz_transv.append(macr['uz'][x, y, 0])
+    avg_uz = np.average(np.array(uz_transv))
+    print("uz_avg", "%.6e" % avg_uz)
+    '''
 
     '''
     # LID DRIVEN PROCESSING
