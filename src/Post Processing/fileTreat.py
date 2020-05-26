@@ -3,7 +3,7 @@ import glob
 import numpy as np
 
 # ALL FILES IN THE FOLDER MUST BE FROM THE SAME SIMULATION
-PATH = "../../bin/circularDuctInterp/001/"
+PATH = "../../bin/circularDuctInterp/000/"
 
 __macr_names__ = ['ux', 'uy', 'uz', 'rho']
 
@@ -184,9 +184,12 @@ def getMacrsFromStep(step):
 
     # get all filenames of the step.
     # THE NUMBER OF ZEROS MUST BE EQUAL TO THE ONE IN "lbmReport.cpp"
+    listNames = ["%s%06d.bin" % (macr, step) 
+                for macr in __macr_names__]
+
     listFilenameStep = [
-        i for i in listFilenameFlat if (
-            ("%06d" % step) + ".bin") in i]
+        i for i in listFilenameFlat if
+            any([True for j in listNames if j in i])]
     # if there is no macroscopic from that step
     if len(listFilenameStep) == 0:
         return None
