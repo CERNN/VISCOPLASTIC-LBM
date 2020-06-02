@@ -39,6 +39,9 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     const unsigned int y = threadIdx.y + blockDim.y * blockIdx.y;
     const unsigned int z = threadIdx.z + blockDim.z * blockIdx.z;
 
+    if(x >= NX || y > NY || z >= NZ)
+        return;
+
     gpuMapBC[idxScalar(x, y, z)].setIsUsed(true); //set all nodes fluid inicially and no bc
     gpuMapBC[idxScalar(x, y, z)].setSavePostCol(false); // set all nodes to not save post 
                                                     // collision population (just stream)
@@ -52,7 +55,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     // Cilinder values
     // THIS RADIUS MUST BE THE SAME AS IN 
     // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
-    dfloat R = NY/2.0-1;
+    dfloat R = NY/2.0;
     dfloat xCenter = (NX/2.0);
     dfloat yCenter = (NY/2.0);
 

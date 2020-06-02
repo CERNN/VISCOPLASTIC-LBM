@@ -8,16 +8,22 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     const short unsigned int y,
     const short unsigned int z)
 {
-    dfloat q, R;
+    dfloat q, R, xNode, yNode;
     const unsigned short int zp1 = (z + 1) % NZ;
     const unsigned short int zm1 = (NZ + z - 1) % NZ;
     // THIS RADIUS MUST BE THE SAME AS IN THE BOUNDARY CONDITION BUILDER
-    R = NY/2.0-1;
-    q = R - distPoints2D(x+0.5, y+0.5, NX/2.0, NY/2.0);
+    R = NY/2.0;
+    // q = R - distPoints2D(x+0.5, y+0.5, NX/2.0, NY/2.0);
+
+    // Dislocate coordinates to get x^2+y^2=R^2
+    xNode = x - NX/2.0 + 0.5;
+    yNode = y - NY/2.0 + 0.5;
 
     if(unknownPops & UNKNOWN_POP_1)
     {
         // Populations with cx=1, cy=0
+        q = gpuDistNormalizedFromNodePopulationToWall_a0(
+            xNode, yNode, xNode-1, yNode, R);
         if(q > 0.5)
         {
             fPostStream[idxPop(x, y, z, 1)] = gpuInterpolatedBounceBackHigherQ(
@@ -43,6 +49,8 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     }
     if(unknownPops & UNKNOWN_POP_2)
     {
+        q = gpuDistNormalizedFromNodePopulationToWall_ainf(
+            xNode, yNode, xNode, yNode-1, R);
         // Populations with cx=0, cy=1
         if(q > 0.5)
         {
@@ -69,6 +77,8 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     }
     if(unknownPops & UNKNOWN_POP_3)
     {
+        q = gpuDistNormalizedFromNodePopulationToWall_a0(
+            xNode, yNode, xNode+1, yNode, R);
         // Populations with cx=-1, cy=0
         if(q > 0.5)
         {
@@ -95,6 +105,8 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     }
     if(unknownPops & UNKNOWN_POP_4)
     {
+        q = gpuDistNormalizedFromNodePopulationToWall_ainf(
+            xNode, yNode, xNode, yNode+1, R);
         // Populations with cx=0, cy=-1
         if(q > 0.5)
         {
@@ -121,6 +133,8 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     }
     if(unknownPops & UNKNOWN_POP_5)
     {
+        q = gpuDistNormalizedFromNodePopulationToWall_ap1(
+            xNode, yNode, xNode-1, yNode-1, R);
         // Populations with cx=1, cy=1
         if(q > 0.5)
         {
@@ -149,6 +163,8 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     }
     if(unknownPops & UNKNOWN_POP_6)
     {
+        q = gpuDistNormalizedFromNodePopulationToWall_am1(
+            xNode, yNode, xNode+1, yNode-1, R);
         // Populations with cx=-1, cy=1
         if(q > 0.5)
         {
@@ -177,6 +193,8 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     }
     if(unknownPops & UNKNOWN_POP_7)
     {
+        q = gpuDistNormalizedFromNodePopulationToWall_ap1(
+            xNode, yNode, xNode+1, yNode+1, R);
         // Populations with cx=-1, cy=-1
         if(q > 0.5)
         {
@@ -205,6 +223,8 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     }
     if(unknownPops & UNKNOWN_POP_8)
     {
+        q = gpuDistNormalizedFromNodePopulationToWall_am1(
+            xNode, yNode, xNode-1, yNode+1, R);
         // Populations with cx=1, cy=-1
         if(q > 0.5)
         {
@@ -231,4 +251,82 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
             #endif
         }
     }
+}
+
+
+__device__
+dfloat gpuDistNormalizedFromNodePopulationToWall_a0(
+    dfloat x1,
+    dfloat y1,
+    dfloat x2,
+    dfloat y2,
+    dfloat R)
+{
+    dfloat x, y, dist;
+    y = y2;
+    x = sqrt(R*R-y*y);
+    if(x2 < 0)
+        x = -x;
+    dist = distPoints2D(x, y, x1, y1);
+    return dist;
+}
+
+
+__device__
+dfloat gpuDistNormalizedFromNodePopulationToWall_ainf(
+    dfloat x1,
+    dfloat y1,
+    dfloat x2,
+    dfloat y2,
+    dfloat R)
+{
+    dfloat x, y, dist;
+    x = x2;
+    y = sqrt(R*R-x*x);
+    if(y2 < 0)
+        y = -y;
+    dist = distPoints2D(x, y, x1, y1);
+    return dist;
+}
+
+
+__device__
+dfloat gpuDistNormalizedFromNodePopulationToWall_ap1(
+    dfloat x1,
+    dfloat y1,
+    dfloat x2,
+    dfloat y2,
+    dfloat R)
+{
+    dfloat x, y, b, delta_r, dist;
+    b = y1-x1;
+    delta_r = sqrt(2*R*R-b*b);
+    x = (-b+delta_r)*0.5;
+    if((x1 > x2 && (x > x1 || x < x2)) ||
+        (x1 < x2 && (x < x1 || x > x2)))
+        x = (-b-delta_r)*0.5;
+    y = x+b;
+    dist = distPoints2D(x, y, x1, y1);
+    return dist/SQRT_2;
+}
+
+
+__device__
+dfloat gpuDistNormalizedFromNodePopulationToWall_am1(
+    dfloat x1,
+    dfloat y1,
+    dfloat x2,
+    dfloat y2,
+    dfloat R)
+{
+    dfloat x, y, b, delta_r, dist;
+    b = y1+x1;
+    delta_r = sqrt(2*R*R-b*b);
+    x = (b+delta_r)*0.5;
+    if((x1 > x2 && (x > x1 || x < x2)) ||
+        (x1 < x2 && (x < x1 || x > x2)))
+        x = (b-delta_r)*0.5;
+    y = -x+b;
+    dist = distPoints2D(x, y, x1, y1);
+    return dist/SQRT_2;
 }

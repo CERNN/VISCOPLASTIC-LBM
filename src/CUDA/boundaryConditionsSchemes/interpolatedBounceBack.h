@@ -69,4 +69,43 @@ dfloat __inline__ gpuInterpolatedBounceBackHigherQ(
 }
 
 
+__device__
+dfloat gpuDistNormalizedFromNodePopulationToWall_a0(
+    dfloat x1,
+    dfloat y1,
+    dfloat x2,
+    dfloat y2,
+    dfloat R
+);
+
+
+__device__
+dfloat gpuDistNormalizedFromNodePopulationToWall_ainf(
+    dfloat x1,
+    dfloat y1,
+    dfloat x2,
+    dfloat y2,
+    dfloat R
+);
+
+
+__device__
+dfloat gpuDistNormalizedFromNodePopulationToWall_ap1(
+    dfloat x1,
+    dfloat y1,
+    dfloat x2,
+    dfloat y2,
+    dfloat R
+);
+
+
+__device__
+dfloat gpuDistNormalizedFromNodePopulationToWall_am1(
+    dfloat x1,
+    dfloat y1,
+    dfloat x2,
+    dfloat y2,
+    dfloat R
+);
+
 #endif // !__BC_INTERPOLATED_BOUNCE_BACK_H
