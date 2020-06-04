@@ -60,13 +60,13 @@ Observations:
 
 Below is described a brief of the content of the source files in _Post Processing/_ folder.
 
-#### [File Treat](../src/Post Processing/fileTreat.py)
+#### [File Treat](../src/Post%20Processing/fileTreat.py)
 Functions to get simulation information and data (i.e. macroscopics). The configuration of the simulation files' folder is in it.
 
-#### [Data Save](../src/Post Processing/dataSave.py)
+#### [Data Save](../src/Post%20Processing/dataSave.py)
 Functions to save simulations' information in VTK format or csv.
 
-#### [examplePlot](../src/Post Processing/exmapleVTK.py) and [exampleVTK](../src/Post Processing/exmaplePlot.py)
+#### [examplePlot](../src/Post%20Processing/exmapleVTK.py) and [exampleVTK](../src/Post%20Processing/exmaplePlot.py)
 Examples of usage of the functions in the files above.
 
 Observations:
