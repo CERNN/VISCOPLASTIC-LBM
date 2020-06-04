@@ -14,6 +14,7 @@ The LBM features supported are:
     * Zou-He (velocity or pressure)
     * Bounce-back (velocity)
     * Free slip
+    * Interpolated bounce back
 
 * Collision
     * BGK operator
