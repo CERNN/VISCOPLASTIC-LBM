@@ -1,0 +1,29 @@
+
+---------------------------- SIMULATION INFORMATION ----------------------------
+      Simulation ID: 305
+       Velocity set: D3Q19
+          Precision: double
+                 NX: 513
+                 NY: 513
+                 NZ: 1
+                Tau: 0.900000
+               Umax: 1.302083e-03
+                 FX: 0.000000e+00
+                 FY: 0.000000e+00
+                 FZ: 1.490116e-08
+       Report steps: 5000
+         Save steps: 0
+             Nsteps: 1126400
+              MLUPS: 72.1
+          Bandwidht: 20.4 (Gb/s)
+       Time elapsed: 4113.779 (s)
+            threads: (32, 1, 1)
+--------------------------------------------------------------------------------
+
+------------------------------- CUDA INFORMATION -------------------------------
+	      device number: 0
+	               name: GeForce GTX 1050 Ti
+	    multiprocessors: 6
+	 compute capability: 6.1
+	        ECC enabled: 0
+--------------------------------------------------------------------------------
