@@ -20,20 +20,31 @@ for step in macrSteps:
 
     '''
     # CIRCULAR DUCT PROCESSING
-    R = info['NY']//2
-    print(info['NX']//2)
-    uz1 = np.array([np.average(macr['uz'][info['NX']//2, y, :]) for y in range(0, info['NY'])])
-    saveMacrCsv(info['ID'] + "uz" + str(step) + ".csv", uz1)
+    R = info['NY']/2
+    uzS_N = np.array([np.average(macr['uz'][info['NX']//2, y, :]) 
+        for y in range(0, info['NY'])])
+    saveMacrCsv(info['ID'] + "uzN-S" + str(step) + ".csv", uzS_N)
 
-    uz_transv = []
-    for x in np.arange(0, info['NX'], 1):
-        for y in np.arange(0, info['NY'], 1):
-            dist = ((x-info['NX']/2)**2+(y-info['NY']/2)**2)**0.5
-            if(dist-1e-10 < R):
-                # z = 0
-                uz_transv.append(macr['uz'][x, y, 0])
-    avg_uz = np.average(np.array(uz_transv))
-    print("uz_avg", "%.6e" % avg_uz)
+    def get_r_times_dr(y, R):
+        # dr = 1
+        diff = info['NY']/2-R
+        # +0.5 due to wet node
+        r = abs(y + 0.5 - R) + diff
+        return r
+
+    def get_avg_vel(uz_x_half, R):
+        uz_integral = 0  # integral(0, r)(u*r*dr)
+        for y in range(0, int(np.floor(R))):
+            r = get_r_times_dr(y, R)
+            uz_integral += r*uz_x_half[y]
+        uz_avg = 2/(R*R)*uz_integral  # 2/R^2*integral(0, r)(u*r*dr)
+        return uz_avg
+
+    if((info["NY"]/2-R+0.5) == 0.5):  # Correct velocity for wall velocity if node is halfway from wall
+        u_correct = (3*uzS_N[0]-uzS_N[1])/2
+        uzS_N = [uz - u_correct for uz in uzS_N]
+    avg_uz = get_avg_vel(uzS_N, R)
+    print("uz_avg", "N %d %.6e" % (info['NY'], avg_uz))
     '''
 
     '''
