@@ -32,8 +32,8 @@ dteta = math.atan(dy)
 # delta R to consider
 dR = dy
 
-# List of radius values
-radius_values = np.arange(0, R+1e-10, dR)
+# List of radius values (normalized from 0 to 1)
+radius_values = np.arange(0, 1+1e-10, dR)
 # List of teta values
 teta_values = np.arange(0, 2*np.pi, dteta)
 
@@ -44,7 +44,7 @@ def get_xy_from_r_teta(r, teta):
     return x, y
 
 # Figure in matplotlib
-fig = plt.figure()
+fig1 = plt.figure(1)
 # Polar plot for velocity
 uzPlot = plt.subplot(projection="polar")
 
@@ -67,10 +67,7 @@ l_teta, lb_teta = plt.thetagrids([i for i in np.arange(0, 360, 45)], fmt=None)
 l_radius, lb_radius = plt.rgrids([i for i in np.arange(0, 1.01, 0.2)], fmt=None)
 
 # configure colorbar of the plot
-fig.colorbar(c, ax=uzPlot)
-
-# Show plots
-plt.show()
+fig1.colorbar(c, ax=uzPlot)
 
 
 def get_uz_values_from_r(r):
@@ -89,6 +86,30 @@ def get_uz_values_from_r_and_teta(r, teta):
     return uz_radial[int(r/dR), int(teta/dteta)]
 
 # Example of above functions usage
-print("r=0:", get_uz_values_from_r(0))
-print("teta=pi/4:", get_uz_values_from_teta(np.pi/4))
-print("r=0, teta=pi/4:", get_uz_values_from_r_and_teta(0.2, np.pi/2))
+
+uz_in_r = get_uz_values_from_r(0.5) # R=0.5
+uz_in_teta = get_uz_values_from_teta(np.pi/4) # teta=pi/4
+uz_in_r_and_teta = get_uz_values_from_r_and_teta(0.2, np.pi/2) #r = 0.2, pi=0.2
+
+# Plot uz in r
+fig2 = plt.figure(2)
+uz_r_plot = plt.subplot()
+# Plot
+uz_r_plot.plot(teta_values, uz_in_r)
+# configure labels and axis limits
+uz_r_plot.set(xlabel='teta', ylabel='uz', xlim=(0,2*np.pi), ylim=(0, max(uz_in_r)*1.1),
+              xticks=[0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi])
+plt.xticks([0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi],
+           ["0", "$\\frac{\pi}{2}$", "$\pi$", "$\\frac{3\pi}{2}$", "$2\pi$"])
+
+# Plot uz in teta
+fig3 = plt.figure(3)
+uz_teta_plot = plt.subplot()
+# Plot
+uz_teta_plot.plot(radius_values, uz_in_teta)
+# configure labels and axis limits
+uz_teta_plot.set(xlabel='R', ylabel='uz', xlim=(0,1), ylim=(0, max(uz_in_teta)*1.1),
+              xticks=[0, 0.5, 1.0])
+
+
+plt.show()
