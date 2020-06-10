@@ -19,23 +19,24 @@ info = getSimInfo()
 uz_mean = macr['uz'].mean(axis=2)
 
 NY, NX = info["NY"], info["NX"]
-# dx, dy normalized to 0, 1
-dx, dy = 1/(NX-1), 1/(NY-1)
+# dx, dy normalized to 0, 2
+dx, dy = 2/(NX-1), 2/(NY-1)
 # x, y normalized to -1, 1
-x, y = np.arange(-1, 1+0.1*dx, 2*dx), np.arange(-1, 1+0.1*dx, 2*dy)
+x, y = np.arange(-1, 1+0.1*dx, dx), np.arange(-1, 1+0.1*dy, dy)
 
 # Interpolating function to get uz velocity in any (-1, 1) point in plan
 interpolating_function = RegularGridInterpolator((x, y), uz_mean)
 
-# Delta teta to consider
-dteta = math.atan(dy)
 # delta R to consider
 dR = dy
+# Delta teta to consider (number of dR possible values times pi)
+dteta = 2*np.pi/(1/dR) / np.pi
 
 # List of radius values (normalized from 0 to 1)
 radius_values = np.arange(0, 1+1e-10, dR)
 # List of teta values
 teta_values = np.arange(0, 2*np.pi, dteta)
+print(radius_values.shape, teta_values.shape)
 
 def get_xy_from_r_teta(r, teta):
     """ Get x, y from R and teta values """
@@ -59,16 +60,11 @@ uz_radial = np.array([ # ugly but it works
 c = uzPlot.pcolormesh(teta_values, radius_values, 
     uz_radial, cmap='OrRd', vmin=np.min(uz_mean), vmax=np.max(uz_mean))
 
-# configure labels and axis limits
-uzPlot.axis([teta_values.min(), teta_values.max(), 
-             radius_values.min(), radius_values.max()])
-
 l_teta, lb_teta = plt.thetagrids([i for i in np.arange(0, 360, 45)], fmt=None)
 l_radius, lb_radius = plt.rgrids([i for i in np.arange(0, 1.01, 0.2)], fmt=None)
 
 # configure colorbar of the plot
 fig1.colorbar(c, ax=uzPlot)
-
 
 def get_uz_values_from_r(r):
     """ Get list of uz values with radius R """
@@ -87,17 +83,29 @@ def get_uz_values_from_r_and_teta(r, teta):
 
 # Example of above functions usage
 
-uz_in_r = get_uz_values_from_r(0.5) # R=0.5
-uz_in_teta = get_uz_values_from_teta(np.pi/4) # teta=pi/4
+# List of uz values for different R
+uz_in_r = np.array([get_uz_values_from_r(0.5), # R=0.5
+            get_uz_values_from_r(0.1), # R=0.1
+            get_uz_values_from_r(0.9)]) # R=0.9
+
+# List of uz values for different teta
+uz_in_teta = np.array([
+    get_uz_values_from_teta(np.pi/4), # teta = 45 degrees
+    get_uz_values_from_teta(np.pi/12), # teta = 15 degrees
+    get_uz_values_from_teta(0) # teta = 0 degree
+])
+
 uz_in_r_and_teta = get_uz_values_from_r_and_teta(0.2, np.pi/2) #r = 0.2, pi=0.2
 
 # Plot uz in r
 fig2 = plt.figure(2)
 uz_r_plot = plt.subplot()
 # Plot
-uz_r_plot.plot(teta_values, uz_in_r)
+for uz_r in uz_in_r:
+    uz_r_plot.plot(teta_values, uz_r)
+
 # configure labels and axis limits
-uz_r_plot.set(xlabel='teta', ylabel='uz', xlim=(0,2*np.pi), ylim=(0, max(uz_in_r)*1.1),
+uz_r_plot.set(xlabel='teta', ylabel='uz', ylim=(0, np.max(uz_in_r)*1.1),
               xticks=[0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi])
 plt.xticks([0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi],
            ["0", "$\\frac{\pi}{2}$", "$\pi$", "$\\frac{3\pi}{2}$", "$2\pi$"])
@@ -106,10 +114,12 @@ plt.xticks([0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi],
 fig3 = plt.figure(3)
 uz_teta_plot = plt.subplot()
 # Plot
-uz_teta_plot.plot(radius_values, uz_in_teta)
-# configure labels and axis limits
-uz_teta_plot.set(xlabel='R', ylabel='uz', xlim=(0,1), ylim=(0, max(uz_in_teta)*1.1),
-              xticks=[0, 0.5, 1.0])
+for uz_teta in uz_in_teta:
+    uz_teta_plot.plot(radius_values, uz_teta, linewidth=2)
 
+# configure labels and axis limits
+uz_teta_plot.set(xlabel='R', ylabel='uz', xlim=(0,1), 
+                ylim=(0, np.max(uz_in_teta)*1.1),
+                xticks=[0, 0.5, 1.0])
 
 plt.show()
