@@ -1,29 +1,36 @@
 #include "interpolatedBounceBack.h"
 
 __device__ 
-void gpuBCInterpolatedBounceBack(unsigned char unknownPops, 
+void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
+    const bool is_inside,
     dfloat* fPostStream, 
     dfloat* fPostCol, 
     const short unsigned int x, 
     const short unsigned int y,
     const short unsigned int z)
 {
-    dfloat q, R, xNode, yNode;
+    dfloat q, r, R, xNode, yNode, radius;
     const unsigned short int zp1 = (z + 1) % NZ;
     const unsigned short int zm1 = (NZ + z - 1) % NZ;
     // THIS RADIUS MUST BE THE SAME AS IN THE BOUNDARY CONDITION BUILDER
-    R = NY/2.0;
+    R = NY/2.0-0.5;
+    r = (NY-1)/8.0-0.5;
     // q = R - distPoints2D(x+0.5, y+0.5, NX/2.0, NY/2.0);
 
     // Dislocate coordinates to get x^2+y^2=R^2
     xNode = x - NX/2.0 + 0.5;
     yNode = y - NY/2.0 + 0.5;
 
+    if(is_inside)
+        radius = r;
+    else
+        radius = R;
+
     if(unknownPops & UNKNOWN_POP_1)
     {
         // Populations with cx=1, cy=0
         q = gpuDistNormalizedFromNodePopulationToWall_a0(
-            xNode, yNode, xNode-1, yNode, R);
+            xNode, yNode, xNode-1, yNode, radius);
         if(q > 0.5)
         {
             fPostStream[idxPop(x, y, z, 1)] = gpuInterpolatedBounceBackHigherQ(
@@ -50,7 +57,7 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     if(unknownPops & UNKNOWN_POP_2)
     {
         q = gpuDistNormalizedFromNodePopulationToWall_ainf(
-            xNode, yNode, xNode, yNode-1, R);
+            xNode, yNode, xNode, yNode-1, radius);
         // Populations with cx=0, cy=1
         if(q > 0.5)
         {
@@ -78,7 +85,7 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     if(unknownPops & UNKNOWN_POP_3)
     {
         q = gpuDistNormalizedFromNodePopulationToWall_a0(
-            xNode, yNode, xNode+1, yNode, R);
+            xNode, yNode, xNode+1, yNode, radius);
         // Populations with cx=-1, cy=0
         if(q > 0.5)
         {
@@ -106,7 +113,7 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     if(unknownPops & UNKNOWN_POP_4)
     {
         q = gpuDistNormalizedFromNodePopulationToWall_ainf(
-            xNode, yNode, xNode, yNode+1, R);
+            xNode, yNode, xNode, yNode+1, radius);
         // Populations with cx=0, cy=-1
         if(q > 0.5)
         {
@@ -134,7 +141,7 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     if(unknownPops & UNKNOWN_POP_5)
     {
         q = gpuDistNormalizedFromNodePopulationToWall_ap1(
-            xNode, yNode, xNode-1, yNode-1, R);
+            xNode, yNode, xNode-1, yNode-1, radius);
         // Populations with cx=1, cy=1
         if(q > 0.5)
         {
@@ -164,7 +171,7 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     if(unknownPops & UNKNOWN_POP_6)
     {
         q = gpuDistNormalizedFromNodePopulationToWall_am1(
-            xNode, yNode, xNode+1, yNode-1, R);
+            xNode, yNode, xNode+1, yNode-1, radius);
         // Populations with cx=-1, cy=1
         if(q > 0.5)
         {
@@ -194,7 +201,7 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     if(unknownPops & UNKNOWN_POP_7)
     {
         q = gpuDistNormalizedFromNodePopulationToWall_ap1(
-            xNode, yNode, xNode+1, yNode+1, R);
+            xNode, yNode, xNode+1, yNode+1, radius);
         // Populations with cx=-1, cy=-1
         if(q > 0.5)
         {
@@ -224,7 +231,7 @@ void gpuBCInterpolatedBounceBack(unsigned char unknownPops,
     if(unknownPops & UNKNOWN_POP_8)
     {
         q = gpuDistNormalizedFromNodePopulationToWall_am1(
-            xNode, yNode, xNode-1, yNode+1, R);
+            xNode, yNode, xNode-1, yNode+1, radius);
         // Populations with cx=1, cy=-1
         if(q > 0.5)
         {

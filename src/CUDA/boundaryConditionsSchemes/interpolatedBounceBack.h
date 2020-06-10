@@ -20,6 +20,8 @@
 /*
 *   @brief Applies interpolated bounce back boundary condition
 *   @param unknownPops: unknown populations (using D2Q9 velocity set) 
+*   @param is_inside: Node is an inside Interpolated BC Node (wall is to the center)
+                or outside (wall is away from the center) (used for annular duct)
 *   @param fPostStream[(NX, NY, NZ, Q)]: populations post streaming
 *   @param fPostCol[(NX, NY, NZ, Q)]: post collision populations from last step 
 *   @param x: node's x value
@@ -27,10 +29,11 @@
 *   @param z: node's z value
 */
 __device__ 
-void gpuBCInterpolatedBounceBack(unsigned char unknownPops, 
-    dfloat* fPostStream, 
-    dfloat* fPostCol, 
-    const short unsigned int x, 
+void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
+    const bool is_inside,
+    dfloat* fPostStream,
+    dfloat* fPostCol,
+    const short unsigned int x,
     const short unsigned int y,
     const short unsigned int z);
 

@@ -91,6 +91,7 @@
 #define UNKNOWN_POP_6 (0b00100000) // [x, y] = (-1,  1)
 #define UNKNOWN_POP_7 (0b01000000) // [x, y] = (-1, -1)
 #define UNKNOWN_POP_8 (0b10000000) // [x, y] = ( 1, -1)
+// DIRECTION IS USED TO CHECK IF NODE IS OF THE INSIDE OR OUTSIDE CIRCLE
 
 /*
 *   Struct for mapping the type of each node using 32-bit variable for 
@@ -281,6 +282,23 @@ typedef struct nodeTypeMap {
     char getBitsUnknownPopsInterpBB()
     {
         return ((map & SPC_INTERP_BB_BITS) >> SPC_INTERP_BB_OFFSET);
+    }
+
+    __device__ __host__
+    void setIsInsideNodeInterpoBB(const bool is_inside)
+    {
+        // South is inside population, North outside 
+        // (in Brazil we call it gambiarra and I love it)
+        if (is_inside)
+            this->setDirection(SOUTH);
+        else
+            this->setDirection(NORTH);
+    }
+
+    __device__ __host__
+    bool getIsInsideNodeInterpoBB()
+    {
+        return this->getDirection() == SOUTH; 
     }
 
 } NodeTypeMap;

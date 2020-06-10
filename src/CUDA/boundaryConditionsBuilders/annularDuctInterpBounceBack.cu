@@ -5,7 +5,7 @@
 *          periodic condition in flow direction and force in Z
 *          N, S: wall; B, F: periodic; W, E: periodic
 *   @version 0.3.0
-*   @date 16/12/2019
+*   @date 10/06/2020
 */
 
 /*
@@ -53,9 +53,10 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     gpuMapBC[idxScalar(x, y, z)].setRhoIdx(0); // manually assigned (index of rho=RHO_0)
 
     // Cilinder values
-    // THIS RADIUS MUST BE THE SAME AS IN 
+    // THESE RADIUS MUST BE THE SAME AS IN 
     // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
     dfloat R = NY/2.0-0.5;
+    dfloat r = (NY-1)/8.0-0.5;
     dfloat xCenter = (NX/2.0);
     dfloat yCenter = (NY/2.0);
 
@@ -64,29 +65,40 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     dfloat yNode = y+0.5;
     dfloat zNode = z+0.5;
 
-    dfloat distNode = distPoints2D(xNode, yNode, xCenter, yCenter);
+    // Axial direction of the cilinder
+    gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
 
+    dfloat distNode = distPoints2D(xNode, yNode, xCenter, yCenter);
+    
     // if the point is out of the cilinder
-    if(distNode > R)
+    if(distNode > R || distNode < r)
     {
         gpuMapBC[idxScalar(x, y, z)].setIsUsed(false);
-        return;
     }
     else
     {
-        // if the point is a boundary node
+        // if the point is an outside boundary node
         if(distNode > (R-sqrt((float)2)))
         {
             gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_INTERP_BOUNCE_BACK);
             gpuMapBC[idxScalar(x, y, z)].setIsInsideNodeInterpoBB(false);
         }
-        // if the point is next to a boundary node
+        // if the point is next to an outside boundary node
         else if(distNode > (R-2*sqrt((float)2)))
         {
             gpuMapBC[idxScalar(x, y, z)].setSavePostCol(true);
         }
-        else
-            return;
+        // if the point is next to an inside boundary node
+        else if(distNode < r+sqrt((float)2))
+        {
+            gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_INTERP_BOUNCE_BACK);
+            gpuMapBC[idxScalar(x, y, z)].setIsInsideNodeInterpoBB(true);
+        }
+        // if the point is next to an inside boundary node
+        else if(distNode < r+2*sqrt((float)2))
+        {
+            gpuMapBC[idxScalar(x, y, z)].setSavePostCol(true);
+        }
     }
 
     // Process the adjacent coordinates (fluid or non fluid)
@@ -105,7 +117,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
         if(xAdj < NX && xAdj > 0 && yAdj < NY && yAdj > 0)
         {
             dfloat distAdj = distPoints2D(xAdj, yAdj, xCenter, yCenter);
-            if(distAdj > R)
+            if(distAdj > R || distAdj < r)
             {
                 // set population as unknown
                 // popUnknown |= (0b1 << i);

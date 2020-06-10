@@ -113,8 +113,6 @@ int main()
     checkCudaErrors(cudaDeviceSynchronize());
     bcInfo.setupBoundaryConditionsInfo(pop->mapBC);
 
-    
-
     // LBM INITIALIZATION
     if(LOAD_POP)
     {
@@ -189,9 +187,10 @@ int main()
             &macr[0], rep || save || ((step+1)>=(int)N_STEPS), step);
         checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
         // BOUNDARY CONDITIONS
-        gpuApplyBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
-            (pop->mapBC, pop->popAux, pop->pop, 
-            bcInfo.idxBCNodes, bcInfo.totalBCNodes);
+        if(bcInfo.totalBCNodes > 0)
+            gpuApplyBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
+                (pop->mapBC, pop->popAux, pop->pop, 
+                bcInfo.idxBCNodes, bcInfo.totalBCNodes);
         checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
         getLastCudaError("lbm/BC kernel error");
 
