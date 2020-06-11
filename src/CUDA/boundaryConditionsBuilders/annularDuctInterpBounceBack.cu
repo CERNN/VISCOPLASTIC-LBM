@@ -56,7 +56,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     // THESE RADIUS MUST BE THE SAME AS IN 
     // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
     dfloat R = NY/2.0-0.5;
-    dfloat r = (NY-1)/8.0-0.5;
+    dfloat r = R/4.0;
     dfloat xCenter = (NX/2.0);
     dfloat yCenter = (NY/2.0);
 
