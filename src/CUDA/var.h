@@ -21,8 +21,8 @@ typedef double dfloat;      // single or double precision
 
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
-#define ID_SIM "001"            // prefix for simulation's files
-#define PATH_FILES "circularDuctInterp"  // path to save simulation's files
+#define ID_SIM "000"            // prefix for simulation's files
+#define PATH_FILES "annularDuctInterp"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
 /* ------------------------------------------------------------------------- */
@@ -121,6 +121,8 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
 
 constexpr size_t BYTES_PER_GB = (1<<30);
 constexpr size_t BYTES_PER_MB = (1<<20);
+
+#define SQRT_2 (1.41421356237309504880168872420969807856967187537)
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------ MEMORY SIZE ------------------------------ */ 
