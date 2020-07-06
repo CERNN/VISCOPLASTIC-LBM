@@ -54,7 +54,7 @@ int main()
     
     // NUMBER OF DEVICES
     checkCudaErrors(cudaGetDeviceCount(&info.numDevices));
-    const int N_GPUS = 1;
+    int N_GPUS = info.numDevices;
 
     // ALLOCATION FOR CPU
     info.devices = (cudaDeviceProp*) malloc(sizeof(cudaDeviceProp)*N_GPUS);
@@ -62,7 +62,7 @@ int main()
     macrCPUOld.macrAllocation(IN_HOST);
 
     // STREAMS AND MEMORY ALLOCATION FOR GPU
-    cudaStream_t streamsKernelLBM[1]; // stream kernel for each GPU
+    cudaStream_t* streamsKernelLBM = (cudaStream_t*) malloc(sizeof(cudaStream_t)*N_GPUS); // stream kernel for each GPU
     checkCudaErrors(cudaSetDevice(0));
     checkCudaErrors(cudaMallocManaged((void**)&pop, 
         sizeof(Populations)*N_GPUS));
