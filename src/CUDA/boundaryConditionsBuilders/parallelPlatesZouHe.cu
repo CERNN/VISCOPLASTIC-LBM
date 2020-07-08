@@ -32,11 +32,13 @@
 
 
 __global__
-void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
+void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
 {
     const unsigned int x = threadIdx.x + blockDim.x * blockIdx.x;
     const unsigned int y = threadIdx.y + blockDim.y * blockIdx.y;
     const unsigned int z = threadIdx.z + blockDim.z * blockIdx.z;
+    const unsigned int zDomain = z + NZ*gpuNumber;
+
 
     if(x >= NX || y > NY || z >= NZ)
         return;
@@ -51,43 +53,43 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     gpuMapBC[idxScalar(x, y, z)].setUzIdx(0); // manually assigned (index of uz=0)
     gpuMapBC[idxScalar(x, y, z)].setRhoIdx(0); // manually assigned (index of rho=RHO_0)
 
-    if (y == 0 && x == 0 && z == 0) // SWB
+    if (y == 0 && x == 0 && zDomain == 0) // SWB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
-    else if (y == 0 && x == 0 && z == (NZ - 1)) // SWF
+    else if (y == 0 && x == 0 && zDomain == (NZ_TOTAL - 1)) // SWF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
-    else if (y == 0 && x == (NX - 1) && z == 0) // SEB
+    else if (y == 0 && x == (NX - 1) && zDomain == 0) // SEB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
-    else if (y == 0 && x == (NX - 1) && z == (NZ - 1)) // SEF
+    else if (y == 0 && x == (NX - 1) && zDomain == (NZ_TOTAL - 1)) // SEF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
-    else if (y == (NY - 1) && x == 0 && z == 0) // NWB
+    else if (y == (NY - 1) && x == 0 && zDomain == 0) // NWB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
-    else if (y == (NY - 1) && x == 0 && z == (NZ - 1)) // NWF
+    else if (y == (NY - 1) && x == 0 && zDomain == (NZ_TOTAL - 1)) // NWF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
-    else if (y == (NY - 1) && x == (NX - 1) && z == 0) // NEB
+    else if (y == (NY - 1) && x == (NX - 1) && zDomain == 0) // NEB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
 
     }
-    else if (y == (NY - 1) && x == (NX - 1) && z == (NZ - 1)) // NEF
+    else if (y == (NY - 1) && x == (NX - 1) && zDomain == (NZ_TOTAL - 1)) // NEF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
@@ -112,45 +114,45 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
-    else if (y == 0 && z == 0) // SB
+    else if (y == 0 && zDomain == 0) // SB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
-    else if (y == 0 && z == (NZ - 1)) // SF
+    else if (y == 0 && zDomain == (NZ_TOTAL - 1)) // SF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
-    else if (y == (NY - 1) && z == 0) // NB
+    else if (y == (NY - 1) && zDomain == 0) // NB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
-    else if (y == (NY - 1) && z == (NZ - 1)) // NF
+    else if (y == (NY - 1) && zDomain == (NZ_TOTAL - 1)) // NF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_VEL_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
-    else if (x == 0 && z == 0) // WB
+    else if (x == 0 && zDomain == 0) // WB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_PRES_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
         gpuMapBC[idxScalar(x, y, z)].setRhoIdx(1); // manually assigned (index of rho_w = RHO_IN)
     }
-    else if (x == 0 && z == (NZ - 1)) // WF
+    else if (x == 0 && zDomain == (NZ_TOTAL - 1)) // WF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_PRES_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
         gpuMapBC[idxScalar(x, y, z)].setRhoIdx(2); // manually assigned (index of rho_w = RHO_IN)
     }
-    else if (x == (NX - 1) && z == 0) // EB
+    else if (x == (NX - 1) && zDomain == 0) // EB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_PRES_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
         gpuMapBC[idxScalar(x, y, z)].setRhoIdx(1); // manually assigned (index of rho_w = RHO_OUT)
     }
-    else if (x == (NX - 1) && z == (NZ - 1)) // EF
+    else if (x == (NX - 1) && zDomain == (NZ_TOTAL - 1)) // EF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_PRES_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
@@ -174,13 +176,13 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     {
 
     }
-    else if (z == 0) // B
+    else if (zDomain == 0) // B
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_PRES_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
         gpuMapBC[idxScalar(x, y, z)].setRhoIdx(1); // manually assigned (index of rho_w = RHO_IN)
     }
-    else if (z == (NZ - 1)) // F
+    else if (zDomain == (NZ_TOTAL - 1)) // F
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_PRES_ZOUHE);
         gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);

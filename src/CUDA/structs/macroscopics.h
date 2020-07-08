@@ -55,11 +55,11 @@ public:
         switch (varLocation)
         {
         case IN_HOST:
-            // allocate with CUDA for pinned memory
-            checkCudaErrors(cudaMallocHost((void**)&(this->rho), memSizeScalar));
-            checkCudaErrors(cudaMallocHost((void**)&(this->ux), memSizeScalar));
-            checkCudaErrors(cudaMallocHost((void**)&(this->uy), memSizeScalar));
-            checkCudaErrors(cudaMallocHost((void**)&(this->uz), memSizeScalar));
+            // allocate with CUDA for pinned memory and for all GPUS
+            checkCudaErrors(cudaMallocHost((void**)&(this->rho), memSizeScalar*N_GPUS));
+            checkCudaErrors(cudaMallocHost((void**)&(this->ux), memSizeScalar*N_GPUS));
+            checkCudaErrors(cudaMallocHost((void**)&(this->uy), memSizeScalar*N_GPUS));
+            checkCudaErrors(cudaMallocHost((void**)&(this->uz), memSizeScalar*N_GPUS));
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaMallocManaged((void**)&(this->rho), memSizeScalar));
@@ -101,17 +101,17 @@ public:
         TODO: update to Memcpy 
     */
     __host__
-    void copyMacr(macroscopics* macrRef)
+    void copyMacr(macroscopics* macrRef, size_t baseIdx=0)
     {
         for(int z = 0; z < NZ; z++)
             for (unsigned int y = 0; y < NY; y++)
                 for (unsigned int x = 0; x < NX; x++)
                 {
                     size_t idx = idxScalar(x, y, z);
-                    this->rho[idx] = macrRef->rho[idx];
-                    this->ux[idx] = macrRef->ux[idx];
-                    this->uy[idx] = macrRef->uy[idx];
-                    this->uz[idx] = macrRef->uz[idx];
+                    this->rho[idx+baseIdx] = macrRef->rho[idx];
+                    this->ux[idx+baseIdx] = macrRef->ux[idx];
+                    this->uy[idx+baseIdx] = macrRef->uy[idx];
+                    this->uz[idx+baseIdx] = macrRef->uz[idx];
                 }
     }
 

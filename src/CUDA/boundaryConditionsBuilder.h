@@ -16,9 +16,10 @@
 /*
 *   @brief Builds boundary conditions map
 *   @param gpuMapBC: device pointer to the boundary conditions map
+*   @param gpuNumber: Current GPU number
 */
 __global__
-void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC);
+void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber);
 
 
 #endif // !__BOUNDARY_CONDITIONS_BUILDER_H

@@ -33,11 +33,13 @@
 
 
 __global__
-void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
+void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
 {
     const unsigned int x = threadIdx.x + blockDim.x * blockIdx.x;
     const unsigned int y = threadIdx.y + blockDim.y * blockIdx.y;
     const unsigned int z = threadIdx.z + blockDim.z * blockIdx.z;
+    const unsigned int zDomain = z + NZ*gpuNumber;
+
 
     if(x >= NX || y > NY || z >= NZ)
         return;
@@ -63,7 +65,6 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     // Node values
     dfloat xNode = x+0.5;
     dfloat yNode = y+0.5;
-    dfloat zNode = z+0.5;
 
     // Axial direction of the cilinder
     gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);

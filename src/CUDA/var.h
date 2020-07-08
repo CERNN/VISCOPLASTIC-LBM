@@ -60,11 +60,15 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
+constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
+
 constexpr unsigned int N = 32;
 constexpr unsigned int NX = N;        // size x of the grid 
                                       // (32 multiple for better performance)
 constexpr unsigned int NY = N;        // size y of the grid
-constexpr unsigned int NZ = 10;        // size z of the grid
+constexpr unsigned int NZ = N;        // size z of the grid in one GPU
+constexpr unsigned int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
+
 
 constexpr dfloat U_MAX = 0.05;        // max velocity
 
