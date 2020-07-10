@@ -488,3 +488,66 @@ void gpuApplyBC(NodeTypeMap* mapBC,
 
     gpuBoundaryConditions(&(mapBC[idx]), popPostStream, popPostCol, x, y, z);
 }
+
+__global__
+void gpuPopulationsTransfer(
+    dfloat* popPostStreamBase,
+    dfloat* popPostCollBase,
+    dfloat* popPostStreamNxt,
+    dfloat* popPostCollNxt)
+{
+    const unsigned short int x = threadIdx.x + blockDim.x * blockIdx.x;
+    const unsigned short int y = threadIdx.y + blockDim.y * blockIdx.y;
+    const unsigned short int zMax = NZ-1;
+
+    if (x >= NX || y >= NY)
+        return;
+
+    // This takes into account that the populations are "teleported"
+    // from one side of domain to another. So the population with cz=-1
+    // in z = 0 is streamed to z = NZ-1.
+    // In this way, to retrieve a population that should have been sent 
+    // to the adjacent node, but was "teleported", the part of the domain 
+    // to which it was streamed must be read.
+    // Also important to notice is that the popBase is above the popNext,
+    // so the lower level of popBase must be streamed to the higher level of
+    // popNext and vice versa
+
+    // pop[6] -> cz = 1; pop[5] -> cz = -1;
+    popPostStreamBase[idxPop(x, y, 0, 5)] = popPostStreamNxt[idxPop(x, y, 0, 5)];
+    popPostStreamNxt[idxPop(x, y, zMax, 6)] = popPostStreamBase[idxPop(x, y, zMax, 6)];
+
+    // pop[9] -> cz = 1; pop[10] -> cz = -1;
+    popPostStreamBase[idxPop(x, y, 0, 9)] = popPostStreamNxt[idxPop(x, y, 0, 9)];
+    popPostStreamNxt[idxPop(x, y, zMax, 10)] = popPostStreamBase[idxPop(x, y, zMax, 10)];
+    
+    // pop[11] -> cz = 1; pop[12] -> cz = -1;
+    popPostStreamBase[idxPop(x, y, 0, 11)] = popPostStreamNxt[idxPop(x, y, 0, 11)];
+    popPostStreamNxt[idxPop(x, y, zMax, 12)] = popPostStreamBase[idxPop(x, y, zMax, 12)];
+    
+    // pop[15] -> cz = 1; pop[16] -> cz = -1;
+    popPostStreamBase[idxPop(x, y, 0, 16)] = popPostStreamNxt[idxPop(x, y, 0, 16)];
+    popPostStreamNxt[idxPop(x, y, zMax, 15)] = popPostStreamBase[idxPop(x, y, zMax, 15)];
+
+    // pop[18] -> cz = 1; pop[17] -> cz = -1;
+    popPostStreamBase[idxPop(x, y, 0, 18)] =   popPostStreamNxt[idxPop(x, y, 0, 18)];
+    popPostStreamNxt[idxPop(x, y, zMax, 17)] = popPostStreamBase[idxPop(x, y, zMax, 17)];
+
+    #ifdef D3Q27
+    // pop[19] -> cz = 1; pop[20] -> cz = -1;
+    popPostStreamBase[idxPop(x, y, 0, 19)] = popPostStreamNxt[idxPop(x, y, 0, 19)];
+    popPostStreamNxt[idxPop(x, y, zMax, 20)] = popPostStreamBase[idxPop(x, y, zMax, 20)];
+
+    // pop[22] -> cz = 1; pop[21] -> cz = -1;
+    popPostStreamBase[idxPop(x, y, 0, 22)] = popPostStreamNxt[idxPop(x, y, 0, 22)];
+    popPostStreamNxt[idxPop(x, y, zMax, 21)] = popPostStreamBase[idxPop(x, y, zMax, 21)];
+
+    // pop[23] -> cz = 1; pop[24] -> cz = -1;
+    popPostStreamBase[idxPop(x, y, 0, 23)] = popPostStreamNxt[idxPop(x, y, 0, 23)];
+    popPostStreamNxt[idxPop(x, y, zMax, 24)] = popPostStreamBase[idxPop(x, y, zMax, 24)];
+
+    // pop[25] -> cz = 1; pop[26] -> cz = -1;
+    popPostStreamBase[idxPop(x, y, 0, 25)] = popPostStreamNxt[idxPop(x, y, 0, 25)];
+    popPostStreamNxt[idxPop(x, y, zMax, 26)] = popPostStreamBase[idxPop(x, y, zMax, 26)];
+    #endif
+}

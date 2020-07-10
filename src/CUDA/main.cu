@@ -43,6 +43,7 @@ int main()
     SimInfo info;
     float** randomNumbers = nullptr; // useful for turbulence
     int step = INI_STEP;
+    dim3* gridsBC;
 
     // SETUP SAVING FOLDER
     folderSetup();
@@ -90,7 +91,7 @@ int main()
         {
             checkCudaErrors(cudaMallocManaged((void**)&randomNumbers[i], 
                 sizeof(float)*numberNodes));
-            initializationRandomNumbers(randomNumbers, CURAND_SEED);
+            initializationRandomNumbers(randomNumbers[i], CURAND_SEED);
             checkCudaErrors(cudaDeviceSynchronize());
             getLastCudaError("random numbers transfer error");
         }
@@ -109,6 +110,10 @@ int main()
     dim3 grid(((NX%nThreads)? (NX/nThreads+1) : (NX/nThreads)), NY, NZ);
     // threads in block
     dim3 threads(nThreads, 1, 1);
+
+    // Grid and threads for memory transfers in multiGPUS
+    dim3 gridTransfer(grid.x, grid.y, 1);
+    dim3 threadsTransfer(nThreads, 1, 1);
 
     // REPORT
     printParamInfo(&info, true); fflush(stdout);
@@ -167,15 +172,15 @@ int main()
         
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
-            gpuInitialization<<<grid, threads>>>(&pop[i], &macr[i], LOAD_MACR, randomNumbers);
+            gpuInitialization<<<grid, threads>>>(&pop[i], &macr[i], LOAD_MACR, randomNumbers[i]);
         }
         checkCudaErrors(cudaDeviceSynchronize());
         getLastCudaError("Initialization error");
     }
 
     // GRID AND THREAD DEFINITION FOR BOUNDARY CONDITIONS
-    
-    for(int i = 0; i < N_GPUS; i++){
+
+    for(int i = 0; i < N_GPUS; i++)
         gridsBC[i] = dim3(((bcInfos[i].totalBCNodes%32)? (bcInfos[i].totalBCNodes/32+1) : 
                 (bcInfos[i].totalBCNodes/32)), 1, 1); // TODO
     dim3 threadsBC(32, 1, 1);
@@ -204,9 +209,9 @@ int main()
                 rep = !(aux % DATA_REPORT);
         }
 
+        // LBM SOLVER
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
-            // LBM SOLVER
             gpuMacrCollisionStream<<<grid, threads, 0, streamsKernelLBM[i]>>>
                 (pop[i].pop, pop[i].popAux, pop[i].mapBC, 
                 &macr[i], rep || save || ((step+1)>=(int)N_STEPS), step);
@@ -214,12 +219,25 @@ int main()
             getLastCudaError("LBM kernel error\n");
         }
 
+        if(N_GPUS > 1) {
+            // Populations transfer
+            for(int i = 0; i < N_GPUS; i++){
+                checkCudaErrors(cudaSetDevice(i));
+                int nxt = (i+1)%NX;
+                gpuPopulationsTransfer<<<gridTransfer, threadsTransfer, 0, streamsKernelLBM[i]>>>
+                    (pop[i].pop, pop[i].popAux, pop[nxt].pop, pop[nxt].popAux);
+
+                getLastCudaError("Mem transfer kernel error\n");
+            }
+        }
+
+        // BOUNDARY CONDITIONS
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
             checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[i]));
             // BOUNDARY CONDITIONS
             if(bcInfos[i].totalBCNodes > 0){
-                gpuApplyBC<<<gridBC[i], threadsBC, 0, streamsKernelLBM[i]>>>
+                gpuApplyBC<<<gridsBC[i], threadsBC, 0, streamsKernelLBM[i]>>>
                     (pop[i].mapBC, pop[i].popAux, pop[i].pop, 
                     bcInfos[i].idxBCNodes, bcInfos[i].totalBCNodes);
                 getLastCudaError("LBM kernel error\n");

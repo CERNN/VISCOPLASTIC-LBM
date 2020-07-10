@@ -65,5 +65,21 @@ void gpuApplyBC(NodeTypeMap* mapBC,
     size_t totalBCNodes
 );
 
+/*
+* @brief Transfers populations from one GPU to another, with the plane dividing
+*   both domains being between the lower level (z=0) of the population "base"
+*   and the higher level (z=NZ-1) of the population "next"
+* 
+* @param popPostStreamBase: Base post streaming populations
+* @param popPostCollBase: Base post collision populations
+* @param popPostStreamNxt: Next post streaming populations
+* @param popPostCollNxt: Next postcollision populations
+*/
+__global__
+void gpuPopulationsTransfer(
+    dfloat* popPostStreamBase,
+    dfloat* popPostCollBase,
+    dfloat* popPostStreamNxt,
+    dfloat* popPostCollNxt);
 
 #endif // __LBM_H
