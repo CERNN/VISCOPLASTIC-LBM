@@ -56,10 +56,10 @@ public:
         {
         case IN_HOST:
             // allocate with CUDA for pinned memory and for all GPUS
-            checkCudaErrors(cudaMallocHost((void**)&(this->rho), memSizeScalar*N_GPUS));
-            checkCudaErrors(cudaMallocHost((void**)&(this->ux), memSizeScalar*N_GPUS));
-            checkCudaErrors(cudaMallocHost((void**)&(this->uy), memSizeScalar*N_GPUS));
-            checkCudaErrors(cudaMallocHost((void**)&(this->uz), memSizeScalar*N_GPUS));
+            checkCudaErrors(cudaMallocHost((void**)&(this->rho), totalMemSizeScalar));
+            checkCudaErrors(cudaMallocHost((void**)&(this->ux), totalMemSizeScalar));
+            checkCudaErrors(cudaMallocHost((void**)&(this->uy), totalMemSizeScalar));
+            checkCudaErrors(cudaMallocHost((void**)&(this->uz), totalMemSizeScalar));
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaMallocManaged((void**)&(this->rho), memSizeScalar));
@@ -101,9 +101,10 @@ public:
         TODO: update to Memcpy 
     */
     __host__
-    void copyMacr(macroscopics* macrRef, size_t baseIdx=0)
+    void copyMacr(macroscopics* macrRef, size_t baseIdx=0, bool all_domain=false)
     {
-        for(int z = 0; z < NZ; z++)
+        int total_z = (all_domain ? NZ_TOTAL : NZ);
+        for(int z = 0; z < total_z; z++)
             for (unsigned int y = 0; y < NY; y++)
                 for (unsigned int x = 0; x < NX; x++)
                 {

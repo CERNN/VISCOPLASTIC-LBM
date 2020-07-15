@@ -55,11 +55,11 @@ int main()
     
     // NUMBER OF DEVICES
     checkCudaErrors(cudaGetDeviceCount(&info.numDevices));
-    if(N_GPUS != info.numDevices){
-            printf("N_GPUS is different than the number of detected GPUS\n");
-            printf("N_GPUS: %d\n", N_GPUS);
-            printf("Number of devices: %d\n", info.numDevices);
-            return -1;
+    if(N_GPUS > info.numDevices){
+        printf("N_GPUS is higher than the number of detected GPUS\n");
+        printf("N_GPUS: %d\n", N_GPUS);
+        printf("Number of devices: %d\n", info.numDevices);
+        return -1;
     }
 
     // ALLOCATION FOR CPU
@@ -123,9 +123,9 @@ int main()
     for(int i = 0; i < N_GPUS; i++){
         checkCudaErrors(cudaSetDevice(i));
         gpuBuildBoundaryConditions<<<grid, threads>>>(pop[i].mapBC, i);
+        checkCudaErrors(cudaDeviceSynchronize());
+        getLastCudaError("Initialization error");
     }
-
-    checkCudaErrors(cudaDeviceSynchronize());
 
     // Divide in two fors to allow kernels of "gpuBuilBoundaryConditions"
     // to run in parallel. Otherwise they would run sequentially
@@ -173,16 +173,16 @@ int main()
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
             gpuInitialization<<<grid, threads>>>(&pop[i], &macr[i], LOAD_MACR, randomNumbers[i]);
+            checkCudaErrors(cudaDeviceSynchronize());
         }
-        checkCudaErrors(cudaDeviceSynchronize());
         getLastCudaError("Initialization error");
     }
 
     // GRID AND THREAD DEFINITION FOR BOUNDARY CONDITIONS
-
     for(int i = 0; i < N_GPUS; i++)
         gridsBC[i] = dim3(((bcInfos[i].totalBCNodes%32)? (bcInfos[i].totalBCNodes/32+1) : 
                 (bcInfos[i].totalBCNodes/32)), 1, 1); // TODO
+
     dim3 threadsBC(32, 1, 1);
 
     if(RANDOM_NUMBERS)
@@ -212,10 +212,10 @@ int main()
         // LBM SOLVER
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
-            gpuMacrCollisionStream<<<grid, threads, 0, streamsKernelLBM[i]>>>
+            gpuMacrCollisionStream<<<grid, threads>>>
                 (pop[i].pop, pop[i].popAux, pop[i].mapBC, 
                 &macr[i], rep || save || ((step+1)>=(int)N_STEPS), step);
-
+            checkCudaErrors(cudaDeviceSynchronize());
             getLastCudaError("LBM kernel error\n");
         }
 
@@ -223,10 +223,10 @@ int main()
             // Populations transfer
             for(int i = 0; i < N_GPUS; i++){
                 checkCudaErrors(cudaSetDevice(i));
-                int nxt = (i+1)%NX;
-                gpuPopulationsTransfer<<<gridTransfer, threadsTransfer, 0, streamsKernelLBM[i]>>>
+                int nxt = (i+1)%N_GPUS;
+                gpuPopulationsTransfer<<<gridTransfer, threadsTransfer>>>
                     (pop[i].pop, pop[i].popAux, pop[nxt].pop, pop[nxt].popAux);
-
+                checkCudaErrors(cudaDeviceSynchronize());
                 getLastCudaError("Mem transfer kernel error\n");
             }
         }
@@ -234,18 +234,17 @@ int main()
         // BOUNDARY CONDITIONS
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
-            checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[i]));
             // BOUNDARY CONDITIONS
             if(bcInfos[i].totalBCNodes > 0){
-                gpuApplyBC<<<gridsBC[i], threadsBC, 0, streamsKernelLBM[i]>>>
+                gpuApplyBC<<<gridsBC[i], threadsBC>>>
                     (pop[i].mapBC, pop[i].popAux, pop[i].pop, 
                     bcInfos[i].idxBCNodes, bcInfos[i].totalBCNodes);
-                getLastCudaError("LBM kernel error\n");
             }
+            checkCudaErrors(cudaDeviceSynchronize());
+            getLastCudaError("BC kernel error\n");
         }
-        
+
         for(int i = 0; i < N_GPUS; i++){
-            checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[i]));
             pop[i].swapPop();
         }
 
@@ -254,9 +253,13 @@ int main()
         {
             printf("\n------------------------- Synchronizing in step %06d -------------------------\n", step); 
             fflush(stdout);
-            checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
             
-            macrCPUOld.copyMacr(&macrCPUCurrent);        
+            for(int i = 0; i < N_GPUS; i++){
+                checkCudaErrors(cudaSetDevice(i));
+                checkCudaErrors(cudaDeviceSynchronize());
+            } 
+            
+            macrCPUOld.copyMacr(&macrCPUCurrent, 0, true);
             for(int i = 0; i < N_GPUS; i++){
                 macrCPUCurrent.copyMacr(&macr[i], numberNodes*i);
             } 
