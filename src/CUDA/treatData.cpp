@@ -31,7 +31,7 @@ void treatData(MacrProc* processing)
 
     processing->avgRho = 0;
 
-    for(int z = 0; z < NZ; z++)
+    for(int z = 0; z < NZ_TOTAL; z++)
     {
         for(int y = 0; y < NY; y++)
         {

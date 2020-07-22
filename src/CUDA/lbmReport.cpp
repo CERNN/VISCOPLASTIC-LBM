@@ -130,10 +130,10 @@ void saveAllMacrBin(
     strFileUz = getVarFilename("uz", nSteps, ".bin");
     
     // saving files
-    saveVarBin(strFileRho, macr->rho, memSizeScalar);
-    saveVarBin(strFileUx, macr->ux, memSizeScalar);
-    saveVarBin(strFileUy, macr->uy, memSizeScalar);
-    saveVarBin(strFileUz, macr->uz, memSizeScalar);
+    saveVarBin(strFileRho, macr->rho, totalMemSizeScalar);
+    saveVarBin(strFileUx, macr->ux, totalMemSizeScalar);
+    saveVarBin(strFileUy, macr->uy, totalMemSizeScalar);
+    saveVarBin(strFileUz, macr->uz, totalMemSizeScalar);
 }
 
 
@@ -197,6 +197,7 @@ void saveSimInfo(SimInfo* info)
         fprintf(outFile, "                 NX: %d\n", NX);
         fprintf(outFile, "                 NY: %d\n", NY);
         fprintf(outFile, "                 NZ: %d\n", NZ);
+        fprintf(outFile, "           NZ_TOTAL: %d\n", NZ_TOTAL);
         fprintf(outFile, "                Tau: %.6f\n", TAU);
         fprintf(outFile, "               Umax: %.6e\n", U_MAX);
         fprintf(outFile, "                 FX: %.6e\n", FX);
@@ -251,6 +252,7 @@ void printParamInfo(
     printf("                 NX: %d\n", NX);
     printf("                 NY: %d\n", NY);
     printf("                 NZ: %d\n", NZ);
+    printf("           NZ_TOTAL: %d\n", NZ_TOTAL);
     printf("                Tau: %.6e\n", TAU);
     printf("               Umax: %.6e\n", U_MAX);
     printf("                 FX: %.6e\n", FX);

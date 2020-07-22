@@ -90,9 +90,15 @@ def getSimInfo():
 
             try:
                 __info__['NZ'] = [int(txt.split(" ")[-1])
-                                  for txt in linesTrim if 'NZ' in txt][0]
+                                  for txt in linesTrim if 'NZ:' in txt][0]
             except BaseException:
                 print("Not able to get NZ from info file")
+
+            try:
+                __info__['NZ_TOTAL'] = [int(txt.split(" ")[-1])
+                                  for txt in linesTrim if 'NZ_TOTAL' in txt][0]
+            except BaseException:
+                print("Not able to get TOTAL_NZ from info file")
 
             try:
                 __info__['Tau'] = [float(txt.split(" ")[-1])
@@ -154,7 +160,7 @@ def readFileMacr3D(macrFilename):
         prc = 'f'
     with open(macrFilename, "r") as f:
         vec = np.fromfile(f, prc)
-        vec3D = np.reshape(vec, (info['NZ'], info['NY'], info['NX']), 'C')
+        vec3D = np.reshape(vec, (info['NZ_TOTAL'], info['NY'], info['NX']), 'C')
         return np.swapaxes(vec3D, 0, 2)
 
 

@@ -61,6 +61,7 @@ int main()
         printf("Number of devices: %d\n", info.numDevices);
         return -1;
     }
+    info.numDevices = N_GPUS;
 
     // ALLOCATION FOR CPU
     info.devices = (cudaDeviceProp*) malloc(sizeof(cudaDeviceProp)*N_GPUS);
