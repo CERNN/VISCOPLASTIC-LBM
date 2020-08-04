@@ -104,8 +104,8 @@ void initializationRandomNumbers(
 
 __global__
 void gpuInitialization(
-    Populations* pop,
-    Macroscopics* macr,
+    Populations pop,
+    Macroscopics macr,
     bool isMacrInit,
     float* randomNumbers)
 {
@@ -119,20 +119,20 @@ void gpuInitialization(
 
     if (!isMacrInit)
     {
-        gpuMacrInitValue(macr, randomNumbers, x, y, z);
+        gpuMacrInitValue(&macr, randomNumbers, x, y, z);
     }
 
     for (int i = 0; i < Q; i++)
     {
         // calculate equilibrium population and initialize populations to equilibrium
-        dfloat feq = gpu_f_eq(w[i] * macr->rho[index],
-            3 * (macr->ux[index] * cx[i] + macr->uy[index] * cy[i] + macr->uz[index] * cz[i]),
-            1 - 1.5*(  macr->ux[index] * macr->ux[index] 
-                 + macr->uy[index] * macr->uy[index] 
-                 + macr->uz[index] * macr->uz[index]));
+        dfloat feq = gpu_f_eq(w[i] * macr.rho[index],
+            3 * (macr.ux[index] * cx[i] + macr.uy[index] * cy[i] + macr.uz[index] * cz[i]),
+            1 - 1.5*(  macr.ux[index] * macr.ux[index] 
+                 + macr.uy[index] * macr.uy[index] 
+                 + macr.uz[index] * macr.uz[index]));
         
-        pop->pop[idxPop(x, y, z, i)] = feq;
-        pop->popAux[idxPop(x, y, z, i)] = feq;
+        pop.pop[idxPop(x, y, z, i)] = feq;
+        pop.popAux[idxPop(x, y, z, i)] = feq;
     }
 }
 

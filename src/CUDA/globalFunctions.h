@@ -110,7 +110,7 @@ dfloat __forceinline__ randGauss(const unsigned long long int seed, const unsign
 __host__ __device__
 size_t __forceinline__ idxScalar(unsigned int x, unsigned int y, unsigned int z)
 {
-    return NX * (NY*z + y) + x;
+    return NX * ((size_t)NY*z + y) + x;
 }
 
 
@@ -126,7 +126,7 @@ size_t __forceinline__ idxScalar(unsigned int x, unsigned int y, unsigned int z)
 __host__ __device__
 size_t __forceinline__ idxPop(const unsigned int x, const unsigned int y, const unsigned int z, const unsigned int d)
 {
-    return NX*(NY*(NZ*d + z) + y) + x;
+    return NX*(NY*((size_t)NZ*d + z) + y) + x;
 }
 
 

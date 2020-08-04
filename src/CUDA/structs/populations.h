@@ -48,7 +48,7 @@ public:
     {
         checkCudaErrors(cudaMallocManaged((void**)&(this->pop), memSizePop));
         checkCudaErrors(cudaMallocManaged((void**)&(this->popAux), memSizePop));
-        checkCudaErrors(cudaMallocManaged((void**)&(this->mapBC), memSizeMapBC));
+        checkCudaErrors(cudaMalloc((void**)&(this->mapBC), memSizeMapBC));
     }
 
     /* Free populations */

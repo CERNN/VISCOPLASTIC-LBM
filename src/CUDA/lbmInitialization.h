@@ -73,8 +73,8 @@ void initializationRandomNumbers(
 */
 __global__
 void gpuInitialization(
-    Populations* pop,
-    Macroscopics* macr,
+    Populations pop,
+    Macroscopics macr,
     bool isMacrInit,
     float* randomNumbers
 );

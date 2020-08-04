@@ -69,12 +69,12 @@ void treatData(MacrProc* processing)
     /* ------------------------------------ */
 
     /* ------- Avg. rho calculation ------- */
-    processing->avgRho /= numberNodes;
+    processing->avgRho /= totalNumberNodes;
     /* ------------------------------------ */
 
     /* ----- Avg. Uz plan calculation ----- */
     for(int y = 0; y < NY; y++)
-        processing->avgUzPlanXZ[y] /= (NX*NZ);
+        processing->avgUzPlanXZ[y] /= (NX*NZ_TOTAL);
     /* ------------------------------------ */
 }
 

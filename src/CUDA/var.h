@@ -15,23 +15,23 @@
 
 
 /* --------------------- PRECISION AND VEL. SET DEFINES -------------------- */
-typedef double dfloat;      // single or double precision
+typedef float dfloat;      // single or double precision
 #define D3Q19               // velocity set to use
 /* ------------------------------------------------------------------------- */
 
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
-#define ID_SIM "000"            // prefix for simulation's files
-#define PATH_FILES "annularDuctInterp"  // path to save simulation's files
+#define ID_SIM "999"            // prefix for simulation's files
+#define PATH_FILES "ParallelPlatesBB"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
 /* ------------------------------------------------------------------------- */
 
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
-constexpr int N_STEPS = 10000;          // maximum number of time steps
-#define MACR_SAVE 1000                  // saves macroscopics every MACR_SAVE steps
-#define DATA_REPORT 1000                // report every DATA_REPORT steps
+constexpr int N_STEPS = 100;          // maximum number of time steps
+#define MACR_SAVE 1                  // saves macroscopics every MACR_SAVE steps
+#define DATA_REPORT 1                // report every DATA_REPORT steps
 
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
@@ -60,9 +60,9 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
-constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
+constexpr unsigned int N_GPUS = 2;    // Number of GPUS to use
 
-constexpr unsigned int N = 32;
+constexpr unsigned int N = 8;
 constexpr unsigned int NX = N;        // size x of the grid 
                                       // (32 multiple for better performance)
 constexpr unsigned int NY = N;        // size y of the grid
@@ -134,6 +134,10 @@ const size_t numberNodes = NX*NY*NZ;
 const size_t memSizePop = sizeof(dfloat) * numberNodes * Q;
 const size_t memSizeScalar = sizeof(dfloat) * numberNodes;
 const size_t memSizeMapBC = sizeof(uint32_t) * numberNodes;
+const size_t totalNumberNodes = NX*NY*NZ_TOTAL;
+const size_t totalMemSizePop = sizeof(dfloat) * totalNumberNodes * Q;
+const size_t totalMemSizeScalar = sizeof(dfloat) * totalNumberNodes;
+const size_t totalMemSizeMapBC = sizeof(uint32_t) * totalNumberNodes;
 /* ------------------------------------------------------------------------- */
 
 #endif // !__VAR_H

@@ -31,7 +31,7 @@ void gpuMacrCollisionStream(
     dfloat* const pop,
     dfloat* const popAux,
     NodeTypeMap* const mapBC,
-    Macroscopics* const macr,
+    Macroscopics const macr,
     bool const save,
     int const step
 );

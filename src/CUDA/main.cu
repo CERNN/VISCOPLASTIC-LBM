@@ -72,13 +72,10 @@ int main()
 
     // STREAMS AND MEMORY ALLOCATION FOR GPU
     cudaStream_t* streamsKernelLBM = (cudaStream_t*) malloc(sizeof(cudaStream_t)*N_GPUS); // stream kernel for each GPU
-    checkCudaErrors(cudaSetDevice(0));
-    checkCudaErrors(cudaMallocManaged((void**)&pop, 
-        sizeof(Populations)*N_GPUS));
-    checkCudaErrors(cudaMallocManaged((void**)&macr, 
-        sizeof(Macroscopics)*N_GPUS));
-    checkCudaErrors(cudaMallocManaged((void**)&randomNumbers, 
-        sizeof(float*)*N_GPUS));
+
+    pop = (Populations*) malloc(sizeof(Populations) * N_GPUS);
+    macr = (Macroscopics*) malloc(sizeof(Macroscopics) * N_GPUS);
+    randomNumbers = (float**)malloc(sizeof(float*) * N_GPUS);
 
     // ALLOCATION AND CONFIGURATION FOR EACH GPU
     for(int i = 0; i < N_GPUS; i++)
@@ -86,7 +83,8 @@ int main()
         checkCudaErrors(cudaSetDevice(i));
         checkCudaErrors(cudaGetDeviceProperties(&(info.devices[i]), i));
         checkCudaErrors(cudaStreamCreate(&streamsKernelLBM[i]));
-        pop[i].popAllocation();
+
+        pop[i]. popAllocation();
         macr[i].macrAllocation(IN_VIRTUAL);
         if(RANDOM_NUMBERS)
         {
@@ -97,15 +95,6 @@ int main()
             getLastCudaError("random numbers transfer error");
         }
     }
-
-/*
-    ---------------------------------------------------------------------------
-    ---------------------------------------------------------------------------
-    ------------------ CODE BELOW DOES NOT SUPPORT MULTI GPU! -----------------
-    ----------------------------- MUST BE UPDATED! ----------------------------
-    ---------------------------------------------------------------------------
-    ---------------------------------------------------------------------------
-*/
 
     // GRID AND THREADS DEFINITION FOR LBM
     dim3 grid(((NX%nThreads)? (NX/nThreads+1) : (NX/nThreads)), NY, NZ);
@@ -121,18 +110,25 @@ int main()
     printGPUInfo(&info); fflush(stdout);
 
     // BOUNDARY CONDITIONS INITIALIZATION
-    for(int i = 0; i < N_GPUS; i++){
-        checkCudaErrors(cudaSetDevice(i));
-        gpuBuildBoundaryConditions<<<grid, threads>>>(pop[i].mapBC, i);
-        checkCudaErrors(cudaDeviceSynchronize());
-        getLastCudaError("Initialization error");
-    }
-
     // Divide in two fors to allow kernels of "gpuBuilBoundaryConditions"
     // to run in parallel. Otherwise they would run sequentially
     for(int i = 0; i < N_GPUS; i++){
-        bcInfos[i].setupBoundaryConditionsInfo(pop[i].mapBC);
+        checkCudaErrors(cudaSetDevice(i));
+        gpuBuildBoundaryConditions<<<grid, threads>>>(pop[i].mapBC, i);
+        getLastCudaError("Initialization error");
     }
+    for (int i = 0; i < N_GPUS; i++) {
+        checkCudaErrors(cudaSetDevice(i));
+        cudaDeviceSynchronize();
+    }
+
+    NodeTypeMap* hMapBC;
+    checkCudaErrors(cudaMallocHost((void**)(&hMapBC), memSizeMapBC));
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaMemcpy(hMapBC, pop[i].mapBC, memSizeMapBC, cudaMemcpyDeviceToHost));
+        bcInfos[i].setupBoundaryConditionsInfo(hMapBC);
+    }
+    cudaFreeHost(hMapBC);
 
     // LBM INITIALIZATION
     // TODO: update initialization with files to multi GPU
@@ -173,7 +169,7 @@ int main()
         
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
-            gpuInitialization<<<grid, threads>>>(&pop[i], &macr[i], LOAD_MACR, randomNumbers[i]);
+            gpuInitialization<<<grid, threads>>>(pop[i], macr[i], LOAD_MACR, randomNumbers[i]);
             checkCudaErrors(cudaDeviceSynchronize());
         }
         getLastCudaError("Initialization error");
@@ -186,9 +182,13 @@ int main()
 
     dim3 threadsBC(32, 1, 1);
 
-    if(RANDOM_NUMBERS)
-        checkCudaErrors(cudaFree(randomNumbers));
-
+    if (RANDOM_NUMBERS) {
+        for (int i = 0; i < N_GPUS; i++) {
+            checkCudaErrors(cudaSetDevice(i));
+            cudaFree(randomNumbers[i]);
+        }
+        free(randomNumbers);
+    }
     // TIMING
     cudaEvent_t start, stop;
     checkCudaErrors(cudaEventCreate(&start));
@@ -215,11 +215,16 @@ int main()
             checkCudaErrors(cudaSetDevice(i));
             gpuMacrCollisionStream<<<grid, threads>>>
                 (pop[i].pop, pop[i].popAux, pop[i].mapBC, 
-                &macr[i], rep || save || ((step+1)>=(int)N_STEPS), step);
-            checkCudaErrors(cudaDeviceSynchronize());
+                macr[i], rep || save || ((step+1)>=(int)N_STEPS), step);
+            //checkCudaErrors(cudaDeviceSynchronize());
             getLastCudaError("LBM kernel error\n");
         }
 
+        for(int i = 0; i < N_GPUS; i++) {
+            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaDeviceSynchronize());
+        }
+        
         if(N_GPUS > 1) {
             // Populations transfer
             for(int i = 0; i < N_GPUS; i++){
@@ -241,11 +246,13 @@ int main()
                     (pop[i].mapBC, pop[i].popAux, pop[i].pop, 
                     bcInfos[i].idxBCNodes, bcInfos[i].totalBCNodes);
             }
-            checkCudaErrors(cudaDeviceSynchronize());
             getLastCudaError("BC kernel error\n");
         }
 
-        for(int i = 0; i < N_GPUS; i++){
+
+        for (int i = 0; i < N_GPUS; i++) {
+            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaDeviceSynchronize());
             pop[i].swapPop();
         }
 
@@ -344,8 +351,8 @@ int main()
 
     // FREE GPU VARIABLES
     checkCudaErrors(cudaSetDevice(0));
-    checkCudaErrors(cudaFree(pop));
-    checkCudaErrors(cudaFree(macr));
+    free(pop);
+    free(macr);
 
     // FREE CPU VARIABLES
     macrCPUCurrent.macrFree();

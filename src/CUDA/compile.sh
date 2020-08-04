@@ -9,7 +9,7 @@
 
 # Compute capbility, change it to the compute capability of your device
 # Example: 35 stands for compute capability 3.5, 70 for CC 7.0, etc.
-CC=35
+CC=61
 
 if [ "$1" = "D3Q19" ]
 then

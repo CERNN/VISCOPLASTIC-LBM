@@ -5,7 +5,7 @@ void gpuMacrCollisionStream(
     dfloat* const pop,
     dfloat* const popAux,
     NodeTypeMap* const mapBC,
-    Macroscopics* const macr,
+    Macroscopics const macr,
     bool const save,
     int const step)
 {
@@ -74,10 +74,10 @@ void gpuMacrCollisionStream(
 
     if (save)
     {
-        macr->rho[idxScalar(x, y, z)] = rhoVar;
-        macr->ux[idxScalar(x, y, z)] = uxVar;
-        macr->uy[idxScalar(x, y, z)] = uyVar;
-        macr->uz[idxScalar(x, y, z)] = uzVar;
+        macr.rho[idxScalar(x, y, z)] = rhoVar;
+        macr.ux[idxScalar(x, y, z)] = uxVar;
+        macr.uy[idxScalar(x, y, z)] = uyVar;
+        macr.uz[idxScalar(x, y, z)] = uzVar;
     }
 
     // Calculate temporary variables
