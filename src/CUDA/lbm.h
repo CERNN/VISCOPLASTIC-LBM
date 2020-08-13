@@ -44,8 +44,8 @@ void gpuMacrCollisionStream(
 */
 __global__
 void gpuUpdateMacr(
-    Populations* pop,
-    Macroscopics* macr
+    Populations pop,
+    Macroscopics macr
 );
 
 

@@ -101,19 +101,34 @@ public:
         TODO: update to Memcpy 
     */
     __host__
-    void copyMacr(macroscopics* macrRef, size_t baseIdx=0, bool all_domain=false)
+    void copyMacr(macroscopics* macrRef, size_t baseIdx=0, size_t baseIdxRef=0, bool all_domain=false)
     {
-        int total_z = (all_domain ? NZ_TOTAL : NZ);
-        for(int z = 0; z < total_z; z++)
-            for (unsigned int y = 0; y < NY; y++)
-                for (unsigned int x = 0; x < NX; x++)
-                {
-                    size_t idx = idxScalar(x, y, z);
-                    this->rho[idx+baseIdx] = macrRef->rho[idx];
-                    this->ux[idx+baseIdx] = macrRef->ux[idx];
-                    this->uy[idx+baseIdx] = macrRef->uy[idx];
-                    this->uz[idx+baseIdx] = macrRef->uz[idx];
-                }
+        size_t memSize = (all_domain ? totalMemSizeScalar : memSizeScalar);
+
+        cudaStream_t streamRho, streamUx, streamUy, streamUz;   
+        checkCudaErrors(cudaStreamCreate(&(streamRho)));
+        checkCudaErrors(cudaStreamCreate(&(streamUx)));
+        checkCudaErrors(cudaStreamCreate(&(streamUy)));
+        checkCudaErrors(cudaStreamCreate(&(streamUz)));
+
+        checkCudaErrors(cudaMemcpyAsync(this->rho+baseIdx, macrRef->rho+baseIdxRef, 
+            memSize, cudaMemcpyDefault, streamRho));
+        checkCudaErrors(cudaMemcpyAsync(this->ux+baseIdx, macrRef->ux+baseIdxRef, 
+            memSize, cudaMemcpyDefault, streamUx));
+        checkCudaErrors(cudaMemcpyAsync(this->uy+baseIdx, macrRef->uy+baseIdxRef, 
+            memSize, cudaMemcpyDefault, streamUy));
+        checkCudaErrors(cudaMemcpyAsync(this->uz+baseIdx, macrRef->uz+baseIdxRef,
+            memSize, cudaMemcpyDefault, streamUz));
+
+        checkCudaErrors(cudaStreamSynchronize(streamRho));
+        checkCudaErrors(cudaStreamSynchronize(streamUx));
+        checkCudaErrors(cudaStreamSynchronize(streamUy));
+        checkCudaErrors(cudaStreamSynchronize(streamUz));
+
+        checkCudaErrors(cudaStreamDestroy(streamRho));
+        checkCudaErrors(cudaStreamDestroy(streamUx));
+        checkCudaErrors(cudaStreamDestroy(streamUy));
+        checkCudaErrors(cudaStreamDestroy(streamUz));
     }
 
 } Macroscopics;

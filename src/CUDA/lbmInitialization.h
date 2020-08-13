@@ -24,11 +24,13 @@
 *   @brief Initializes device populations with values in binary file
 *   @param pop: populations to be initialized
 *   @param filePop: file with population's content
+*   @param filePopAux: file with auxiliary population's content
 */
 __host__
 void initializationPop( 
     Populations* pop,
-    FILE* filePop
+    FILE* filePop,
+    FILE* filePopAux
 );
 
 

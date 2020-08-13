@@ -25,19 +25,24 @@
 __host__
 void initializationPop( 
     Populations* pop,
-    FILE* filePop)
+    FILE* filePop,
+    FILE* filePopAux)
 {
-    dfloat* tmp = (dfloat*)malloc(memSizePop);
-    if (filePop != NULL)
-    {
-        fread(tmp, memSizePop, 1, filePop);
-        
-        for(size_t idx = 0; idx < numberNodes*Q; idx++)
-        {
-            pop->pop[idx] = tmp[idx];
-            pop->popAux[idx] = tmp[idx];
-        }
+    dfloat* tmp = (dfloat*)malloc(totalMemSizePop);
+    fread(tmp, totalMemSizePop, 1, filePop);
+
+    for(int i = 0; i < N_GPUS; i++){
+        size_t base_idx = numberNodes*Q*i;
+        checkCudaErrors(cudaMemcpy(pop[i].pop, tmp+base_idx, memSizePop, cudaMemcpyDefault));
     }
+
+    fread(tmp, totalMemSizePop, 1, filePopAux);
+
+    for(int i = 0; i < N_GPUS; i++){
+        size_t base_idx = numberNodes*Q*i;
+        checkCudaErrors(cudaMemcpy(pop[i].popAux, tmp+base_idx, memSizePop, cudaMemcpyDefault));
+    }
+
     free(tmp);
 }
 
@@ -50,31 +55,20 @@ void initializationMacr(
     FILE* fileUy,
     FILE* fileUz)
 {
-    dfloat* tmp = (dfloat*)malloc(memSizeScalar);
-    if (fileRho != NULL)
-    {
-        fread(tmp, memSizeScalar, 1, fileRho);
-        for(size_t idx = 0; idx < numberNodes; idx++)
-            macr->rho[idx] = tmp[idx];
-    }
-    if (fileUx != NULL)
-    {
-        fread(tmp, memSizeScalar, 1, fileUx);
-        for(size_t idx = 0; idx < numberNodes; idx++)
-            macr->ux[idx] = tmp[idx];
-    }
-    if (fileUy != NULL)
-    {
-        fread(tmp, memSizeScalar, 1, fileUy);
-        for(size_t idx = 0; idx < numberNodes; idx++)
-            macr->uy[idx] = tmp[idx];
-    }
-    if (fileUz != NULL)
-    {
-        fread(tmp, memSizeScalar, 1, fileUz);
-        for(size_t idx = 0; idx < numberNodes; idx++)
-            macr->uz[idx] = tmp[idx];
-    }
+    dfloat* tmp = (dfloat*)malloc(totalMemSizeScalar);
+
+    fread(tmp, totalMemSizeScalar, 1, fileRho);
+    checkCudaErrors(cudaMemcpy(macr->rho, tmp, totalMemSizeScalar, cudaMemcpyDefault));
+
+    fread(tmp, totalMemSizeScalar, 1, fileUx);
+    checkCudaErrors(cudaMemcpy(macr->ux, tmp, totalMemSizeScalar, cudaMemcpyDefault));
+
+    fread(tmp, totalMemSizeScalar, 1, fileUy);
+    checkCudaErrors(cudaMemcpy(macr->uy, tmp, totalMemSizeScalar, cudaMemcpyDefault));
+
+    fread(tmp, totalMemSizeScalar, 1, fileUz);
+    checkCudaErrors(cudaMemcpy(macr->uz, tmp, totalMemSizeScalar, cudaMemcpyDefault));
+
     free(tmp);
 }
 

@@ -86,10 +86,14 @@ std::string getVarFilename(
 void saveVarBin(
     std::string strFile, 
     dfloat* var, 
-    size_t memSize)
+    size_t memSize,
+    bool append)
 {
     FILE* outFile = nullptr;
-    outFile = fopen(strFile.c_str(), "wb");
+    if(append)
+        outFile = fopen(strFile.c_str(), "ab");
+    else
+        outFile = fopen(strFile.c_str(), "wb");
     if(outFile != nullptr)
     {
         fwrite(var, memSize, 1, outFile);
@@ -106,13 +110,22 @@ void savePopBin(
     Populations* pop, 
     unsigned int nSteps)
 {
-    std::string strFilePop;
+    std::string strFilePop, strFilePopAux;
     strFilePop = getVarFilename("pop", nSteps, ".bin");
-    
+    strFilePopAux = getVarFilename("pop_aux", nSteps, ".bin");
+
     dfloat* tmp = nullptr;
     checkCudaErrors(cudaMallocHost((void**)&(tmp), memSizePop));
-    checkCudaErrors(cudaMemcpy(tmp, pop[0].pop, memSizePop, cudaMemcpyDeviceToHost));
-    saveVarBin(strFilePop, tmp, memSizePop);
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaMemcpy(tmp, pop[i].pop, memSizePop, cudaMemcpyDeviceToHost));
+        saveVarBin(strFilePop, tmp, memSizePop, i != 0);
+    }
+
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaMemcpy(tmp, pop[i].popAux, memSizePop, cudaMemcpyDeviceToHost));
+        saveVarBin(strFilePopAux, tmp, memSizePop, i != 0);
+    }
+
     checkCudaErrors(cudaFreeHost(tmp));
 }
 
@@ -130,10 +143,10 @@ void saveAllMacrBin(
     strFileUz = getVarFilename("uz", nSteps, ".bin");
     
     // saving files
-    saveVarBin(strFileRho, macr->rho, totalMemSizeScalar);
-    saveVarBin(strFileUx, macr->ux, totalMemSizeScalar);
-    saveVarBin(strFileUy, macr->uy, totalMemSizeScalar);
-    saveVarBin(strFileUz, macr->uz, totalMemSizeScalar);
+    saveVarBin(strFileRho, macr->rho, totalMemSizeScalar, false);
+    saveVarBin(strFileUx, macr->ux, totalMemSizeScalar, false);
+    saveVarBin(strFileUy, macr->uy, totalMemSizeScalar, false);
+    saveVarBin(strFileUz, macr->uz, totalMemSizeScalar, false);
 }
 
 

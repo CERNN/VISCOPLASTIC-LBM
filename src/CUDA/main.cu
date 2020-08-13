@@ -125,7 +125,7 @@ int main()
     NodeTypeMap* hMapBC;
     checkCudaErrors(cudaMallocHost((void**)(&hMapBC), memSizeMapBC));
     for(int i = 0; i < N_GPUS; i++){
-        checkCudaErrors(cudaMemcpy(hMapBC, pop[i].mapBC, memSizeMapBC, cudaMemcpyDeviceToHost));
+        checkCudaErrors(cudaMemcpy(hMapBC, pop[i].mapBC, memSizeMapBC, cudaMemcpyDefault));
         bcInfos[i].setupBoundaryConditionsInfo(hMapBC);
     }
     cudaFreeHost(hMapBC);
@@ -135,16 +135,20 @@ int main()
     if(LOAD_POP)
     {
         FILE* filePop = fopen(STR_POP, "rb");
-        if(filePop == nullptr)
+        FILE* filePopAux = fopen(STR_POP_AUX, "rb");
+        if(filePop == nullptr || filePopAux == nullptr)
         {
             printf("Error reading population file\n");
             return -1;
         }
-        initializationPop(&pop[0], filePop);
+        initializationPop(pop, filePop, filePopAux);
         fclose (filePop);
-        gpuUpdateMacr<<<grid, threads>>>(&pop[0], &macr[0]);
-        checkCudaErrors(cudaDeviceSynchronize());
-        getLastCudaError("Update macroscopics error");
+        for(int i = 0; i < N_GPUS; i++){
+            checkCudaErrors(cudaSetDevice(i));
+            gpuUpdateMacr<<<grid, threads>>>(pop[i], macr[i]);
+            getLastCudaError("Update macroscopics error");
+            checkCudaErrors(cudaDeviceSynchronize());
+        }
     }
     else 
     {
@@ -160,7 +164,8 @@ int main()
                 printf("Error reading macroscopics files\n");
                 return -1;
             }
-            initializationMacr(&macr[0], fileRho, fileUx, fileUy, fileUz);
+
+            initializationMacr(&macrCPUCurrent, fileRho, fileUx, fileUy, fileUz);
             fclose (fileRho);
             fclose (fileUx);
             fclose (fileUy);
@@ -169,6 +174,11 @@ int main()
         
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
+            if(LOAD_MACR){
+                size_t baseIdx = i*numberNodes;
+                macr[i].copyMacr(&macrCPUCurrent, 0, baseIdx, false);
+                checkCudaErrors(cudaDeviceSynchronize());
+            }
             gpuInitialization<<<grid, threads>>>(pop[i], macr[i], LOAD_MACR, randomNumbers[i]);
             checkCudaErrors(cudaDeviceSynchronize());
         }
@@ -267,7 +277,7 @@ int main()
                 checkCudaErrors(cudaDeviceSynchronize());
             } 
             
-            macrCPUOld.copyMacr(&macrCPUCurrent, 0, true);
+            macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
             for(int i = 0; i < N_GPUS; i++){
                 macrCPUCurrent.copyMacr(&macr[i], numberNodes*i);
             } 

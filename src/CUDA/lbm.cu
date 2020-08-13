@@ -410,8 +410,8 @@ void gpuMacrCollisionStream(
 
 __global__
 void gpuUpdateMacr(
-    Populations* pop,
-    Macroscopics* macr)
+    Populations pop,
+    Macroscopics macr)
 {
     const unsigned int z = threadIdx.z + blockDim.z * blockIdx.z;
     const unsigned int y = threadIdx.y + blockDim.y * blockIdx.y;
@@ -422,7 +422,7 @@ void gpuUpdateMacr(
     // load populations
     dfloat fNode[Q];
     for (unsigned char i = 0; i < Q; i++)
-        fNode[i] = pop->pop[idxPop(x, y, z, i)];
+        fNode[i] = pop.pop[idxPop(x, y, z, i)];
 
     // calc for macroscopics
     // rho = sum(f[i])
@@ -462,10 +462,10 @@ void gpuUpdateMacr(
         - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17] + fNode[20]
         + fNode[21] + fNode[24] + fNode[26]) + 0.5*FZ) * invRho;
     #endif // !D3Q27
-    macr->rho[idxScalar(x, y, z)] = rhoVar;
-    macr->ux[idxScalar(x, y, z)] = uxVar;
-    macr->uy[idxScalar(x, y, z)] = uyVar;
-    macr->uz[idxScalar(x, y, z)] = uzVar;
+    macr.rho[idxScalar(x, y, z)] = rhoVar;
+    macr.ux[idxScalar(x, y, z)] = uxVar;
+    macr.uy[idxScalar(x, y, z)] = uyVar;
+    macr.uz[idxScalar(x, y, z)] = uzVar;
 }
 
 

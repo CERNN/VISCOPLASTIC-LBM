@@ -44,11 +44,13 @@ std::string getVarFilename(
 *   @param strFile: filename to save
 *   @param var: float variable to save
 *   @param memSize: sizeof var
+*   @param append: content must be appended to file or overwrite
 */
 void saveVarBin(
     std::string strFile, 
     dfloat* var, 
-    size_t memSize
+    size_t memSize,
+    bool append
 );
 
 
