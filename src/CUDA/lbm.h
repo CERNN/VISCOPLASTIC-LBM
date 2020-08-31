@@ -12,8 +12,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "structs\macroscopics.h"
-#include "structs\macrProc.h"
+#include "structs/macroscopics.h"
+#include "structs/macrProc.h"
 #include "boundaryConditionsHandler.h"
 
 

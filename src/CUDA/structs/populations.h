@@ -10,7 +10,7 @@
 #define __POPULATIONS_H
 
 #include "../var.h"
-#include "errorDef.h"
+#include "../errorDef.h"
 #include "nodeTypeMap.h"
 #include <cuda.h>
 

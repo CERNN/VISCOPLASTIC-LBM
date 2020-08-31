@@ -9,9 +9,9 @@
 #ifndef __MACROSCOPICS_H
 #define __MACROSCOPICS_H
 
-#include "..\var.h"
-#include "..\globalFunctions.h"
-#include "..\errorDef.h"
+#include "../var.h"
+#include "../globalFunctions.h"
+#include "../errorDef.h"
 #include <cuda.h>
 
 /*
