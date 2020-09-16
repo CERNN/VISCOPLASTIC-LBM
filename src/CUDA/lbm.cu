@@ -426,9 +426,9 @@ void gpuUpdateMacr(
 
     // calc for macroscopics
     // rho = sum(f[i])
-    // ux = sum(f[i]*cx[i]) / rho
-    // uy = sum(f[i]*cy[i]) / rho
-    // uz = sum(f[i]*cz[i]) / rho
+    // ux = sum(f[i]*cx[i] + Fx/2) / rho
+    // uy = sum(f[i]*cy[i] + Fy/2) / rho
+    // uz = sum(f[i]*cz[i] + Fz/2) / rho
     #ifdef D3Q19
     const dfloat rhoVar = fNode[0] + fNode[1] + fNode[2] + fNode[3] + fNode[4] 
         + fNode[5] + fNode[6] + fNode[7] + fNode[8] + fNode[9] + fNode[10] 
