@@ -11,19 +11,33 @@
 #define __PARTICLE_H
 
 #include "../../structs/globalStructs.h"
-#include "ibmVar.h"
+#include "particleCenter.h"
+#include "particleNode.h"
+#include "../ibmVar.h"
 
-struct particle {
-    // variables
+class Particle {
+// Use as struct, as imperative programming
+public: 
     unsigned int numNodes; // number of nodes the particle have
-    ParticleCenter bodyCenter;
-    ParticleNode* nodes;
+    // TODO: rename to pCenter?
+    ParticleCenter bodyCenter; // Particle center
+    ParticleNode* nodes; // Particle nodes
+
+    // All particle nodes from all particles as struct of arrays (better 
+    // performance on GPU)
+    static ParticleNodeSoA nodesSoA;
+
+    // Array with particle centers from all particles 
+    // (managed for use in CPU and GPU)
+    __managed__ static ParticleCenter pCenterArray[NUM_PARTICLES];
 
     Particle(){
         numNodes = 0;
         nodes = nullptr;
     }
-} Particle;
+
+    static void updateParticleStaticVars(Particle* particle);
+};
 
 
 /*

@@ -13,7 +13,7 @@
 #include "../var.h"
 
 /* ------------------------------------------------------------------------- */
-#define NUM_PARTICLES  100  // total number of immersed boundaries in the system
+#define NUM_PARTICLES 100  // total number of immersed boundaries in the system
 
 // Stencil to use, define only one
 // #define STENCIL_2 
@@ -26,7 +26,7 @@
 #define IBM_MAX_ITERATION 1
 #define SRP 1.0 // Epsilon - successive relaxation parameter - DASH 2014
 
-#define ROTATION_LOCK true   //Llock particle rotation
+#define ROTATION_LOCK true   // Lock particle rotation
 
 
 constexpr dfloat PARTICLE_DENSITY = 2.647;

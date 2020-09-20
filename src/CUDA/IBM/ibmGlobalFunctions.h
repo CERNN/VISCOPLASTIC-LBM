@@ -7,7 +7,6 @@
 *   @date 26/08/2020
 */
 
-
 #ifndef __IBM_GLOBAL_FUNCTIONS_H
 #define __IBM_GLOBAL_FUNCTIONS_H
 

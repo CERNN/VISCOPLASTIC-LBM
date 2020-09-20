@@ -10,7 +10,8 @@
 #ifndef __GLOBAL_STRUCTS_H
 #define __GLOBAL_STRUCTS_H
 
-#include "var.h"
+#include "../var.h"
+#include "../errorDef.h"
 
 typedef struct dfloat3 {
     dfloat x;
@@ -19,9 +20,9 @@ typedef struct dfloat3 {
 
     dfloat3()
     {
-        x = -1;
-        y = -1;
-        z = -1;
+        x = 0;
+        y = 0;
+        z = 0;
     }
 } dfloat3;
 
@@ -42,6 +43,29 @@ typedef struct dfloat3SoA {
         x = nullptr;
         y = nullptr;
         z = nullptr;
+    }
+
+    __host__
+    void allocateMemory(size_t arraySize){
+        size_t memSize = sizeof(dfloat) * arraySize;
+
+        checkCudaErrors(cudaMallocManaged((void**)&(this->x), memSize));
+        checkCudaErrors(cudaMallocManaged((void**)&(this->y), memSize));
+        checkCudaErrors(cudaMallocManaged((void**)&(this->z), memSize));
+    }
+
+    __host__
+    void freeMemory(){
+        checkCudaErrors(cudaFree(this->x));
+        checkCudaErrors(cudaFree(this->y));
+        checkCudaErrors(cudaFree(this->z));
+    }
+
+    __host__ __device__
+    void copyValuesFromdFloat3(dfloat3 val, size_t idx){
+        this->x[idx] = val.x;
+        this->y[idx] = val.y;
+        this->z[idx] = val.z;
     }
 
 } dfloat3SoA;

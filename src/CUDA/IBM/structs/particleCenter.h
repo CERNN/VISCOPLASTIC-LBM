@@ -11,7 +11,7 @@
 #define __PARTICLE_CENTER_H
 
 #include "../../structs/globalStructs.h"
-#include "ibmVar.h"
+#include "../ibmVar.h"
 
 /*
 * Describe the particle center properties
@@ -33,14 +33,16 @@ typedef struct particleCenter {
     dfloat radius;
     bool movable;       // If the particle can move
 
-    /* Constrctor */
+    /* Constructor */
     particleCenter()
     {
-        S = -1;
-        rho = -1;
-        mass_p = -1;
-        mass_f = -1;
-        radius = -1;
+        // All dfloat3 variables are initialized as 0
+
+        S = 0;
+        rho = 0;
+        mass_p = 0;
+        mass_f = 0;
+        radius = 0;
         movable = false;
     }
 } ParticleCenter;

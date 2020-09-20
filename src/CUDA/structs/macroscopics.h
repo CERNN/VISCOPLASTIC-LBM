@@ -27,6 +27,12 @@ public:
     dfloat* uy;     // y velocity
     dfloat* uz;     // z velocity
 
+    #ifdef IBM
+    dfloat* fx;     // x force
+    dfloat* fy;     // y force
+    dfloat* fz;     // z force
+    #endif
+
     /* Constructor */
     __host__
     macroscopics()
@@ -35,6 +41,12 @@ public:
         this->ux = nullptr;
         this->uy = nullptr;
         this->uz = nullptr;
+        
+        #ifdef IBM
+        this->fx = nullptr;
+        this->fy = nullptr;
+        this->fz = nullptr;
+        #endif
     }
 
     /* Destructor */
@@ -45,6 +57,12 @@ public:
         this->ux = nullptr;
         this->uy = nullptr;
         this->uz = nullptr;
+        
+        #ifdef IBM
+        this->fx = nullptr;
+        this->fy = nullptr;
+        this->fz = nullptr;
+        #endif
     }
 
     /* Allocate macroscopics */
@@ -60,12 +78,22 @@ public:
             checkCudaErrors(cudaMallocHost((void**)&(this->ux), totalMemSizeScalar));
             checkCudaErrors(cudaMallocHost((void**)&(this->uy), totalMemSizeScalar));
             checkCudaErrors(cudaMallocHost((void**)&(this->uz), totalMemSizeScalar));
+            #ifdef IBM
+            checkCudaErrors(cudaMallocHost((void**)&(this->fx), totalMemSizeScalar));
+            checkCudaErrors(cudaMallocHost((void**)&(this->fy), totalMemSizeScalar));
+            checkCudaErrors(cudaMallocHost((void**)&(this->fz), totalMemSizeScalar));
+            #endif
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaMallocManaged((void**)&(this->rho), memSizeScalar));
             checkCudaErrors(cudaMallocManaged((void**)&(this->ux), memSizeScalar));
             checkCudaErrors(cudaMallocManaged((void**)&(this->uy), memSizeScalar));
             checkCudaErrors(cudaMallocManaged((void**)&(this->uz), memSizeScalar));
+            #ifdef IBM
+            checkCudaErrors(cudaMallocManaged((void**)&(this->fx), memSizeScalar));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->fy), memSizeScalar));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->fz), memSizeScalar));
+            #endif
             break;
         default:
             break;
@@ -83,12 +111,22 @@ public:
             checkCudaErrors(cudaFreeHost(this->ux));
             checkCudaErrors(cudaFreeHost(this->uy));
             checkCudaErrors(cudaFreeHost(this->uz));
+            #ifdef IBM
+            checkCudaErrors(cudaFreeHost(this->fx));
+            checkCudaErrors(cudaFreeHost(this->fy));
+            checkCudaErrors(cudaFreeHost(this->fz));
+            #endif
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaFree(this->rho));
             checkCudaErrors(cudaFree(this->ux));
             checkCudaErrors(cudaFree(this->uy));
             checkCudaErrors(cudaFree(this->uz));
+            #ifdef IBM
+            checkCudaErrors(cudaFree(this->fx));
+            checkCudaErrors(cudaFree(this->fy));
+            checkCudaErrors(cudaFree(this->fz));
+            #endif
             break;
         default:
             break;
@@ -98,18 +136,22 @@ public:
     /*  
         Copies macrRef to this object  
         this <- macrRef
-        TODO: update to Memcpy 
     */
     __host__
     void copyMacr(macroscopics* macrRef, size_t baseIdx=0, size_t baseIdxRef=0, bool all_domain=false)
     {
         size_t memSize = (all_domain ? totalMemSizeScalar : memSizeScalar);
 
-        cudaStream_t streamRho, streamUx, streamUy, streamUz;   
+        cudaStream_t streamRho, streamUx, streamUy, streamUz;
         checkCudaErrors(cudaStreamCreate(&(streamRho)));
         checkCudaErrors(cudaStreamCreate(&(streamUx)));
         checkCudaErrors(cudaStreamCreate(&(streamUy)));
         checkCudaErrors(cudaStreamCreate(&(streamUz)));
+        #ifdef IBM
+        checkCudaErrors(cudaStreamCreate(&(streamFx)));
+        checkCudaErrors(cudaStreamCreate(&(streamFy)));
+        checkCudaErrors(cudaStreamCreate(&(streamFz)));
+        #endif
 
         checkCudaErrors(cudaMemcpyAsync(this->rho+baseIdx, macrRef->rho+baseIdxRef, 
             memSize, cudaMemcpyDefault, streamRho));
@@ -120,6 +162,15 @@ public:
         checkCudaErrors(cudaMemcpyAsync(this->uz+baseIdx, macrRef->uz+baseIdxRef,
             memSize, cudaMemcpyDefault, streamUz));
 
+        #ifdef IBM
+        checkCudaErrors(cudaMemcpyAsync(this->fx+baseIdx, macrRef->fx+baseIdxRef, 
+            memSize, cudaMemcpyDefault, streamFx));
+        checkCudaErrors(cudaMemcpyAsync(this->fy+baseIdx, macrRef->fy+baseIdxRef, 
+            memSize, cudaMemcpyDefault, streamFy));
+        checkCudaErrors(cudaMemcpyAsync(this->fz+baseIdx, macrRef->fz+baseIdxRef,
+            memSize, cudaMemcpyDefault, streamFz));
+        #endif
+
         checkCudaErrors(cudaStreamSynchronize(streamRho));
         checkCudaErrors(cudaStreamSynchronize(streamUx));
         checkCudaErrors(cudaStreamSynchronize(streamUy));
@@ -129,6 +180,12 @@ public:
         checkCudaErrors(cudaStreamDestroy(streamUx));
         checkCudaErrors(cudaStreamDestroy(streamUy));
         checkCudaErrors(cudaStreamDestroy(streamUz));
+        #ifdef IBM
+        checkCudaErrors(cudaStreamDestroy(streamFx));
+        checkCudaErrors(cudaStreamDestroy(streamFy));
+        checkCudaErrors(cudaStreamDestroy(streamFz));
+        #endif
+
     }
 
 } Macroscopics;
