@@ -17,27 +17,25 @@
 #include "../structs/macroscopics.h"
 #include "../structs/populations.h"
 #include "../structs/globalStructs.h"
-#include "structs/particleCenter.h"
-#include "structs/particleNode.h"
-
+#include "structs/particle.h"
 
 __host__
 void immersedBoundaryMethod(
-    Particle* const __restrict__ particles,
+    ParticlesSoA particles,
     Macroscopics* const __restrict__ macr,
     Populations* const __restrict__ pop,
-    const dim3 gridLBM,
-    const dim3 threadsLBM,
-    const unsigned int gridIBM,
-    const unsigned int threadsIBM,
-    cudaStream_t* const __restrict__ stream
+    dim3 gridLBM,
+    dim3 threadsLBM,
+    unsigned int gridIBM,
+    unsigned int threadsIBM,
+    cudaStream_t* __restrict__ stream
 );
 
 
 __global__
 void gpuForceInterpolationSpread(
-    unsigned int totalParticlesNodes,
-    ParticleNode* const __restrict__ particlesNodes,
+    ParticleNodeSoA const particlesNodes,
+    ParticleCenter* const particleCenters,
     Macroscopics* const __restrict__ macr
 );
 
@@ -50,11 +48,11 @@ __global__
 void gpuResetNodesForces(ParticleNodeSoA* __restrict__ particleNodes);
 
 
-__host__ 
+/*__host__ 
 void updateParticleCenterForce(
     Particle* __restrict__ particleNode,
     unsigned int numParticles
-);
+);*/
 
 __host__ 
 dfloat3 particleCollisionSoft(

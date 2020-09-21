@@ -29,6 +29,7 @@
 #include "lbmInitialization.h"
 #include "boundaryConditionsBuilder.h"
 #include "structs/boundaryConditionsInfo.h"
+#include "IBM/ibm.h"
 
 
 int main()

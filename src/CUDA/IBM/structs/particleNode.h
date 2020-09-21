@@ -14,7 +14,7 @@
 #include "../ibmVar.h"
 #include "../../structs/globalStructs.h"
 
-class Particle;
+// struct Particle;
 
 /*
 *   Describe the IBM node properties
@@ -48,7 +48,7 @@ typedef struct particleNodeSoA {
 
     void allocateMemory(size_t numNodes);
     void freeMemory();
-    void copyNodesFromParticle(Particle p, unsigned int pCenterIdx, size_t baseIdx);
+    void copyNodesFromParticle(struct particle p, unsigned int pCenterIdx, size_t baseIdx);
 
 } ParticleNodeSoA;
 

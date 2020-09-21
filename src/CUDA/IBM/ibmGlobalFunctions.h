@@ -24,7 +24,7 @@
 *               atomicDoubleAdd(a, addedValue);
 *           }
 */
-__device__ __inline__ dfloat atomicDoubleAdd(double* address, double val)
+__device__ __inline__ void atomicDoubleAdd(double* address, double val)
 {
     #if __CUDA_ARCH__ < 600
     //TODO add cuda version and double/float swap
@@ -39,7 +39,8 @@ __device__ __inline__ dfloat atomicDoubleAdd(double* address, double val)
         // Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
     } while (assumed != old);
 
-    return __longlong_as_double(old);
+    // TODO: fix this function
+    // return __longlong_as_double(old);
 
     #else
         atomicAdd(address,val);
@@ -52,20 +53,20 @@ __device__ __inline__ dfloat atomicDoubleAdd(double* address, double val)
 *   @return force weight
 */
 __device__ __forceinline__  dfloat stencil(dfloat x) {
-    dfloat x = abs(x);
+    dfloat absX = abs(x);
     #if defined STENCIL_2
-        if (x > 1.0) {
+        if (absX > 1.0) {
             return 0.0;
         }
         else {
             return (1 - x);
         }
     #elif defined STENCIL_4
-        if (x <= 1) {
-            return (1.0 / 8.0)*(3.0 - 2.0*x + sqrt(1 + 4 * x - 4 * x*x));;
+        if (absX <= 1) {
+            return (1.0 / 8.0)*(3.0 - 2.0*absX + sqrt(1 + 4 * absX - 4 * absX*absX));;
         }
-        else if (x > 1.0 && x <= 2.0) {
-            return (1.0 / 8.0)*(5.0 - 2.0*x - sqrt(-7.0 + 12.0*x - 4.0*x*x));
+        else if (absX > 1.0 && absX <= 2.0) {
+            return (1.0 / 8.0)*(5.0 - 2.0*absX - sqrt(-7.0 + 12.0*absX - 4.0*absX*absX));
         }
         else {
             return 0.0;
@@ -73,4 +74,4 @@ __device__ __forceinline__  dfloat stencil(dfloat x) {
     #endif //STENCIL
 }
 
-#endif // !__IBM_IDX_H
+#endif // !__IBM_GLOBAL_FUNCTIONS_H

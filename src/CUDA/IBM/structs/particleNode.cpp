@@ -1,7 +1,7 @@
-#ifdef IBM
-
 #include "particleNode.h"
 #include "particle.h"
+
+#ifdef IBM
 
 ParticleNodeSoA::particleNodeSoA()
 {

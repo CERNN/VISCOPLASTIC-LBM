@@ -14,9 +14,10 @@
 #define _USE_MATH_DEFINES
 
 
-/* --------------------- PRECISION AND VEL. SET DEFINES -------------------- */
+/* ------------------------ GENERAL SIMULATION DEFINES ---------------------- */
 typedef float dfloat;      // single or double precision
-#define D3Q19               // velocity set to use
+#define D3Q19              // velocity set to use
+#define IBM
 /* ------------------------------------------------------------------------- */
 
 
@@ -52,6 +53,7 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 // file names to load
 #define STR_POP "pop.bin"
+#define STR_POP_AUX "pop_aux.bin"
 #define STR_RHO "rho.bin"
 #define STR_UX "ux.bin"
 #define STR_UY "uy.bin"

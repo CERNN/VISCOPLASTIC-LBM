@@ -143,6 +143,9 @@ public:
         size_t memSize = (all_domain ? totalMemSizeScalar : memSizeScalar);
 
         cudaStream_t streamRho, streamUx, streamUy, streamUz;
+        #ifdef IBM
+        cudaStream_t streamFx, streamFy, streamFz;
+        #endif
         checkCudaErrors(cudaStreamCreate(&(streamRho)));
         checkCudaErrors(cudaStreamCreate(&(streamUx)));
         checkCudaErrors(cudaStreamCreate(&(streamUy)));

@@ -18,6 +18,7 @@ typedef struct dfloat3 {
     dfloat y;
     dfloat z;
 
+    __host__ __device__
     dfloat3()
     {
         x = 0;
@@ -31,6 +32,7 @@ typedef struct dfloat3SoA {
     dfloat* y; // y array
     dfloat* z; // z array
 
+    __host__ __device__
     dfloat3SoA()
     {
         x = nullptr;
@@ -38,6 +40,7 @@ typedef struct dfloat3SoA {
         z = nullptr;
     }
 
+    __host__ __device__
     ~dfloat3SoA()
     {
         x = nullptr;

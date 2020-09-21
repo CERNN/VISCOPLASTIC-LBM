@@ -1,11 +1,10 @@
-#ifdef IBM
-
 #include "ibm.h"
 
+#ifdef IBM
 
 __host__
 void immersedBoundaryMethod(
-    Particle* __restrict__ particles,
+    ParticlesSoA particles,
     Macroscopics* const __restrict__ macr,
     Populations* const __restrict__ pop,
     dim3 gridLBM,
@@ -26,40 +25,43 @@ void immersedBoundaryMethod(
 
     checkCudaErrors(cudaStreamSynchronize(stream[0]));
 
-    for (int i = 0; i < IBM_MAX_INTERATION; i++) {
+    for (int i = 0; i < IBM_MAX_ITERATION; i++) {
         // TODO: UPDATE PARTICLE VELOCITY AND ROTATION
         // updateParticleVelocity
 
         // TODO: check parameters
-        gpuForceInterpolationSpread<<<gridIBM, threadsIBM, 0, stream[0]>>>();
+        gpuForceInterpolationSpread<<<gridIBM, threadsIBM, 0, stream[0]>>>(
+            particles.nodesSoA, particles.pCenterArray, macr);
         checkCudaErrors(cudaStreamSynchronize(stream[0]));
+
+
     }
 
 
-    particleForce();
+    // particleForce();
     // TODO: make it in a kernel
-    particleMovement();
+    // particleMovement();
     checkCudaErrors(cudaStreamSynchronize(stream[0]));
 }
 
 
 __global__
 void gpuForceInterpolationSpread(
-    ParticleNodeSoA* const __restrict__ particlesNodes,
-    ParticleCenter* const __restrict__ particleCenters,
+    ParticleNodeSoA const particlesNodes,
+    ParticleCenter* const particleCenters,
     Macroscopics* const __restrict__ macr)
 {
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
 
-    if (i > particlesNodes->numNodes)
+    if (i > particlesNodes.numNodes)
         return;
 
     dfloat aux; // aux variable for many things
     size_t idx; // index for many things
 
-    const dfloat xIBM = particlesNodes->pos.x[i];
-    const dfloat yIBM = particlesNodes->pos.y[i];
-    const dfloat zIBM = particlesNodes->pos.z[i];
+    const dfloat xIBM = particlesNodes.pos.x[i];
+    const dfloat yIBM = particlesNodes.pos.y[i];
+    const dfloat zIBM = particlesNodes.pos.z[i];
 
     // Stencil distance
     #if defined STENCIL_2
@@ -92,16 +94,16 @@ void gpuForceInterpolationSpread(
     dfloat uzVar = 0;
 
     // Index of particle center of this particle node
-    idx = particlesNodes->particleCenterIdx[i];
+    idx = particlesNodes.particleCenterIdx[i];
 
     // Load position, velocity and rotation velocity of particle center
     dfloat x_pc = particleCenters[idx].pos.x;
     dfloat y_pc = particleCenters[idx].pos.y;
     dfloat z_pc = particleCenters[idx].pos.z;
     
-    dfloat vx_pc = particleCenters[idx].v.x;
-    dfloat vy_pc = particleCenters[idx].v.y;
-    dfloat vz_pc = particleCenters[idx].v.z;
+    dfloat vx_pc = particleCenters[idx].vel.x;
+    dfloat vy_pc = particleCenters[idx].vel.y;
+    dfloat vz_pc = particleCenters[idx].vel.z;
 
     dfloat wx_pc = particleCenters[idx].w.x;
     dfloat wy_pc = particleCenters[idx].w.y;
@@ -132,19 +134,21 @@ void gpuForceInterpolationSpread(
         }
     }
 
-    //particlesNodes->pos.x[i];
-    particlesNodes->vel.x[i] = uxVar;
-    particlesNodes->vel.y[i] = uyVar;
-    particlesNodes->vel.z[i] = uzVar;
+    //particlesNodes.pos.x[i];
+    particlesNodes.vel.x[i] = uxVar;
+    particlesNodes.vel.y[i] = uyVar;
+    particlesNodes.vel.z[i] = uzVar;
 
     // printf("\nUz Calc %lf...\n", uz_cal);
     // printf("\nUz Var %lf...\n", uzVar);
 
     // load FxIBM FyIBM FzIBM
-    dfloat fxIBM = particlesNodes->f.x[i];
-    dfloat fyIBM = particlesNodes->f.y[i];
-    dfloat fzIBM = particlesNodes->f.z[i];
+    dfloat fxIBM = particlesNodes.f.x[i];
+    dfloat fyIBM = particlesNodes.f.y[i];
+    dfloat fzIBM = particlesNodes.f.z[i];
 
+    // WAINE QUE ESCREVEU ISSO SÓ PRA COMPILAR, REVER
+    dfloat dA = 1, drs= 1;
     // TODO: what is dA and drs?
     aux = 2 * rhoVar * dA * drs;
     dfloat deltaFx = aux * (uxVar - ux_cal);
@@ -175,17 +179,17 @@ void gpuForceInterpolationSpread(
     }
 
     // Update node force
-    particlesNodes->f.x[i] = fxIBM;
-    particlesNodes->f.y[i] = fyIBM;
-    particlesNodes->f.z[i] = fzIBM;
+    particlesNodes.f.x[i] = fxIBM;
+    particlesNodes.f.y[i] = fyIBM;
+    particlesNodes.f.z[i] = fzIBM;
 
     // Update node delta forne
-    particlesNodes->deltaF.x[i] = deltaFx;
-    particlesNodes->deltaF.y[i] = deltaFy;
-    particlesNodes->deltaF.z[i] = deltaFz;
+    particlesNodes.deltaF.x[i] = deltaFx;
+    particlesNodes.deltaF.y[i] = deltaFy;
+    particlesNodes.deltaF.z[i] = deltaFz;
 
     // Add node force to particle center
-    idx = particlesNodes->particleCenterIdx[i];
+    idx = particlesNodes.particleCenterIdx[i];
     atomicAdd((double*)&(particleCenters[idx].f.x), (double) deltaFx);
     atomicAdd((double*)&(particleCenters[idx].f.y), (double) deltaFy);
     atomicAdd((double*)&(particleCenters[idx].f.z), (double) deltaFz);
@@ -211,7 +215,7 @@ void gpuUpdateMacrResetForces(Populations* __restrict__ pop, Macroscopics* __res
     // load populations
     dfloat fNode[Q];
     for (unsigned char i = 0; i < Q; i++)
-        fNode[i] = pop.pop[idxPop(x, y, z, i)];
+        fNode[i] = pop->pop[idxPop(x, y, z, i)];
 
     // calc for macroscopics
     // rho = sum(f[i])
@@ -266,8 +270,8 @@ void gpuResetNodesForces(ParticleNodeSoA* const __restrict__ particleNodes){
     if(idx >= particleNodes->numNodes)
         return;
 
-    dfloat3SoA* const force = particleNodes->f;
-    dfloat3SoA* const delta_force = particleNodes->delta_f;
+    const dfloat3SoA force = particleNodes->f;
+    const dfloat3SoA delta_force = particleNodes->deltaF;
 
     force.x[idx] = 0;
     force.y[idx] = 0;
@@ -277,20 +281,21 @@ void gpuResetNodesForces(ParticleNodeSoA* const __restrict__ particleNodes){
     delta_force.z[idx] = 0;
 }
 
+/*
 __host__ 
 void updateParticleCenterForce(
     Particle* particle,
     unsigned int numParticles)
 {
     // TODO: move this to spread force kernel, except collision
-    /* Old arguments
-    unsigned int totalIbmNodes,
-    unsigned int* qtdNos,
-    ParticleCenter* particleCenter,
-    dfloat3* nodePosition,
-    dfloat3* nodeCumulativeForce,
-    dfloat* nodeSurface,
-    */
+    // /* Old arguments
+    // unsigned int totalIbmNodes,
+    // unsigned int* qtdNos,
+    // ParticleCenter* particleCenter,
+    // dfloat3* nodePosition,
+    // dfloat3* nodeCumulativeForce,
+    // dfloat* nodeSurface,
+    // *
 
     //particle dynamics
     int n, p;
@@ -354,5 +359,6 @@ void particleMovement(
 {
 
 }
+*/
 
 #endif // !IBM

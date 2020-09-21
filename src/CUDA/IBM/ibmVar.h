@@ -3,7 +3,7 @@
 *   @author Marco Aurelio Ferrari (marcoferrari@alunos.utfpr.edu.br)
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Configurations for the immersed boundary method
-*   @version 0.0.1
+*   @version 0.3.0
 *   @date 26/08/2020
 */
 
@@ -14,6 +14,7 @@
 
 /* ------------------------------------------------------------------------- */
 #define NUM_PARTICLES 100  // total number of immersed boundaries in the system
+#define IBM_MAX_ITERATION 1 // Number of iterations
 
 // Stencil to use, define only one
 // #define STENCIL_2 

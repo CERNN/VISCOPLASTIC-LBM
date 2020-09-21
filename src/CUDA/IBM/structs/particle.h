@@ -15,29 +15,29 @@
 #include "particleNode.h"
 #include "../ibmVar.h"
 
-class Particle {
-// Use as struct, as imperative programming
-public: 
+// After use_math_defines in "var.h"
+#include <math.h>
+
+typedef struct particle {
     unsigned int numNodes; // number of nodes the particle have
     // TODO: rename to pCenter?
     ParticleCenter bodyCenter; // Particle center
     ParticleNode* nodes; // Particle nodes
 
-    // All particle nodes from all particles as struct of arrays (better 
-    // performance on GPU)
-    static ParticleNodeSoA nodesSoA;
-
-    // Array with particle centers from all particles 
-    // (managed for use in CPU and GPU)
-    __managed__ static ParticleCenter pCenterArray[NUM_PARTICLES];
-
-    Particle(){
+    particle(){
         numNodes = 0;
         nodes = nullptr;
     }
 
-    static void updateParticleStaticVars(Particle* particle);
-};
+} Particle;
+
+typedef struct particlesSoA{
+    ParticleNodeSoA nodesSoA;
+    ParticleCenter* pCenterArray;
+
+    void updateParticlesAsSoA(Particle* particles);
+    void freeNodesAndCenters();
+} ParticlesSoA;
 
 
 /*
