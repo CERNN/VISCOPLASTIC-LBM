@@ -23,18 +23,22 @@
 #include <stdlib.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
+
 #include "treatData.h"
 #include "lbmReport.h"
 #include "lbm.h"
 #include "lbmInitialization.h"
 #include "boundaryConditionsBuilder.h"
 #include "structs/boundaryConditionsInfo.h"
+
+#ifdef IBM
 #include "IBM/ibm.h"
+#endif // IBM
 
 
 int main()
 {
-    // VARIABLE DECLARATIONS
+    // Variables declaration
     Populations* pop;
     Macroscopics* macr;
     Macroscopics macrCPUCurrent;
@@ -46,15 +50,15 @@ int main()
     int step = INI_STEP;
     dim3* gridsBC;
 
-    // SETUP SAVING FOLDER
+    // Setup saving folder
     folderSetup();
 
-    // INITALIZE PROCESS DATA
+    // Initializes process data
     processData.step = &step;
     processData.macrCurr = &macrCPUCurrent;
     processData.macrOld = &macrCPUOld;
     
-    // NUMBER OF DEVICES
+    // Number of devices
     checkCudaErrors(cudaGetDeviceCount(&info.numDevices));
     if(N_GPUS > info.numDevices){
         printf("N_GPUS is higher than the number of detected GPUS\n");
@@ -64,21 +68,20 @@ int main()
     }
     info.numDevices = N_GPUS;
 
-    // ALLOCATION FOR CPU
+    /* ------------------------- ALLOCATION FOR CPU ------------------------- */
     info.devices = (cudaDeviceProp*) malloc(sizeof(cudaDeviceProp)*N_GPUS);
     bcInfos = (BoundaryConditionsInfo*) malloc(sizeof(BoundaryConditionsInfo)*N_GPUS);
     gridsBC = (dim3*) malloc(sizeof(dim3)*N_GPUS);
     macrCPUCurrent.macrAllocation(IN_HOST);
     macrCPUOld.macrAllocation(IN_HOST);
-
-    // STREAMS AND MEMORY ALLOCATION FOR GPU
-    cudaStream_t* streamsKernelLBM = (cudaStream_t*) malloc(sizeof(cudaStream_t)*N_GPUS); // stream kernel for each GPU
-
     pop = (Populations*) malloc(sizeof(Populations) * N_GPUS);
     macr = (Macroscopics*) malloc(sizeof(Macroscopics) * N_GPUS);
     randomNumbers = (float**)malloc(sizeof(float*) * N_GPUS);
+    /* ---------------------------------------------------------------------- */
 
-    // ALLOCATION AND CONFIGURATION FOR EACH GPU
+    /* -------------- ALLOCATION AND CONFIGURATION FOR EACH GPU ------------- */
+    // Streams for GPU
+    cudaStream_t* streamsKernelLBM = (cudaStream_t*) malloc(sizeof(cudaStream_t)*N_GPUS); 
     for(int i = 0; i < N_GPUS; i++)
     {
         checkCudaErrors(cudaSetDevice(i));
@@ -96,8 +99,13 @@ int main()
             getLastCudaError("random numbers transfer error");
         }
     }
+    /* ---------------------------------------------------------------------- */
 
-    // GRID AND THREADS DEFINITION FOR LBM
+    /* -------------------------------- IBM --------------------------------- */
+
+    /* ---------------------------------------------------------------------- */
+
+    // ------------------ GRID AND THREADS DEFINITION FOR LBM ------------------
     dim3 grid(((NX%nThreads)? (NX/nThreads+1) : (NX/nThreads)), NY, NZ);
     // threads in block
     dim3 threads(nThreads, 1, 1);
@@ -105,12 +113,15 @@ int main()
     // Grid and threads for memory transfers in multiGPUS
     dim3 gridTransfer(grid.x, grid.y, 1);
     dim3 threadsTransfer(nThreads, 1, 1);
+    /* ---------------------------------------------------------------------- */
 
-    // REPORT
+    /* ------------------------------- REPORT ------------------------------- */
     printParamInfo(&info, true); fflush(stdout);
     printGPUInfo(&info); fflush(stdout);
+    /* ---------------------------------------------------------------------- */
 
-    // BOUNDARY CONDITIONS INITIALIZATION
+
+    /* ----------------- BOUNDARY CONDITIONS INITIALIZATION ----------------- */
     // Divide in two fors to allow kernels of "gpuBuilBoundaryConditions"
     // to run in parallel. Otherwise they would run sequentially
     for(int i = 0; i < N_GPUS; i++){
@@ -130,9 +141,10 @@ int main()
         bcInfos[i].setupBoundaryConditionsInfo(hMapBC);
     }
     cudaFreeHost(hMapBC);
+    /* ---------------------------------------------------------------------- */
 
-    // LBM INITIALIZATION
-    // TODO: update initialization with files to multi GPU
+    /* ------------------------- LBM INITIALIZATION ------------------------- */
+    // Load populations from files
     if(LOAD_POP)
     {
         FILE* filePop = fopen(STR_POP, "rb");
@@ -144,6 +156,8 @@ int main()
         }
         initializationPop(pop, filePop, filePopAux);
         fclose (filePop);
+        fclose (filePopAux);
+
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
             gpuUpdateMacr<<<grid, threads>>>(pop[i], macr[i]);
@@ -153,6 +167,7 @@ int main()
     }
     else 
     {
+        // Load macroscopics from files
         if(LOAD_MACR)
         {   
             FILE* fileRho = fopen(STR_RHO, "rb");
@@ -165,7 +180,7 @@ int main()
                 printf("Error reading macroscopics files\n");
                 return -1;
             }
-
+            // Load macroscopics from files
             initializationMacr(&macrCPUCurrent, fileRho, fileUx, fileUy, fileUz);
             fclose (fileRho);
             fclose (fileUx);
@@ -175,24 +190,28 @@ int main()
         
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
+            // Copy macroscopics to GPU if required
             if(LOAD_MACR){
                 size_t baseIdx = i*numberNodes;
                 macr[i].copyMacr(&macrCPUCurrent, 0, baseIdx, false);
                 checkCudaErrors(cudaDeviceSynchronize());
             }
-            gpuInitialization<<<grid, threads>>>(pop[i], macr[i], LOAD_MACR, randomNumbers[i]);
-            checkCudaErrors(cudaDeviceSynchronize());
+            // Initialize populations
+            gpuInitializationPop<<<grid, threads>>>(pop[i], macr[i], LOAD_MACR, randomNumbers[i]);
+            // checkCudaErrors(cudaDeviceSynchronize());
         }
         getLastCudaError("Initialization error");
     }
+    /* ---------------------------------------------------------------------- */
 
-    // GRID AND THREAD DEFINITION FOR BOUNDARY CONDITIONS
+    // Grid and thread definition for boundary conditions
     for(int i = 0; i < N_GPUS; i++)
         gridsBC[i] = dim3(((bcInfos[i].totalBCNodes%32)? (bcInfos[i].totalBCNodes/32+1) : 
                 (bcInfos[i].totalBCNodes/32)), 1, 1); // TODO
 
     dim3 threadsBC(32, 1, 1);
 
+    // Free random numbers
     if (RANDOM_NUMBERS) {
         for (int i = 0; i < N_GPUS; i++) {
             checkCudaErrors(cudaSetDevice(i));
@@ -200,14 +219,15 @@ int main()
         }
         free(randomNumbers);
     }
-    // TIMING
+
+    // Timing
     cudaEvent_t start, stop;
     checkCudaErrors(cudaEventCreate(&start));
     checkCudaErrors(cudaEventCreate(&stop));
 
     checkCudaErrors(cudaEventRecord(start, 0));
-    
-    // LBM
+
+    /* ------------------------------ LBM LOOP ------------------------------ */
     for(step = INI_STEP; step < N_STEPS; step++)
     {
         int aux = step-INI_STEP;
@@ -221,7 +241,7 @@ int main()
                 rep = !(aux % DATA_REPORT);
         }
 
-        // LBM SOLVER
+        // LBM solver
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
             gpuMacrCollisionStream<<<grid, threads>>>
@@ -248,10 +268,9 @@ int main()
             }
         }
 
-        // BOUNDARY CONDITIONS
+        // Boundary conditions
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
-            // BOUNDARY CONDITIONS
             if(bcInfos[i].totalBCNodes > 0){
                 gpuApplyBC<<<gridsBC[i], threadsBC>>>
                     (pop[i].mapBC, pop[i].popAux, pop[i].pop, 
@@ -260,14 +279,14 @@ int main()
             getLastCudaError("BC kernel error\n");
         }
 
-
+        // Synchronize and swap populations
         for (int i = 0; i < N_GPUS; i++) {
             checkCudaErrors(cudaSetDevice(i));
             checkCudaErrors(cudaDeviceSynchronize());
             pop[i].swapPop();
         }
 
-        // SYNCHRONIZING
+        // Synchronizing data (macroscopics) between GPU and CPU
         if(save || rep)
         {
             printf("\n------------------------- Synchronizing in step %06d -------------------------\n", step); 
@@ -279,7 +298,7 @@ int main()
             } 
         }
 
-        // SAVE
+        // Save macroscopics
         if(save)
         {
             printf("\n---------------------------- Saving in step %06d -----------------------------\n", step); 
@@ -287,7 +306,7 @@ int main()
             saveAllMacrBin(&macrCPUCurrent, step);
         }
 
-        // REPORT
+        // Report data
         if(rep)
         {
             treatData(&processData);
@@ -304,26 +323,25 @@ int main()
             }
         }
     }
+    /* ---------------------------------------------------------------------- */
 
-    // TIMING
+    // Timing
     checkCudaErrors(cudaEventRecord(stop, 0));
     checkCudaErrors(cudaEventSynchronize(stop));
     checkCudaErrors(cudaEventElapsedTime(&(info.timeElapsed), start, stop));
     info.timeElapsed *= 0.001;
 
-    // SAVE FINAL MACROSCOPICS
-    
+    // Save final macroscopics
     for(int i = 0; i < N_GPUS; i++){
         macrCPUCurrent.copyMacr(&macr[i], numberNodes*i);
     } 
     saveAllMacrBin(&macrCPUCurrent, step);
 
-    // SAVE FINAL POPULATIONS (IF REQUIRED)
-    // TODO: update to multi GPU
+    // Save final populations (if required)
     if(POP_SAVE)
         savePopBin(pop, step);
 
-    // EVALUATE PERFORMANCE
+    // Evaluate performance
     info.totalSteps = step - INI_STEP;
     size_t nodesUpdated = info.totalSteps * numberNodes * N_GPUS;
     info.MLUPS = (nodesUpdated / 1e6) / info.timeElapsed;
@@ -331,10 +349,10 @@ int main()
     info.bandwidth = memSizePop*2.0*N_GPUS / (info.timeElapsed*BYTES_PER_GB) 
         * info.totalSteps;
 
-    // SIMULATION INFO
+    // Save simulation info
     saveSimInfo(&info);
 
-    // REPORT
+    // Report data (last calculated one)
     if(DATA_REPORT)
     {
         printTreatData(&processData);
@@ -345,7 +363,8 @@ int main()
     printGPUInfo(&info);
     fflush(stdout);
 
-    // FREE MEMORY FOR EACH GPU
+    /* ---------------------------- FREE MEMORY ----------------------------- */
+    // Free memory for each GPU
     for(int i = 0; i < N_GPUS; i++)
     {
         checkCudaErrors(cudaSetDevice(i));
@@ -355,17 +374,15 @@ int main()
         bcInfos[i].freeIdxBC();
     }
 
-    // FREE GPU VARIABLES
-    checkCudaErrors(cudaSetDevice(0));
+    // Free CPU variables
     free(pop);
     free(macr);
-
-    // FREE CPU VARIABLES
     macrCPUCurrent.macrFree();
     macrCPUOld.macrFree();
     free(info.devices);
     free(bcInfos);
     free(gridsBC);
+    /* ---------------------------------------------------------------------- */
 
     return 0;
 }
