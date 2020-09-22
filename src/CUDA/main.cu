@@ -33,6 +33,7 @@
 
 #ifdef IBM
 #include "IBM/ibm.h"
+#include "IBM/ibmParticlesCreation.h"
 #endif // IBM
 
 
@@ -49,6 +50,12 @@ int main()
     float** randomNumbers = nullptr; // useful for turbulence
     int step = INI_STEP;
     dim3* gridsBC;
+
+    #ifdef IBM
+    Particle* particles;
+    ParticlesSoA particlesSoA;
+    dim3 gridIBM, threadsIBM;
+    #endif
 
     // Setup saving folder
     folderSetup();
@@ -88,7 +95,7 @@ int main()
         checkCudaErrors(cudaGetDeviceProperties(&(info.devices[i]), i));
         checkCudaErrors(cudaStreamCreate(&streamsKernelLBM[i]));
 
-        pop[i]. popAllocation();
+        pop[i].popAllocation();
         macr[i].macrAllocation(IN_VIRTUAL);
         if(RANDOM_NUMBERS)
         {
@@ -101,11 +108,14 @@ int main()
     }
     /* ---------------------------------------------------------------------- */
 
-    /* -------------------------------- IBM --------------------------------- */
-
+    /* ------------------ IBM ALLOCATION AND CONFIGURATION ------------------ */
+    #ifdef IBM
+    particles = createParticles();
+    particlesSoA.updateParticlesAsSoA(particles);
+    #endif
     /* ---------------------------------------------------------------------- */
 
-    // ------------------ GRID AND THREADS DEFINITION FOR LBM ------------------
+    /* ----------------- GRID AND THREADS DEFINITION FOR LBM ---------------- */
     dim3 grid(((NX%nThreads)? (NX/nThreads+1) : (NX/nThreads)), NY, NZ);
     // threads in block
     dim3 threads(nThreads, 1, 1);
@@ -197,7 +207,7 @@ int main()
                 checkCudaErrors(cudaDeviceSynchronize());
             }
             // Initialize populations
-            gpuInitializationPop<<<grid, threads>>>(pop[i], macr[i], LOAD_MACR, randomNumbers[i]);
+            gpuInitialization<<<grid, threads>>>(pop[i], macr[i], LOAD_MACR, randomNumbers[i]);
             // checkCudaErrors(cudaDeviceSynchronize());
         }
         getLastCudaError("Initialization error");
@@ -382,6 +392,14 @@ int main()
     free(info.devices);
     free(bcInfos);
     free(gridsBC);
+
+    #ifdef IBM
+    for(int i = 0; i < NUM_PARTICLES; i++){
+        free(particles[i].nodes);
+    }
+    free(particles);
+    particlesSoA.freeNodesAndCenters();
+    #endif
     /* ---------------------------------------------------------------------- */
 
     return 0;
