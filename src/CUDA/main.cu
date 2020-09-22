@@ -52,7 +52,7 @@ int main()
     dim3* gridsBC;
 
     #ifdef IBM
-    Particle* particles;
+    Particle particles[NUM_PARTICLES];
     ParticlesSoA particlesSoA;
     dim3 gridIBM, threadsIBM;
     #endif
@@ -110,7 +110,7 @@ int main()
 
     /* ------------------ IBM ALLOCATION AND CONFIGURATION ------------------ */
     #ifdef IBM
-    particles = createParticles();
+    createParticles(particles);
     particlesSoA.updateParticlesAsSoA(particles);
     #endif
     /* ---------------------------------------------------------------------- */

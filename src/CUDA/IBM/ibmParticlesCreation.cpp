@@ -2,15 +2,11 @@
 
 #ifdef IBM
 
-Particle* createParticles()
+void createParticles(Particle particles[NUM_PARTICLES])
 {
     printf("-------------------------------- IBM INFORMATION -------------------------------\n");
 
-    Particle *particles;
     dfloat3 bCenter[NUM_PARTICLES];
-
-    particles = (Particle *)malloc(NUM_PARTICLES * sizeof(Particle));
-
     unsigned int totalIbmNodes = 0;
 
     int id = 0;
@@ -24,19 +20,23 @@ Particle* createParticles()
                 bCenter[id].x = 10.0 + (dfloat)i * 25.0 + ((dfloat)rand() / (RAND_MAX));
                 bCenter[id].y = 10.0 + (dfloat)j * 25.0 + ((dfloat)rand() / (RAND_MAX));
                 bCenter[id].z = 10.0 + (dfloat)k * 25.0 + ((dfloat)rand() / (RAND_MAX));
-
                 id++;
+                if(id >= NUM_PARTICLES)
+                    break;
             }
+            if(id >= NUM_PARTICLES)
+                break;
         }
+        if(id >= NUM_PARTICLES)
+            break;
     }
 
-    printf("Creating particles: \n");
+    printf("Creating particles...\t"); fflush(stdout);
     for (int p = 0; p < NUM_PARTICLES; p++)
     {
         particles[p] = makeSpherePolar(PARTICLE_DIAMETER, bCenter[p], MESH_COULOMB, true);
     }
-
-    return particles;
+    printf("Particles created!\n"); fflush(stdout);
 }
 
 #endif // !IBM

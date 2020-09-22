@@ -13,7 +13,7 @@
 #include "../var.h"
 
 /* ------------------------------------------------------------------------- */
-#define NUM_PARTICLES 100  // total number of immersed boundaries in the system
+#define NUM_PARTICLES (1)  // total number of immersed boundaries in the system
 #define IBM_MAX_ITERATION 1 // Number of iterations
 
 // Stencil to use, define only one

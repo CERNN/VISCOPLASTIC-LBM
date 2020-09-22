@@ -33,8 +33,6 @@ void immersedBoundaryMethod(
         gpuForceInterpolationSpread<<<gridIBM, threadsIBM, 0, stream[0]>>>(
             particles.nodesSoA, particles.pCenterArray, macr);
         checkCudaErrors(cudaStreamSynchronize(stream[0]));
-
-
     }
 
 
@@ -171,9 +169,9 @@ void gpuForceInterpolationSpread(
                 // Dirac delta (kernel)
                 aux = stencil(x - xIBM)*stencil(y - yIBM)*stencil(z - zIBM);
 
-                atomicAdd((double*)&(macr->fx[idx]), (double) - deltaFx * aux);
-                atomicAdd((double*)&(macr->fy[idx]), (double) - deltaFy * aux);
-                atomicAdd((double*)&(macr->fz[idx]), (double) - deltaFz * aux);
+                atomicDoubleAdd((double*)&(macr->fx[idx]), (double) - deltaFx * aux);
+                atomicDoubleAdd((double*)&(macr->fy[idx]), (double) - deltaFy * aux);
+                atomicDoubleAdd((double*)&(macr->fz[idx]), (double) - deltaFz * aux);
             }
         }
     }
@@ -190,9 +188,9 @@ void gpuForceInterpolationSpread(
 
     // Add node force to particle center
     idx = particlesNodes.particleCenterIdx[i];
-    atomicAdd((double*)&(particleCenters[idx].f.x), (double) deltaFx);
-    atomicAdd((double*)&(particleCenters[idx].f.y), (double) deltaFy);
-    atomicAdd((double*)&(particleCenters[idx].f.z), (double) deltaFz);
+    atomicDoubleAdd((double*)&(particleCenters[idx].f.x), (double) deltaFx);
+    atomicDoubleAdd((double*)&(particleCenters[idx].f.y), (double) deltaFy);
+    atomicDoubleAdd((double*)&(particleCenters[idx].f.z), (double) deltaFz);
 }
 
 

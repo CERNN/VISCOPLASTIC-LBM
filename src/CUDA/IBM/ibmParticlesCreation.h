@@ -12,6 +12,6 @@
 #include "structs/particle.h"
 #include "ibmVar.h"
 
-Particle* createParticles();
+void createParticles(Particle particles[NUM_PARTICLES]);
 
 #endif // !__IBM_PARTICLES_CREATION_H

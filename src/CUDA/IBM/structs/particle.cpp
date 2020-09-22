@@ -16,13 +16,16 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
            (unsigned long)((totalIbmNodes * sizeof(particleNode) + NUM_PARTICLES * sizeof(particleCenter)) / BYTES_PER_MB));
     fflush(stdout);
 
+    printf("Allocating particles in GPU... \t"); fflush(stdout);
     this->nodesSoA.allocateMemory(totalIbmNodes);
-
     // Allocate particle center array
     checkCudaErrors(
         cudaMallocManaged((void**)&(this->pCenterArray), sizeof(ParticleCenter) * NUM_PARTICLES));
+    printf("Particles allocated in GPU!\n"); fflush(stdout);
 
     size_t baseIdx = 0;
+
+    printf("Optimizig memory layout of particles for GPU... \t"); fflush(stdout);
 
     for (int p = 0; p < NUM_PARTICLES; p++)
     {
@@ -32,10 +35,12 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
         baseIdx += particles[p].numNodes;
     }
 
-    printf("Particle positions :\n");
+    printf("Optimized memory layout for GPU!\n"); fflush(stdout);
+
+    printf("Particles positions:\n");
     for(int p = 0; p < NUM_PARTICLES; p++)
     {
-        printf("%u -- x: %f -- y: %f -- z: %f \n",
+        printf("p[%u] -- x: %f - y: %f - z: %f \n",
                p, this->pCenterArray[p].pos.x, 
                this->pCenterArray[p].pos.y, 
                this->pCenterArray[p].pos.z);
