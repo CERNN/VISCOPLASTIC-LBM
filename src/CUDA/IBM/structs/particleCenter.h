@@ -18,15 +18,18 @@
 */
 typedef struct particleCenter {
     dfloat3 pos;        // Particle center position
-    dfloat3 theta;      // Particle center rotation
+    dfloat3 pos_old;    // Old Particle center position
     dfloat3 vel;        // Particle center translation velocity
-    dfloat3 vel_old;    // Particle center translation velocity
+    dfloat3 vel_old;    // Old particle center translation velocity
     dfloat3 w;          // Particle center rotation velocity
-    dfloat3 w_old;      // Particle center rotation velocity
-    dfloat3 f;          // Sum of the forces acting in the Particle
-    dfloat3 M;          // Sum of moments acting the partticle
-    dfloat3 I;          // I innertia moement I.x =  Ixx
-    dfloat S;           // total area of the particle
+    dfloat3 w_avg;      // Average particle rotation (used by nodes in movement)
+    dfloat3 w_old;      // Old particle center rotation velocity
+    dfloat3 f;          // Sum of the forces acting on particle
+    dfloat3 f_old;      // Old sum of the forces acting on particle
+    dfloat3 M;          // Total momentum acting on particle
+    dfloat3 M_old;       // Old total momentum acting on particle
+    dfloat3 I;          // I innertia moment I.x = Ixx
+    dfloat S;           // Total area of the particle
     dfloat rho;         // Particle density relative to fluid
     dfloat mass_p;      // Particle mass
     dfloat mass_f;      // Fluid mass
@@ -37,6 +40,18 @@ typedef struct particleCenter {
     particleCenter()
     {
         // All dfloat3 variables are initialized as 0
+        pos = dfloat3();
+        pos_old = dfloat3();
+        vel = dfloat3();
+        vel_old = dfloat3();
+        w = dfloat3();
+        w_avg = dfloat3();
+        w_old = dfloat3();
+        f = dfloat3();
+        f_old = dfloat3();
+        M = dfloat3();
+        M_old = dfloat3();
+        I = dfloat3();
 
         S = 0;
         rho = 0;

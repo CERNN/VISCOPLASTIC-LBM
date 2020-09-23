@@ -28,7 +28,7 @@
 #define SRP 1.0 // Epsilon - successive relaxation parameter - DASH 2014
 
 #define ROTATION_LOCK true   // Lock particle rotation
-
+#define IBM_THICKNESS (1) // Assumed boundary thickness for IBM
 
 constexpr dfloat PARTICLE_DENSITY = 2.647;
 constexpr dfloat FLUID_DENSITY  = 1;

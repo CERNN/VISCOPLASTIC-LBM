@@ -35,7 +35,7 @@ void immersedBoundaryMethod(
 __global__
 void gpuForceInterpolationSpread(
     ParticleNodeSoA const particlesNodes,
-    ParticleCenter* const particleCenters,
+    ParticleCenter const particleCenters[NUM_PARTICLES],
     Macroscopics* const __restrict__ macr
 );
 
@@ -48,11 +48,21 @@ __global__
 void gpuResetNodesForces(ParticleNodeSoA* __restrict__ particleNodes);
 
 
-/*__host__ 
-void updateParticleCenterForce(
-    Particle* __restrict__ particleNode,
-    unsigned int numParticles
-);*/
+__host__
+void updateParticleCenterVelocityAndRotation(
+    ParticleCenter particleCenters[NUM_PARTICLES]
+);
+
+__host__
+void particleMovement(
+    ParticleCenter particleCenters[NUM_PARTICLES]
+);
+
+__global__
+void particleNodeMovement(
+    ParticleNodeSoA const particlesNodes,
+    ParticleCenter particleCenters[NUM_PARTICLES]
+);
 
 __host__ 
 dfloat3 particleCollisionSoft(
@@ -60,9 +70,5 @@ dfloat3 particleCollisionSoft(
     int particleIndex
 );
 
-__global__
-void particleMovement(
-    ParticleCenter* __restrict__ ParticleCenter
-);
 
 #endif // !__IBM_H
