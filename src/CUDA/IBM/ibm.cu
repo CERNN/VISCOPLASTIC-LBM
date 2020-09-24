@@ -12,17 +12,10 @@ __host__ void immersedBoundaryMethod(
     unsigned int threadsIBM,
     cudaStream_t *__restrict__ stream)
 {
-    //dim3 grid1(((totalIbmNodes % nThreads) ? (totalIbmNodes / nThreads + 1) : (totalIbmNodes / nThreads)), 1, 1);
-    //dim3 threads1(nThreads, 1, 1);
-
-    //dim3 grid2(((NX % nThreads) ? (NX / nThreads + 1) : (NX / nThreads)), NY, NZ);
-    //dim3 threads2(nThreads, 1, 1);
-
-    // TODO: Update Particle center and nodes for processing
-
     // TODO: Update it to multi GPU
     // Update macroscopics post streaming and reset forces
     gpuUpdateMacrResetForces<<<gridLBM, threadsLBM, 0, stream[0]>>>(pop[0], macr[0]);
+    gpuResetNodesForces<<<gridIBM, threadsIBM, 0, stream[0]>>>(particles.nodesSoA);
 
     checkCudaErrors(cudaStreamSynchronize(stream[0]));
 
@@ -42,14 +35,15 @@ __host__ void immersedBoundaryMethod(
     }
 
     // Update particle center position and its old values
-    particleMovement(particles.pCenterArray);
+    gpuParticleNodeMovement<<<gridIBM, threadsIBM, 0, stream[0]>>>(
+        particles.nodesSoA, particles.pCenterArray);
 
     // particleNodeMovement();
     checkCudaErrors(cudaStreamSynchronize(stream[0]));
 }
 
 __global__ void gpuForceInterpolationSpread(
-    ParticleNodeSoA particlesNodes,
+    ParticleNodeSoA const particlesNodes,
     ParticleCenter const particleCenters[NUM_PARTICLES],
     Macroscopics const macr)
 {
@@ -142,10 +136,6 @@ __global__ void gpuForceInterpolationSpread(
     particlesNodes.vel.y[i] = uyVar;
     particlesNodes.vel.z[i] = uzVar;
 
-
-    // printf("\nUz Calc %lf...\n", uz_cal);
-    // printf("\nUz Var %lf...\n", uzVar);
-
     const dfloat dA = particlesNodes.S[i];
     aux = 2 * rhoVar * dA * IBM_THICKNESS;
 
@@ -230,11 +220,11 @@ __global__ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr)
     for (unsigned char i = 0; i < Q; i++)
         fNode[i] = pop.pop[idxPop(x, y, z, i)];
 
-// calc for macroscopics
-// rho = sum(f[i])
-// ux = sum(f[i]*cx[i] + Fx/2) / rho
-// uy = sum(f[i]*cy[i] + Fy/2) / rho
-// uz = sum(f[i]*cz[i] + Fz/2) / rho
+    // calc for macroscopics
+    // rho = sum(f[i])
+    // ux = sum(f[i]*cx[i] + Fx/2) / rho
+    // uy = sum(f[i]*cy[i] + Fy/2) / rho
+    // uz = sum(f[i]*cz[i] + Fz/2) / rho
 #ifdef D3Q19
     const dfloat rhoVar = fNode[0] + fNode[1] + fNode[2] + fNode[3] + fNode[4] 
         + fNode[5] + fNode[6] + fNode[7] + fNode[8] + fNode[9] + fNode[10] 
@@ -275,15 +265,15 @@ __global__ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr)
     macr.uz[idx] = uzVar;
 }
 
-__global__ void gpuResetNodesForces(ParticleNodeSoA *const __restrict__ particleNodes)
+__global__ void gpuResetNodesForces(ParticleNodeSoA particlesNodes)
 {
     int idx = threadIdx.x + blockDim.x * blockIdx.x;
 
-    if (idx >= particleNodes->numNodes)
+    if (idx >= particlesNodes.numNodes)
         return;
 
-    const dfloat3SoA force = particleNodes->f;
-    const dfloat3SoA delta_force = particleNodes->deltaF;
+    const dfloat3SoA force = particlesNodes.f;
+    const dfloat3SoA delta_force = particlesNodes.deltaF;
 
     force.x[idx] = 0;
     force.y[idx] = 0;
@@ -369,81 +359,28 @@ void particleMovement(
     }
 }
 
-/*
-__host__ 
-void updateParticleCenterForce(
-    Particle* particle,
-    unsigned int numParticles)
-{
-    // TODO: move this to spread force kernel, except collision
-    // /* Old arguments
-    // unsigned int totalIbmNodes,
-    // unsigned int* qtdNos,
-    // ParticleCenter* particleCenter,
-    // dfloat3* nodePosition,
-    // dfloat3* nodeCumulativeForce,
-    // dfloat* nodeSurface,
-    // *
+__global__
+void gpuParticleNodeMovement(
+    ParticleNodeSoA const particlesNodes,
+    ParticleCenter particleCenters[NUM_PARTICLES]
+){
+    int i = threadIdx.x + blockDim.x * blockIdx.x;
 
-    //particle dynamics
-    int n, p;
-    dfloat fx = 0, fy = 0, fz = 0;
-    dfloat mx = 0, my = 0, mz = 0;
-    dfloat r_x = 0, r_y = 0, r_z = 0;
-    dfloat3 force;
+    if(i >= particlesNodes.numNodes)
+        return;
 
-    for (p = 0; p < NUM_PARTICLES; p++) {
-        fx = 0.0;
-        fy = 0.0;
-        fz = 0.0;
-        mx = 0.0;
-        my = 0.0;
-        mz = 0.0;
-        // determine forces
-        for (n = qtdNos[p]; n < qtdNos[p + 1]; n++) {
-            // TODO: update this
-            r_x = nodePosition[n].x - particleCenter[p].pos.x;
-            r_y = nodePosition[n].y - particleCenter[p].pos.y;
-            r_z = nodePosition[n].z - particleCenter[p].pos.z;
+    ParticleCenter pc = particleCenters[particlesNodes.particleCenterIdx[i]];
 
-            fx += (nodeCumulativeForce[n].x * nodeSurface[n]);
-            fy += (nodeCumulativeForce[n].y * nodeSurface[n]);
-            fz += (nodeCumulativeForce[n].z * nodeSurface[n]);
-
-            mx += r_y * (nodeCumulativeForce[n].z * nodeSurface[n]) - r_z * (nodeCumulativeForce[n].y * nodeSurface[n]);
-            my += r_z * (nodeCumulativeForce[n].x * nodeSurface[n]) - r_x * (nodeCumulativeForce[n].z * nodeSurface[n]);
-            mz += r_x * (nodeCumulativeForce[n].y * nodeSurface[n]) - r_y * (nodeCumulativeForce[n].x * nodeSurface[n]);
-        }
-
-        force = particleCollisionSoft(particleCenter, p);
-
- 
-        fx += force.x;
-        fy += force.y;
-        fz += force.z;
-
-        particleCenter[p].f.x = fx;
-        particleCenter[p].f.y = fy;
-        particleCenter[p].f.z = fz;
-
-        particleCenter[p].M.x = mx;
-        particleCenter[p].M.y = my;
-        particleCenter[p].M.z = mz;
-    }
+    // particlesNodes.pos.x[i] = ...;
+    // particlesNodes.pos.y[i] = ...;
+    // particlesNodes.pos.z[i] = ...;
 }
 
+/*
 __host__ 
 dfloat3 particleCollisionSoft(
     ParticleCenter* __restrict__ particleCenter,
     int particleIndex)
-{
-
-}
-
-
-__global__
-void particleMovement(
-    ParticleCenter const particleCenters[NUM_PARTICLES],)
 {
 
 }
