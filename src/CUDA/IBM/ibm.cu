@@ -35,10 +35,11 @@ __host__ void immersedBoundaryMethod(
     }
 
     // Update particle center position and its old values
+    particleMovement(particles.pCenterArray);
+    // Update particle nodes positions
     gpuParticleNodeMovement<<<gridIBM, threadsIBM, 0, stream[0]>>>(
         particles.nodesSoA, particles.pCenterArray);
 
-    // particleNodeMovement();
     checkCudaErrors(cudaStreamSynchronize(stream[0]));
 }
 
@@ -336,7 +337,7 @@ void particleMovement(
 {
     for (int p = 0; p < NUM_PARTICLES; p++){
         ParticleCenter *pc = &(particleCenters[p]);
-        
+
         pc->pos_old.x = pc->pos.x;
         pc->pos_old.y = pc->pos.y;
         pc->pos_old.z = pc->pos.z;
@@ -369,11 +370,36 @@ void gpuParticleNodeMovement(
     if(i >= particlesNodes.numNodes)
         return;
 
-    ParticleCenter pc = particleCenters[particlesNodes.particleCenterIdx[i]];
+    const ParticleCenter pc = particleCenters[particlesNodes.particleCenterIdx[i]];
 
-    // particlesNodes.pos.x[i] = ...;
-    // particlesNodes.pos.y[i] = ...;
-    // particlesNodes.pos.z[i] = ...;
+    // TODO: make the calculation of w_norm along with w_avg?
+    const dfloat w_norm = sqrt((pc.w_avg.x * pc.w_avg.x) 
+        + (pc.w_avg.y * pc.w_avg.y) 
+        + (pc.w_avg.z * pc.w_avg.z));
+
+    if(w_norm <= 1e-8)
+    {
+        particlesNodes.pos.x[i] += pc.pos.x - pc.pos_old.x;
+        particlesNodes.pos.y[i] += pc.pos.y - pc.pos_old.y;
+        particlesNodes.pos.z[i] += pc.pos.z - pc.pos_old.z; 
+        return;
+    }
+
+    // TODO: these variables are the same for every particle center, optimize it
+    const dfloat q0 = cos(0.5*w_norm);
+    const dfloat qi = (pc.w_avg.x/w_norm) * sin (0.5*w_norm);
+    const dfloat qj = (pc.w_avg.y/w_norm) * sin (0.5*w_norm);
+    const dfloat qk = (pc.w_avg.z/w_norm) * sin (0.5*w_norm);
+
+    const dfloat tq0m1 = (q0*q0) - 0.5;
+
+    const dfloat x_vec = particlesNodes.pos.x[i] - pc.pos_old.x;
+    const dfloat y_vec = particlesNodes.pos.y[i] - pc.pos_old.y;
+    const dfloat z_vec = particlesNodes.pos.z[i] - pc.pos_old.z;
+
+    particlesNodes.pos.x[i] = pc.pos.x + 2 * (   (tq0m1 + (qi*qi))*x_vec + ((qi*qj) - (q0*qk))*y_vec + ((qi*qk) + (q0*qj))*z_vec);
+    particlesNodes.pos.y[i] = pc.pos.y + 2 * ( ((qi*qj) + (q0*qk))*x_vec +   (tq0m1 + (qj*qj))*y_vec + ((qj*qk) - (q0*qi))*z_vec);
+    particlesNodes.pos.z[i] = pc.pos.z + 2 * ( ((qi*qj) - (q0*qj))*x_vec + ((qj*qk) + (q0*qi))*y_vec +   (tq0m1 + (qk*qk))*z_vec);
 }
 
 /*

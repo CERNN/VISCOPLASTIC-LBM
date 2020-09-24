@@ -14,7 +14,7 @@
 
 /* ------------------------------------------------------------------------- */
 #define NUM_PARTICLES (1)  // total number of immersed boundaries in the system
-#define IBM_MAX_ITERATION 1 // Number of iterations
+#define IBM_MAX_ITERATION 5 // Number of iterations
 
 // Stencil to use, define only one
 // #define STENCIL_2 
@@ -24,7 +24,6 @@
 #define PARTICLE_DIAMETER 15.0 // 22.99
 #define MESH_SCALE 1.0
 #define MESH_COULOMB 500
-#define IBM_MAX_ITERATION 1
 #define SRP 1.0 // Epsilon - successive relaxation parameter - DASH 2014
 
 #define ROTATION_LOCK true   // Lock particle rotation
