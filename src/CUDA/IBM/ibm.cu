@@ -22,35 +22,41 @@ __host__ void immersedBoundaryMethod(
 
     // TODO: Update it to multi GPU
     // Update macroscopics post streaming and reset forces
-    gpuUpdateMacrResetForces<<<gridLBM, threadsLBM, 0, stream[0]>>>(&pop[0], &macr[0]);
+    gpuUpdateMacrResetForces<<<gridLBM, threadsLBM, 0, stream[0]>>>(pop[0], macr[0]);
 
     checkCudaErrors(cudaStreamSynchronize(stream[0]));
 
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
         gpuForceInterpolationSpread<<<gridIBM, threadsIBM, 0, stream[0]>>>(
-            particles.nodesSoA, particles.pCenterArray, macr);
+            particles.nodesSoA, particles.pCenterArray, macr[0]);
+
+        // Update LBM velcoties and density
+        // TODO: update it in kernel with interpolation/spread
+        // TODO: update only velocities, since density is constant
+        gpuUpdateMacr<<<gridLBM, threadsLBM, 0, stream[0]>>>(pop[0], macr[0]);
         checkCudaErrors(cudaStreamSynchronize(stream[0]));
 
         // Update particle velocity using body center force and constant forces
         updateParticleCenterVelocityAndRotation(particles.pCenterArray);
     }
 
-    // particleMovement(); (update velocity, rotation velocity and position)
+    // Update particle center position and its old values
+    particleMovement(particles.pCenterArray);
 
     // particleNodeMovement();
     checkCudaErrors(cudaStreamSynchronize(stream[0]));
 }
 
 __global__ void gpuForceInterpolationSpread(
-    ParticleNodeSoA const particlesNodes,
+    ParticleNodeSoA particlesNodes,
     ParticleCenter const particleCenters[NUM_PARTICLES],
-    Macroscopics *const __restrict__ macr)
+    Macroscopics const macr)
 {
     // TODO: update atomic double add to use only if is double
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
 
-    if (i > particlesNodes.numNodes)
+    if (i >= particlesNodes.numNodes)
         return;
 
     dfloat aux; // aux variable for many things
@@ -123,18 +129,19 @@ __global__ void gpuForceInterpolationSpread(
                 // Dirac delta (kernel)
                 aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
 
-                rhoVar += macr->rho[idx] * aux;
-                uxVar += macr->ux[idx] * aux;
-                uyVar += macr->uy[idx] * aux;
-                uzVar += macr->uz[idx] * aux;
+                rhoVar += macr.rho[idx] * aux;
+                uxVar += macr.ux[idx] * aux;
+                uyVar += macr.uy[idx] * aux;
+                uzVar += macr.uz[idx] * aux;
+                
             }
         }
     }
 
-    //particlesNodes.pos.x[i];
     particlesNodes.vel.x[i] = uxVar;
     particlesNodes.vel.y[i] = uyVar;
     particlesNodes.vel.z[i] = uzVar;
+
 
     // printf("\nUz Calc %lf...\n", uz_cal);
     // printf("\nUz Var %lf...\n", uzVar);
@@ -163,9 +170,12 @@ __global__ void gpuForceInterpolationSpread(
                 // Dirac delta (kernel)
                 aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
 
-                atomicDoubleAdd((double *)&(macr->fx[idx]), (double)-deltaFx * aux);
-                atomicDoubleAdd((double *)&(macr->fy[idx]), (double)-deltaFy * aux);
-                atomicDoubleAdd((double *)&(macr->fz[idx]), (double)-deltaFz * aux);
+                // TODO: update rho and velocities of LBM here, but with 
+                // different array to not have concurrent problems with loading 
+                // the velocities
+                atomicDoubleAdd((double *)&(macr.fx[idx]), (double)-deltaFx * aux);
+                atomicDoubleAdd((double *)&(macr.fy[idx]), (double)-deltaFy * aux);
+                atomicDoubleAdd((double *)&(macr.fz[idx]), (double)-deltaFz * aux);
             }
         }
     }
@@ -200,7 +210,7 @@ __global__ void gpuForceInterpolationSpread(
     atomicDoubleAdd((double *)&(particleCenters[idx].M.z), (double)deltaMomentum.z);
 }
 
-__global__ void gpuUpdateMacrResetForces(Populations *__restrict__ pop, Macroscopics *__restrict__ macr)
+__global__ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr)
 {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
@@ -211,14 +221,14 @@ __global__ void gpuUpdateMacrResetForces(Populations *__restrict__ pop, Macrosco
     size_t idx = idxScalar(x, y, z);
 
     // Reset forces
-    macr->fx[idx] = FX;
-    macr->fy[idx] = FY;
-    macr->fz[idx] = FZ;
+    macr.fx[idx] = FX;
+    macr.fy[idx] = FY;
+    macr.fz[idx] = FZ;
 
     // load populations
     dfloat fNode[Q];
     for (unsigned char i = 0; i < Q; i++)
-        fNode[i] = pop->pop[idxPop(x, y, z, i)];
+        fNode[i] = pop.pop[idxPop(x, y, z, i)];
 
 // calc for macroscopics
 // rho = sum(f[i])
@@ -226,24 +236,43 @@ __global__ void gpuUpdateMacrResetForces(Populations *__restrict__ pop, Macrosco
 // uy = sum(f[i]*cy[i] + Fy/2) / rho
 // uz = sum(f[i]*cz[i] + Fz/2) / rho
 #ifdef D3Q19
-    const dfloat rhoVar = fNode[0] + fNode[1] + fNode[2] + fNode[3] + fNode[4] + fNode[5] + fNode[6] + fNode[7] + fNode[8] + fNode[9] + fNode[10] + fNode[11] + fNode[12] + fNode[13] + fNode[14] + fNode[15] + fNode[16] + fNode[17] + fNode[18];
+    const dfloat rhoVar = fNode[0] + fNode[1] + fNode[2] + fNode[3] + fNode[4] 
+        + fNode[5] + fNode[6] + fNode[7] + fNode[8] + fNode[9] + fNode[10] 
+        + fNode[11] + fNode[12] + fNode[13] + fNode[14] + fNode[15] + fNode[16] 
+        + fNode[17] + fNode[18];
     const dfloat invRho = 1 / rhoVar;
-    const dfloat uxVar = ((fNode[1] + fNode[7] + fNode[9] + fNode[13] + fNode[15]) - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16]) + 0.5 * FX) * invRho;
-    const dfloat uyVar = ((fNode[3] + fNode[7] + fNode[11] + fNode[14] + fNode[17]) - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18]) + 0.5 * FY) * invRho;
-    const dfloat uzVar = ((fNode[5] + fNode[9] + fNode[11] + fNode[16] + fNode[18]) - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17]) + 0.5 * FZ) * invRho;
+    const dfloat uxVar = ((fNode[1] + fNode[7] + fNode[9] + fNode[13] + fNode[15]) 
+    - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16]) + 0.5 * FX) * invRho;
+    const dfloat uyVar = ((fNode[3] + fNode[7] + fNode[11] + fNode[14] + fNode[17])
+     - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18]) + 0.5 * FY) * invRho;
+    const dfloat uzVar = ((fNode[5] + fNode[9] + fNode[11] + fNode[16] + fNode[18])
+     - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17]) + 0.5 * FZ) * invRho;
 #endif // !D3Q19
 #ifdef D3Q27
-    const dfloat rhoVar = fNode[0] + fNode[1] + fNode[2] + fNode[3] + fNode[4] + fNode[5] + fNode[6] + fNode[7] + fNode[8] + fNode[9] + fNode[10] + fNode[11] + fNode[12] + fNode[13] + fNode[14] + fNode[15] + fNode[16] + fNode[17] + fNode[18] + fNode[19] + fNode[20] + fNode[21] + fNode[22] + fNode[23] + fNode[24] + fNode[25] + fNode[26];
+    const dfloat rhoVar = fNode[0] + fNode[1] + fNode[2] + fNode[3] + fNode[4] 
+        + fNode[5] + fNode[6] + fNode[7] + fNode[8] + fNode[9] + fNode[10] 
+        + fNode[11] + fNode[12] + fNode[13] + fNode[14] + fNode[15] + fNode[16] 
+        + fNode[17] + fNode[18] + fNode[19] + fNode[20] + fNode[21] + fNode[22] 
+        + fNode[23] + fNode[24] + fNode[25] + fNode[26];
     const dfloat invRho = 1 / rhoVar;
-    const dfloat uxVar = ((fNode[1] + fNode[7] + fNode[9] + fNode[13] + fNode[15] + fNode[19] + fNode[21] + fNode[23] + fNode[26]) - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16] + fNode[20] + fNode[22] + fNode[24] + fNode[25]) + 0.5 * FX) * invRho;
-    const dfloat uyVar = ((fNode[3] + fNode[7] + fNode[11] + fNode[14] + fNode[17] + fNode[19] + fNode[21] + fNode[24] + fNode[25]) - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18] + fNode[20] + fNode[22] + fNode[23] + fNode[26]) + 0.5 * FY) * invRho;
-    const dfloat uzVar = ((fNode[5] + fNode[9] + fNode[11] + fNode[16] + fNode[18] + fNode[19] + fNode[22] + fNode[23] + fNode[25]) - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17] + fNode[20] + fNode[21] + fNode[24] + fNode[26]) + 0.5 * FZ) * invRho;
+    const dfloat uxVar = ((fNode[1] + fNode[7] + fNode[9] + fNode[13] + fNode[15] 
+        + fNode[19] + fNode[21] + fNode[23] + fNode[26]) 
+        - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16] + fNode[20] 
+        + fNode[22] + fNode[24] + fNode[25]) + 0.5 * FX) * invRho;
+    const dfloat uyVar = ((fNode[3] + fNode[7] + fNode[11] + fNode[14] + fNode[17]
+        + fNode[19] + fNode[21] + fNode[24] + fNode[25]) 
+        - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18] + fNode[20] 
+        + fNode[22] + fNode[23] + fNode[26]) + 0.5 * FY) * invRho;
+    const dfloat uzVar = ((fNode[5] + fNode[9] + fNode[11] + fNode[16] + fNode[18]
+        + fNode[19] + fNode[22] + fNode[23] + fNode[25]) 
+        - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17] + fNode[20] 
+        + fNode[21] + fNode[24] + fNode[26]) + 0.5 * FZ) * invRho;
 #endif // !D3Q27
 
-    macr->rho[idx] = rhoVar;
-    macr->ux[idx] = uxVar;
-    macr->uy[idx] = uyVar;
-    macr->uz[idx] = uzVar;
+    macr.rho[idx] = rhoVar;
+    macr.ux[idx] = uxVar;
+    macr.uy[idx] = uyVar;
+    macr.uz[idx] = uzVar;
 }
 
 __global__ void gpuResetNodesForces(ParticleNodeSoA *const __restrict__ particleNodes)

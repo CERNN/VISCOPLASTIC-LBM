@@ -33,11 +33,27 @@ void gpuMacrCollisionStream(
     for (char i = 0; i < Q; i++)
         fNode[i] = pop[idxPop(x, y, z, i)];
 
+    #ifdef IBM
+    const dfloat fxVar = macr.fx[idxScalar(x, y, z)];
+    const dfloat fyVar = macr.fy[idxScalar(x, y, z)];
+    const dfloat fzVar = macr.fz[idxScalar(x, y, z)];
+    const dfloat fxVar_D3 = fxVar / 3;
+    const dfloat fyVar_D3 = fyVar / 3;
+    const dfloat fzVar_D3 = fzVar / 3;
+    #else
+    const dfloat fxVar = FX;
+    const dfloat fyVar = FY;
+    const dfloat fzVar = FZ;
+    const dfloat fxVar_D3 = FX / 3;
+    const dfloat fyVar_D3 = FY / 3;
+    const dfloat fzVar_D3 = FZ / 3;
+    #endif
+
     // Calculate macroscopics
     // rho = sum(f[i])
-    // ux = (sum(f[i]*cx[i])+0.5*FX) / rho
-    // uy = (sum(f[i]*cy[i])+0.5*FY) / rho
-    // uz = (sum(f[i]*cz[i])+0.5*FZ) / rho
+    // ux = (sum(f[i]*cx[i])+0.5*fxVar) / rho
+    // uy = (sum(f[i]*cy[i])+0.5*fyVar) / rho
+    // uz = (sum(f[i]*cz[i])+0.5*fzVar) / rho
     #ifdef D3Q19
     const dfloat rhoVar = fNode[0] + fNode[1] + fNode[2] + fNode[3] + fNode[4] 
         + fNode[5] + fNode[6] + fNode[7] + fNode[8] + fNode[9] + fNode[10] 
@@ -45,11 +61,11 @@ void gpuMacrCollisionStream(
         + fNode[17] + fNode[18];
     const dfloat invRho = 1/rhoVar;
     const dfloat uxVar = ((fNode[1] + fNode[7] + fNode[9] + fNode[13] + fNode[15])
-        - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16]) + 0.5*FX) * invRho;
+        - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16]) + 0.5*fxVar) * invRho;
     const dfloat uyVar = ((fNode[3] + fNode[7] + fNode[11] + fNode[14] + fNode[17])
-        - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18]) + 0.5*FY) * invRho;
+        - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18]) + 0.5*fyVar) * invRho;
     const dfloat uzVar = ((fNode[5] + fNode[9] + fNode[11] + fNode[16] + fNode[18])
-        - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17]) + 0.5*FZ) * invRho;
+        - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17]) + 0.5*fzVar) * invRho;
     #endif // !D3Q19
     #ifdef D3Q27
     const dfloat rhoVar = fNode[0] + fNode[1] + fNode[2] + fNode[3] + fNode[4] 
@@ -61,15 +77,15 @@ void gpuMacrCollisionStream(
     const dfloat uxVar = ((fNode[1] + fNode[7] + fNode[9] + fNode[13] + fNode[15]
         + fNode[19] + fNode[21] + fNode[23] + fNode[26]) 
         - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16] + fNode[20]
-        + fNode[22] + fNode[24] + fNode[25]) + 0.5*FX) * invRho;
+        + fNode[22] + fNode[24] + fNode[25]) + 0.5*fxVar) * invRho;
     const dfloat uyVar = ((fNode[3] + fNode[7] + fNode[11] + fNode[14] + fNode[17]
         + fNode[19] + fNode[21] + fNode[24] + fNode[25])
         - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18] + fNode[20]
-        + fNode[22] + fNode[23] + fNode[26]) + 0.5*FY) * invRho;
+        + fNode[22] + fNode[23] + fNode[26]) + 0.5*fyVar) * invRho;
     const dfloat uzVar = ((fNode[5] + fNode[9] + fNode[11] + fNode[16] + fNode[18]
         + fNode[19] + fNode[22] + fNode[23] + fNode[25])
         - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17] + fNode[20]
-        + fNode[21] + fNode[24] + fNode[26]) + 0.5*FZ) * invRho;
+        + fNode[21] + fNode[24] + fNode[26]) + 0.5*fzVar) * invRho;
     #endif // !D3Q27
 
     if (save)
@@ -173,10 +189,10 @@ void gpuMacrCollisionStream(
     // terms[3] -> population 3
     // terms[4] -> population 4
     terms[0] = -pineqXX/3 - pineqYY/3 - pineqZZ/3;
-    terms[1] = terms[0] + (-FX_D3 + pineqXX);
-    terms[2] = terms[0] + ( FX_D3 + pineqXX);
-    terms[3] = terms[0] + (-FY_D3 + pineqYY);
-    terms[4] = terms[0] + ( FY_D3 + pineqYY);
+    terms[1] = terms[0] + (-fxVar_D3 + pineqXX);
+    terms[2] = terms[0] + ( fxVar_D3 + pineqXX);
+    terms[3] = terms[0] + (-fyVar_D3 + pineqYY);
+    terms[4] = terms[0] + ( fyVar_D3 + pineqYY);
     #ifdef D3Q27
     // terms[5] -> population 7
     // terms[6] -> population 8
@@ -184,12 +200,12 @@ void gpuMacrCollisionStream(
     // terms[8] -> population 10
     // terms[9] -> population 11
     // terms[10] -> population 12
-    terms[5] = terms[1] + (-FY_D3 + pineqXYt2 + pineqYY);
-    terms[6] = terms[2] + ( FY_D3 + pineqXYt2 + pineqYY);
-    terms[7] = terms[1] + (-FZ_D3 + pineqXZt2 + pineqZZ);
-    terms[8] = terms[2] + ( FZ_D3 + pineqXZt2 + pineqZZ);
-    terms[9] = terms[3] + (-FZ_D3 + pineqYZt2 + pineqZZ);
-    terms[10] = terms[4] + ( FZ_D3 + pineqYZt2 + pineqZZ);
+    terms[5] = terms[1] + (-fyVar_D3 + pineqXYt2 + pineqYY);
+    terms[6] = terms[2] + ( fyVar_D3 + pineqXYt2 + pineqYY);
+    terms[7] = terms[1] + (-fzVar_D3 + pineqXZt2 + pineqZZ);
+    terms[8] = terms[2] + ( fzVar_D3 + pineqXZt2 + pineqZZ);
+    terms[9] = terms[3] + (-fzVar_D3 + pineqYZt2 + pineqZZ);
+    terms[10] = terms[4] + ( fzVar_D3 + pineqYZt2 + pineqZZ);
     #endif
     
     // Calculate regularized population to fNode
@@ -202,31 +218,31 @@ void gpuMacrCollisionStream(
     fNode[2] = multiplyTerm*terms[2];
     fNode[3] = multiplyTerm*terms[3];
     fNode[4] = multiplyTerm*terms[4];
-    fNode[5] = multiplyTerm*(terms[0] + (-FZ_D3 + pineqZZ));
-    fNode[6] = multiplyTerm*(terms[0] + ( FZ_D3 + pineqZZ));
+    fNode[5] = multiplyTerm*(terms[0] + (-fzVar_D3 + pineqZZ));
+    fNode[6] = multiplyTerm*(terms[0] + ( fzVar_D3 + pineqZZ));
     multiplyTerm = W2t9d2;
-    fNode[7] = multiplyTerm*(terms[1] + (-FY_D3 + pineqXYt2 + pineqYY));
-    fNode[8] = multiplyTerm*(terms[2] + ( FY_D3 + pineqXYt2 + pineqYY));
-    fNode[9] = multiplyTerm*(terms[1] + (-FZ_D3 + pineqXZt2 + pineqZZ));
-    fNode[10] = multiplyTerm*(terms[2] + ( FZ_D3 + pineqXZt2 + pineqZZ));
-    fNode[11] = multiplyTerm*(terms[3] + (-FZ_D3 + pineqYZt2 + pineqZZ));
-    fNode[12] = multiplyTerm*(terms[4] + ( FZ_D3 + pineqYZt2 + pineqZZ));
-    fNode[13] = multiplyTerm*(terms[1] + ( FY_D3 - pineqXYt2 + pineqYY));
-    fNode[14] = multiplyTerm*(terms[2] + (-FY_D3 - pineqXYt2 + pineqYY));
-    fNode[15] = multiplyTerm*(terms[1] + ( FZ_D3 - pineqXZt2 + pineqZZ));
-    fNode[16] = multiplyTerm*(terms[2] + (-FZ_D3 - pineqXZt2 + pineqZZ));
-    fNode[17] = multiplyTerm*(terms[3] + ( FZ_D3 - pineqYZt2 + pineqZZ));
-    fNode[18] = multiplyTerm*(terms[4] + (-FZ_D3 - pineqYZt2 + pineqZZ));
+    fNode[7] = multiplyTerm*(terms[1] + (-fyVar_D3 + pineqXYt2 + pineqYY));
+    fNode[8] = multiplyTerm*(terms[2] + ( fyVar_D3 + pineqXYt2 + pineqYY));
+    fNode[9] = multiplyTerm*(terms[1] + (-fzVar_D3 + pineqXZt2 + pineqZZ));
+    fNode[10] = multiplyTerm*(terms[2] + ( fzVar_D3 + pineqXZt2 + pineqZZ));
+    fNode[11] = multiplyTerm*(terms[3] + (-fzVar_D3 + pineqYZt2 + pineqZZ));
+    fNode[12] = multiplyTerm*(terms[4] + ( fzVar_D3 + pineqYZt2 + pineqZZ));
+    fNode[13] = multiplyTerm*(terms[1] + ( fyVar_D3 - pineqXYt2 + pineqYY));
+    fNode[14] = multiplyTerm*(terms[2] + (-fyVar_D3 - pineqXYt2 + pineqYY));
+    fNode[15] = multiplyTerm*(terms[1] + ( fzVar_D3 - pineqXZt2 + pineqZZ));
+    fNode[16] = multiplyTerm*(terms[2] + (-fzVar_D3 - pineqXZt2 + pineqZZ));
+    fNode[17] = multiplyTerm*(terms[3] + ( fzVar_D3 - pineqYZt2 + pineqZZ));
+    fNode[18] = multiplyTerm*(terms[4] + (-fzVar_D3 - pineqYZt2 + pineqZZ));
     #ifdef D3Q27
     multiplyTerm = W3t9d2;
-    fNode[19] = multiplyTerm*(terms[5] + (-FZ_D3 + pineqXZt2 + pineqYZt2 + pineqZZ));
-    fNode[20] = multiplyTerm*(terms[6] + ( FZ_D3 + pineqXZt2 + pineqYZt2 + pineqZZ));
-    fNode[21] = multiplyTerm*(terms[5] + ( FZ_D3 - pineqXZt2 - pineqYZt2 + pineqZZ));
-    fNode[22] = multiplyTerm*(terms[6] + (-FZ_D3 - pineqXZt2 - pineqYZt2 + pineqZZ));
-    fNode[23] = multiplyTerm*(terms[7] + ( FY_D3 - pineqXYt2 + pineqYY - pineqYZt2));
-    fNode[24] = multiplyTerm*(terms[8] + (-FY_D3 - pineqXYt2 + pineqYY - pineqYZt2));
-    fNode[25] = multiplyTerm*(terms[9] + ( FX_D3 + pineqXX - pineqXYt2 - pineqXZt2));
-    fNode[26] = multiplyTerm*(terms[10] + (-FX_D3 + pineqXX - pineqXYt2 - pineqXZt2));
+    fNode[19] = multiplyTerm*(terms[5] + (-fzVar_D3 + pineqXZt2 + pineqYZt2 + pineqZZ));
+    fNode[20] = multiplyTerm*(terms[6] + ( fzVar_D3 + pineqXZt2 + pineqYZt2 + pineqZZ));
+    fNode[21] = multiplyTerm*(terms[5] + ( fzVar_D3 - pineqXZt2 - pineqYZt2 + pineqZZ));
+    fNode[22] = multiplyTerm*(terms[6] + (-fzVar_D3 - pineqXZt2 - pineqYZt2 + pineqZZ));
+    fNode[23] = multiplyTerm*(terms[7] + ( fyVar_D3 - pineqXYt2 + pineqYY - pineqYZt2));
+    fNode[24] = multiplyTerm*(terms[8] + (-fyVar_D3 - pineqXYt2 + pineqYY - pineqYZt2));
+    fNode[25] = multiplyTerm*(terms[9] + ( fxVar_D3 + pineqXX - pineqXYt2 - pineqXZt2));
+    fNode[26] = multiplyTerm*(terms[10] + (-fxVar_D3 + pineqXX - pineqXYt2 - pineqXZt2));
     #endif
 
     // Collision to fNode:
@@ -312,15 +328,15 @@ void gpuMacrCollisionStream(
     // term[3] -> population 7
     // term[4] -> population 9
     // term[5] -> population 11
-    terms[0] = - FX*ux3 - FY*uy3 - FZ*uz3;
-    terms[1] = terms[0] + (FX*( 3*ux3 + 3));
-    terms[2] = terms[0] + (FY*( 3*uy3 + 3));
-    terms[3] = terms[1] + (FX*( 3*uy3) + FY*( 3*ux3 + 3*uy3 + 3));
-    terms[4] = terms[1] + (FX*( 3*uz3) + FZ*( 3*ux3 + 3*uz3 + 3));
-    terms[5] = terms[2] + (FY*( 3*uz3) + FZ*( 3*uy3 + 3*uz3 + 3));
+    terms[0] = - fxVar*ux3 - fyVar*uy3 - fzVar*uz3;
+    terms[1] = terms[0] + (fxVar*( 3*ux3 + 3));
+    terms[2] = terms[0] + (fyVar*( 3*uy3 + 3));
+    terms[3] = terms[1] + (fxVar*( 3*uy3) + fyVar*( 3*ux3 + 3*uy3 + 3));
+    terms[4] = terms[1] + (fxVar*( 3*uz3) + fzVar*( 3*ux3 + 3*uz3 + 3));
+    terms[5] = terms[2] + (fyVar*( 3*uz3) + fzVar*( 3*uy3 + 3*uz3 + 3));
     #ifdef D3Q27
     // term[6] -> population 19
-    terms[6] = terms[3] + (FX*( 3*uz3) + FY*( 3*uz3) + FZ*( 3*ux3 + 3*uy3 + 3*uz3 + 3));
+    terms[6] = terms[3] + (fxVar*( 3*uz3) + fyVar*( 3*uz3) + fzVar*( 3*ux3 + 3*uy3 + 3*uz3 + 3));
     #endif
 
     // fNode += TT_OMEGA * force
@@ -328,41 +344,41 @@ void gpuMacrCollisionStream(
     fNode[0] += multiplyTerm*terms[0];
     multiplyTerm = W1*TT_OMEGA;
     fNode[1] += multiplyTerm*terms[1];
-    fNode[2] += multiplyTerm*(terms[1] + (FX*(-6)));
+    fNode[2] += multiplyTerm*(terms[1] + (fxVar*(-6)));
     fNode[3] += multiplyTerm*terms[2];
-    fNode[4] += multiplyTerm*(terms[2] + (FY*(-6)));
-    auxTerm = terms[0] + (FZ*( 3*uz3 + 3));
+    fNode[4] += multiplyTerm*(terms[2] + (fyVar*(-6)));
+    auxTerm = terms[0] + (fzVar*( 3*uz3 + 3));
     fNode[5] += multiplyTerm*auxTerm;
-    fNode[6] += multiplyTerm*(auxTerm + (FZ*(-6)));
+    fNode[6] += multiplyTerm*(auxTerm + (fzVar*(-6)));
     multiplyTerm = W2*TT_OMEGA;
     fNode[7] += multiplyTerm*terms[3];
-    fNode[8] += multiplyTerm*(terms[3] + (FX*(-6) + FY*(-6)));
+    fNode[8] += multiplyTerm*(terms[3] + (fxVar*(-6) + fyVar*(-6)));
     fNode[9] += multiplyTerm*terms[4];
-    fNode[10] += multiplyTerm*(terms[4] + (FX*(-6) + FZ*(-6)));
+    fNode[10] += multiplyTerm*(terms[4] + (fxVar*(-6) + fzVar*(-6)));
     fNode[11] += multiplyTerm*(terms[5]);
-    fNode[12] += multiplyTerm*(terms[5] + (FY*(-6) + FZ*(-6)));
-    auxTerm = terms[3] + (FX*(-6*uy3) + FY*(-6*ux3 - 6));
+    fNode[12] += multiplyTerm*(terms[5] + (fyVar*(-6) + fzVar*(-6)));
+    auxTerm = terms[3] + (fxVar*(-6*uy3) + fyVar*(-6*ux3 - 6));
     fNode[13] += multiplyTerm*(auxTerm);
-    fNode[14] += multiplyTerm*(auxTerm + (FX*(-6) + FY*( 6)));
-    auxTerm = terms[4] + (FX*(-6*uz3) + FZ*(-6*ux3 - 6));
+    fNode[14] += multiplyTerm*(auxTerm + (fxVar*(-6) + fyVar*( 6)));
+    auxTerm = terms[4] + (fxVar*(-6*uz3) + fzVar*(-6*ux3 - 6));
     fNode[15] += multiplyTerm*auxTerm;
-    fNode[16] += multiplyTerm*(auxTerm + (FX*(-6) + FZ*( 6)));
-    auxTerm = terms[5] + (FY*(-6*uz3) + FZ*(-6*uy3 - 6));
+    fNode[16] += multiplyTerm*(auxTerm + (fxVar*(-6) + fzVar*( 6)));
+    auxTerm = terms[5] + (fyVar*(-6*uz3) + fzVar*(-6*uy3 - 6));
     fNode[17] += multiplyTerm*auxTerm;
-    fNode[18] += multiplyTerm*(auxTerm + (FY*(-6) + FZ*( 6)));
+    fNode[18] += multiplyTerm*(auxTerm + (fyVar*(-6) + fzVar*( 6)));
     #ifdef D3Q27
     multiplyTerm = W3*TT_OMEGA;
     fNode[19] += multiplyTerm*terms[6];
-    fNode[20] += multiplyTerm*(terms[6] + (FX*(-6) + FY*(-6) + FZ*(-6)));
-    auxTerm = terms[6] + (FX*(-6*uz3) + FY*(-6*uz3) + FZ*(-6*ux3 - 6*uy3 - 6));
+    fNode[20] += multiplyTerm*(terms[6] + (fxVar*(-6) + fyVar*(-6) + fzVar*(-6)));
+    auxTerm = terms[6] + (fxVar*(-6*uz3) + fyVar*(-6*uz3) + fzVar*(-6*ux3 - 6*uy3 - 6));
     fNode[21] += multiplyTerm*auxTerm;
-    fNode[22] += multiplyTerm*(auxTerm + (FX*(-6) + FY*(-6) + FZ*( 6)));
-    auxTerm = terms[6] + (FX*(-6*uy3) + FY*(-6*ux3 - 6*uz3 - 6) + FZ*(-6*uy3));
+    fNode[22] += multiplyTerm*(auxTerm + (fxVar*(-6) + fyVar*(-6) + fzVar*( 6)));
+    auxTerm = terms[6] + (fxVar*(-6*uy3) + fyVar*(-6*ux3 - 6*uz3 - 6) + fzVar*(-6*uy3));
     fNode[23] += multiplyTerm*auxTerm;
-    fNode[24] += multiplyTerm*(auxTerm + (FX*(-6) + FY*( 6) + FZ*(-6)));
-    auxTerm = terms[6] + (FX*(-6*uy3 - 6*uz3 - 6) + FY*(-6*ux3) + FZ*(-6*ux3));
+    fNode[24] += multiplyTerm*(auxTerm + (fxVar*(-6) + fyVar*( 6) + fzVar*(-6)));
+    auxTerm = terms[6] + (fxVar*(-6*uy3 - 6*uz3 - 6) + fyVar*(-6*ux3) + fzVar*(-6*ux3));
     fNode[25] += multiplyTerm*auxTerm;
-    fNode[26] += multiplyTerm*(auxTerm + (FX*( 6) + FY*(-6) + FZ*(-6)));
+    fNode[26] += multiplyTerm*(auxTerm + (fxVar*( 6) + fyVar*(-6) + fzVar*(-6)));
     #endif
 
     // Save post collision populations of boundary conditions nodes
@@ -419,10 +435,21 @@ void gpuUpdateMacr(
     if (x >= NX || y >= NY || z >= NZ)
         return;
 
+    size_t idx_s = idxScalar(x, y, z);
     // load populations
     dfloat fNode[Q];
     for (unsigned char i = 0; i < Q; i++)
         fNode[i] = pop.pop[idxPop(x, y, z, i)];
+
+    #ifdef IBM
+    const dfloat fxVar = macr.fx[idx_s];
+    const dfloat fyVar = macr.fy[idx_s];;
+    const dfloat fzVar = macr.fz[idx_s];;
+    #else
+    const dfloat fxVar = FX;
+    const dfloat fyVar = FY;
+    const dfloat fzVar = FZ;
+    #endif
 
     // calc for macroscopics
     // rho = sum(f[i])
@@ -436,11 +463,11 @@ void gpuUpdateMacr(
         + fNode[17] + fNode[18];
     const dfloat invRho = 1/rhoVar;
     const dfloat uxVar = ((fNode[1] + fNode[7] + fNode[9] + fNode[13] + fNode[15])
-        - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16]) + 0.5*FX) * invRho;
+        - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16]) + 0.5*fxVar) * invRho;
     const dfloat uyVar = ((fNode[3] + fNode[7] + fNode[11] + fNode[14] + fNode[17])
-        - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18]) + 0.5*FY) * invRho;
+        - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18]) + 0.5*fyVar) * invRho;
     const dfloat uzVar = ((fNode[5] + fNode[9] + fNode[11] + fNode[16] + fNode[18])
-        - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17]) + 0.5*FZ) * invRho;
+        - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17]) + 0.5*fzVar) * invRho;
     #endif // !D3Q19
     #ifdef D3Q27
     const dfloat rhoVar = fNode[0] + fNode[1] + fNode[2] + fNode[3] + fNode[4] 
@@ -452,20 +479,20 @@ void gpuUpdateMacr(
     const dfloat uxVar = ((fNode[1] + fNode[7] + fNode[9] + fNode[13] + fNode[15]
         + fNode[19] + fNode[21] + fNode[23] + fNode[26]) 
         - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16] + fNode[20]
-        + fNode[22] + fNode[24] + fNode[25]) + 0.5*FX) * invRho;
+        + fNode[22] + fNode[24] + fNode[25]) + 0.5*fxVar) * invRho;
     const dfloat uyVar = ((fNode[3] + fNode[7] + fNode[11] + fNode[14] + fNode[17]
         + fNode[19] + fNode[21] + fNode[24] + fNode[25])
         - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18] + fNode[20]
-        + fNode[22] + fNode[23] + fNode[26]) + 0.5*FY) * invRho;
+        + fNode[22] + fNode[23] + fNode[26]) + 0.5*fyVar) * invRho;
     const dfloat uzVar = ((fNode[5] + fNode[9] + fNode[11] + fNode[16] + fNode[18]
         + fNode[19] + fNode[22] + fNode[23] + fNode[25])
         - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17] + fNode[20]
-        + fNode[21] + fNode[24] + fNode[26]) + 0.5*FZ) * invRho;
+        + fNode[21] + fNode[24] + fNode[26]) + 0.5*fzVar) * invRho;
     #endif // !D3Q27
-    macr.rho[idxScalar(x, y, z)] = rhoVar;
-    macr.ux[idxScalar(x, y, z)] = uxVar;
-    macr.uy[idxScalar(x, y, z)] = uyVar;
-    macr.uz[idxScalar(x, y, z)] = uzVar;
+    macr.rho[idx_s] = rhoVar;
+    macr.ux[idx_s] = uxVar;
+    macr.uy[idx_s] = uyVar;
+    macr.uz[idx_s] = uzVar;
 }
 
 

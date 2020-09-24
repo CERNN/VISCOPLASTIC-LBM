@@ -54,7 +54,6 @@ int main()
     #ifdef IBM
     Particle particles[NUM_PARTICLES];
     ParticlesSoA particlesSoA;
-    dim3 gridIBM, threadsIBM;
     #endif
 
     // Setup saving folder
@@ -111,7 +110,12 @@ int main()
     /* ------------------ IBM ALLOCATION AND CONFIGURATION ------------------ */
     #ifdef IBM
     createParticles(particles);
+
     particlesSoA.updateParticlesAsSoA(particles);
+
+    const unsigned int threadsIBM = 64;
+    const unsigned int pNumNodes = particlesSoA.nodesSoA.numNodes;
+    const unsigned int gridIBM = pNumNodes % threadsIBM ? pNumNodes / threadsIBM + 1 : pNumNodes / threadsIBM;
     #endif
     /* ---------------------------------------------------------------------- */
 
@@ -295,6 +299,13 @@ int main()
             checkCudaErrors(cudaDeviceSynchronize());
             pop[i].swapPop();
         }
+
+        // IBM
+        #ifdef IBM
+        immersedBoundaryMethod(
+            particlesSoA, macr, pop, grid, threads,
+            gridIBM, threadsIBM, streamsKernelLBM);
+        #endif
 
         // Synchronizing data (macroscopics) between GPU and CPU
         if(save || rep)

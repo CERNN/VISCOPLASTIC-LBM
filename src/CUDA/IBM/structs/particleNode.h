@@ -46,9 +46,9 @@ typedef struct particleNodeSoA {
     particleNodeSoA();
     ~particleNodeSoA();
 
-    void allocateMemory(size_t numNodes);
+    void allocateMemory(unsigned int numNodes);
     void freeMemory();
-    void copyNodesFromParticle(struct particle p, unsigned int pCenterIdx, size_t baseIdx);
+    void copyNodesFromParticle(struct particle p, unsigned int pCenterIdx, unsigned int baseIdx);
 
 } ParticleNodeSoA;
 

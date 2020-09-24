@@ -14,6 +14,7 @@
 #include "ibmVar.h"
 
 #include "ibmGlobalFunctions.h"
+#include "../lbm.h"
 #include "../structs/macroscopics.h"
 #include "../structs/populations.h"
 #include "../structs/globalStructs.h"
@@ -34,14 +35,14 @@ void immersedBoundaryMethod(
 
 __global__
 void gpuForceInterpolationSpread(
-    ParticleNodeSoA const particlesNodes,
+    ParticleNodeSoA particlesNodes,
     ParticleCenter const particleCenters[NUM_PARTICLES],
-    Macroscopics* const __restrict__ macr
+    Macroscopics const macr
 );
 
 
 __global__
-void gpuUpdateMacrResetForces(Populations* __restrict__ pop, Macroscopics* __restrict__ macr);
+void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr);
 
 
 __global__

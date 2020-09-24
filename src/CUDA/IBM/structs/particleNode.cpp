@@ -13,15 +13,15 @@ ParticleNodeSoA::~particleNodeSoA()
     this->S = nullptr;
 }
 
-void ParticleNodeSoA::allocateMemory(size_t numNodes)
+void ParticleNodeSoA::allocateMemory(unsigned int numNodes)
 {
     this->numNodes = numNodes;
 
-    this->pos.allocateMemory(numNodes);
-    this->vel.allocateMemory(numNodes);
-    this->vel_old.allocateMemory(numNodes);
-    this->f.allocateMemory(numNodes);
-    this->deltaF.allocateMemory(numNodes);
+    this->pos.allocateMemory((size_t) numNodes);
+    this->vel.allocateMemory((size_t) numNodes);
+    this->vel_old.allocateMemory((size_t) numNodes);
+    this->f.allocateMemory((size_t) numNodes);
+    this->deltaF.allocateMemory((size_t) numNodes);
 
     checkCudaErrors(
         cudaMallocManaged((void**)&(this->S), sizeof(dfloat) * numNodes));
@@ -43,7 +43,7 @@ void ParticleNodeSoA::freeMemory()
     cudaFree(this->particleCenterIdx);
 }
 
-void ParticleNodeSoA::copyNodesFromParticle(Particle p, unsigned int pCenterIdx, size_t baseIdx)
+void ParticleNodeSoA::copyNodesFromParticle(Particle p, unsigned int pCenterIdx, unsigned int baseIdx)
 {
     for (int i = 0; i < p.numNodes; i++)
     {
