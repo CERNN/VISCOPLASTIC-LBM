@@ -443,8 +443,8 @@ void gpuUpdateMacr(
 
     #ifdef IBM
     const dfloat fxVar = macr.fx[idx_s];
-    const dfloat fyVar = macr.fy[idx_s];;
-    const dfloat fzVar = macr.fz[idx_s];;
+    const dfloat fyVar = macr.fy[idx_s];
+    const dfloat fzVar = macr.fz[idx_s];
     #else
     const dfloat fxVar = FX;
     const dfloat fyVar = FY;
