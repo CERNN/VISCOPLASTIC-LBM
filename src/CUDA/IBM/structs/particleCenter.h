@@ -34,6 +34,7 @@ typedef struct particleCenter {
     dfloat mass_p;      // Particle mass
     dfloat mass_f;      // Fluid mass
     dfloat radius;
+    dfloat volume;
     bool movable;       // If the particle can move
 
     /* Constructor */
@@ -58,6 +59,7 @@ typedef struct particleCenter {
         mass_p = 0;
         mass_f = 0;
         radius = 0;
+        volume = 0;
         movable = false;
     }
 } ParticleCenter;

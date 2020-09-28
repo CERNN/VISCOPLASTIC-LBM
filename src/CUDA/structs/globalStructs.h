@@ -21,9 +21,9 @@ typedef struct dfloat3 {
     __host__ __device__
     dfloat3()
     {
-        x = 0;
-        y = 0;
-        z = 0;
+        this->x = 0;
+        this->y = 0;
+        this->z = 0;
     }
 } dfloat3;
 

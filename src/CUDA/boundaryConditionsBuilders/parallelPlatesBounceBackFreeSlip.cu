@@ -1,5 +1,5 @@
 /*
-*   @file parallelPlatesZouHe.cu
+*   @file parallelPlatesBounceBackFreeSlip.cu
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Parallel plates using bounce boundary conditions in walls,
 *          periodic condition in flow direction and force in Z

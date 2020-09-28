@@ -23,7 +23,7 @@
 __host__
 void immersedBoundaryMethod(
     ParticlesSoA particles,
-    Macroscopics* const __restrict__ macr,
+    Macroscopics* __restrict__ macr,
     Populations* const __restrict__ pop,
     dim3 gridLBM,
     dim3 threadsLBM,
@@ -35,8 +35,8 @@ void immersedBoundaryMethod(
 
 __global__
 void gpuForceInterpolationSpread(
-    ParticleNodeSoA const particlesNodes,
-    ParticleCenter const particleCenters[NUM_PARTICLES],
+    ParticleNodeSoA particlesNodes,
+    ParticleCenter particleCenters[NUM_PARTICLES],
     Macroscopics const macr
 );
 

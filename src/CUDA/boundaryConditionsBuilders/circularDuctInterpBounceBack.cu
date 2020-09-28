@@ -1,5 +1,5 @@
 /*
-*   @file parallelPlatesZouHe.cu
+*   @file circularDuctInerpBounceBack.cu
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Circular duct interpolated bounce boundary conditions in walls,
 *          periodic condition in flow direction and force in Z

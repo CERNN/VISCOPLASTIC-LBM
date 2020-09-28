@@ -83,6 +83,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     // Define the properties of the particle
     r = diameter / 2.0;
     particleRet.bodyCenter.radius = r;
+    particleRet.bodyCenter.volume = r*r*r*4*M_PI/3;
     //translation
     particleRet.bodyCenter.pos.x = center.x;
     particleRet.bodyCenter.pos.y = center.y;
@@ -309,7 +310,6 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
         }
 
         free(cForce);
-
     } //end coloumb
 
     free(nNodesLayer);

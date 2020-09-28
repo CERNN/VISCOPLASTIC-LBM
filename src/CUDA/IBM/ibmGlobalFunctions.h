@@ -13,6 +13,10 @@
 
 #include "ibmVar.h"
 
+
+// Only compile for compute capability lower than 6.0, since for 6.0 or higher
+// this functionality already exists
+#if __CUDA_ARCH__ < 600
 /*
 *   @brief Double atomic add for Cuda capabailities less than 6.0
 *   @param address: memory address where will be added the value
@@ -24,28 +28,26 @@
 *               atomicDoubleAdd(a, addedValue);
 *           }
 */
-__device__ __inline__ void atomicDoubleAdd(double* address, double val)
+/*
+__device__ double atomicAdd(double* address, double val)
 {
-    #if __CUDA_ARCH__ < 600
-    //TODO add cuda version and double/float swap
     unsigned long long int* address_as_ull =
-        (unsigned long long int*)address;
+                              (unsigned long long int*)address;
     unsigned long long int old = *address_as_ull, assumed;
 
     do {
         assumed = old;
-        old = atomicCAS(address_as_ull, assumed, 
-                        __double_as_longlong(val + __longlong_as_double(assumed)));
-        // Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
+        old = atomicCAS(address_as_ull, assumed,
+                        __double_as_longlong(val +
+                               __longlong_as_double(assumed)));
+
+    // Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
     } while (assumed != old);
 
-    // TODO: fix this function
-    // return __longlong_as_double(old);
-
-    #else
-        atomicAdd(address,val);
-    #endif
+    return __longlong_as_double(old);
 }
+*/
+#endif
 
 /*
 *   @brief Evaluate the force distributions based on the stencil 
@@ -63,7 +65,7 @@ __device__ __forceinline__  dfloat stencil(dfloat x) {
         }
     #elif defined STENCIL_4
         if (absX <= 1) {
-            return (1.0 / 8.0)*(3.0 - 2.0*absX + sqrt(1 + 4 * absX - 4 * absX*absX));;
+            return (1.0 / 8.0)*(3.0 - 2.0*absX + sqrt(1 + 4 * absX - 4 * absX*absX));
         }
         else if (absX > 1.0 && absX <= 2.0) {
             return (1.0 / 8.0)*(5.0 - 2.0*absX - sqrt(-7.0 + 12.0*absX - 4.0*absX*absX));
