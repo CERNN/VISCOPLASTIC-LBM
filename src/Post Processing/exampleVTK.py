@@ -10,16 +10,17 @@ info = getSimInfo()
 for step in macrSteps:
     macr = getMacrsFromStep(step)
     # Save macroscopics to VTK format
-    saveVTK3D(macr, info['ID'] + "macr" + str(step), points=False)
+    print("Processing step", step)
+    saveVTK3D(macr, info['ID'] + "macr" + str(step).zfill(6), points=False)
 
-    '''
     # COUETTE/PARALLEL PLATES PROCESSING
+    '''
     uz = np.array([np.average(macr['uz'][:, y, info['NZ']//2]) for y in range(0, info['NY'])])
     saveMacrCsv(info['ID'] + "uz" + str(step) + ".csv", uz)
     '''
 
-    '''
     # CIRCULAR DUCT PROCESSING
+    '''
     R = info['NY']/2
     uzS_N = np.array([np.average(macr['uz'][info['NX']//2, y, :]) 
         for y in range(0, info['NY'])])
@@ -47,9 +48,8 @@ for step in macrSteps:
     print("uz_avg", "N %d %.6e" % (info['NY'], avg_uz))
     '''
 
-    '''
     # LID DRIVEN PROCESSING
-    
+    '''
     # get uy(x=[0, 1], y=NY/2, z=NZ/2) and uy(x=NX/2, y=[0, 1], z=NZ/2)
     uy = macr['uy'][:, info['NY']//2, info['NZ']//2]
     ux = macr['ux'][info['NX']//2, :, info['NZ']//2]
@@ -58,9 +58,8 @@ for step in macrSteps:
     saveMacrCsv(info['ID'] + "ux" + str(step) + ".csv", ux)
     '''
 
-    '''
     # SQUARE DUCT PROCESSING
-    
+    '''
     # get uz(x=[0, 1], y=[0, 1], z=NZ/2)
     uz = macr['uz'][:,:,info['NZ']//2]
     # mean corrected for free slip in y=0 and x=1
