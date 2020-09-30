@@ -30,11 +30,8 @@ typedef struct particleCenter {
     dfloat3 M_old;       // Old total momentum acting on particle
     dfloat3 I;          // I innertia moment I.x = Ixx
     dfloat S;           // Total area of the particle
-    dfloat rho;         // Particle density relative to fluid
-    dfloat mass_p;      // Particle mass
-    dfloat mass_f;      // Fluid mass
-    dfloat radius;
-    dfloat volume;
+    dfloat radius;      // Sphere radius
+    dfloat volume;      // Particle volume
     bool movable;       // If the particle can move
 
     /* Constructor */
@@ -55,9 +52,6 @@ typedef struct particleCenter {
         I = dfloat3();
 
         S = 0;
-        rho = 0;
-        mass_p = 0;
-        mass_f = 0;
         radius = 0;
         volume = 0;
         movable = false;

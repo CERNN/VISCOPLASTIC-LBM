@@ -28,7 +28,6 @@ typedef struct particle {
         numNodes = 0;
         nodes = nullptr;
     }
-
 } Particle;
 
 typedef struct particlesSoA{

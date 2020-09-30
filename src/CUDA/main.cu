@@ -109,7 +109,11 @@ int main()
 
     /* ------------------ IBM ALLOCATION AND CONFIGURATION ------------------ */
     #ifdef IBM
+    printf("-------------------------------- IBM INFORMATION -------------------------------\n");
+
+    printf("Creating particles...\t"); fflush(stdout);
     createParticles(particles);
+    printf("Particles created!\n"); fflush(stdout);
 
     particlesSoA.updateParticlesAsSoA(particles);
 

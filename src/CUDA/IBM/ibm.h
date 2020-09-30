@@ -66,10 +66,8 @@ void gpuParticleNodeMovement(
 );
 
 __host__ 
-dfloat3 particleCollisionSoft(
-    ParticleCenter* __restrict__ particleCenter,
-    int particleIndex
+void particlesCollision(
+    ParticleCenter particleCenters[NUM_PARTICLES]
 );
-
 
 #endif // !__IBM_H

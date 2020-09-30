@@ -4,8 +4,6 @@
 
 void createParticles(Particle particles[NUM_PARTICLES])
 {
-    printf("-------------------------------- IBM INFORMATION -------------------------------\n");
-
     dfloat3 bCenter[NUM_PARTICLES];
     unsigned int totalIbmNodes = 0;
 
@@ -31,16 +29,14 @@ void createParticles(Particle particles[NUM_PARTICLES])
             break;
     }
 
-    printf("Creating particles...\t"); fflush(stdout);
     for (int p = 0; p < NUM_PARTICLES; p++)
     {
         dfloat3 center;
         center.x = NX/2;
         center.y = NY/2;
         center.z = NZ/2;
-        particles[p] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true);
+        particles[p] = makeSpherePolar(PARTICLE_DIAMETER, bCenter[p] , MESH_COULOMB, true);
     }
-    printf("Particles created!\n"); fflush(stdout);
 }
 
 #endif // !IBM

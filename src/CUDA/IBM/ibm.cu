@@ -18,13 +18,10 @@ __host__ void immersedBoundaryMethod(
     gpuResetNodesForces<<<gridIBM, threadsIBM, 0, stream[0]>>>(particles.nodesSoA);
 
     checkCudaErrors(cudaStreamSynchronize(stream[0]));
-    ParticleCenter* pc = &particles.pCenterArray[0];
 
     // Test if this can be done before iterations
-    // Calculate collision force
-    // TODO
-    // Update node velocities with new forces
-    // TODO
+    // Calculate collision force between particles
+    particlesCollision(particles.pCenterArray);
 
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
@@ -49,6 +46,7 @@ __host__ void immersedBoundaryMethod(
         particles.nodesSoA, particles.pCenterArray);
 
     checkCudaErrors(cudaStreamSynchronize(stream[0]));
+    ParticleCenter* pc = &particles.pCenterArray[0];
     printf("position %f %f %f\n", pc->pos.x, pc->pos.y, pc->pos.z);
 }
 
@@ -415,14 +413,136 @@ void gpuParticleNodeMovement(
     particlesNodes.pos.z[i] = pc.pos.z + 2 * ( ((qi*qj) - (q0*qj))*x_vec + ((qj*qk) + (q0*qi))*y_vec +   (tq0m1 + (qk*qk))*z_vec);
 }
 
-/*
-__host__ 
-dfloat3 particleCollisionSoft(
-    ParticleCenter* __restrict__ particleCenter,
-    int particleIndex)
-{
 
+__host__
+void particlesCollision(
+    ParticleCenter particleCenters[NUM_PARTICLES]
+){
+    // Auxiliary variable for many things
+    dfloat aux;
+
+    for(int i = 0; i < NUM_PARTICLES; i++){
+        const dfloat3 pos_i = particleCenters[i].pos;
+        const dfloat radius_i = particleCenters[i].radius;
+
+        const dfloat grav = sqrt(GX * GX + GY * GY + GZ * GZ);
+        // Buoyancy force
+        const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * particleCenters[i].volume;
+        
+        // Collision against walls
+        const dfloat min_dist = 2 * radius_i + ZETA;
+
+        // West
+        dfloat pos_mirror = -pos_i.x;
+        dfloat dist_abs = abs(pos_i.x - pos_mirror);
+        if (dist_abs <= min_dist){
+            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
+            particleCenters[i].f.x += (b_force / STIFF_WALL) * aux * aux;
+        }
+
+        // East
+        pos_mirror = 2 * (NX - 1) - pos_i.x;
+        dist_abs = abs(pos_i.x - pos_mirror);
+        if (dist_abs <= min_dist){
+            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
+            particleCenters[i].f.x -= (b_force / STIFF_WALL) * aux * aux;
+        }
+
+        // South
+        pos_mirror = - pos_i.y;
+        dist_abs = abs(pos_i.y - pos_mirror);
+        if (dist_abs <= min_dist){
+            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
+            particleCenters[i].f.y += (b_force / STIFF_WALL) * aux * aux;
+        }
+
+        // North
+        pos_mirror = 2 * (NY - 1) - pos_i.y;
+        dist_abs = abs(pos_i.y - pos_mirror);
+        if (dist_abs <= min_dist){
+            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
+            particleCenters[i].f.y -= (b_force / STIFF_WALL) * aux * aux;
+        }
+
+        // Back
+        pos_mirror = -pos_i.z;
+        dist_abs = abs(pos_i.z - pos_mirror);
+        if (dist_abs <= min_dist){
+            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
+            particleCenters[i].f.y += (b_force / STIFF_WALL) * aux * aux;
+        }
+
+        // Front
+        pos_mirror = 2 * (NZ - 1) - pos_i.z;
+        dist_abs = abs(pos_i.z - pos_mirror);
+        if (dist_abs <= min_dist) {
+            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
+            particleCenters[i].f.y -= (b_force / STIFF_WALL) * aux * aux;
+        }
+
+
+        for(int j = i+1; j < NUM_PARTICLES; j++){
+            const dfloat3 pos_j = particleCenters[j].pos;
+            const dfloat radius_j = particleCenters[j].radius;
+
+            dfloat3 diff_pos;
+            diff_pos.x = pos_i.x - pos_j.x;
+            diff_pos.y = pos_i.y - pos_j.y;
+            diff_pos.z = pos_i.z - pos_j.z;
+
+            const dfloat mag_dist = sqrt(
+                diff_pos.x*diff_pos.x
+                + diff_pos.y*diff_pos.y
+                + diff_pos.z*diff_pos.z);
+
+            // Hard collision (one particle inside another)
+            if(mag_dist < radius_i+radius_j){
+                aux = (mag_dist - radius_i - radius_j - ZETA) / ZETA;
+                // Force to act on particles
+                const dfloat f = ((b_force / STIFF_SOFT) * aux * aux 
+                    + (b_force / STIFF_HARD) * 
+                    ((radius_i + radius_j - mag_dist) / ZETA)) / mag_dist;
+
+                // Force in each direction
+                const dfloat3 f_dirs = dfloat3(
+                    f * diff_pos.x,
+                    f * diff_pos.y,
+                    f * diff_pos.z
+                );
+
+                // Force positive in particle i
+                particleCenters[i].f.x += f_dirs.x;
+                particleCenters[i].f.y += f_dirs.y;
+                particleCenters[i].f.z += f_dirs.z;
+                // Force negative in particle j
+                particleCenters[j].f.x -= f_dirs.x;
+                particleCenters[j].f.y -= f_dirs.y;
+                particleCenters[j].f.z -= f_dirs.z;
+            }
+            // Soft collision (one particle close to another)
+            else if (mag_dist < radius_i+radius_j+ZETA){
+                aux = (mag_dist - radius_i - radius_j - ZETA) / ZETA;
+                // Force to act on particles
+                const dfloat f = (b_force / STIFF_SOFT) * aux*aux / mag_dist;
+
+                // Force in each direction
+                const dfloat3 f_dirs = dfloat3(
+                    f * diff_pos.x,
+                    f * diff_pos.y,
+                    f * diff_pos.z
+                );
+
+                // Force positive in particle i
+                particleCenters[i].f.x += f_dirs.x;
+                particleCenters[i].f.y += f_dirs.y;
+                particleCenters[i].f.z += f_dirs.z;
+                // Force negative in particle j
+                particleCenters[j].f.x -= f_dirs.x;
+                particleCenters[j].f.y -= f_dirs.y;
+                particleCenters[j].f.z -= f_dirs.z;
+            }
+        }
+    }
 }
-*/
 
 #endif // !IBM
