@@ -115,15 +115,15 @@ void savePopBin(
     strFilePopAux = getVarFilename("pop_aux", nSteps, ".bin");
 
     dfloat* tmp = nullptr;
-    checkCudaErrors(cudaMallocHost((void**)&(tmp), memSizePop));
+    checkCudaErrors(cudaMallocHost((void**)&(tmp), MEM_SIZE_POP));
     for(int i = 0; i < N_GPUS; i++){
-        checkCudaErrors(cudaMemcpy(tmp, pop[i].pop, memSizePop, cudaMemcpyDeviceToHost));
-        saveVarBin(strFilePop, tmp, memSizePop, i != 0);
+        checkCudaErrors(cudaMemcpy(tmp, pop[i].pop, MEM_SIZE_POP, cudaMemcpyDeviceToHost));
+        saveVarBin(strFilePop, tmp, MEM_SIZE_POP, i != 0);
     }
 
     for(int i = 0; i < N_GPUS; i++){
-        checkCudaErrors(cudaMemcpy(tmp, pop[i].popAux, memSizePop, cudaMemcpyDeviceToHost));
-        saveVarBin(strFilePopAux, tmp, memSizePop, i != 0);
+        checkCudaErrors(cudaMemcpy(tmp, pop[i].popAux, MEM_SIZE_POP, cudaMemcpyDeviceToHost));
+        saveVarBin(strFilePopAux, tmp, MEM_SIZE_POP, i != 0);
     }
 
     checkCudaErrors(cudaFreeHost(tmp));
@@ -143,10 +143,10 @@ void saveAllMacrBin(
     strFileUz = getVarFilename("uz", nSteps, ".bin");
     
     // saving files
-    saveVarBin(strFileRho, macr->rho, totalMemSizeScalar, false);
-    saveVarBin(strFileUx, macr->ux, totalMemSizeScalar, false);
-    saveVarBin(strFileUy, macr->uy, totalMemSizeScalar, false);
-    saveVarBin(strFileUz, macr->uz, totalMemSizeScalar, false);
+    saveVarBin(strFileRho, macr->rho, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileUx, macr->ux, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileUy, macr->uy, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileUz, macr->uz, TOTAL_MEM_SIZE_SCALAR, false);
 }
 
 
@@ -222,7 +222,7 @@ void saveSimInfo(SimInfo* info)
         fprintf(outFile, "              MLUPS: %.1f\n", info->MLUPS);
         fprintf(outFile, "          Bandwidht: %.1f (Gb/s)\n", info->bandwidth);
         fprintf(outFile, "       Time elapsed: %.3f (s)\n", info->timeElapsed);
-        fprintf(outFile, "            threads: (%d, %d, %d)\n", nThreads, 1, 1);
+        fprintf(outFile, "            threads: (%d, %d, %d)\n", N_THREADS, 1, 1);
         fprintf(outFile, "--------------------------------------------------------------------------------\n");
     
         fprintf(outFile, "\n------------------------------- CUDA INFORMATION -------------------------------\n");
@@ -280,7 +280,7 @@ void printParamInfo(
         printf("          Bandwidht: %.1f (Gb/s)\n", info->bandwidth);
         printf("       Time elapsed: %.3f (s)\n", info->timeElapsed);
     }
-    printf("            threads: (%d, %d, %d)\n", nThreads, 1, 1);
+    printf("            threads: (%d, %d, %d)\n", N_THREADS, 1, 1);
     printf("--------------------------------------------------------------------------------\n");
 }
 

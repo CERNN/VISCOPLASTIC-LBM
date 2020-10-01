@@ -54,6 +54,7 @@ int main()
     #ifdef IBM
     Particle particles[NUM_PARTICLES];
     ParticlesSoA particlesSoA;
+    dfloat3SoA velAuxIBM[N_GPUS];
     #endif
 
     // Setup saving folder
@@ -87,19 +88,29 @@ int main()
 
     /* -------------- ALLOCATION AND CONFIGURATION FOR EACH GPU ------------- */
     // Streams for GPU
-    cudaStream_t* streamsKernelLBM = (cudaStream_t*) malloc(sizeof(cudaStream_t)*N_GPUS); 
+    cudaStream_t streamsLBM[N_GPUS];
+    #ifdef IBM
+    cudaStream_t streamsIBM[N_GPUS];
+    #endif
+
     for(int i = 0; i < N_GPUS; i++)
     {
         checkCudaErrors(cudaSetDevice(i));
         checkCudaErrors(cudaGetDeviceProperties(&(info.devices[i]), i));
-        checkCudaErrors(cudaStreamCreate(&streamsKernelLBM[i]));
+
+        checkCudaErrors(cudaStreamCreate(&streamsLBM[i]));
+        #ifdef IBM
+        checkCudaErrors(cudaStreamCreate(&streamsIBM[i]));
+        
+        velAuxIBM[i].allocateMemory(NUMBER_LBM_NODES*sizeof(dfloat));
+        #endif
 
         pop[i].popAllocation();
         macr[i].macrAllocation(IN_VIRTUAL);
         if(RANDOM_NUMBERS)
         {
             checkCudaErrors(cudaMallocManaged((void**)&randomNumbers[i], 
-                sizeof(float)*numberNodes));
+                sizeof(float)*NUMBER_LBM_NODES));
             initializationRandomNumbers(randomNumbers[i], CURAND_SEED);
             checkCudaErrors(cudaDeviceSynchronize());
             getLastCudaError("random numbers transfer error");
@@ -124,13 +135,13 @@ int main()
     /* ---------------------------------------------------------------------- */
 
     /* ----------------- GRID AND THREADS DEFINITION FOR LBM ---------------- */
-    dim3 grid(((NX%nThreads)? (NX/nThreads+1) : (NX/nThreads)), NY, NZ);
+    dim3 grid(((NX%N_THREADS)? (NX/N_THREADS+1) : (NX/N_THREADS)), NY, NZ);
     // threads in block
-    dim3 threads(nThreads, 1, 1);
+    dim3 threads(N_THREADS, 1, 1);
 
     // Grid and threads for memory transfers in multiGPUS
     dim3 gridTransfer(grid.x, grid.y, 1);
-    dim3 threadsTransfer(nThreads, 1, 1);
+    dim3 threadsTransfer(N_THREADS, 1, 1);
     /* ---------------------------------------------------------------------- */
 
     /* ------------------------------- REPORT ------------------------------- */
@@ -153,9 +164,9 @@ int main()
     }
 
     NodeTypeMap* hMapBC;
-    checkCudaErrors(cudaMallocHost((void**)(&hMapBC), memSizeMapBC));
+    checkCudaErrors(cudaMallocHost((void**)(&hMapBC), MEM_SIZE_MAP_BC));
     for(int i = 0; i < N_GPUS; i++){
-        checkCudaErrors(cudaMemcpy(hMapBC, pop[i].mapBC, memSizeMapBC, cudaMemcpyDefault));
+        checkCudaErrors(cudaMemcpy(hMapBC, pop[i].mapBC, MEM_SIZE_MAP_BC, cudaMemcpyDefault));
         bcInfos[i].setupBoundaryConditionsInfo(hMapBC);
     }
     cudaFreeHost(hMapBC);
@@ -210,7 +221,7 @@ int main()
             checkCudaErrors(cudaSetDevice(i));
             // Copy macroscopics to GPU if required
             if(LOAD_MACR){
-                size_t baseIdx = i*numberNodes;
+                size_t baseIdx = i*NUMBER_LBM_NODES;
                 macr[i].copyMacr(&macrCPUCurrent, 0, baseIdx, false);
                 checkCudaErrors(cudaDeviceSynchronize());
             }
@@ -307,8 +318,8 @@ int main()
         // IBM
         #ifdef IBM
         immersedBoundaryMethod(
-            particlesSoA, macr, pop, grid, threads,
-            gridIBM, threadsIBM, streamsKernelLBM);
+            particlesSoA, macr, velAuxIBM, pop, grid, threads,
+            gridIBM, threadsIBM, streamsLBM, streamsIBM);
         #endif
 
         // Synchronizing data (macroscopics) between GPU and CPU
@@ -319,7 +330,7 @@ int main()
 
             macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
             for(int i = 0; i < N_GPUS; i++){
-                macrCPUCurrent.copyMacr(&macr[i], numberNodes*i);
+                macrCPUCurrent.copyMacr(&macr[i], NUMBER_LBM_NODES*i);
             } 
         }
 
@@ -358,7 +369,7 @@ int main()
 
     // Save final macroscopics
     for(int i = 0; i < N_GPUS; i++){
-        macrCPUCurrent.copyMacr(&macr[i], numberNodes*i);
+        macrCPUCurrent.copyMacr(&macr[i], NUMBER_LBM_NODES*i);
     } 
     saveAllMacrBin(&macrCPUCurrent, step);
 
@@ -368,10 +379,10 @@ int main()
 
     // Evaluate performance
     info.totalSteps = step - INI_STEP;
-    size_t nodesUpdated = info.totalSteps * numberNodes * N_GPUS;
+    size_t nodesUpdated = info.totalSteps * NUMBER_LBM_NODES * N_GPUS;
     info.MLUPS = (nodesUpdated / 1e6) / info.timeElapsed;
     // bandwidth for AB scheme and does not consider macroscopics transfers
-    info.bandwidth = memSizePop*2.0*N_GPUS / (info.timeElapsed*BYTES_PER_GB) 
+    info.bandwidth = MEM_SIZE_POP*2.0*N_GPUS / (info.timeElapsed*BYTES_PER_GB) 
         * info.totalSteps;
 
     // Save simulation info
@@ -393,7 +404,11 @@ int main()
     for(int i = 0; i < N_GPUS; i++)
     {
         checkCudaErrors(cudaSetDevice(i));
-        checkCudaErrors(cudaStreamDestroy(streamsKernelLBM[i]));
+        checkCudaErrors(cudaStreamDestroy(streamsLBM[i]));
+        #ifdef IBM
+        checkCudaErrors(cudaStreamDestroy(streamsIBM[i]));
+        velAuxIBM[i].freeMemory();
+        #endif
         pop[i].popFree();
         macr[i].macrFree();
         bcInfos[i].freeIdxBC();

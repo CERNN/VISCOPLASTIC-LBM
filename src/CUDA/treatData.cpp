@@ -69,7 +69,7 @@ void treatData(MacrProc* processing)
     /* ------------------------------------ */
 
     /* ------- Avg. rho calculation ------- */
-    processing->avgRho /= totalNumberNodes;
+    processing->avgRho /= TOTAL_NUMBER_LBM_NODES;
     /* ------------------------------------ */
 
     /* ----- Avg. Uz plan calculation ----- */

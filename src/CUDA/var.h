@@ -17,6 +17,7 @@
 /* ------------------------ GENERAL SIMULATION DEFINES ---------------------- */
 typedef float dfloat;      // single or double precision
 #define D3Q19              // velocity set to use
+// Comment to disable IBM
 #define IBM
 /* ------------------------------------------------------------------------- */
 
@@ -30,10 +31,10 @@ typedef float dfloat;      // single or double precision
 
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
-constexpr int N_STEPS = 100;          // maximum number of time steps
+constexpr int N_STEPS = 10;          // maximum number of time steps
 #define MACR_SAVE 1                  // saves macroscopics every MACR_SAVE steps
-#define DATA_REPORT 1                // report every DATA_REPORT steps
-
+#define DATA_REPORT 0                // report every DATA_REPORT steps
+ 
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
 
@@ -64,7 +65,7 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 /* --------------------------  SIMULATION DEFINES -------------------------- */
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 
-constexpr unsigned int N = 64;
+constexpr unsigned int N = 160;
 constexpr unsigned int NX = N;        // size x of the grid 
                                       // (32 multiple for better performance)
 constexpr unsigned int NY = N;        // size y of the grid
@@ -84,23 +85,20 @@ constexpr dfloat RHO_0 = 1;         // initial rho
 
 constexpr dfloat FX = 0;        // force in x
 constexpr dfloat FY = 0;        // force in y
-constexpr dfloat FZ = 1e-5;     // force in z (flow direction in most cases)
-constexpr dfloat FX_D3 = FX/3;  // util for regularization
-constexpr dfloat FY_D3 = FY/3;  // util for regularization
-constexpr dfloat FZ_D3 = FZ/3;  // util for regularization
+constexpr dfloat FZ = 0;     // force in z (flow direction in most cases)
 
 // values options for boundary conditions
-__device__ const dfloat uxBC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
-__device__ const dfloat uyBC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
-__device__ const dfloat uzBC[8] = { 0, U_MAX/2, -U_MAX/2, 0, 0, 0, 0, 0 };
-__device__ const dfloat rhoBC[8] = { RHO_0, 1, 1, 1, 1, 1, 1, 1 };
+__device__ const dfloat UX_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
+__device__ const dfloat UY_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
+__device__ const dfloat UZ_BC[8] = { 0, U_MAX/2, -U_MAX/2, 0, 0, 0, 0, 0 };
+__device__ const dfloat RHO_BC[8] = { RHO_0, 1, 1, 1, 1, 1, 1, 1 };
 
 constexpr dfloat RESID_MAX = 1e-5;      // maximal residual
 /* ------------------------------------------------------------------------- */
 
 
 /* ------------------------------ GPU DEFINES ------------------------------ */
-const int nThreads = (NX%64?((NX%32||(NX<32))?NX:32):64); // NX or 32 or 64 
+const int N_THREADS = (NX%64?((NX%32||(NX<32))?NX:32):64); // NX or 32 or 64 
                                     // multiple of 32 for better performance.
 const int CURAND_SEED = 0;          // seed for random numbers for CUDA
 constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers 
@@ -132,14 +130,14 @@ constexpr size_t BYTES_PER_MB = (1<<20);
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------ MEMORY SIZE ------------------------------ */ 
-const size_t numberNodes = NX*NY*NZ;
-const size_t memSizePop = sizeof(dfloat) * numberNodes * Q;
-const size_t memSizeScalar = sizeof(dfloat) * numberNodes;
-const size_t memSizeMapBC = sizeof(uint32_t) * numberNodes;
-const size_t totalNumberNodes = NX*NY*NZ_TOTAL;
-const size_t totalMemSizePop = sizeof(dfloat) * totalNumberNodes * Q;
-const size_t totalMemSizeScalar = sizeof(dfloat) * totalNumberNodes;
-const size_t totalMemSizeMapBC = sizeof(uint32_t) * totalNumberNodes;
+const size_t NUMBER_LBM_NODES = NX*NY*NZ;
+const size_t MEM_SIZE_POP = sizeof(dfloat) * NUMBER_LBM_NODES * Q;
+const size_t MEM_SIZE_SCALAR = sizeof(dfloat) * NUMBER_LBM_NODES;
+const size_t MEM_SIZE_MAP_BC = sizeof(uint32_t) * NUMBER_LBM_NODES;
+const size_t TOTAL_NUMBER_LBM_NODES = NX*NY*NZ_TOTAL;
+const size_t TOTAL_MEM_SIZE_POP = sizeof(dfloat) * TOTAL_NUMBER_LBM_NODES * Q;
+const size_t TOTAL_MEM_SIZE_SCALAR = sizeof(dfloat) * TOTAL_NUMBER_LBM_NODES;
+const size_t TOTAL_MEM_SIZE_MAP_BC = sizeof(uint32_t) * TOTAL_NUMBER_LBM_NODES;
 /* ------------------------------------------------------------------------- */
 
 #endif // !__VAR_H

@@ -169,7 +169,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     last_node->pos.z = center.z + r * sin(theta[nLayer]);
     last_node->S = S[nLayer];
 
-    unsigned int numberNodes = particleRet.numNodes;
+    unsigned int numNodes = particleRet.numNodes;
 
     // Coulomb node positions distribution
     if (coulomb != 0) {
@@ -177,9 +177,9 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
         dfloat mag;
         dfloat scaleF;
         dfloat3* cForce;
-        cForce = (dfloat3*)malloc(numberNodes * sizeof(dfloat3));
+        cForce = (dfloat3*)malloc(numNodes * sizeof(dfloat3));
 
-        for (i = 0; i < numberNodes; i++) {
+        for (i = 0; i < numNodes; i++) {
             cForce[i].x = 0;
             cForce[i].y = 0;
             cForce[i].z = 0;
@@ -190,10 +190,10 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
         dfloat fx, fy, fz;
 
         for (unsigned int c = 0; c < coulomb; c++) {
-            for (i = 0; i < numberNodes; i++) {
+            for (i = 0; i < numNodes; i++) {
                 ParticleNode* node_i = &(particleRet.nodes[i]);
 
-                for (j = i+1; j < numberNodes; j++) {
+                for (j = i+1; j < numNodes; j++) {
 
                     ParticleNode* node_j = &(particleRet.nodes[j]);
 
@@ -215,7 +215,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
                     }
                 }
             }
-            for (i = 0; i < numberNodes; i++) {
+            for (i = 0; i < numNodes; i++) {
                 //move particle
                 fx = cForce[i].x / scaleF;
                 fy = cForce[i].y / scaleF;
@@ -239,10 +239,10 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
         }
 
         // Area fix
-        for (i = 0; i < numberNodes; i++) {
+        for (i = 0; i < numNodes; i++) {
             ParticleNode* node_i = &(particleRet.nodes[i]);
 
-            node_i->S = particleRet.bodyCenter.S / (numberNodes);
+            node_i->S = particleRet.bodyCenter.S / (numNodes);
 
             node_i->pos.x += center.x;
             node_i->pos.y += center.y;

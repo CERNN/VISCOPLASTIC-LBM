@@ -2,58 +2,86 @@
 
 #ifdef IBM
 
-__host__ void immersedBoundaryMethod(
+__host__
+void immersedBoundaryMethod(
     ParticlesSoA particles,
-    Macroscopics * __restrict__ macr,
-    Populations *const __restrict__ pop,
+    Macroscopics* __restrict__ macr,
+    dfloat3SoA* __restrict__ velsAuxIBM,
+    Populations* const __restrict__ pop,
     dim3 gridLBM,
     dim3 threadsLBM,
-    unsigned int gridIBM,
-    unsigned int threadsIBM,
-    cudaStream_t *__restrict__ stream)
+    unsigned int gridNodesIBM,
+    unsigned int threadsNodesIBM,
+    cudaStream_t __restrict__ streamLBM[N_GPUS],
+    cudaStream_t __restrict__ streamIBM[N_GPUS])
 {
     // TODO: Update it to multi GPU
-    // Update macroscopics post streaming and reset forces
-    gpuUpdateMacrResetForces<<<gridLBM, threadsLBM, 0, stream[0]>>>(pop[0], macr[0]);
-    gpuResetNodesForces<<<gridIBM, threadsIBM, 0, stream[0]>>>(particles.nodesSoA);
 
-    checkCudaErrors(cudaStreamSynchronize(stream[0]));
+    // Threads for IBM particles
+    const unsigned int threadsParticlesIBM = NUM_PARTICLES > 32 ? 32 : NUM_PARTICLES;
+    // Grid for IBM particles
+    const unsigned int gridParticlesIBM = 
+        (NUM_PARTICLES % threadsParticlesIBM ? 
+            (NUM_PARTICLES / threadsParticlesIBM + 1)
+            : (NUM_PARTICLES / threadsParticlesIBM));
+    // Size of shared memory to use for optimization in interpolation/spread
+    const unsigned int sharedMemInterpSpread = threadsNodesIBM * sizeof(dfloat3);
 
-    // Test if this can be done before iterations
+    // Update macroscopics post boundary conditions and reset forces
+    gpuUpdateMacrResetForces<<<gridLBM, threadsLBM, 0, streamLBM[0]>>>(pop[0], macr[0], velsAuxIBM[0]);
+    // Reset forces in all IBM nodes
+    gpuResetNodesForces<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(particles.nodesSoA);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+    checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
+
     // Calculate collision force between particles
     particlesCollision(particles.pCenterArray);
+    checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
 
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
-        gpuForceInterpolationSpread<<<gridIBM, threadsIBM, 0, stream[0]>>>(
-            particles.nodesSoA, particles.pCenterArray, macr[0]);
-        checkCudaErrors(cudaStreamSynchronize(stream[0]));
+        // Make the interpolation of LBM and spreading of IBM forces
+        gpuForceInterpolationSpread<<<gridNodesIBM, threadsNodesIBM, 
+            sharedMemInterpSpread, streamIBM[0]>>>(
+            particles.nodesSoA, particles.pCenterArray, macr[0], velsAuxIBM[0]);
+        checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+        
+        // Swapping velocity vectors
+        dfloat* tmp = macr[0].ux;
+        macr[0].ux = velsAuxIBM[0].x;
+        velsAuxIBM[0].x = tmp;
 
-        // Update LBM velcoties and density
-        // TODO: update it in kernel with interpolation/spread
-        // TODO: update only velocities, since density is constant
-        gpuUpdateMacr<<<gridLBM, threadsLBM, 0, stream[0]>>>(pop[0], macr[0]);
-        checkCudaErrors(cudaStreamSynchronize(stream[0]));
+        tmp = macr[0].uy;
+        macr[0].uy = velsAuxIBM[0].y;
+        velsAuxIBM[0].y = tmp;
+
+        tmp = macr[0].uz;
+        macr[0].uz = velsAuxIBM[0].z;
+        velsAuxIBM[0].z = tmp;
 
         // Update particle velocity using body center force and constant forces
-        updateParticleCenterVelocityAndRotation(particles.pCenterArray);
+        updateParticleCenterVelocityAndRotation<<<gridParticlesIBM, threadsParticlesIBM, 0, streamIBM[0]>>>(
+            particles.pCenterArray);
+
+        checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     }
 
     // Update particle center position and its old values
-    particleMovement(particles.pCenterArray);
+    particleMovement<<<gridParticlesIBM, threadsParticlesIBM, 0, streamIBM[0]>>>(
+        particles.pCenterArray);
     // Update particle nodes positions
-    gpuParticleNodeMovement<<<gridIBM, threadsIBM, 0, stream[0]>>>(
+    gpuParticleNodeMovement<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(
         particles.nodesSoA, particles.pCenterArray);
 
-    checkCudaErrors(cudaStreamSynchronize(stream[0]));
-    ParticleCenter* pc = &particles.pCenterArray[0];
-    printf("position %f %f %f\n", pc->pos.x, pc->pos.y, pc->pos.z);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 }
 
-__global__ void gpuForceInterpolationSpread(
+__global__
+void gpuForceInterpolationSpread(
     ParticleNodeSoA particlesNodes,
     ParticleCenter particleCenters[NUM_PARTICLES],
-    Macroscopics const macr)
+    Macroscopics const macr,
+    dfloat3SoA velAuxIBM)
 {
     // TODO: update atomic double add to use only if is double
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
@@ -101,7 +129,6 @@ __global__ void gpuForceInterpolationSpread(
                 uxVar += macr.ux[idx] * aux;
                 uyVar += macr.uy[idx] * aux;
                 uzVar += macr.uz[idx] * aux;
-                
             }
         }
     }
@@ -140,14 +167,15 @@ __global__ void gpuForceInterpolationSpread(
     const dfloat dA = particlesNodes.S[i];
     aux = 2 * rhoVar * dA * IBM_THICKNESS;
 
-    const dfloat deltaFx = aux * (uxVar - ux_calc);
-    const dfloat deltaFy = aux * (uyVar - uy_calc);
-    const dfloat deltaFz = aux * (uzVar - uz_calc);
+    const dfloat3 deltaF = dfloat3(
+        aux * (uxVar - ux_calc),
+        aux * (uyVar - uy_calc),
+        aux * (uzVar - uz_calc));
 
     // Calculate IBM forces
-    const dfloat fxIBM = particlesNodes.f.x[i] + deltaFx;
-    const dfloat fyIBM = particlesNodes.f.y[i] + deltaFy;
-    const dfloat fzIBM = particlesNodes.f.z[i] + deltaFz;
+    const dfloat fxIBM = particlesNodes.f.x[i] + deltaF.x;
+    const dfloat fyIBM = particlesNodes.f.y[i] + deltaF.y;
+    const dfloat fzIBM = particlesNodes.f.z[i] + deltaF.z;
 
     // Spreading
     for (int z = zMin; z < zMax; z++)
@@ -164,9 +192,14 @@ __global__ void gpuForceInterpolationSpread(
                 // TODO: update rho and velocities of LBM here, but with 
                 // different array to not have concurrent problems with loading 
                 // the velocities
-                atomicAdd(&(macr.fx[idx]), -deltaFx * aux);
-                atomicAdd(&(macr.fy[idx]), -deltaFy * aux);
-                atomicAdd(&(macr.fz[idx]), -deltaFz * aux);
+                atomicAdd(&(macr.fx[idx]), -deltaF.x * aux);
+                atomicAdd(&(macr.fy[idx]), -deltaF.y * aux);
+                atomicAdd(&(macr.fz[idx]), -deltaF.z * aux);
+
+                const dfloat inv_rho = 1 / macr.rho[idx];
+                atomicAdd(&(velAuxIBM.x[idx]), 0.5 * -deltaF.x * aux * inv_rho);
+                atomicAdd(&(velAuxIBM.y[idx]), 0.5 * -deltaF.y * aux * inv_rho);
+                atomicAdd(&(velAuxIBM.z[idx]), 0.5 * -deltaF.z * aux * inv_rho);
             }
         }
     }
@@ -182,31 +215,32 @@ __global__ void gpuForceInterpolationSpread(
     particlesNodes.f.z[i] = fzIBM;
 
     // Update node delta force
-    particlesNodes.deltaF.x[i] = deltaFx;
-    particlesNodes.deltaF.y[i] = deltaFy;
-    particlesNodes.deltaF.z[i] = deltaFz;
+    particlesNodes.deltaF.x[i] = deltaF.x;
+    particlesNodes.deltaF.y[i] = deltaF.y;
+    particlesNodes.deltaF.z[i] = deltaF.z;
 
     // Particle node delta momentum
-    dfloat3 deltaMomentum = dfloat3();
-
-    deltaMomentum.x = (yIBM - y_pc) * deltaFz - (zIBM - z_pc) * deltaFy;
-    deltaMomentum.y = (zIBM - z_pc) * deltaFx - (xIBM - x_pc) * deltaFz;
-    deltaMomentum.z = (xIBM - x_pc) * deltaFy - (yIBM - y_pc) * deltaFx;
+    const dfloat3 deltaMomentum = dfloat3(
+        (yIBM - y_pc) * deltaF.z - (zIBM - z_pc) * deltaF.y,
+        (zIBM - z_pc) * deltaF.x - (xIBM - x_pc) * deltaF.z,
+        (xIBM - x_pc) * deltaF.y - (yIBM - y_pc) * deltaF.x
+    );
 
     // Add node force to particle center
     idx = particlesNodes.particleCenterIdx[i];
 
     // TODO: check if shared memory is more efficient
-    atomicAdd(&(particleCenters[idx].f.x), deltaFx);
-    atomicAdd(&(particleCenters[idx].f.y), deltaFy);
-    atomicAdd(&(particleCenters[idx].f.z), deltaFz);
+    atomicAdd(&(particleCenters[idx].f.x), deltaF.x);
+    atomicAdd(&(particleCenters[idx].f.y), deltaF.y);
+    atomicAdd(&(particleCenters[idx].f.z), deltaF.z);
 
     atomicAdd(&(particleCenters[idx].M.x), deltaMomentum.x);
     atomicAdd(&(particleCenters[idx].M.y), deltaMomentum.y);
     atomicAdd(&(particleCenters[idx].M.z), deltaMomentum.z);
 }
 
-__global__ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr)
+__global__
+void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM)
 {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
@@ -269,9 +303,13 @@ __global__ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr)
     macr.ux[idx] = uxVar;
     macr.uy[idx] = uyVar;
     macr.uz[idx] = uzVar;
+    velAuxIBM.x[idx] = uxVar;
+    velAuxIBM.y[idx] = uyVar;
+    velAuxIBM.z[idx] = uzVar;
 }
 
-__global__ void gpuResetNodesForces(ParticleNodeSoA particlesNodes)
+__global__ 
+void gpuResetNodesForces(ParticleNodeSoA particlesNodes)
 {
     int idx = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -289,86 +327,91 @@ __global__ void gpuResetNodesForces(ParticleNodeSoA particlesNodes)
     delta_force.z[idx] = 0;
 }
 
-__host__ void updateParticleCenterVelocityAndRotation(
+__global__ 
+void updateParticleCenterVelocityAndRotation(
     ParticleCenter particleCenters[NUM_PARTICLES])
 {
-    for (int p = 0; p < NUM_PARTICLES; p++)
+    unsigned int p = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if(p >= NUM_PARTICLES)
+        return;
+
+    ParticleCenter *pc = &(particleCenters[p]);
+
+    const dfloat inv_volume = 1 / pc->volume;
+    // Update particle center velocity using its surface forces and the body forces
+    pc->vel.x = pc->vel_old.x + (0.5 * (pc->f_old.x + pc->f.x) * inv_volume + (PARTICLE_DENSITY - FLUID_DENSITY) * GX) / (PARTICLE_DENSITY);
+    pc->vel.y = pc->vel_old.y + (0.5 * (pc->f_old.y + pc->f.y) * inv_volume + (PARTICLE_DENSITY - FLUID_DENSITY) * GY) / (PARTICLE_DENSITY);
+    pc->vel.z = pc->vel_old.z + (0.5 * (pc->f_old.z + pc->f.z) * inv_volume + (PARTICLE_DENSITY - FLUID_DENSITY) * GZ) / (PARTICLE_DENSITY);
+
+    // Auxiliary variables for angular velocity update
+    dfloat error = 1;
+    dfloat3 wNew = dfloat3(), wAux;
+    const dfloat3 M = pc->M;
+    const dfloat3 M_old = pc->M_old;
+    const dfloat3 w_old = pc->w_old;
+    const dfloat3 I = pc->I;
+
+    wAux.x = w_old.x;
+    wAux.y = w_old.y;
+    wAux.z = w_old.z;
+
+    // Iteration process to upadate angular velocity 
+    // (Crank-Nicolson implicit scheme)
+    for (int i = 0; error > 1e-6; i++)
     {
-        ParticleCenter *pc = &(particleCenters[p]);
-        
-        const dfloat inv_volume = 1 / pc->volume;
-        // Update particle center velocity using its surface forces and the body forces
-        pc->vel.x = pc->vel_old.x + (0.5 * (pc->f_old.x + pc->f.x) * inv_volume + (PARTICLE_DENSITY - FLUID_DENSITY) * GX) / (PARTICLE_DENSITY);
-        pc->vel.y = pc->vel_old.y + (0.5 * (pc->f_old.y + pc->f.y) * inv_volume + (PARTICLE_DENSITY - FLUID_DENSITY) * GY) / (PARTICLE_DENSITY);
-        pc->vel.z = pc->vel_old.z + (0.5 * (pc->f_old.z + pc->f.z) * inv_volume + (PARTICLE_DENSITY - FLUID_DENSITY) * GZ) / (PARTICLE_DENSITY);
+        wNew.x = pc->w_old.x + (0.5*(M.x + M_old.x) - (I.z - I.y)*0.25*(w_old.y + wAux.y)*(w_old.z + wAux.z))/I.x;
+        wNew.y = pc->w_old.y + (0.5*(M.y + M_old.y) - (I.x - I.z)*0.25*(w_old.x + wAux.x)*(w_old.z + wAux.z))/I.y;
+        wNew.z = pc->w_old.z + (0.5*(M.z + M_old.z) - (I.y - I.x)*0.25*(w_old.x + wAux.x)*(w_old.y + wAux.y))/I.z;
 
-        // Auxiliary variables for angular velocity update
-        dfloat error = 1;
-        dfloat3 wNew = dfloat3(), wAux;
-        const dfloat3 M = pc->M;
-        const dfloat3 M_old = pc->M_old;
-        const dfloat3 w_old = pc->w_old;
-        const dfloat3 I = pc->I;
+        error = (wNew.x - wAux.x)*(wNew.x - wAux.x)/(wNew.x*wNew.x);
+        error += (wNew.y - wAux.y)*(wNew.y - wAux.y)/(wNew.y*wNew.y);
+        error += (wNew.z - wAux.z)*(wNew.z - wAux.z)/(wNew.z*wNew.z);
 
-        wAux.x = w_old.x;
-        wAux.y = w_old.y;
-        wAux.z = w_old.z;
-
-        // Iteration process to upadate angular velocity 
-        // (Crank-Nicolson implicit scheme)
-        for (int i = 0; error > 1e-6; i++)
-        {
-            wNew.x = pc->w_old.x + (0.5*(M.x + M_old.x) - (I.z - I.y)*0.25*(w_old.y + wAux.y)*(w_old.z + wAux.z))/I.x;
-            wNew.y = pc->w_old.y + (0.5*(M.y + M_old.y) - (I.x - I.z)*0.25*(w_old.x + wAux.x)*(w_old.z + wAux.z))/I.y;
-            wNew.z = pc->w_old.z + (0.5*(M.z + M_old.z) - (I.y - I.x)*0.25*(w_old.x + wAux.x)*(w_old.y + wAux.y))/I.z;
-
-            error = (wNew.x - wAux.x)*(wNew.x - wAux.x)/(wNew.x*wNew.x);
-            error += (wNew.y - wAux.y)*(wNew.y - wAux.y)/(wNew.y*wNew.y);
-            error += (wNew.z - wAux.z)*(wNew.z - wAux.z)/(wNew.z*wNew.z);
-
-            wAux.x = wNew.x;
-            wAux.y = wNew.y;
-            wAux.z = wNew.z;
-        }
-        // Store new velocities in particle center
-        pc->w.x = wNew.x;
-        pc->w.y = wNew.y;
-        pc->w.z = wNew.z;
+        wAux.x = wNew.x;
+        wAux.y = wNew.y;
+        wAux.z = wNew.z;
     }
+    // Store new velocities in particle center
+    pc->w.x = wNew.x;
+    pc->w.y = wNew.y;
+    pc->w.z = wNew.z;
 }
 
-
-__host__
+__global__
 void particleMovement(
     ParticleCenter particleCenters[NUM_PARTICLES])
 {
-    for (int p = 0; p < NUM_PARTICLES; p++){
-        ParticleCenter *pc = &(particleCenters[p]);
+    unsigned int p = threadIdx.x + blockDim.x * blockIdx.x;
 
-        pc->pos_old.x = pc->pos.x;
-        pc->pos_old.y = pc->pos.y;
-        pc->pos_old.z = pc->pos.z;
+    if(p >= NUM_PARTICLES)
+        return;
 
-        pc->pos.x += 0.5 * (pc->vel.x + pc->vel_old.x);
-        pc->pos.y += 0.5 * (pc->vel.y + pc->vel_old.y);
-        pc->pos.z += 0.5 * (pc->vel.z + pc->vel_old.z);
+    ParticleCenter *pc = &(particleCenters[p]);
 
-        pc->vel_old.x = pc->vel.x;
-        pc->vel_old.y = pc->vel.y;
-        pc->vel_old.z = pc->vel.z;
+    pc->pos_old.x = pc->pos.x;
+    pc->pos_old.y = pc->pos.y;
+    pc->pos_old.z = pc->pos.z;
 
-        pc->w_avg.x = 0.5 * (pc->w.x + pc->w_old.x);
-        pc->w_avg.y = 0.5 * (pc->w.y + pc->w_old.y);
-        pc->w_avg.z = 0.5 * (pc->w.z + pc->w_old.z);
+    pc->pos.x += 0.5 * (pc->vel.x + pc->vel_old.x);
+    pc->pos.y += 0.5 * (pc->vel.y + pc->vel_old.y);
+    pc->pos.z += 0.5 * (pc->vel.z + pc->vel_old.z);
 
-        pc->w_old.x = pc->w.x;
-        pc->w_old.y = pc->w.y;
-        pc->w_old.z = pc->w.z;
+    pc->vel_old.x = pc->vel.x;
+    pc->vel_old.y = pc->vel.y;
+    pc->vel_old.z = pc->vel.z;
 
-        pc->f_old.x = pc->f.x;
-        pc->f_old.y = pc->f.y;
-        pc->f_old.z = pc->f.z;
-    }
+    pc->w_avg.x = 0.5 * (pc->w.x + pc->w_old.x);
+    pc->w_avg.y = 0.5 * (pc->w.y + pc->w_old.y);
+    pc->w_avg.z = 0.5 * (pc->w.z + pc->w_old.z);
+
+    pc->w_old.x = pc->w.x;
+    pc->w_old.y = pc->w.y;
+    pc->w_old.z = pc->w.z;
+
+    pc->f_old.x = pc->f.x;
+    pc->f_old.y = pc->f.y;
+    pc->f_old.z = pc->f.z;
 }
 
 __global__
@@ -413,7 +456,6 @@ void gpuParticleNodeMovement(
     particlesNodes.pos.z[i] = pc.pos.z + 2 * ( ((qi*qj) - (q0*qj))*x_vec + ((qj*qk) + (q0*qi))*y_vec +   (tq0m1 + (qk*qk))*z_vec);
 }
 
-
 __host__
 void particlesCollision(
     ParticleCenter particleCenters[NUM_PARTICLES]
@@ -431,7 +473,6 @@ void particlesCollision(
         
         // Collision against walls
         const dfloat min_dist = 2 * radius_i + ZETA;
-
         // West
         dfloat pos_mirror = -pos_i.x;
         dfloat dist_abs = abs(pos_i.x - pos_mirror);
@@ -479,7 +520,6 @@ void particlesCollision(
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
             particleCenters[i].f.y -= (b_force / STIFF_WALL) * aux * aux;
         }
-
 
         for(int j = i+1; j < NUM_PARTICLES; j++){
             const dfloat3 pos_j = particleCenters[j].pos;

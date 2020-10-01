@@ -28,19 +28,19 @@ void initializationPop(
     FILE* filePop,
     FILE* filePopAux)
 {
-    dfloat* tmp = (dfloat*)malloc(totalMemSizePop);
-    fread(tmp, totalMemSizePop, 1, filePop);
+    dfloat* tmp = (dfloat*)malloc(TOTAL_MEM_SIZE_POP);
+    fread(tmp, TOTAL_MEM_SIZE_POP, 1, filePop);
 
     for(int i = 0; i < N_GPUS; i++){
-        size_t base_idx = numberNodes*Q*i;
-        checkCudaErrors(cudaMemcpy(pop[i].pop, tmp+base_idx, memSizePop, cudaMemcpyDefault));
+        size_t base_idx = NUMBER_LBM_NODES*Q*i;
+        checkCudaErrors(cudaMemcpy(pop[i].pop, tmp+base_idx, MEM_SIZE_POP, cudaMemcpyDefault));
     }
 
-    fread(tmp, totalMemSizePop, 1, filePopAux);
+    fread(tmp, TOTAL_MEM_SIZE_POP, 1, filePopAux);
 
     for(int i = 0; i < N_GPUS; i++){
-        size_t base_idx = numberNodes*Q*i;
-        checkCudaErrors(cudaMemcpy(pop[i].popAux, tmp+base_idx, memSizePop, cudaMemcpyDefault));
+        size_t base_idx = NUMBER_LBM_NODES*Q*i;
+        checkCudaErrors(cudaMemcpy(pop[i].popAux, tmp+base_idx, MEM_SIZE_POP, cudaMemcpyDefault));
     }
 
     free(tmp);
@@ -55,19 +55,19 @@ void initializationMacr(
     FILE* fileUy,
     FILE* fileUz)
 {
-    dfloat* tmp = (dfloat*)malloc(totalMemSizeScalar);
+    dfloat* tmp = (dfloat*)malloc(TOTAL_MEM_SIZE_SCALAR);
 
-    fread(tmp, totalMemSizeScalar, 1, fileRho);
-    checkCudaErrors(cudaMemcpy(macr->rho, tmp, totalMemSizeScalar, cudaMemcpyDefault));
+    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileRho);
+    checkCudaErrors(cudaMemcpy(macr->rho, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
 
-    fread(tmp, totalMemSizeScalar, 1, fileUx);
-    checkCudaErrors(cudaMemcpy(macr->ux, tmp, totalMemSizeScalar, cudaMemcpyDefault));
+    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileUx);
+    checkCudaErrors(cudaMemcpy(macr->ux, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
 
-    fread(tmp, totalMemSizeScalar, 1, fileUy);
-    checkCudaErrors(cudaMemcpy(macr->uy, tmp, totalMemSizeScalar, cudaMemcpyDefault));
+    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileUy);
+    checkCudaErrors(cudaMemcpy(macr->uy, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
 
-    fread(tmp, totalMemSizeScalar, 1, fileUz);
-    checkCudaErrors(cudaMemcpy(macr->uz, tmp, totalMemSizeScalar, cudaMemcpyDefault));
+    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileUz);
+    checkCudaErrors(cudaMemcpy(macr->uz, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
 
     free(tmp);
 }
@@ -89,7 +89,7 @@ void initializationRandomNumbers(
     
     // Generate NX*NY*NZ floats on device, using normal distribution
     // with mean=0 and std_dev=NORMAL_STD_DEV
-    checkCurandStatus(curandGenerateNormal(gen, randomNumbers, numberNodes,
+    checkCurandStatus(curandGenerateNormal(gen, randomNumbers, NUMBER_LBM_NODES,
         0, CURAND_STD_DEV));
 
     checkCurandStatus(curandDestroyGenerator(gen));
@@ -158,7 +158,7 @@ void gpuMacrInitValue(
 ​
     // perturbation
     dfloat pert = 0.1;
-    int l = idxScalar(x, y, z), Nt = numberNodes;
+    int l = idxScalar(x, y, z), Nt = NUMBER_LBM_NODES;
     macr->uz[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NZ - Nt*((l + NZ) / Nt)];
     macr->ux[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NX - Nt*((l + NX) / Nt)];
     macr->uy[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NY - Nt*((l + NY) / Nt)];

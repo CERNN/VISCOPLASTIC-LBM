@@ -24,12 +24,14 @@ __host__
 void immersedBoundaryMethod(
     ParticlesSoA particles,
     Macroscopics* __restrict__ macr,
+    dfloat3SoA* __restrict__ vels_aux,
     Populations* const __restrict__ pop,
     dim3 gridLBM,
     dim3 threadsLBM,
     unsigned int gridIBM,
     unsigned int threadsIBM,
-    cudaStream_t* __restrict__ stream
+    cudaStream_t __restrict__ streamLBM[N_GPUS],
+    cudaStream_t __restrict__ streamIBM[N_GPUS]
 );
 
 
@@ -37,24 +39,25 @@ __global__
 void gpuForceInterpolationSpread(
     ParticleNodeSoA particlesNodes,
     ParticleCenter particleCenters[NUM_PARTICLES],
-    Macroscopics const macr
+    Macroscopics const macr,
+    dfloat3SoA velAuxIBM
 );
 
 
 __global__
-void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr);
+void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM);
 
 
 __global__
 void gpuResetNodesForces(ParticleNodeSoA particlesNodes);
 
 
-__host__
+__global__
 void updateParticleCenterVelocityAndRotation(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
 
-__host__
+__global__
 void particleMovement(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );

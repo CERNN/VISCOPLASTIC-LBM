@@ -46,9 +46,9 @@ public:
     __host__
     void popAllocation()
     {
-        checkCudaErrors(cudaMallocManaged((void**)&(this->pop), memSizePop));
-        checkCudaErrors(cudaMallocManaged((void**)&(this->popAux), memSizePop));
-        checkCudaErrors(cudaMalloc((void**)&(this->mapBC), memSizeMapBC));
+        checkCudaErrors(cudaMallocManaged((void**)&(this->pop), MEM_SIZE_POP));
+        checkCudaErrors(cudaMallocManaged((void**)&(this->popAux), MEM_SIZE_POP));
+        checkCudaErrors(cudaMalloc((void**)&(this->mapBC), MEM_SIZE_MAP_BC));
     }
 
     /* Free populations */

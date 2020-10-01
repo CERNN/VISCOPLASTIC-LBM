@@ -257,27 +257,27 @@ void gpuSchVelBounceBack(NodeTypeMap* gpuNT,
     switch (gpuNT->getDirection())
     {
     case NORTH:
-        gpuBCVelBounceBackN(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelBounceBackN(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()], UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
 
     case SOUTH:
-        gpuBCVelBounceBackS(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelBounceBackS(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()], UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
 
     case WEST:
-        gpuBCVelBounceBackW(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelBounceBackW(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()], UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
 
     case EAST:
-        gpuBCVelBounceBackE(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelBounceBackE(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()], UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
 
     case FRONT:
-        gpuBCVelBounceBackF(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelBounceBackF(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()], UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
 
     case BACK:
-        gpuBCVelBounceBackB(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelBounceBackB(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()], UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
 
     default:
@@ -299,27 +299,27 @@ void gpuSchPresZouHe(NodeTypeMap* gpuNT,
     switch (gpuNT->getDirection())
     {
     case NORTH:
-        gpuBCPresZouHeN(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        gpuBCPresZouHeN(fPostStream, fPostCol, x, y, z, RHO_BC[gpuNT->getRhoIdx()]);
         break;
 
     case SOUTH:
-        gpuBCPresZouHeS(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        gpuBCPresZouHeS(fPostStream, fPostCol, x, y, z, RHO_BC[gpuNT->getRhoIdx()]);
         break;
 
     case WEST:
-        gpuBCPresZouHeW(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        gpuBCPresZouHeW(fPostStream, fPostCol, x, y, z, RHO_BC[gpuNT->getRhoIdx()]);
         break;
 
     case EAST:
-        gpuBCPresZouHeE(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        gpuBCPresZouHeE(fPostStream, fPostCol, x, y, z, RHO_BC[gpuNT->getRhoIdx()]);
         break;
 
     case FRONT:
-        gpuBCPresZouHeF(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        gpuBCPresZouHeF(fPostStream, fPostCol, x, y, z, RHO_BC[gpuNT->getRhoIdx()]);
         break;
 
     case BACK:
-        gpuBCPresZouHeB(fPostStream, fPostCol, x, y, z, rhoBC[gpuNT->getRhoIdx()]);
+        gpuBCPresZouHeB(fPostStream, fPostCol, x, y, z, RHO_BC[gpuNT->getRhoIdx()]);
         break;
     default:
         break;
@@ -340,33 +340,33 @@ void gpuSchVelZouHe(NodeTypeMap* gpuNT,
     switch (gpuNT->getDirection())
     {
     case NORTH:
-        gpuBCVelZouHeN(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()], 
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelZouHeN(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()], 
+            UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
 
     case SOUTH:
-        gpuBCVelZouHeS(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()],
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelZouHeS(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()],
+            UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
 
     case WEST:
-        gpuBCVelZouHeW(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()],
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelZouHeW(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()],
+            UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
 
     case EAST:
-        gpuBCVelZouHeE(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()],
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelZouHeE(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()],
+            UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
 
     case FRONT:
-        gpuBCVelZouHeF(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()],
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelZouHeF(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()],
+            UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
 
     case BACK:
-        gpuBCVelZouHeB(fPostStream, fPostCol, x, y, z, uxBC[gpuNT->getUxIdx()],
-            uyBC[gpuNT->getUyIdx()], uzBC[gpuNT->getUzIdx()]);
+        gpuBCVelZouHeB(fPostStream, fPostCol, x, y, z, UX_BC[gpuNT->getUxIdx()],
+            UY_BC[gpuNT->getUyIdx()], UZ_BC[gpuNT->getUzIdx()]);
         break;
     default:
         break;

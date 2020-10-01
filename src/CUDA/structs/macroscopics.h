@@ -74,25 +74,25 @@ public:
         {
         case IN_HOST:
             // allocate with CUDA for pinned memory and for all GPUS
-            checkCudaErrors(cudaMallocHost((void**)&(this->rho), totalMemSizeScalar));
-            checkCudaErrors(cudaMallocHost((void**)&(this->ux), totalMemSizeScalar));
-            checkCudaErrors(cudaMallocHost((void**)&(this->uy), totalMemSizeScalar));
-            checkCudaErrors(cudaMallocHost((void**)&(this->uz), totalMemSizeScalar));
+            checkCudaErrors(cudaMallocHost((void**)&(this->rho), TOTAL_MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocHost((void**)&(this->ux), TOTAL_MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocHost((void**)&(this->uy), TOTAL_MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocHost((void**)&(this->uz), TOTAL_MEM_SIZE_SCALAR));
             #ifdef IBM
-            checkCudaErrors(cudaMallocHost((void**)&(this->fx), totalMemSizeScalar));
-            checkCudaErrors(cudaMallocHost((void**)&(this->fy), totalMemSizeScalar));
-            checkCudaErrors(cudaMallocHost((void**)&(this->fz), totalMemSizeScalar));
+            checkCudaErrors(cudaMallocHost((void**)&(this->fx), TOTAL_MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocHost((void**)&(this->fy), TOTAL_MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocHost((void**)&(this->fz), TOTAL_MEM_SIZE_SCALAR));
             #endif
             break;
         case IN_VIRTUAL:
-            checkCudaErrors(cudaMallocManaged((void**)&(this->rho), memSizeScalar));
-            checkCudaErrors(cudaMallocManaged((void**)&(this->ux), memSizeScalar));
-            checkCudaErrors(cudaMallocManaged((void**)&(this->uy), memSizeScalar));
-            checkCudaErrors(cudaMallocManaged((void**)&(this->uz), memSizeScalar));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->rho), MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->ux), MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->uy), MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->uz), MEM_SIZE_SCALAR));
             #ifdef IBM
-            checkCudaErrors(cudaMallocManaged((void**)&(this->fx), memSizeScalar));
-            checkCudaErrors(cudaMallocManaged((void**)&(this->fy), memSizeScalar));
-            checkCudaErrors(cudaMallocManaged((void**)&(this->fz), memSizeScalar));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->fx), MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->fy), MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->fz), MEM_SIZE_SCALAR));
             #endif
             break;
         default:
@@ -140,7 +140,7 @@ public:
     __host__
     void copyMacr(macroscopics* macrRef, size_t baseIdx=0, size_t baseIdxRef=0, bool all_domain=false)
     {
-        size_t memSize = (all_domain ? totalMemSizeScalar : memSizeScalar);
+        size_t memSize = (all_domain ? TOTAL_MEM_SIZE_SCALAR : MEM_SIZE_SCALAR);
 
         cudaStream_t streamRho, streamUx, streamUy, streamUz;
         #ifdef IBM
