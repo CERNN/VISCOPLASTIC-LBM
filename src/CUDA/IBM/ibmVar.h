@@ -65,4 +65,26 @@ constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 #endif
 /* -------------------------------------------------------------------------- */
 
+/* ------------------------ THREADS AND GRIDS FOR IBM ----------------------- */
+// Threads for IBM particles
+constexpr unsigned int THREADS_PARTICLES_IBM = NUM_PARTICLES > 64 ? 64 : NUM_PARTICLES;
+// Grid for IBM particles
+constexpr unsigned int GRID_PARTICLES_IBM = 
+    (NUM_PARTICLES % THREADS_PARTICLES_IBM ? 
+        (NUM_PARTICLES / THREADS_PARTICLES_IBM + 1)
+        : (NUM_PARTICLES / THREADS_PARTICLES_IBM));
+
+// For IBM particles collision, the total of threads must be 
+// totalThreads = NUM_PARTICLES*(NUM_PARTICLES+1)/2
+constexpr unsigned int TOTAL_PCOLLISION_IBM_THREADS = (NUM_PARTICLES*NUM_PARTICLES+1)/2;
+// Threads for IBM particles collision 
+constexpr unsigned int THREADS_PCOLLISION_IBM = (TOTAL_PCOLLISION_IBM_THREADS > 64 ? 
+    64 : TOTAL_PCOLLISION_IBM_THREADS;
+// Grid for IBM particles collision
+constexpr unsigned int GRID_PCOLLISION_IBM = 
+    (TOTAL_PCOLLISION_IBM_THREADS % THREADS_PCOLLISION_IBM ? 
+        (TOTAL_PCOLLISION_IBM_THREADS / THREADS_PCOLLISION_IBM + 1)
+        : (TOTAL_PCOLLISION_IBM_THREADS / THREADS_PCOLLISION_IBM));
+/* -------------------------------------------------------------------------- */
+
 #endif // !__IBM_VAR_H

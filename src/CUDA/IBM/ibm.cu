@@ -24,6 +24,18 @@ void immersedBoundaryMethod(
         (NUM_PARTICLES % threadsParticlesIBM ? 
             (NUM_PARTICLES / threadsParticlesIBM + 1)
             : (NUM_PARTICLES / threadsParticlesIBM));
+
+    // For IBM particles collision, the total of threads must be 
+    // totalThreads = NUM_PARTICLES*(NUM_PARTICLES+1)/2
+    // Threads for IBM particles collision 
+    const unsigned int threadsPCollisionIBM = (NUM_PARTICLES*NUM_PARTICLES+1)/2 > 32 ? 
+        32 : (NUM_PARTICLES*NUM_PARTICLES+1)/2;
+    // Grid for IBM particles collision
+    const unsigned int gridPCollisionIBM = 
+        (NUM_PARTICLES % threadsPCollisionIBM ? 
+            (NUM_PARTICLES / threadsPCollision + 1)
+            : (NUM_PARTICLES / threadsPCollision));
+
     // Size of shared memory to use for optimization in interpolation/spread
     const unsigned int sharedMemInterpSpread = threadsNodesIBM * sizeof(dfloat3);
 
@@ -456,29 +468,77 @@ void gpuParticleNodeMovement(
     particlesNodes.pos.z[i] = pc.pos.z + 2 * ( ((qi*qj) - (q0*qj))*x_vec + ((qj*qk) + (q0*qi))*y_vec +   (tq0m1 + (qk*qk))*z_vec);
 }
 
-__host__
+__global__
 void particlesCollision(
     ParticleCenter particleCenters[NUM_PARTICLES]
 ){
-    // Auxiliary variable for many things
+    const unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if(idx >= TOTAL_PCOLLISION_IBM_THREADS)
+        return;
+    
+    /* Maps a 1D array to a Floyd triangle, where the last row is for checking
+    collision against the wall and the other ones to check collision between 
+    particles, with index given by row/column. Example for 7 particles:
+
+    FLOYD TRIANGLE
+        c0  c1  c2  c3  c4  c5  c6
+    r0  0
+    r1  1   2
+    r2  3   4   5
+    r3  6   7   8   9
+    r4  10  11  12  13  14
+    r5  15  16  17  18  19  20
+    c6  21  22  23  24  25  26  27
+
+    Index 7 is in r3, c1. It will compare p[1] (particle in index 1), from column,
+    with p[4], from row (this is because for all rows one is added to its index)
+
+    Index 0 will compare p[0] (column) and p[1] (row)
+    Index 13 will compare p[3] (column) and p[5] (row)
+    Index 20 will compare p[5] (column) and p[6] (row)
+
+    For the last column, the particles check collision against the wall.
+    Index 21 will check p[0] (column) collision against the wall
+    Index 27 will check p[6] (column) collision against the wall
+    Index 24 will check p[3] (column) collision against the wall
+    
+    FROM INDEX TO ROW/COLUMN
+    Starting column/row from 1, the n'th row always ends (n)*(n+1)/2+1. So:
+
+    k = (n)*(n+1)/2+1
+    n^2 + n - (2k+1) = 0
+
+    (with k=particle index)
+    n_row = ceil((-1 + Sqrt(1 + 8(k+1))) / 2)
+    n_column = k - n_row * (n_row - 1) / 2
+    */
+
+    const unsigned int row = ceil((-1.0+sqrt(1+8*idx))/2);
+    // Auxiliary variables, for many things
     dfloat aux;
 
-    for(int i = 0; i < NUM_PARTICLES; i++){
-        const dfloat3 pos_i = particleCenters[i].pos;
-        const dfloat radius_i = particleCenters[i].radius;
+    // Collision against walls
+    if(row == NUM_PARTICLES){
+        const unsigned int column = idx - (row+1)*row/2;
 
+        // Particle position
+        const dfloat3 pos_i = particleCenters[column].pos;
+        const dfloat radius_i = particleCenters[column].radius;
+
+        const dfloat min_dist = 2 * radius_i + ZETA;
+
+        // Magnitude of gravity force
         const dfloat grav = sqrt(GX * GX + GY * GY + GZ * GZ);
         // Buoyancy force
-        const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * particleCenters[i].volume;
-        
-        // Collision against walls
-        const dfloat min_dist = 2 * radius_i + ZETA;
+        const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * particleCenters[column].volume;
+
         // West
         dfloat pos_mirror = -pos_i.x;
         dfloat dist_abs = abs(pos_i.x - pos_mirror);
         if (dist_abs <= min_dist){
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            particleCenters[i].f.x += (b_force / STIFF_WALL) * aux * aux;
+            atomicAdd(&(particleCenters[column].f.x), (b_force / STIFF_WALL) * aux * aux);
         }
 
         // East
@@ -486,7 +546,7 @@ void particlesCollision(
         dist_abs = abs(pos_i.x - pos_mirror);
         if (dist_abs <= min_dist){
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            particleCenters[i].f.x -= (b_force / STIFF_WALL) * aux * aux;
+            atomicAdd(&(particleCenters[column].f.x), -(b_force / STIFF_WALL) * aux * aux);
         }
 
         // South
@@ -494,7 +554,7 @@ void particlesCollision(
         dist_abs = abs(pos_i.y - pos_mirror);
         if (dist_abs <= min_dist){
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            particleCenters[i].f.y += (b_force / STIFF_WALL) * aux * aux;
+            atomicAdd(&(particleCenters[column].f.y), (b_force / STIFF_WALL) * aux * aux);
         }
 
         // North
@@ -502,7 +562,7 @@ void particlesCollision(
         dist_abs = abs(pos_i.y - pos_mirror);
         if (dist_abs <= min_dist){
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            particleCenters[i].f.y -= (b_force / STIFF_WALL) * aux * aux;
+            atomicAdd(&(particleCenters[column].f.y), -(b_force / STIFF_WALL) * aux * aux);
         }
 
         // Back
@@ -510,7 +570,7 @@ void particlesCollision(
         dist_abs = abs(pos_i.z - pos_mirror);
         if (dist_abs <= min_dist){
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            particleCenters[i].f.y += (b_force / STIFF_WALL) * aux * aux;
+            atomicAdd(&(particleCenters[column].f.z), (b_force / STIFF_WALL) * aux * aux);
         }
 
         // Front
@@ -518,69 +578,75 @@ void particlesCollision(
         dist_abs = abs(pos_i.z - pos_mirror);
         if (dist_abs <= min_dist) {
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            particleCenters[i].f.y -= (b_force / STIFF_WALL) * aux * aux;
+            atomicAdd(&(particleCenters[column].f.z), -(b_force / STIFF_WALL) * aux * aux);
         }
+    }
+    // Collision against particles
+    else{
+        const unsigned int column = idx - (row-1)*row/2;
 
-        for(int j = i+1; j < NUM_PARTICLES; j++){
-            const dfloat3 pos_j = particleCenters[j].pos;
-            const dfloat radius_j = particleCenters[j].radius;
+        // Particle i info (column)
+        const dfloat3 pos_i = particleCenters[column].pos;
+        const dfloat radius_i = particleCenters[column].radius;
 
-            dfloat3 diff_pos;
-            diff_pos.x = pos_i.x - pos_j.x;
-            diff_pos.y = pos_i.y - pos_j.y;
-            diff_pos.z = pos_i.z - pos_j.z;
+        // Particle j info (row)
+        const dfloat3 pos_j = particleCenters[row].pos;
+        const dfloat radius_j = particleCenters[row].radius;
 
-            const dfloat mag_dist = sqrt(
-                diff_pos.x*diff_pos.x
-                + diff_pos.y*diff_pos.y
-                + diff_pos.z*diff_pos.z);
+        // Particles position difference
+        const dfloat3 diff_pos = dfloat3(;
+            pos_i.x - pos_j.x,
+            pos_i.y - pos_j.y,
+            pos_i.z - pos_j.z);
 
-            // Hard collision (one particle inside another)
-            if(mag_dist < radius_i+radius_j){
-                aux = (mag_dist - radius_i - radius_j - ZETA) / ZETA;
-                // Force to act on particles
-                const dfloat f = ((b_force / STIFF_SOFT) * aux * aux 
-                    + (b_force / STIFF_HARD) * 
-                    ((radius_i + radius_j - mag_dist) / ZETA)) / mag_dist;
+        // Magnitude of distance between particles
+        const dfloat mag_dist = sqrt(
+            diff_pos.x*diff_pos.x
+            + diff_pos.y*diff_pos.y
+            + diff_pos.z*diff_pos.z);
 
-                // Force in each direction
-                const dfloat3 f_dirs = dfloat3(
-                    f * diff_pos.x,
-                    f * diff_pos.y,
-                    f * diff_pos.z
-                );
+        // Force on particle
+        dfloat f = 0;
+        dfloat3 f_dirs = dfloat3();
 
-                // Force positive in particle i
-                particleCenters[i].f.x += f_dirs.x;
-                particleCenters[i].f.y += f_dirs.y;
-                particleCenters[i].f.z += f_dirs.z;
-                // Force negative in particle j
-                particleCenters[j].f.x -= f_dirs.x;
-                particleCenters[j].f.y -= f_dirs.y;
-                particleCenters[j].f.z -= f_dirs.z;
-            }
-            // Soft collision (one particle close to another)
-            else if (mag_dist < radius_i+radius_j+ZETA){
-                aux = (mag_dist - radius_i - radius_j - ZETA) / ZETA;
-                // Force to act on particles
-                const dfloat f = (b_force / STIFF_SOFT) * aux*aux / mag_dist;
+        // Hard collision (one particle inside another)
+        if(mag_dist < radius_i+radius_j){
+            aux = (mag_dist - radius_i - radius_j - ZETA) / ZETA;
+            // Force to act on particles
+            f = ((b_force / STIFF_SOFT) * aux * aux 
+                + (b_force / STIFF_HARD) * 
+                ((radius_i + radius_j - mag_dist) / ZETA)) / mag_dist;
 
-                // Force in each direction
-                const dfloat3 f_dirs = dfloat3(
-                    f * diff_pos.x,
-                    f * diff_pos.y,
-                    f * diff_pos.z
-                );
+            // Force in each direction
+            f_dirs = dfloat3(
+                f * diff_pos.x,
+                f * diff_pos.y,
+                f * diff_pos.z
+            );
+        }
+        // Soft collision (one particle close to another)
+        else if (mag_dist < radius_i+radius_j+ZETA){
+            aux = (mag_dist - radius_i - radius_j - ZETA) / ZETA;
+            // Force to act on particles
+            f = (b_force / STIFF_SOFT) * aux*aux / mag_dist;
 
-                // Force positive in particle i
-                particleCenters[i].f.x += f_dirs.x;
-                particleCenters[i].f.y += f_dirs.y;
-                particleCenters[i].f.z += f_dirs.z;
-                // Force negative in particle j
-                particleCenters[j].f.x -= f_dirs.x;
-                particleCenters[j].f.y -= f_dirs.y;
-                particleCenters[j].f.z -= f_dirs.z;
-            }
+            // Force in each direction
+            f_dirs = dfloat3(
+                f * diff_pos.x,
+                f * diff_pos.y,
+                f * diff_pos.z
+            );
+        }
+        // Add force on particles
+        if(f != 0){
+            // Force positive in particle i (column)
+            atomicAdd(&particleCenters[column].f.x, f_dirs.x);
+            atomicAdd(&particleCenters[column].f.y, f_dirs.y);
+            atomicAdd(&particleCenters[column].f.z, f_dirs.z);
+            // Force negative in particle j (row)
+            atomicAdd(&particleCenters[row].f.x, -f_dirs.x);
+            atomicAdd(&particleCenters[row].f.y, -f_dirs.y);
+            atomicAdd(&particleCenters[row].f.z, -f_dirs.z);
         }
     }
 }

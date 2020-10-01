@@ -68,7 +68,7 @@ void gpuParticleNodeMovement(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
 
-__host__ 
+__global__ 
 void particlesCollision(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
