@@ -78,7 +78,7 @@ constexpr unsigned int GRID_PARTICLES_IBM =
 // totalThreads = NUM_PARTICLES*(NUM_PARTICLES+1)/2
 constexpr unsigned int TOTAL_PCOLLISION_IBM_THREADS = (NUM_PARTICLES*NUM_PARTICLES+1)/2;
 // Threads for IBM particles collision 
-constexpr unsigned int THREADS_PCOLLISION_IBM = (TOTAL_PCOLLISION_IBM_THREADS > 64 ? 
+constexpr unsigned int THREADS_PCOLLISION_IBM = (TOTAL_PCOLLISION_IBM_THREADS > 64) ? 
     64 : TOTAL_PCOLLISION_IBM_THREADS;
 // Grid for IBM particles collision
 constexpr unsigned int GRID_PCOLLISION_IBM = 

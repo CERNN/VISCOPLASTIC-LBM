@@ -16,39 +16,19 @@ void immersedBoundaryMethod(
     cudaStream_t __restrict__ streamIBM[N_GPUS])
 {
     // TODO: Update it to multi GPU
-
-    // Threads for IBM particles
-    const unsigned int threadsParticlesIBM = NUM_PARTICLES > 32 ? 32 : NUM_PARTICLES;
-    // Grid for IBM particles
-    const unsigned int gridParticlesIBM = 
-        (NUM_PARTICLES % threadsParticlesIBM ? 
-            (NUM_PARTICLES / threadsParticlesIBM + 1)
-            : (NUM_PARTICLES / threadsParticlesIBM));
-
-    // For IBM particles collision, the total of threads must be 
-    // totalThreads = NUM_PARTICLES*(NUM_PARTICLES+1)/2
-    // Threads for IBM particles collision 
-    const unsigned int threadsPCollisionIBM = (NUM_PARTICLES*NUM_PARTICLES+1)/2 > 32 ? 
-        32 : (NUM_PARTICLES*NUM_PARTICLES+1)/2;
-    // Grid for IBM particles collision
-    const unsigned int gridPCollisionIBM = 
-        (NUM_PARTICLES % threadsPCollisionIBM ? 
-            (NUM_PARTICLES / threadsPCollision + 1)
-            : (NUM_PARTICLES / threadsPCollision));
-
     // Size of shared memory to use for optimization in interpolation/spread
     const unsigned int sharedMemInterpSpread = threadsNodesIBM * sizeof(dfloat3);
 
     // Update macroscopics post boundary conditions and reset forces
     gpuUpdateMacrResetForces<<<gridLBM, threadsLBM, 0, streamLBM[0]>>>(pop[0], macr[0], velsAuxIBM[0]);
+
     // Reset forces in all IBM nodes
     gpuResetNodesForces<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(particles.nodesSoA);
-    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-    checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
-
     // Calculate collision force between particles
-    particlesCollision(particles.pCenterArray);
+    particlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
+
     checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
@@ -72,14 +52,14 @@ void immersedBoundaryMethod(
         velsAuxIBM[0].z = tmp;
 
         // Update particle velocity using body center force and constant forces
-        updateParticleCenterVelocityAndRotation<<<gridParticlesIBM, threadsParticlesIBM, 0, streamIBM[0]>>>(
+        updateParticleCenterVelocityAndRotation<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
             particles.pCenterArray);
 
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     }
 
     // Update particle center position and its old values
-    particleMovement<<<gridParticlesIBM, threadsParticlesIBM, 0, streamIBM[0]>>>(
+    particleMovement<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
         particles.pCenterArray);
     // Update particle nodes positions
     gpuParticleNodeMovement<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(
@@ -474,7 +454,7 @@ void particlesCollision(
 ){
     const unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
 
-    if(idx >= TOTAL_PCOLLISION_IBM_THREADS)
+    if(idx > TOTAL_PCOLLISION_IBM_THREADS)
         return;
     
     /* Maps a 1D array to a Floyd triangle, where the last row is for checking
@@ -514,13 +494,17 @@ void particlesCollision(
     n_column = k - n_row * (n_row - 1) / 2
     */
 
-    const unsigned int row = ceil((-1.0+sqrt(1+8*idx))/2);
+    const unsigned int row = ceil((-1.0+sqrt((float)1+8*(idx+1)))/2);
+    const unsigned int column = idx - (row-1)*row/2;
+
     // Auxiliary variables, for many things
     dfloat aux;
 
+    // Magnitude of gravity force
+    const dfloat grav = sqrt(GX * GX + GY * GY + GZ * GZ);
+
     // Collision against walls
     if(row == NUM_PARTICLES){
-        const unsigned int column = idx - (row+1)*row/2;
 
         // Particle position
         const dfloat3 pos_i = particleCenters[column].pos;
@@ -528,8 +512,6 @@ void particlesCollision(
 
         const dfloat min_dist = 2 * radius_i + ZETA;
 
-        // Magnitude of gravity force
-        const dfloat grav = sqrt(GX * GX + GY * GY + GZ * GZ);
         // Buoyancy force
         const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * particleCenters[column].volume;
 
@@ -583,8 +565,6 @@ void particlesCollision(
     }
     // Collision against particles
     else{
-        const unsigned int column = idx - (row-1)*row/2;
-
         // Particle i info (column)
         const dfloat3 pos_i = particleCenters[column].pos;
         const dfloat radius_i = particleCenters[column].radius;
@@ -594,7 +574,7 @@ void particlesCollision(
         const dfloat radius_j = particleCenters[row].radius;
 
         // Particles position difference
-        const dfloat3 diff_pos = dfloat3(;
+        const dfloat3 diff_pos = dfloat3(
             pos_i.x - pos_j.x,
             pos_i.y - pos_j.y,
             pos_i.z - pos_j.z);
@@ -608,6 +588,9 @@ void particlesCollision(
         // Force on particle
         dfloat f = 0;
         dfloat3 f_dirs = dfloat3();
+
+        // Buoyancy force
+        const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * particleCenters[column].volume;
 
         // Hard collision (one particle inside another)
         if(mag_dist < radius_i+radius_j){
@@ -640,13 +623,13 @@ void particlesCollision(
         // Add force on particles
         if(f != 0){
             // Force positive in particle i (column)
-            atomicAdd(&particleCenters[column].f.x, f_dirs.x);
-            atomicAdd(&particleCenters[column].f.y, f_dirs.y);
-            atomicAdd(&particleCenters[column].f.z, f_dirs.z);
+            atomicAdd(&(particleCenters[column].f.x), f_dirs.x);
+            atomicAdd(&(particleCenters[column].f.y), f_dirs.y);
+            atomicAdd(&(particleCenters[column].f.z), f_dirs.z);
             // Force negative in particle j (row)
-            atomicAdd(&particleCenters[row].f.x, -f_dirs.x);
-            atomicAdd(&particleCenters[row].f.y, -f_dirs.y);
-            atomicAdd(&particleCenters[row].f.z, -f_dirs.z);
+            atomicAdd(&(particleCenters[row].f.x), -f_dirs.x);
+            atomicAdd(&(particleCenters[row].f.y), -f_dirs.y);
+            atomicAdd(&(particleCenters[row].f.z), -f_dirs.z);
         }
     }
 }
