@@ -269,13 +269,20 @@ int main()
             if(DATA_REPORT != 0)
                 rep = !(aux % DATA_REPORT);
         }
+        // Save macroscopics to array in LBM kernel
+        bool save_macr_to_array;
+        #ifndef IBM
+        save_macr_to_array = rep || save || ((step+1)>=(int)N_STEPS);
+        #else
+        save_macr_to_array = true;
+        #endif
 
         // LBM solver
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
             gpuMacrCollisionStream<<<grid, threads>>>
-                (pop[i].pop, pop[i].popAux, pop[i].mapBC, 
-                macr[i], rep || save || ((step+1)>=(int)N_STEPS), step);
+                (pop[i].pop, pop[i].popAux, pop[i].mapBC, macr[i],
+                save_macr_to_array, step);
             //checkCudaErrors(cudaDeviceSynchronize());
             getLastCudaError("LBM kernel error\n");
         }
