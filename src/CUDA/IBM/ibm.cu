@@ -13,7 +13,8 @@ void immersedBoundaryMethod(
     unsigned int gridNodesIBM,
     unsigned int threadsNodesIBM,
     cudaStream_t __restrict__ streamLBM[N_GPUS],
-    cudaStream_t __restrict__ streamIBM[N_GPUS])
+    cudaStream_t __restrict__ streamIBM[N_GPUS],
+    unsigned int step)
 {
     // TODO: Update it to multi GPU
     // Size of shared memory to use for optimization in interpolation/spread
@@ -21,13 +22,12 @@ void immersedBoundaryMethod(
 
     // Update macroscopics post boundary conditions and reset forces
     gpuUpdateMacrResetForces<<<gridLBM, threadsLBM, 0, streamLBM[0]>>>(pop[0], macr[0], velsAuxIBM[0]);
+    checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
 
     // Reset forces in all IBM nodes
     gpuResetNodesForces<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(particles.nodesSoA);
     // Calculate collision force between particles
-    particlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
-
-    checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
+    gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
@@ -52,20 +52,35 @@ void immersedBoundaryMethod(
         velsAuxIBM[0].z = tmp;
 
         // Update particle velocity using body center force and constant forces
-        updateParticleCenterVelocityAndRotation<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
+        gpuUpdateParticleCenterVelocityAndRotation<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
             particles.pCenterArray);
 
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     }
 
     // Update particle center position and its old values
-    particleMovement<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
+    gpuParticleMovement<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
         particles.pCenterArray);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     // Update particle nodes positions
     gpuParticleNodeMovement<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(
         particles.nodesSoA, particles.pCenterArray);
-
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+    // Update particle center position and its old values
+    gpuUpdateParticleOldValues<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
+        particles.pCenterArray);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+
+    // Synchronize and swap populations
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    if(!(step % 100)){
+        ParticleCenter pc = particles.pCenterArray[0];
+        printf("step %d\n", step); 
+        printf("pos (%f, %f, %f)\n", pc.pos.x, pc.pos.y, pc.pos.z);
+        printf("vel (%f, %f, %f)\n", pc.vel.x, pc.vel.y, pc.vel.z);
+        printf("accel (%f, %f, %f)\n", pc.vel.x-pc.vel_old.x, pc.vel.y-pc.vel_old.y, pc.vel.z-pc.vel_old.z);  
+    }
 }
 
 __global__
@@ -89,15 +104,15 @@ void gpuForceInterpolationSpread(
     const dfloat zIBM = particlesNodes.pos.z[i];
 
     // Minimum number of xyz for LBM interpolation
-    const unsigned int xMin = (((int)xIBM - P_DIST) < 0) ? 0 : xIBM - P_DIST;
-    const unsigned int yMin = (((int)yIBM - P_DIST) < 0) ? 0 : yIBM - P_DIST;
-    const unsigned int zMin = (((int)zIBM - P_DIST) < 0) ? 0 : zIBM - P_DIST;
+    const unsigned int xMin = (((int)xIBM - P_DIST) < 0) ? 0 : (int)xIBM - P_DIST;
+    const unsigned int yMin = (((int)yIBM - P_DIST) < 0) ? 0 : (int)yIBM - P_DIST;
+    const unsigned int zMin = (((int)zIBM - P_DIST) < 0) ? 0 : (int)zIBM - P_DIST;
 
     // Maximum number of xyz for LBM interpolation, excluding last
     // (e.g. NX goes just until NX-1)
-    const unsigned int xMax = (((int)xIBM + P_DIST + 1) > NX) ? NX : xIBM + P_DIST + 1;
-    const unsigned int yMax = (((int)yIBM + P_DIST + 1) > NY) ? NY : yIBM + P_DIST + 1;
-    const unsigned int zMax = (((int)zIBM + P_DIST + 1) > NZ) ? NZ : zIBM + P_DIST + 1;
+    const unsigned int xMax = (((int)xIBM + 1 + P_DIST) > NX) ? NX : (int)xIBM + P_DIST + 1;
+    const unsigned int yMax = (((int)yIBM + 1 + P_DIST) > NY) ? NY : (int)yIBM + P_DIST + 1;
+    const unsigned int zMax = (((int)zIBM + 1 + P_DIST) > NZ) ? NZ : (int)zIBM + P_DIST + 1;
 
     dfloat rhoVar = 0;
     dfloat uxVar = 0;
@@ -242,15 +257,13 @@ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA vel
 
     size_t idx = idxScalar(x, y, z);
 
-    // Reset forces
-    macr.fx[idx] = FX;
-    macr.fy[idx] = FY;
-    macr.fz[idx] = FZ;
-
     // load populations
     dfloat fNode[Q];
     for (unsigned char i = 0; i < Q; i++)
         fNode[i] = pop.pop[idxPop(x, y, z, i)];
+
+    // Reset forces
+    const dfloat3 f = dfloat3(macr.fx[idx], macr.fy[idx], macr.fz[idx]);
 
     // calc for macroscopics
     // rho = sum(f[i])
@@ -264,11 +277,11 @@ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA vel
         + fNode[17] + fNode[18];
     const dfloat invRho = 1 / rhoVar;
     const dfloat uxVar = ((fNode[1] + fNode[7] + fNode[9] + fNode[13] + fNode[15]) 
-    - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16]) + 0.5 * FX) * invRho;
+    - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16]) + 0.5 * f.x) * invRho;
     const dfloat uyVar = ((fNode[3] + fNode[7] + fNode[11] + fNode[14] + fNode[17])
-     - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18]) + 0.5 * FY) * invRho;
+     - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18]) + 0.5 * f.y) * invRho;
     const dfloat uzVar = ((fNode[5] + fNode[9] + fNode[11] + fNode[16] + fNode[18])
-     - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17]) + 0.5 * FZ) * invRho;
+     - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17]) + 0.5 * f.z) * invRho;
 #endif // !D3Q19
 #ifdef D3Q27
     const dfloat rhoVar = fNode[0] + fNode[1] + fNode[2] + fNode[3] + fNode[4] 
@@ -280,15 +293,15 @@ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA vel
     const dfloat uxVar = ((fNode[1] + fNode[7] + fNode[9] + fNode[13] + fNode[15] 
         + fNode[19] + fNode[21] + fNode[23] + fNode[26]) 
         - (fNode[2] + fNode[8] + fNode[10] + fNode[14] + fNode[16] + fNode[20] 
-        + fNode[22] + fNode[24] + fNode[25]) + 0.5 * FX) * invRho;
+        + fNode[22] + fNode[24] + fNode[25]) + 0.5 * f.x) * invRho;
     const dfloat uyVar = ((fNode[3] + fNode[7] + fNode[11] + fNode[14] + fNode[17]
         + fNode[19] + fNode[21] + fNode[24] + fNode[25]) 
         - (fNode[4] + fNode[8] + fNode[12] + fNode[13] + fNode[18] + fNode[20] 
-        + fNode[22] + fNode[23] + fNode[26]) + 0.5 * FY) * invRho;
+        + fNode[22] + fNode[23] + fNode[26]) + 0.5 * f.y) * invRho;
     const dfloat uzVar = ((fNode[5] + fNode[9] + fNode[11] + fNode[16] + fNode[18]
         + fNode[19] + fNode[22] + fNode[23] + fNode[25]) 
         - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17] + fNode[20] 
-        + fNode[21] + fNode[24] + fNode[26]) + 0.5 * FZ) * invRho;
+        + fNode[21] + fNode[24] + fNode[26]) + 0.5 * f.z) * invRho;
 #endif // !D3Q27
 
     macr.rho[idx] = rhoVar;
@@ -298,6 +311,11 @@ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA vel
     velAuxIBM.x[idx] = uxVar;
     velAuxIBM.y[idx] = uyVar;
     velAuxIBM.z[idx] = uzVar;
+    
+    macr.fx[idx] = FX;
+    macr.fy[idx] = FY;
+    macr.fz[idx] = FZ;
+
 }
 
 __global__ 
@@ -320,7 +338,7 @@ void gpuResetNodesForces(ParticleNodeSoA particlesNodes)
 }
 
 __global__ 
-void updateParticleCenterVelocityAndRotation(
+void gpuUpdateParticleCenterVelocityAndRotation(
     ParticleCenter particleCenters[NUM_PARTICLES])
 {
     unsigned int p = threadIdx.x + blockDim.x * blockIdx.x;
@@ -329,6 +347,9 @@ void updateParticleCenterVelocityAndRotation(
         return;
 
     ParticleCenter *pc = &(particleCenters[p]);
+
+    if(!pc->movable)
+        return;
 
     const dfloat inv_volume = 1 / pc->volume;
     // Update particle center velocity using its surface forces and the body forces
@@ -365,13 +386,13 @@ void updateParticleCenterVelocityAndRotation(
         wAux.z = wNew.z;
     }
     // Store new velocities in particle center
-    pc->w.x = wNew.x;
-    pc->w.y = wNew.y;
-    pc->w.z = wNew.z;
+    pc->w.x = 0; //wNew.x;
+    pc->w.y = 0; //wNew.y;
+    pc->w.z = 0; //wNew.z;
 }
 
 __global__
-void particleMovement(
+void gpuParticleMovement(
     ParticleCenter particleCenters[NUM_PARTICLES])
 {
     unsigned int p = threadIdx.x + blockDim.x * blockIdx.x;
@@ -381,21 +402,30 @@ void particleMovement(
 
     ParticleCenter *pc = &(particleCenters[p]);
 
-    pc->pos_old.x = pc->pos.x;
-    pc->pos_old.y = pc->pos.y;
-    pc->pos_old.z = pc->pos.z;
-
     pc->pos.x += 0.5 * (pc->vel.x + pc->vel_old.x);
     pc->pos.y += 0.5 * (pc->vel.y + pc->vel_old.y);
     pc->pos.z += 0.5 * (pc->vel.z + pc->vel_old.z);
 
-    pc->vel_old.x = pc->vel.x;
-    pc->vel_old.y = pc->vel.y;
-    pc->vel_old.z = pc->vel.z;
-
     pc->w_avg.x = 0.5 * (pc->w.x + pc->w_old.x);
     pc->w_avg.y = 0.5 * (pc->w.y + pc->w_old.y);
     pc->w_avg.z = 0.5 * (pc->w.z + pc->w_old.z);
+}
+
+
+__global__
+void gpuUpdateParticleOldValues(
+    ParticleCenter particleCenters[NUM_PARTICLES])
+{
+    unsigned int p = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if(p >= NUM_PARTICLES)
+        return;
+
+    ParticleCenter *pc = &(particleCenters[p]);
+
+    pc->vel_old.x = pc->vel.x;
+    pc->vel_old.y = pc->vel.y;
+    pc->vel_old.z = pc->vel.z;
 
     pc->w_old.x = pc->w.x;
     pc->w_old.y = pc->w.y;
@@ -404,6 +434,11 @@ void particleMovement(
     pc->f_old.x = pc->f.x;
     pc->f_old.y = pc->f.y;
     pc->f_old.z = pc->f.z;
+
+    // Reset force, because kernel is always added
+    pc->f.x = 0;
+    pc->f.y = 0;
+    pc->f.z = 0;
 }
 
 __global__
@@ -418,6 +453,9 @@ void gpuParticleNodeMovement(
 
     const ParticleCenter pc = particleCenters[particlesNodes.particleCenterIdx[i]];
 
+    if(!pc.movable)
+        return;
+
     // TODO: make the calculation of w_norm along with w_avg?
     const dfloat w_norm = sqrt((pc.w_avg.x * pc.w_avg.x) 
         + (pc.w_avg.y * pc.w_avg.y) 
@@ -427,7 +465,7 @@ void gpuParticleNodeMovement(
     {
         particlesNodes.pos.x[i] += pc.pos.x - pc.pos_old.x;
         particlesNodes.pos.y[i] += pc.pos.y - pc.pos_old.y;
-        particlesNodes.pos.z[i] += pc.pos.z - pc.pos_old.z; 
+        particlesNodes.pos.z[i] += pc.pos.z - pc.pos_old.z;
         return;
     }
 
@@ -449,7 +487,7 @@ void gpuParticleNodeMovement(
 }
 
 __global__
-void particlesCollision(
+void gpuParticlesCollision(
     ParticleCenter particleCenters[NUM_PARTICLES]
 ){
     const unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
@@ -503,24 +541,30 @@ void particlesCollision(
     // Magnitude of gravity force
     const dfloat grav = sqrt(GX * GX + GY * GY + GZ * GZ);
 
+    // Particle from column
+    ParticleCenter* pc_i = &particleCenters[column];
+
     // Collision against walls
     if(row == NUM_PARTICLES){
 
+        if(!pc_i->movable)
+            return;
+
         // Particle position
-        const dfloat3 pos_i = particleCenters[column].pos;
-        const dfloat radius_i = particleCenters[column].radius;
+        const dfloat3 pos_i = pc_i->pos;
+        const dfloat radius_i = pc_i->radius;
 
         const dfloat min_dist = 2 * radius_i + ZETA;
 
         // Buoyancy force
-        const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * particleCenters[column].volume;
+        const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * pc_i->volume;
 
         // West
         dfloat pos_mirror = -pos_i.x;
         dfloat dist_abs = abs(pos_i.x - pos_mirror);
         if (dist_abs <= min_dist){
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(particleCenters[column].f.x), (b_force / STIFF_WALL) * aux * aux);
+            atomicAdd(&(pc_i->f.x), (b_force / STIFF_WALL) * aux * aux);
         }
 
         // East
@@ -528,7 +572,7 @@ void particlesCollision(
         dist_abs = abs(pos_i.x - pos_mirror);
         if (dist_abs <= min_dist){
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(particleCenters[column].f.x), -(b_force / STIFF_WALL) * aux * aux);
+            atomicAdd(&(pc_i->f.x), -(b_force / STIFF_WALL) * aux * aux);
         }
 
         // South
@@ -536,7 +580,7 @@ void particlesCollision(
         dist_abs = abs(pos_i.y - pos_mirror);
         if (dist_abs <= min_dist){
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(particleCenters[column].f.y), (b_force / STIFF_WALL) * aux * aux);
+            atomicAdd(&(pc_i->f.y), (b_force / STIFF_WALL) * aux * aux);
         }
 
         // North
@@ -544,7 +588,7 @@ void particlesCollision(
         dist_abs = abs(pos_i.y - pos_mirror);
         if (dist_abs <= min_dist){
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(particleCenters[column].f.y), -(b_force / STIFF_WALL) * aux * aux);
+            atomicAdd(&(pc_i->f.y), -(b_force / STIFF_WALL) * aux * aux);
         }
 
         // Back
@@ -552,7 +596,7 @@ void particlesCollision(
         dist_abs = abs(pos_i.z - pos_mirror);
         if (dist_abs <= min_dist){
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(particleCenters[column].f.z), (b_force / STIFF_WALL) * aux * aux);
+            atomicAdd(&(pc_i->f.z), (b_force / STIFF_WALL) * aux * aux);
         }
 
         // Front
@@ -560,18 +604,23 @@ void particlesCollision(
         dist_abs = abs(pos_i.z - pos_mirror);
         if (dist_abs <= min_dist) {
             aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(particleCenters[column].f.z), -(b_force / STIFF_WALL) * aux * aux);
+            atomicAdd(&(pc_i->f.z), -(b_force / STIFF_WALL) * aux * aux);
         }
     }
     // Collision against particles
     else{
+        ParticleCenter* pc_j = &particleCenters[row];
+
+        if(!pc_i->movable && !pc_j->movable)
+            return;
+
         // Particle i info (column)
-        const dfloat3 pos_i = particleCenters[column].pos;
-        const dfloat radius_i = particleCenters[column].radius;
+        const dfloat3 pos_i = pc_i->pos;
+        const dfloat radius_i = pc_i->radius;
 
         // Particle j info (row)
-        const dfloat3 pos_j = particleCenters[row].pos;
-        const dfloat radius_j = particleCenters[row].radius;
+        const dfloat3 pos_j = pc_j->pos;
+        const dfloat radius_j = pc_j->radius;
 
         // Particles position difference
         const dfloat3 diff_pos = dfloat3(
@@ -590,7 +639,7 @@ void particlesCollision(
         dfloat3 f_dirs = dfloat3();
 
         // Buoyancy force
-        const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * particleCenters[column].volume;
+        const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * pc_i->volume;
 
         // Hard collision (one particle inside another)
         if(mag_dist < radius_i+radius_j){
@@ -622,14 +671,31 @@ void particlesCollision(
         }
         // Add force on particles
         if(f != 0){
-            // Force positive in particle i (column)
-            atomicAdd(&(particleCenters[column].f.x), f_dirs.x);
-            atomicAdd(&(particleCenters[column].f.y), f_dirs.y);
-            atomicAdd(&(particleCenters[column].f.z), f_dirs.z);
-            // Force negative in particle j (row)
-            atomicAdd(&(particleCenters[row].f.x), -f_dirs.x);
-            atomicAdd(&(particleCenters[row].f.y), -f_dirs.y);
-            atomicAdd(&(particleCenters[row].f.z), -f_dirs.z);
+            // Both particles are movable
+            if(pc_i->movable && pc_j->movable){
+                // Force positive in particle i (column)
+                atomicAdd(&(pc_i->f.x), f_dirs.x);
+                atomicAdd(&(pc_i->f.y), f_dirs.y);
+                atomicAdd(&(pc_i->f.z), f_dirs.z);
+                // Force negative in particle j (row)
+                atomicAdd(&(pc_j->f.x), -f_dirs.x);
+                atomicAdd(&(pc_j->f.y), -f_dirs.y);
+                atomicAdd(&(pc_j->f.z), -f_dirs.z);
+            }
+            // Only particle i is movable
+            else if(pc_i->movable && !pc_j->movable){
+                // Force positive in particle i (column)
+                atomicAdd(&(pc_i->f.x), 2*f_dirs.x);
+                atomicAdd(&(pc_i->f.y), 2*f_dirs.y);
+                atomicAdd(&(pc_i->f.z), 2*f_dirs.z);
+            }
+            // Only particle j is movable
+            else{
+                // Force positive in particle i (column)
+                atomicAdd(&(pc_j->f.x), -2*f_dirs.x);
+                atomicAdd(&(pc_j->f.y), -2*f_dirs.y);
+                atomicAdd(&(pc_j->f.z), -2*f_dirs.z);
+            }
         }
     }
 }

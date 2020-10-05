@@ -31,7 +31,8 @@ void immersedBoundaryMethod(
     unsigned int gridIBM,
     unsigned int threadsIBM,
     cudaStream_t __restrict__ streamLBM[N_GPUS],
-    cudaStream_t __restrict__ streamIBM[N_GPUS]
+    cudaStream_t __restrict__ streamIBM[N_GPUS],
+    unsigned int step
 );
 
 
@@ -53,12 +54,17 @@ void gpuResetNodesForces(ParticleNodeSoA particlesNodes);
 
 
 __global__
-void updateParticleCenterVelocityAndRotation(
+void gpuUpdateParticleCenterVelocityAndRotation(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
 
 __global__
-void particleMovement(
+void gpuParticleMovement(
+    ParticleCenter particleCenters[NUM_PARTICLES]
+);
+
+__global__
+void gpuUpdateParticleOldValues(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
 
@@ -69,7 +75,7 @@ void gpuParticleNodeMovement(
 );
 
 __global__ 
-void particlesCollision(
+void gpuParticlesCollision(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
 

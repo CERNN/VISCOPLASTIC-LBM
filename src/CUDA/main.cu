@@ -271,10 +271,10 @@ int main()
         }
         // Save macroscopics to array in LBM kernel
         bool save_macr_to_array;
-        #ifndef IBM
-        save_macr_to_array = rep || save || ((step+1)>=(int)N_STEPS);
-        #else
+        #ifdef IBM
         save_macr_to_array = true;
+        #else
+        save_macr_to_array = rep || save || ((step+1)>=(int)N_STEPS);
         #endif
 
         // LBM solver
@@ -326,7 +326,7 @@ int main()
         #ifdef IBM
         immersedBoundaryMethod(
             particlesSoA, macr, velAuxIBM, pop, grid, threads,
-            gridIBM, threadsIBM, streamsLBM, streamsIBM);
+            gridIBM, threadsIBM, streamsLBM, streamsIBM, step);
         #endif
 
         // Synchronizing data (macroscopics) between GPU and CPU
