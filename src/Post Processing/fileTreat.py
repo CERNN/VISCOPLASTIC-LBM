@@ -3,9 +3,9 @@ import glob
 import numpy as np
 
 # ALL FILES IN THE FOLDER MUST BE FROM THE SAME SIMULATION
-PATH = "../../bin/circularDuctInterp/000/"
+PATH = "../../bin/parallelPlatesBB/999/"
 
-__macr_names__ = ['ux', 'uy', 'uz', 'rho']
+__macr_names__ = ['ux', 'uy', 'uz', 'rho', 'fx', 'fy', 'fz']
 
 __info__ = dict()
 

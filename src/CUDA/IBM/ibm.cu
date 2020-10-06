@@ -16,6 +16,35 @@ void immersedBoundaryMethod(
     cudaStream_t __restrict__ streamIBM[N_GPUS],
     unsigned int step)
 {
+    // Update particle center position and its old values
+    gpuUpdateParticleOldValues<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
+        particles.pCenterArray);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+
+    if(!(step % 100)){
+        ParticleCenter pc = particles.pCenterArray[0];
+        printf("step %d\n", step); 
+        printf("pos (%f, %f, %f)\n", pc.pos.x, pc.pos.y, pc.pos.z);
+        printf("pos_old (%f, %f, %f)\n", pc.pos_old.x, pc.pos_old.y, pc.pos_old.z);
+        printf("vel (%e, %e, %e)\n", pc.vel.x, pc.vel.y, pc.vel.z);
+        printf("accel (%e, %e, %e)\n", pc.vel.x-pc.vel_old.x, pc.vel.y-pc.vel_old.y, pc.vel.z-pc.vel_old.z);
+        std::string file_part;
+        file_part += "parts";
+        file_part += std::to_string(step);
+        file_part += ".csv";
+        FILE* outFile = fopen(file_part.c_str(), "w");
+        if(outFile != nullptr)
+        {
+            fprintf(outFile, "x, y, z\n");
+            for(int idx=0; idx < particles.nodesSoA.numNodes; idx++){
+                fprintf(outFile, "%.3e, %.3e, %.3e\n", 
+                    particles.nodesSoA.pos.x[idx],
+                    particles.nodesSoA.pos.y[idx],
+                    particles.nodesSoA.pos.z[idx]);
+            }
+            fclose(outFile);
+        }
+    }
     // TODO: Update it to multi GPU
     // Size of shared memory to use for optimization in interpolation/spread
     const unsigned int sharedMemInterpSpread = threadsNodesIBM * sizeof(dfloat3);
@@ -27,6 +56,8 @@ void immersedBoundaryMethod(
     // Reset forces in all IBM nodes
     gpuResetNodesForces<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(particles.nodesSoA);
     // Calculate collision force between particles
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+
     gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
@@ -66,21 +97,9 @@ void immersedBoundaryMethod(
     gpuParticleNodeMovement<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(
         particles.nodesSoA, particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-    // Update particle center position and its old values
-    gpuUpdateParticleOldValues<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
-        particles.pCenterArray);
-    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
     // Synchronize and swap populations
     checkCudaErrors(cudaDeviceSynchronize());
-
-    if(!(step % 100)){
-        ParticleCenter pc = particles.pCenterArray[0];
-        printf("step %d\n", step); 
-        printf("pos (%f, %f, %f)\n", pc.pos.x, pc.pos.y, pc.pos.z);
-        printf("vel (%f, %f, %f)\n", pc.vel.x, pc.vel.y, pc.vel.z);
-        printf("accel (%f, %f, %f)\n", pc.vel.x-pc.vel_old.x, pc.vel.y-pc.vel_old.y, pc.vel.z-pc.vel_old.z);  
-    }
 }
 
 __global__
@@ -114,11 +133,15 @@ void gpuForceInterpolationSpread(
     const unsigned int yMax = (((int)yIBM + 1 + P_DIST) > NY) ? NY : (int)yIBM + P_DIST + 1;
     const unsigned int zMax = (((int)zIBM + 1 + P_DIST) > NZ) ? NZ : (int)zIBM + P_DIST + 1;
 
+    if(xMin >= NX || yMin >= NY || zMin >= NZ || xMax <= 0 || yMax <= 0 || zMax <= 0)
+        return;
+
     dfloat rhoVar = 0;
     dfloat uxVar = 0;
     dfloat uyVar = 0;
     dfloat uzVar = 0;
 
+    dfloat sumAux_interp = 0;
     //  Interpolation
     for (int z = zMin; z < zMax; z++)
     {
@@ -129,8 +152,8 @@ void gpuForceInterpolationSpread(
                 idx = idxScalar(x, y, z);
                 // Dirac delta (kernel)
                 aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
-                if(aux == 0)
-                    continue;
+
+                sumAux_interp += aux;
 
                 rhoVar += macr.rho[idx] * aux;
                 uxVar += macr.ux[idx] * aux;
@@ -184,6 +207,7 @@ void gpuForceInterpolationSpread(
     const dfloat fyIBM = particlesNodes.f.y[i] + deltaF.y;
     const dfloat fzIBM = particlesNodes.f.z[i] + deltaF.z;
 
+    dfloat sumAux_spread = 0;
     // Spreading
     for (int z = zMin; z < zMax; z++)
     {
@@ -195,6 +219,7 @@ void gpuForceInterpolationSpread(
 
                 // Dirac delta (kernel)
                 aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
+                sumAux_spread += aux;
 
                 // TODO: update rho and velocities of LBM here, but with 
                 // different array to not have concurrent problems with loading 
@@ -210,6 +235,9 @@ void gpuForceInterpolationSpread(
             }
         }
     }
+    // if(i == 0)
+    //     printf("id %d xMin %d xMax %d xIBM %.2e deltaFz %.2e aux_spread %.2e aux_interp %.2e\n", 
+    //     i, xMin, xMax, xIBM, deltaF.z, sumAux_spread, sumAux_interp);
 
     // Update node velocity
     particlesNodes.vel.x[i] = ux_calc;
@@ -262,8 +290,11 @@ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA vel
     for (unsigned char i = 0; i < Q; i++)
         fNode[i] = pop.pop[idxPop(x, y, z, i)];
 
-    // Reset forces
-    const dfloat3 f = dfloat3(macr.fx[idx], macr.fy[idx], macr.fz[idx]);
+    macr.fx[idx] = FX;
+    macr.fy[idx] = FY;
+    macr.fz[idx] = FZ;
+
+    const dfloat3 f = dfloat3(FX, FY, FZ);
 
     // calc for macroscopics
     // rho = sum(f[i])
@@ -312,9 +343,6 @@ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA vel
     velAuxIBM.y[idx] = uyVar;
     velAuxIBM.z[idx] = uzVar;
     
-    macr.fx[idx] = FX;
-    macr.fy[idx] = FY;
-    macr.fz[idx] = FZ;
 
 }
 
@@ -423,6 +451,10 @@ void gpuUpdateParticleOldValues(
 
     ParticleCenter *pc = &(particleCenters[p]);
 
+    pc->pos_old.x = pc->pos.x;
+    pc->pos_old.y = pc->pos.y;
+    pc->pos_old.z = pc->pos.z;
+
     pc->vel_old.x = pc->vel.x;
     pc->vel_old.y = pc->vel.y;
     pc->vel_old.z = pc->vel.z;
@@ -461,13 +493,19 @@ void gpuParticleNodeMovement(
         + (pc.w_avg.y * pc.w_avg.y) 
         + (pc.w_avg.z * pc.w_avg.z));
 
-    if(w_norm <= 1e-8)
-    {
-        particlesNodes.pos.x[i] += pc.pos.x - pc.pos_old.x;
-        particlesNodes.pos.y[i] += pc.pos.y - pc.pos_old.y;
-        particlesNodes.pos.z[i] += pc.pos.z - pc.pos_old.z;
-        return;
-    }
+    // if(w_norm <= 1e-8)
+    // {
+    //     particlesNodes.pos.x[i] += pc.pos.x - pc.pos_old.x;
+    //     particlesNodes.pos.y[i] += pc.pos.y - pc.pos_old.y;
+    //     particlesNodes.pos.z[i] += pc.pos.z - pc.pos_old.z;
+    //     return;
+    // }
+
+    particlesNodes.pos.x[i] += (pc.pos.x - pc.pos_old.x);
+    particlesNodes.pos.y[i] += (pc.pos.y - pc.pos_old.y);
+    particlesNodes.pos.z[i] += (pc.pos.z - pc.pos_old.z);
+    return;
+    
 
     // TODO: these variables are the same for every particle center, optimize it
     const dfloat q0 = cos(0.5*w_norm);

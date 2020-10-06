@@ -31,8 +31,8 @@ typedef float dfloat;      // single or double precision
 
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
-constexpr int N_STEPS = 10;          // maximum number of time steps
-#define MACR_SAVE 1                  // saves macroscopics every MACR_SAVE steps
+constexpr int N_STEPS = 1000;          // maximum number of time steps
+#define MACR_SAVE 100                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT 0                // report every DATA_REPORT steps
  
 #define DATA_STOP false                 // stop condition by treated data
@@ -66,16 +66,16 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 
 constexpr unsigned int N = 160;
-constexpr unsigned int NX = N;        // size x of the grid 
+constexpr unsigned int NX = 100;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr unsigned int NY = N;        // size y of the grid
-constexpr unsigned int NZ = N;        // size z of the grid in one GPU
+constexpr unsigned int NY = 100;        // size y of the grid
+constexpr unsigned int NZ = 160;        // size z of the grid in one GPU
 constexpr unsigned int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
 
 constexpr dfloat U_MAX = 0.05;        // max velocity
 
-constexpr dfloat TAU = 0.9;              // relaxation time
+constexpr dfloat TAU = 0.7294244564;              // relaxation time
 
 constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
 constexpr dfloat T_OMEGA = 1-OMEGA;      // 1-omega, for collision

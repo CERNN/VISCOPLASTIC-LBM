@@ -13,6 +13,7 @@
 
 #include "ibmVar.h"
 
+#include <string>
 #include "ibmGlobalFunctions.h"
 #include "../lbm.h"
 #include "../structs/macroscopics.h"

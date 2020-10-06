@@ -32,10 +32,10 @@ void createParticles(Particle particles[NUM_PARTICLES])
     for (int p = 0; p < NUM_PARTICLES; p++)
     {
         dfloat3 center;
-        center.x = NX/2;
-        center.y = NY/2;
-        center.z = NZ/2;
-        particles[p] = makeSpherePolar(PARTICLE_DIAMETER, bCenter[p] , MESH_COULOMB, true);
+        center.x = (NX-1.0)/2.0;
+        center.y = (NY-1.0)/2.0;
+        center.z = (NZ-1.0)*0.796;
+        particles[p] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true);
     }
 }
 
