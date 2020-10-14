@@ -134,7 +134,7 @@ void saveAllMacrBin(
     Macroscopics* macr, 
     unsigned int nSteps)
 {
-    // names of files
+    // Names of files
     std::string strFileRho, strFileUx, strFileUy, strFileUz;
     
     strFileRho = getVarFilename("rho", nSteps, ".bin");
@@ -157,7 +157,6 @@ void saveAllMacrBin(
     saveVarBin(strFileFy, macr->fy, TOTAL_MEM_SIZE_SCALAR, false);
     saveVarBin(strFileFz, macr->fz, TOTAL_MEM_SIZE_SCALAR, false);
     #endif
-
 }
 
 
