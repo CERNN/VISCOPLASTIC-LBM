@@ -138,7 +138,6 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     first_node->S = S[0];
 
     int nodeIndex = 1;
-    printf("numero layers %d\n", nLayer);
     for (int i = 1; i < nLayer; i++) {
         if (i % 2 == 1) {
             // Calculate the phase of the segmente to avoid a straight point line
@@ -158,10 +157,8 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
             // Add one node
             nodeIndex++;
         }
-        printf("terminou layer %d, node index %d\n", i, nodeIndex);
     }
-    printf("node index final %d\n", nodeIndex);
-    
+
     // North pole -define all properties
     ParticleNode* last_node = &(particleRet.nodes[particleRet.numNodes-1]);
     

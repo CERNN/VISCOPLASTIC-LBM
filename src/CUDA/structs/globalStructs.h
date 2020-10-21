@@ -71,6 +71,10 @@ typedef struct dfloat3SoA {
         this->z[idx] = val.z;
     }
 
+    __host__ __device__
+    dfloat3 getValuesFromdIdx(size_t idx){
+        return dfloat3(this->x[idx], this->y[idx], this->z[idx]);
+    }
 } dfloat3SoA;
 
 #endif //__GLOBAL_STRUCTS_H

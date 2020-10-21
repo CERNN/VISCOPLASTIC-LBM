@@ -11,6 +11,8 @@
 #define __IBM_REPORT_H
 
 #include <fstream>
+#include <string>
+#include <sstream>
 #include "../lbmReport.h"
 #include "structs/particle.h"
 

@@ -17,7 +17,7 @@
 // Total number of IB particles in the system
 #define NUM_PARTICLES 1
 // Number of IBM inner iterations
-#define IBM_MAX_ITERATION 1
+#define IBM_MAX_ITERATION 10
 // Particles diameters
 #define PARTICLE_DIAMETER 15.0
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
@@ -29,6 +29,18 @@
 // Assumed boundary thickness for IBM
 #define IBM_THICKNESS (1) 
 /* ------------------------------------------------------------------------- */
+
+
+/* ------------------------- TIME AND SAVE DEFINES ------------------------- */
+#define IBM_PARTICLES_SAVE 100               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT 0                   // Report IBM treated data every given steps (0 not report)
+ 
+#define IBM_DATA_STOP false                 // stop condition by IBM treated data
+#define IBM_DATA_SAVE false                 // save reported IBM data to file
+
+#define IBM_PARTICLES_NODES_SAVE true      // Saves particles nodes data
+/* ------------------------------------------------------------------------- */
+
 
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */

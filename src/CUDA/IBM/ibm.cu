@@ -16,35 +16,16 @@ void immersedBoundaryMethod(
     cudaStream_t __restrict__ streamIBM[N_GPUS],
     unsigned int step)
 {
+    // Save particles informations
+    if(IBM_PARTICLES_SAVE != 0 && !(step % IBM_PARTICLES_SAVE)){
+        saveParticlesInfo(particles, step, IBM_PARTICLES_NODES_SAVE);
+    }
+
     // Update particle center position and its old values
     gpuUpdateParticleOldValues<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
         particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
-    if(!(step % 100)){
-        ParticleCenter pc = particles.pCenterArray[0];
-        printf("step %d\n", step); 
-        printf("pos (%f, %f, %f)\n", pc.pos.x, pc.pos.y, pc.pos.z);
-        printf("pos_old (%f, %f, %f)\n", pc.pos_old.x, pc.pos_old.y, pc.pos_old.z);
-        printf("vel (%e, %e, %e)\n", pc.vel.x, pc.vel.y, pc.vel.z);
-        printf("accel (%e, %e, %e)\n", pc.vel.x-pc.vel_old.x, pc.vel.y-pc.vel_old.y, pc.vel.z-pc.vel_old.z);
-        std::string file_part;
-        file_part += "parts";
-        file_part += std::to_string(step);
-        file_part += ".csv";
-        FILE* outFile = fopen(file_part.c_str(), "w");
-        if(outFile != nullptr)
-        {
-            fprintf(outFile, "x, y, z\n");
-            for(int idx=0; idx < particles.nodesSoA.numNodes; idx++){
-                fprintf(outFile, "%.3e, %.3e, %.3e\n", 
-                    particles.nodesSoA.pos.x[idx],
-                    particles.nodesSoA.pos.y[idx],
-                    particles.nodesSoA.pos.z[idx]);
-            }
-            fclose(outFile);
-        }
-    }
     // TODO: Update it to multi GPU
     // Size of shared memory to use for optimization in interpolation/spread
     const unsigned int sharedMemInterpSpread = threadsNodesIBM * sizeof(dfloat3);
@@ -61,6 +42,7 @@ void immersedBoundaryMethod(
     gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
+    ParticleCenter* pc = &particles.pCenterArray[0];
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
         // Make the interpolation of LBM and spreading of IBM forces
@@ -68,7 +50,9 @@ void immersedBoundaryMethod(
             sharedMemInterpSpread, streamIBM[0]>>>(
             particles.nodesSoA, particles.pCenterArray, macr[0], velsAuxIBM[0]);
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-        
+        // printf("Passo %d iter %d fz %.6e fz_old %.6e vz %.6e vz_old %.6e wz %.6e wz_old %.6e\n", 
+        //    step, i, pc->f.z, pc->f_old.z, pc->vel.z, pc->vel_old.z, pc->w.z, pc->w_old.z);
+
         // Swapping velocity vectors
         dfloat* tmp = macr[0].ux;
         macr[0].ux = velsAuxIBM[0].x;
@@ -90,6 +74,7 @@ void immersedBoundaryMethod(
     }
 
     // Update particle center position and its old values
+
     gpuParticleMovement<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
         particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
@@ -255,6 +240,9 @@ void gpuForceInterpolationSpread(
     particlesNodes.deltaF.z[i] = deltaF.z;
 
     // Particle node delta momentum
+    
+    idx = particlesNodes.particleCenterIdx[i];
+
     const dfloat3 deltaMomentum = dfloat3(
         (yIBM - y_pc) * deltaF.z - (zIBM - z_pc) * deltaF.y,
         (zIBM - z_pc) * deltaF.x - (xIBM - x_pc) * deltaF.z,
@@ -262,8 +250,6 @@ void gpuForceInterpolationSpread(
     );
 
     // Add node force to particle center
-    idx = particlesNodes.particleCenterIdx[i];
-
     // TODO: check if shared memory is more efficient
     atomicAdd(&(particleCenters[idx].f.x), deltaF.x);
     atomicAdd(&(particleCenters[idx].f.y), deltaF.y);
@@ -429,6 +415,8 @@ void gpuParticleMovement(
         return;
 
     ParticleCenter *pc = &(particleCenters[p]);
+    if(!pc->movable)
+        return;
 
     pc->pos.x += 0.5 * (pc->vel.x + pc->vel_old.x);
     pc->pos.y += 0.5 * (pc->vel.y + pc->vel_old.y);
@@ -545,7 +533,7 @@ void gpuParticlesCollision(
     r3  6   7   8   9
     r4  10  11  12  13  14
     r5  15  16  17  18  19  20
-    c6  21  22  23  24  25  26  27
+    r6  21  22  23  24  25  26  27
 
     Index 7 is in r3, c1. It will compare p[1] (particle in index 1), from column,
     with p[4], from row (this is because for all rows one is added to its index)
@@ -558,7 +546,7 @@ void gpuParticlesCollision(
     Index 21 will check p[0] (column) collision against the wall
     Index 27 will check p[6] (column) collision against the wall
     Index 24 will check p[3] (column) collision against the wall
-    
+
     FROM INDEX TO ROW/COLUMN
     Starting column/row from 1, the n'th row always ends (n)*(n+1)/2+1. So:
 
