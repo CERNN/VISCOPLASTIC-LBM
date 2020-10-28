@@ -20,6 +20,8 @@
 #include "../structs/populations.h"
 #include "../structs/globalStructs.h"
 #include "structs/particle.h"
+#include "ibmReport.h"
+
 
 __host__
 void immersedBoundaryMethod(
