@@ -33,8 +33,8 @@ void immersedBoundaryMethod(
     dim3 threadsLBM,
     unsigned int gridIBM,
     unsigned int threadsIBM,
-    cudaStream_t __restrict__ streamLBM[N_GPUS],
-    cudaStream_t __restrict__ streamIBM[N_GPUS],
+    cudaStream_t streamLBM[N_GPUS],
+    cudaStream_t streamIBM[N_GPUS],
     unsigned int step
 );
 

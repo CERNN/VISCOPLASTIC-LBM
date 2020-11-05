@@ -39,7 +39,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
     const unsigned int zDomain = z + NZ*gpuNumber;
 
 
-    if(x >= NX || y > NY || z >= NZ)
+    if(x >= NX || y >= NY || z >= NZ)
         return;
 
     gpuMapBC[idxScalar(x, y, z)].setIsUsed(true); //set all nodes fluid inicially and no bc
