@@ -34,6 +34,7 @@
 #ifdef IBM
 #include "IBM/ibm.h"
 #include "IBM/ibmParticlesCreation.h"
+#include "IBM/structs/ibmProc.h"
 #endif // IBM
 
 
@@ -55,6 +56,9 @@ int main()
     Particle particles[NUM_PARTICLES];
     ParticlesSoA particlesSoA;
     dfloat3SoA velAuxIBM[N_GPUS];
+
+    IBMProc ibmProcessData;
+    ibmProcessData.allocateIBMProc();
     #endif
 
     // Setup saving folder
@@ -131,6 +135,10 @@ int main()
     const unsigned int threadsIBM = 64;
     const unsigned int pNumNodes = particlesSoA.nodesSoA.numNodes;
     const unsigned int gridIBM = pNumNodes % threadsIBM ? pNumNodes / threadsIBM + 1 : pNumNodes / threadsIBM;
+    
+    ibmProcessData.step = &step;
+    ibmProcessData.macrCurr = &macrCPUCurrent;
+    ibmProcessData.pCenter = particlesSoA.pCenterArray;
     #endif
     /* ---------------------------------------------------------------------- */
 
@@ -261,20 +269,24 @@ int main()
     {
         int aux = step-INI_STEP;
         // WHAT NEEDS TO BE DONE IN THIS TIME STEP
-        bool save = false, rep = false;
+        bool save = false, rep = false, repIBM = false;
         if(aux != 0)
         {
             if(MACR_SAVE != 0)
                 save = !(aux % MACR_SAVE);
             if(DATA_REPORT != 0)
                 rep = !(aux % DATA_REPORT);
+            #ifdef IBM
+            if(IBM_DATA_REPORT != 0)
+                repIBM = !(aux % IBM_DATA_REPORT);
+            #endif
         }
         // Save macroscopics to array in LBM kernel
         bool save_macr_to_array;
         #ifdef IBM
-        save_macr_to_array = true;
+        save_macr_to_array = false;
         #else
-        save_macr_to_array = rep || save || ((step+1)>=(int)N_STEPS);
+        save_macr_to_array = rep || save || repIBM || ((step+1)>=(int)N_STEPS);
         #endif
 
         // LBM solver
@@ -327,14 +339,18 @@ int main()
         immersedBoundaryMethod(
             particlesSoA, macr, velAuxIBM, pop, grid, threads,
             gridIBM, threadsIBM, streamsLBM, streamsIBM, step);
+
+        // Save particles informations
+        if(IBM_PARTICLES_SAVE != 0 && !(step % IBM_PARTICLES_SAVE)){
+            saveParticlesInfo(particlesSoA, step, IBM_PARTICLES_NODES_SAVE);
+        }
         #endif
 
         // Synchronizing data (macroscopics) between GPU and CPU
-        if(save || rep)
+        if(save || rep || repIBM)
         {
             printf("\n------------------------- Synchronizing in step %06d -------------------------\n", step); 
             fflush(stdout);
-
             macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
             for(int i = 0; i < N_GPUS; i++){
                 macrCPUCurrent.copyMacr(&macr[i], NUMBER_LBM_NODES*i);
@@ -362,6 +378,22 @@ int main()
             if(DATA_STOP)
             {
                 if(stopSim(&processData))
+                    break;
+            }
+        }
+
+        // Report IBM data
+        if(repIBM){
+            ibmProcessData.treatData();
+            ibmProcessData.printTreatData();
+            fflush(stdout);
+            if(IBM_DATA_SAVE)
+            {
+                ibmProcessData.saveTreatData();
+            }
+            if(IBM_DATA_STOP)
+            {
+                if(ibmProcessData.stopSim())
                     break;
             }
         }
@@ -431,6 +463,7 @@ int main()
     free(gridsBC);
 
     #ifdef IBM
+    ibmProcessData.freeIBMProc();
     for(int i = 0; i < NUM_PARTICLES; i++){
         free(particles[i].nodes);
     }
@@ -438,6 +471,8 @@ int main()
     particlesSoA.freeNodesAndCenters();
     #endif
     /* ---------------------------------------------------------------------- */
+
+    fflush(stdout);
 
     return 0;
 }

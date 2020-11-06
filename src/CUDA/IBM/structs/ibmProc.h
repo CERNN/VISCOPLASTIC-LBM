@@ -2,6 +2,7 @@
 #define __IBM_PROC_H
 
 #include "../../globalFunctions.h"
+#include "particle.h"
 #include "../../structs/macroscopics.h"
 
 typedef struct ibmProc{
@@ -13,33 +14,31 @@ typedef struct ibmProc{
 
     /* Constructor */
     __host__
-    ibmProc()
-    {
-        macrCurr = nullptr;
-        pCenter = nullptr;
-        step = nullptr;
-    }
+    ibmProc();
 
     /* Destructor */
     __host__
-    ~ibmProc()
-    {
-        macrCurr = nullptr;
-        pCenter = nullptr;
-        step = nullptr;
-    }
+    ~ibmProc();
 
     /* Allocate necessary variables, if required dynamic allocation */
     __host__
-    void allocateIBMProc()
-    {
-    }
+    void allocateIBMProc();
 
     /* Free allocated variables, if required dynamic allocation */
     __host__
-    void freeIBMProc()
-    {
-    }
+    void freeIBMProc();
+
+    __host__
+    void treatData();
+
+    __host__
+    bool stopSim();
+
+    __host__
+    void printTreatData();
+
+    __host__
+    void saveTreatData();
 }IBMProc;
 
 #endif // !__IBM_PROC_H
