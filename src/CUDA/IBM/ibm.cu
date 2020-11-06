@@ -16,11 +16,6 @@ void immersedBoundaryMethod(
     cudaStream_t streamIBM[N_GPUS],
     unsigned int step)
 {
-    // Save particles informations
-    if(IBM_PARTICLES_SAVE != 0 && !(step % IBM_PARTICLES_SAVE)){
-        saveParticlesInfo(particles, step, IBM_PARTICLES_NODES_SAVE);
-    }
-
     // Update particle center position and its old values
     gpuUpdateParticleOldValues<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
         particles.pCenterArray);
