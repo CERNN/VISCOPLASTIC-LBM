@@ -88,14 +88,6 @@ void gpuMacrCollisionStream(
         + fNode[21] + fNode[24] + fNode[26]) + 0.5*fzVar) * invRho;
     #endif // !D3Q27
 
-    if (save)
-    {
-        macr.rho[idxScalar(x, y, z)] = rhoVar;
-        macr.ux[idxScalar(x, y, z)] = uxVar;
-        macr.uy[idxScalar(x, y, z)] = uyVar;
-        macr.uz[idxScalar(x, y, z)] = uzVar;
-    }
-
     // Calculate temporary variables
     const dfloat p1_muu15 = 1 - 1.5 * (uxVar * uxVar + 
         uyVar * uyVar + uzVar * uzVar);
@@ -245,6 +237,35 @@ void gpuMacrCollisionStream(
     fNode[26] = multiplyTerm*(terms[10] + (-fxVar_D3 + pineqXX - pineqXYt2 - pineqXZt2));
     #endif
 
+    #ifdef NON_NEWTONIAN_FLUID
+    const dfloat stressMag = sqrt(0.5 * (
+        (pineqXX + uxVar * fxVar) * (pineqXX + uxVar * fxVar) +
+        (pineqYY + uyVar * fyVar) * (pineqYY + uyVar * fyVar) +
+        (pineqZZ + uzVar * fzVar) * (pineqZZ + uzVar * fzVar) +
+        0.5 * (pineqXYt2 + (uxVar * fyVar + uyVar * fxVar)) * 0.5 * (pineqXYt2 + (uxVar * fyVar + uyVar * fxVar)) +
+        0.5 * (pineqXZt2 + (uxVar * fzVar + uzVar * fxVar)) * 0.5 * (pineqXZt2 + (uxVar * fzVar + uzVar * fxVar)) + 
+        0.5 * (pineqYZt2 + (uyVar * fzVar + uzVar * fyVar)) * 0.5 * (pineqYZt2 + (uyVar * fzVar + uzVar * fyVar))));
+
+    // Update omega (related to fluid viscosity) locally for non newtonian fluid
+    dfloat omegaVar = macr.omega[idxScalar(x, y, z)];
+    omegaVar = calcOmega(omegaVar, stressMag);
+    macr.omega[idxScalar(x, y, z)] = omegaVar; 
+
+    #else
+    const dfloat omegaVar = OMEGA;
+    #endif
+
+    const dfloat t_omegaVar = 1 - omegaVar;
+    const dfloat tt_omegaVar = 1 - 0.5*omegaVar;
+
+    if (save)
+    {
+        macr.rho[idxScalar(x, y, z)] = rhoVar;
+        macr.ux[idxScalar(x, y, z)] = uxVar;
+        macr.uy[idxScalar(x, y, z)] = uyVar;
+        macr.uz[idxScalar(x, y, z)] = uzVar;
+    }
+
     // Collision to fNode:
     // fNode = (1 - 1/TAU)*f1 + fEq + (1 - 0.5/TAU)*force ->
     // fNode = (1 - OMEGA)*f1 + fEq + (1 - 0.5*0MEGA)*force->
@@ -257,7 +278,7 @@ void gpuMacrCollisionStream(
 
     #pragma unroll
     for(char i = 0; i < Q; i++)
-        fNode[i] *= T_OMEGA;
+        fNode[i] *= t_omegaVar;
 
     // Calculate equilibrium terms 
     // terms = 0.5*uc3^2 + uc3
@@ -340,9 +361,9 @@ void gpuMacrCollisionStream(
     #endif
 
     // fNode += TT_OMEGA * force
-    multiplyTerm = W0*TT_OMEGA;
+    multiplyTerm = W0*tt_omegaVar;
     fNode[0] += multiplyTerm*terms[0];
-    multiplyTerm = W1*TT_OMEGA;
+    multiplyTerm = W1*tt_omegaVar;
     fNode[1] += multiplyTerm*terms[1];
     fNode[2] += multiplyTerm*(terms[1] + (fxVar*(-6)));
     fNode[3] += multiplyTerm*terms[2];
@@ -350,7 +371,7 @@ void gpuMacrCollisionStream(
     auxTerm = terms[0] + (fzVar*( 3*uz3 + 3));
     fNode[5] += multiplyTerm*auxTerm;
     fNode[6] += multiplyTerm*(auxTerm + (fzVar*(-6)));
-    multiplyTerm = W2*TT_OMEGA;
+    multiplyTerm = W2*tt_omegaVar;
     fNode[7] += multiplyTerm*terms[3];
     fNode[8] += multiplyTerm*(terms[3] + (fxVar*(-6) + fyVar*(-6)));
     fNode[9] += multiplyTerm*terms[4];
@@ -367,7 +388,7 @@ void gpuMacrCollisionStream(
     fNode[17] += multiplyTerm*auxTerm;
     fNode[18] += multiplyTerm*(auxTerm + (fyVar*(-6) + fzVar*( 6)));
     #ifdef D3Q27
-    multiplyTerm = W3*TT_OMEGA;
+    multiplyTerm = W3*tt_omegaVar;
     fNode[19] += multiplyTerm*terms[6];
     fNode[20] += multiplyTerm*(terms[6] + (fxVar*(-6) + fyVar*(-6) + fzVar*(-6)));
     auxTerm = terms[6] + (fxVar*(-6*uz3) + fyVar*(-6*uz3) + fzVar*(-6*ux3 - 6*uy3 - 6));

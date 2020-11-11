@@ -6,39 +6,57 @@
 
 
 /* ------------------------ NON NEWTONIAN FLUID TYPE ------------------------ */
-//#define POWERLAW
-//#define BINGHAM
-//#define HERSCHEL_BULKLEY
-
+constexpr dfloat ETA_0 = RHO_0 * (TAU - 0.5) / 3;
 #ifdef BINGHAM
     constexpr dfloat S_Y = 1.49e-3;  //yield rate of strain
-    constexpr dfloat ETA_0 = RHO_0 * (TAU - 0.5) / 3;
 #endif
 
 #ifdef POWERLAW
     constexpr dfloat N_INDEX = 0.55;
-    constexpr dfloat ETA_0 = RHO_0*(TAU-0.5)/3;
     constexpr dfloat GAMMA_0 = 0.00;
-
 #endif
 
 #ifdef HERSCHEL_BULKLEY
     constexpr dfloat N_INDEX = 0.8;
-    constexpr dfloat ETA_0 = RHO_0*(TAU-0.5)/3;
     constexpr dfloat S_Y = 2e-5;  // yield rate of strain
-#endif //HERSCHEL_BULKLEY
+#endif
 /* -------------------------------------------------------------------------- */
 
-__device__ 
-void __forceinline__ calcOmega(
-    dfloat* __restrict__ omegaOld, dfloat* __restrict__ gammaOld,
-    const dfloat pXX, const dfloat pYY, const dfloat pZZ,
-    const dfloat pXY, const dfloat pXZ, const dfloat pYZ,
-    const dfloat uxVar, const dfloat uyVar, const dfloat uzVar, const dfloat rhoVar,
-    const dfloat fxVar, const dfloat fyVar, const dfloat fzVar, const dfloat lambda
-);
 
-#ifdef HERSCHEL_BULKLEY || POWERLAW || BINGHAM
+__device__ 
+dfloat __forceinline__ calcOmega(
+    dfloat omegaOld, dfloat const stressMag
+){
+    dfloat omega;
+
+#ifdef POWERLAW
+    // Apparent viscosity
+    dfloat eta = ((1/omegaOld) - 0.5) / 3.0;
+
+    // Rate of strain
+    const dfloat gammaDot = (1 - 0.5 * (omega)) * stressMag / eta;
+
+    if (gamma_dot <= GAMMA_0) {
+        eta = ETA_0;
+    }
+    else {
+        eta = ETA_0 * POW_FUNCTION((double)gammaDot, (double)(N_INDEX - 1));
+    }
+
+    omega = 1 / (0.5 + 3 * eta);
+#endif // POWERLAW
+
+#ifdef BINGHAM
+    omega = 1 / (0.5 + 3 * ETA_0);
+    omega *= (1 - S_Y / stressMag);
+    if(omega < 0)
+        omega = 0;
+#endif // BINGHAM
+
+    return omega;
+}
+
+#if defined(HERSCHEL_BULKLEY) || defined(POWERLAW) || defined(BINGHAM)
     #define NON_NEWTONIAN_FLUID
 #endif
 

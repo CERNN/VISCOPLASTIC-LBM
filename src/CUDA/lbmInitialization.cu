@@ -53,7 +53,11 @@ void initializationMacr(
     FILE* fileRho,
     FILE* fileUx,
     FILE* fileUy,
-    FILE* fileUz)
+    FILE* fileUz,
+    FILE* fileFx,
+    FILE* fileFy,
+    FILE* fileFz,
+    FILE* fileOmega)
 {
     dfloat* tmp = (dfloat*)malloc(TOTAL_MEM_SIZE_SCALAR);
 
@@ -68,6 +72,22 @@ void initializationMacr(
 
     fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileUz);
     checkCudaErrors(cudaMemcpy(macr->uz, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+
+    #ifdef IBM
+    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileFx);
+    checkCudaErrors(cudaMemcpy(macr->fx, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+
+    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileFy);
+    checkCudaErrors(cudaMemcpy(macr->fy, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+
+    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileFz);
+    checkCudaErrors(cudaMemcpy(macr->fz, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+    #endif
+
+    #ifdef NON_NEWTONIAN_FLUID
+    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileOmega);
+    checkCudaErrors(cudaMemcpy(macr->omega, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+    #endif
 
     free(tmp);
 }
@@ -141,6 +161,15 @@ void gpuMacrInitValue(
     macr->ux[idxScalar(x, y, z)] = 0;
     macr->uy[idxScalar(x, y, z)] = 0;
     macr->uz[idxScalar(x, y, z)] = 0;
+
+    #ifdef IBM
+    macr->fx[idxScalar(x, y, z)] = 0;
+    macr->fy[idxScalar(x, y, z)] = 0;
+    macr->fz[idxScalar(x, y, z)] = 0;
+    #endif
+    #ifdef NON_NEWTONIAN_FLUID
+    macr->omega[idxScalar(x, y, z)] = OMEGA;
+    #endif
 
     // Example of usage of random numbers for turbulence in parallel plates flow in z
 

@@ -206,23 +206,43 @@ int main()
     {
         // Load macroscopics from files
         if(LOAD_MACR)
-        {   
+        {
             FILE* fileRho = fopen(STR_RHO, "rb");
             FILE* fileUx = fopen(STR_UX, "rb");
             FILE* fileUy = fopen(STR_UY, "rb");
             FILE* fileUz = fopen(STR_UZ, "rb");
+            FILE* fileFx = fopen(STR_FX, "rb");
+            FILE* fileFy = fopen(STR_FY, "rb");
+            FILE* fileFz = fopen(STR_FZ, "rb");
+            FILE* fileOmega = fopen(STR_OMEGA, "rb");
+
             if(fileRho == nullptr || fileUz == nullptr 
-                || fileUy == nullptr || fileUx == nullptr)
-            {
+                || fileUy == nullptr || fileUx == nullptr
+                #ifdef IBM
+                || fileFx == nullptr || fileFy == nullptr || fileFz == nullptr
+                #endif
+                #ifdef NON_NEWTONIAN_FLUID
+                || fileOmega == nullptr
+                #endif
+            ){
                 printf("Error reading macroscopics files\n");
                 return -1;
             }
             // Load macroscopics from files
-            initializationMacr(&macrCPUCurrent, fileRho, fileUx, fileUy, fileUz);
+            initializationMacr(&macrCPUCurrent, fileRho, fileUx, fileUy, fileUz, 
+                fileFx, fileFy, fileFz, fileOmega);
             fclose (fileRho);
             fclose (fileUx);
             fclose (fileUy);
             fclose (fileUz);
+            #ifdef IBM
+            fclose (fileFx);
+            fclose (fileFy);
+            fclose (fileFz);
+            #endif
+            #ifdef NON_NEWTONIAN_FLUID
+            fclose (fileOmega);
+            #endif
         }
         
         for(int i = 0; i < N_GPUS; i++){

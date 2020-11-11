@@ -136,7 +136,7 @@ void saveAllMacrBin(
 {
     // Names of files
     std::string strFileRho, strFileUx, strFileUy, strFileUz;
-    
+
     strFileRho = getVarFilename("rho", nSteps, ".bin");
     strFileUx = getVarFilename("ux", nSteps, ".bin");
     strFileUy = getVarFilename("uy", nSteps, ".bin");
@@ -156,6 +156,12 @@ void saveAllMacrBin(
     saveVarBin(strFileFx, macr->fx, TOTAL_MEM_SIZE_SCALAR, false);
     saveVarBin(strFileFy, macr->fy, TOTAL_MEM_SIZE_SCALAR, false);
     saveVarBin(strFileFz, macr->fz, TOTAL_MEM_SIZE_SCALAR, false);
+    #endif
+    
+    #ifdef NON_NEWTONIAN_FLUID
+    std::string strFileOmega = getVarFilename("omega", nSteps, ".bin");
+
+    saveVarBin(strFileOmega, macr->omega, TOTAL_MEM_SIZE_SCALAR, false);
     #endif
 }
 

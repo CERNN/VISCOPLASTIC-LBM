@@ -21,6 +21,13 @@
 #define IBM
 /* ------------------------------------------------------------------------- */
 
+/* ------------------------ NON NEWTONIAN FLUID TYPE ------------------------ */
+// Uncomment the one to use. Comment all to simulate newtonian fluid
+//#define POWERLAW
+#define BINGHAM
+//#define HERSCHEL_BULKLEY
+/* -------------------------------------------------------------------------- */
+
 #ifdef SINGLE_PRECISION
     typedef float dfloat;      // single or double precision
 #endif
@@ -58,13 +65,19 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 #define RANDOM_NUMBERS false // to generate random numbers 
                             // (useful for turbulence)
 
-// file names to load
+// File names to load
 #define STR_POP "pop.bin"
 #define STR_POP_AUX "pop_aux.bin"
 #define STR_RHO "rho.bin"
 #define STR_UX "ux.bin"
 #define STR_UY "uy.bin"
 #define STR_UZ "uz.bin"
+// Files for IBM
+#define STR_FX "ux.bin"
+#define STR_FY "uy.bin"
+#define STR_FZ "uz.bin"
+// Files for non newtonian
+#define STR_OMEGA "omega.bin"
 /* ------------------------------------------------------------------------- */
 
 
@@ -78,14 +91,10 @@ constexpr unsigned int NY = 100;        // size y of the grid
 constexpr unsigned int NZ = 160;        // size z of the grid in one GPU
 constexpr unsigned int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
+constexpr dfloat U_MAX = 0.05;           // max velocity
 
-constexpr dfloat U_MAX = 0.05;        // max velocity
-
-constexpr dfloat TAU = 0.7294244564;              // relaxation time
-
+constexpr dfloat TAU = 0.7294244564;     // relaxation time
 constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
-constexpr dfloat T_OMEGA = 1-OMEGA;      // 1-omega, for collision
-constexpr dfloat TT_OMEGA = 1-0.5*OMEGA; // 1-0.5*omega, for force term
 
 constexpr dfloat RHO_0 = 1;         // initial rho
 

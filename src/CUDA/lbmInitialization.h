@@ -19,6 +19,7 @@
 #include "globalFunctions.h"
 #include "structs/macroscopics.h"
 #include "structs/populations.h"
+#include "NNF/nnf.h"
 
 /*
 *   @brief Initializes device populations with values in binary file
@@ -48,7 +49,11 @@ void initializationMacr(
     FILE* fileRho,
     FILE* fileUx,
     FILE* fileUy,
-    FILE* fileUz
+    FILE* fileUz,
+    FILE* fileFx,
+    FILE* fileFy,
+    FILE* fileFz,
+    FILE* fileOmega
 );
 
 

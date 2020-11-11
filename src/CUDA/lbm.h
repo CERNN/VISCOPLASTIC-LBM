@@ -15,6 +15,7 @@
 #include "structs/macroscopics.h"
 #include "structs/macrProc.h"
 #include "boundaryConditionsHandler.h"
+#include "NNF/nnf.h"
 
 
 /*

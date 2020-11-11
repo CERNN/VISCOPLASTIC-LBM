@@ -12,6 +12,7 @@
 #include "../var.h"
 #include "../globalFunctions.h"
 #include "../errorDef.h"
+#include "../NNF/nnf.h"
 #include <cuda.h>
 
 /*
@@ -33,6 +34,10 @@ public:
     dfloat* fz;     // z force
     #endif
 
+    #ifdef NON_NEWTONIAN_FLUID
+    dfloat* omega;
+    #endif
+
     /* Constructor */
     __host__
     macroscopics()
@@ -47,6 +52,10 @@ public:
         this->fy = nullptr;
         this->fz = nullptr;
         #endif
+
+        #ifdef NON_NEWTONIAN_FLUID
+        this->omega = nullptr;
+        #endif
     }
 
     /* Destructor */
@@ -57,11 +66,15 @@ public:
         this->ux = nullptr;
         this->uy = nullptr;
         this->uz = nullptr;
-        
+
         #ifdef IBM
         this->fx = nullptr;
         this->fy = nullptr;
         this->fz = nullptr;
+        #endif
+
+        #ifdef NON_NEWTONIAN_FLUID
+        this->omega = nullptr;
         #endif
     }
 
@@ -83,6 +96,9 @@ public:
             checkCudaErrors(cudaMallocHost((void**)&(this->fy), TOTAL_MEM_SIZE_SCALAR));
             checkCudaErrors(cudaMallocHost((void**)&(this->fz), TOTAL_MEM_SIZE_SCALAR));
             #endif
+            #ifdef NON_NEWTONIAN_FLUID
+            checkCudaErrors(cudaMallocHost((void**)&(this->omega), TOTAL_MEM_SIZE_SCALAR));
+            #endif
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaMallocManaged((void**)&(this->rho), MEM_SIZE_SCALAR));
@@ -93,6 +109,9 @@ public:
             checkCudaErrors(cudaMallocManaged((void**)&(this->fx), MEM_SIZE_SCALAR));
             checkCudaErrors(cudaMallocManaged((void**)&(this->fy), MEM_SIZE_SCALAR));
             checkCudaErrors(cudaMallocManaged((void**)&(this->fz), MEM_SIZE_SCALAR));
+            #endif
+            #ifdef NON_NEWTONIAN_FLUID
+            checkCudaErrors(cudaMallocManaged((void**)&(this->omega), TOTAL_MEM_SIZE_SCALAR));
             #endif
             break;
         default:
@@ -116,6 +135,9 @@ public:
             checkCudaErrors(cudaFreeHost(this->fy));
             checkCudaErrors(cudaFreeHost(this->fz));
             #endif
+            #ifdef NON_NEWTONIAN_FLUID
+            checkCudaErrors(cudaFreeHost(this->omega));
+            #endif
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaFree(this->rho));
@@ -126,6 +148,9 @@ public:
             checkCudaErrors(cudaFree(this->fx));
             checkCudaErrors(cudaFree(this->fy));
             checkCudaErrors(cudaFree(this->fz));
+            #endif
+            #ifdef NON_NEWTONIAN_FLUID
+            checkCudaErrors(cudaFree(this->omega));
             #endif
             break;
         default:
@@ -146,6 +171,10 @@ public:
         #ifdef IBM
         cudaStream_t streamFx, streamFy, streamFz;
         #endif
+        #ifdef NON_NEWTONIAN_FLUID
+        cudaStream_t streamOmega;
+        #endif
+
         checkCudaErrors(cudaStreamCreate(&(streamRho)));
         checkCudaErrors(cudaStreamCreate(&(streamUx)));
         checkCudaErrors(cudaStreamCreate(&(streamUy)));
@@ -154,6 +183,10 @@ public:
         checkCudaErrors(cudaStreamCreate(&(streamFx)));
         checkCudaErrors(cudaStreamCreate(&(streamFy)));
         checkCudaErrors(cudaStreamCreate(&(streamFz)));
+        #endif
+
+        #ifdef NON_NEWTONIAN_FLUID
+        checkCudaErrors(cudaStreamCreate(&(streamOmega)));
         #endif
 
         checkCudaErrors(cudaMemcpyAsync(this->rho+baseIdx, macrRef->rho+baseIdxRef, 
@@ -174,6 +207,11 @@ public:
             memSize, cudaMemcpyDefault, streamFz));
         #endif
 
+        #ifdef NON_NEWTONIAN_FLUID
+        checkCudaErrors(cudaMemcpyAsync(this->omega+baseIdx, macrRef->omega+baseIdxRef,
+            memSize, cudaMemcpyDefault, streamOmega));
+        #endif
+
         checkCudaErrors(cudaStreamSynchronize(streamRho));
         checkCudaErrors(cudaStreamSynchronize(streamUx));
         checkCudaErrors(cudaStreamSynchronize(streamUy));
@@ -187,6 +225,10 @@ public:
         checkCudaErrors(cudaStreamDestroy(streamFx));
         checkCudaErrors(cudaStreamDestroy(streamFy));
         checkCudaErrors(cudaStreamDestroy(streamFz));
+        #endif
+
+        #ifdef NON_NEWTONIAN_FLUID
+        checkCudaErrors(cudaStreamDestroy(streamOmega));
         #endif
 
     }

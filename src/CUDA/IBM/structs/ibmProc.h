@@ -8,7 +8,7 @@
 typedef struct ibmProc{
     Macroscopics* macrCurr;  // current macroscopics values
     ParticleCenter* pCenter; // current particle centers values
-    int* step;               // pointer to step value 
+    int* step;               // pointer to step value
 
     // Treated values below
 
