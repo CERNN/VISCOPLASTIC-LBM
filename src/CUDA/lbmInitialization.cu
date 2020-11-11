@@ -163,9 +163,9 @@ void gpuMacrInitValue(
     macr->uz[idxScalar(x, y, z)] = 0;
 
     #ifdef IBM
-    macr->fx[idxScalar(x, y, z)] = 0;
-    macr->fy[idxScalar(x, y, z)] = 0;
-    macr->fz[idxScalar(x, y, z)] = 0;
+    macr->fx[idxScalar(x, y, z)] = FX;
+    macr->fy[idxScalar(x, y, z)] = FY;
+    macr->fz[idxScalar(x, y, z)] = FZ;
     #endif
     #ifdef NON_NEWTONIAN_FLUID
     macr->omega[idxScalar(x, y, z)] = OMEGA;

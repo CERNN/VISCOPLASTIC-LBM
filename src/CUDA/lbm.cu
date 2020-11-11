@@ -121,53 +121,53 @@ void gpuMacrCollisionStream(
     dfloat auxTerm;
 
 
-    // Calculate pineq(alfa, beta)
-    // pineqAB = pops - popsEquilibrium
+    // Calculate momNeq(alfa, beta)
+    // momNeqAB = pops - popsEquilibrium
     #ifdef D3Q19
-    const dfloat pineqXX = (fNode[1] + fNode[2] + fNode[7] + fNode[8] + fNode[9] 
+    const dfloat momNeqXX = (fNode[1] + fNode[2] + fNode[7] + fNode[8] + fNode[9] 
             + fNode[10] + fNode[13] + fNode[14] + fNode[15] + fNode[16]) -
             (2*rhoW1*(p1_muu15 + ux3ux3d2) + 
              4*rhoW2*(2*p1_muu15 + 2*ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
-    const dfloat pineqYY = (fNode[3] + fNode[4] + fNode[7] + fNode[8] + fNode[11]
+    const dfloat momNeqYY = (fNode[3] + fNode[4] + fNode[7] + fNode[8] + fNode[11]
             + fNode[12] + fNode[13] + fNode[14] + fNode[17] + fNode[18]) -
             (2*rhoW1*(p1_muu15 + uy3uy3d2) + 
              4*rhoW2*(2*p1_muu15 + ux3ux3d2 + 2*uy3uy3d2 + uz3uz3d2)); 
-    const dfloat pineqZZ = (fNode[5] + fNode[6] + fNode[9] + fNode[10] + fNode[11]
+    const dfloat momNeqZZ = (fNode[5] + fNode[6] + fNode[9] + fNode[10] + fNode[11]
             + fNode[12] + fNode[15] + fNode[16] + fNode[17] + fNode[18]) -
             (2*rhoW1*(p1_muu15 + uz3uz3d2) + 
              4*rhoW2*(2*p1_muu15 + ux3ux3d2 + uy3uy3d2 + 2*uz3uz3d2));
-    const dfloat pineqXYt2 = ((fNode[7] + fNode[8] - fNode[13] - fNode[14]) - 
+    const dfloat momNeqXYt2 = ((fNode[7] + fNode[8] - fNode[13] - fNode[14]) - 
             (4*rhoW2*(ux3uy3))) * 2;
-    const dfloat pineqXZt2 = ((fNode[9] + fNode[10] - fNode[15] - fNode[16]) -
+    const dfloat momNeqXZt2 = ((fNode[9] + fNode[10] - fNode[15] - fNode[16]) -
             (4*rhoW2*(ux3uz3))) * 2;
-    const dfloat pineqYZt2 = ((fNode[11] + fNode[12] - fNode[17] - fNode[18]) -
+    const dfloat momNeqYZt2 = ((fNode[11] + fNode[12] - fNode[17] - fNode[18]) -
             (4*rhoW2*(uy3uz3))) * 2;
     #endif // !D3Q19 
     #ifdef D3Q27
     const dfloat aux = (fNode[19] + fNode[20] + fNode[21] + fNode[22] + fNode[23]
             + fNode[24] + fNode[25] + fNode[26]) - 
             (8*rhoW3*(ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
-    const dfloat pineqXX = (fNode[1] + fNode[2] + fNode[7] + fNode[8] + fNode[9] 
+    const dfloat momNeqXX = (fNode[1] + fNode[2] + fNode[7] + fNode[8] + fNode[9] 
             + fNode[10] + fNode[13] + fNode[14] + fNode[15] + fNode[16] + aux) -
             (2*rhoW1*(p1_muu15 + ux3ux3d2) + 
              4*rhoW2*(2*p1_muu15 + 2*ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
-    const dfloat pineqYY = (fNode[3] + fNode[4] + fNode[7] + fNode[8] + fNode[11]
+    const dfloat momNeqYY = (fNode[3] + fNode[4] + fNode[7] + fNode[8] + fNode[11]
             + fNode[12] + fNode[13] + fNode[14] + fNode[17] + fNode[18] + aux) -
             (2*rhoW1*(p1_muu15 + uy3uy3d2) + 
              4*rhoW2*(ux3ux3d2 + 2*uy3uy3d2 + uz3uz3d2)); 
-    const dfloat pineqZZ = (fNode[5] + fNode[6] + fNode[9] + fNode[10] + fNode[11]
+    const dfloat momNeqZZ = (fNode[5] + fNode[6] + fNode[9] + fNode[10] + fNode[11]
             + fNode[12] + fNode[15] + fNode[16] + fNode[17] + fNode[18] + aux) -
             (2*rhoW1*(p1_muu15 + uz3uz3d2) + 
              4*rhoW2*(ux3ux3d2 + uy3uy3d2 + 2*uz3uz3d2));
-    const dfloat pineqXYt2 = ((fNode[7] + fNode[8] - fNode[13] - fNode[14] + fNode[19]
+    const dfloat momNeqXYt2 = ((fNode[7] + fNode[8] - fNode[13] - fNode[14] + fNode[19]
             + fNode[20] + fNode[21] + fNode[22] - fNode[23] - fNode[24] - fNode[25]
             - fNode[26]) - 
             (4*rhoW2*(ux3uy3) + 8*rhoW3*(ux3uy3))) * 2;
-    const dfloat pineqXZt2 = ((fNode[9] + fNode[10] - fNode[15] - fNode[16] + fNode[19]
+    const dfloat momNeqXZt2 = ((fNode[9] + fNode[10] - fNode[15] - fNode[16] + fNode[19]
             + fNode[20] - fNode[21] - fNode[22] + fNode[23] + fNode[24] - fNode[25]
             - fNode[26]) - 
             (4*rhoW2*(ux3uz3) + 8*rhoW3*(ux3uz3))) * 2;
-    const dfloat pineqYZt2 = ((fNode[11] + fNode[12] - fNode[17] - fNode[18] + fNode[19]
+    const dfloat momNeqYZt2 = ((fNode[11] + fNode[12] - fNode[17] - fNode[18] + fNode[19]
             + fNode[20] - fNode[21] - fNode[22] - fNode[23] - fNode[24] + fNode[25]
             + fNode[26]) - 
             (4*rhoW2*(uy3uz3) + 8*rhoW3*(uy3uz3))) * 2;
@@ -180,11 +180,11 @@ void gpuMacrCollisionStream(
     // terms[2] -> population 2
     // terms[3] -> population 3
     // terms[4] -> population 4
-    terms[0] = -pineqXX/3 - pineqYY/3 - pineqZZ/3;
-    terms[1] = terms[0] + (-fxVar_D3 + pineqXX);
-    terms[2] = terms[0] + ( fxVar_D3 + pineqXX);
-    terms[3] = terms[0] + (-fyVar_D3 + pineqYY);
-    terms[4] = terms[0] + ( fyVar_D3 + pineqYY);
+    terms[0] = -momNeqXX/3 - momNeqYY/3 - momNeqZZ/3;
+    terms[1] = terms[0] + (-fxVar_D3 + momNeqXX);
+    terms[2] = terms[0] + ( fxVar_D3 + momNeqXX);
+    terms[3] = terms[0] + (-fyVar_D3 + momNeqYY);
+    terms[4] = terms[0] + ( fyVar_D3 + momNeqYY);
     #ifdef D3Q27
     // terms[5] -> population 7
     // terms[6] -> population 8
@@ -192,12 +192,12 @@ void gpuMacrCollisionStream(
     // terms[8] -> population 10
     // terms[9] -> population 11
     // terms[10] -> population 12
-    terms[5] = terms[1] + (-fyVar_D3 + pineqXYt2 + pineqYY);
-    terms[6] = terms[2] + ( fyVar_D3 + pineqXYt2 + pineqYY);
-    terms[7] = terms[1] + (-fzVar_D3 + pineqXZt2 + pineqZZ);
-    terms[8] = terms[2] + ( fzVar_D3 + pineqXZt2 + pineqZZ);
-    terms[9] = terms[3] + (-fzVar_D3 + pineqYZt2 + pineqZZ);
-    terms[10] = terms[4] + ( fzVar_D3 + pineqYZt2 + pineqZZ);
+    terms[5] = terms[1] + (-fyVar_D3 + momNeqXYt2 + momNeqYY);
+    terms[6] = terms[2] + ( fyVar_D3 + momNeqXYt2 + momNeqYY);
+    terms[7] = terms[1] + (-fzVar_D3 + momNeqXZt2 + momNeqZZ);
+    terms[8] = terms[2] + ( fzVar_D3 + momNeqXZt2 + momNeqZZ);
+    terms[9] = terms[3] + (-fzVar_D3 + momNeqYZt2 + momNeqZZ);
+    terms[10] = terms[4] + ( fzVar_D3 + momNeqYZt2 + momNeqZZ);
     #endif
     
     // Calculate regularized population to fNode
@@ -210,46 +210,55 @@ void gpuMacrCollisionStream(
     fNode[2] = multiplyTerm*terms[2];
     fNode[3] = multiplyTerm*terms[3];
     fNode[4] = multiplyTerm*terms[4];
-    fNode[5] = multiplyTerm*(terms[0] + (-fzVar_D3 + pineqZZ));
-    fNode[6] = multiplyTerm*(terms[0] + ( fzVar_D3 + pineqZZ));
+    fNode[5] = multiplyTerm*(terms[0] + (-fzVar_D3 + momNeqZZ));
+    fNode[6] = multiplyTerm*(terms[0] + ( fzVar_D3 + momNeqZZ));
     multiplyTerm = W2t9d2;
-    fNode[7] = multiplyTerm*(terms[1] + (-fyVar_D3 + pineqXYt2 + pineqYY));
-    fNode[8] = multiplyTerm*(terms[2] + ( fyVar_D3 + pineqXYt2 + pineqYY));
-    fNode[9] = multiplyTerm*(terms[1] + (-fzVar_D3 + pineqXZt2 + pineqZZ));
-    fNode[10] = multiplyTerm*(terms[2] + ( fzVar_D3 + pineqXZt2 + pineqZZ));
-    fNode[11] = multiplyTerm*(terms[3] + (-fzVar_D3 + pineqYZt2 + pineqZZ));
-    fNode[12] = multiplyTerm*(terms[4] + ( fzVar_D3 + pineqYZt2 + pineqZZ));
-    fNode[13] = multiplyTerm*(terms[1] + ( fyVar_D3 - pineqXYt2 + pineqYY));
-    fNode[14] = multiplyTerm*(terms[2] + (-fyVar_D3 - pineqXYt2 + pineqYY));
-    fNode[15] = multiplyTerm*(terms[1] + ( fzVar_D3 - pineqXZt2 + pineqZZ));
-    fNode[16] = multiplyTerm*(terms[2] + (-fzVar_D3 - pineqXZt2 + pineqZZ));
-    fNode[17] = multiplyTerm*(terms[3] + ( fzVar_D3 - pineqYZt2 + pineqZZ));
-    fNode[18] = multiplyTerm*(terms[4] + (-fzVar_D3 - pineqYZt2 + pineqZZ));
+    fNode[7] = multiplyTerm*(terms[1] + (-fyVar_D3 + momNeqXYt2 + momNeqYY));
+    fNode[8] = multiplyTerm*(terms[2] + ( fyVar_D3 + momNeqXYt2 + momNeqYY));
+    fNode[9] = multiplyTerm*(terms[1] + (-fzVar_D3 + momNeqXZt2 + momNeqZZ));
+    fNode[10] = multiplyTerm*(terms[2] + ( fzVar_D3 + momNeqXZt2 + momNeqZZ));
+    fNode[11] = multiplyTerm*(terms[3] + (-fzVar_D3 + momNeqYZt2 + momNeqZZ));
+    fNode[12] = multiplyTerm*(terms[4] + ( fzVar_D3 + momNeqYZt2 + momNeqZZ));
+    fNode[13] = multiplyTerm*(terms[1] + ( fyVar_D3 - momNeqXYt2 + momNeqYY));
+    fNode[14] = multiplyTerm*(terms[2] + (-fyVar_D3 - momNeqXYt2 + momNeqYY));
+    fNode[15] = multiplyTerm*(terms[1] + ( fzVar_D3 - momNeqXZt2 + momNeqZZ));
+    fNode[16] = multiplyTerm*(terms[2] + (-fzVar_D3 - momNeqXZt2 + momNeqZZ));
+    fNode[17] = multiplyTerm*(terms[3] + ( fzVar_D3 - momNeqYZt2 + momNeqZZ));
+    fNode[18] = multiplyTerm*(terms[4] + (-fzVar_D3 - momNeqYZt2 + momNeqZZ));
     #ifdef D3Q27
     multiplyTerm = W3t9d2;
-    fNode[19] = multiplyTerm*(terms[5] + (-fzVar_D3 + pineqXZt2 + pineqYZt2 + pineqZZ));
-    fNode[20] = multiplyTerm*(terms[6] + ( fzVar_D3 + pineqXZt2 + pineqYZt2 + pineqZZ));
-    fNode[21] = multiplyTerm*(terms[5] + ( fzVar_D3 - pineqXZt2 - pineqYZt2 + pineqZZ));
-    fNode[22] = multiplyTerm*(terms[6] + (-fzVar_D3 - pineqXZt2 - pineqYZt2 + pineqZZ));
-    fNode[23] = multiplyTerm*(terms[7] + ( fyVar_D3 - pineqXYt2 + pineqYY - pineqYZt2));
-    fNode[24] = multiplyTerm*(terms[8] + (-fyVar_D3 - pineqXYt2 + pineqYY - pineqYZt2));
-    fNode[25] = multiplyTerm*(terms[9] + ( fxVar_D3 + pineqXX - pineqXYt2 - pineqXZt2));
-    fNode[26] = multiplyTerm*(terms[10] + (-fxVar_D3 + pineqXX - pineqXYt2 - pineqXZt2));
+    fNode[19] = multiplyTerm*(terms[5] + (-fzVar_D3 + momNeqXZt2 + momNeqYZt2 + momNeqZZ));
+    fNode[20] = multiplyTerm*(terms[6] + ( fzVar_D3 + momNeqXZt2 + momNeqYZt2 + momNeqZZ));
+    fNode[21] = multiplyTerm*(terms[5] + ( fzVar_D3 - momNeqXZt2 - momNeqYZt2 + momNeqZZ));
+    fNode[22] = multiplyTerm*(terms[6] + (-fzVar_D3 - momNeqXZt2 - momNeqYZt2 + momNeqZZ));
+    fNode[23] = multiplyTerm*(terms[7] + ( fyVar_D3 - momNeqXYt2 + momNeqYY - momNeqYZt2));
+    fNode[24] = multiplyTerm*(terms[8] + (-fyVar_D3 - momNeqXYt2 + momNeqYY - momNeqYZt2));
+    fNode[25] = multiplyTerm*(terms[9] + ( fxVar_D3 + momNeqXX - momNeqXYt2 - momNeqXZt2));
+    fNode[26] = multiplyTerm*(terms[10] + (-fxVar_D3 + momNeqXX - momNeqXYt2 - momNeqXZt2));
     #endif
 
     #ifdef NON_NEWTONIAN_FLUID
-    const dfloat stressMag = sqrt(0.5 * (
-        (pineqXX + uxVar * fxVar) * (pineqXX + uxVar * fxVar) +
-        (pineqYY + uyVar * fyVar) * (pineqYY + uyVar * fyVar) +
-        (pineqZZ + uzVar * fzVar) * (pineqZZ + uzVar * fzVar) +
-        0.5 * (pineqXYt2 + (uxVar * fyVar + uyVar * fxVar)) * 0.5 * (pineqXYt2 + (uxVar * fyVar + uyVar * fxVar)) +
-        0.5 * (pineqXZt2 + (uxVar * fzVar + uzVar * fxVar)) * 0.5 * (pineqXZt2 + (uxVar * fzVar + uzVar * fxVar)) + 
-        0.5 * (pineqYZt2 + (uyVar * fzVar + uzVar * fyVar)) * 0.5 * (pineqYZt2 + (uyVar * fzVar + uzVar * fyVar))));
+    const dfloat uFxxd2 = uxVar*fxVar; // d2 = uFxx Divided by two
+    const dfloat uFyyd2 = uyVar*fyVar;
+    const dfloat uFzzd2 = uzVar*fzVar;
+    const dfloat uFxy = uxVar*fyVar + uyVar*fxVar;
+    const dfloat uFxz = uxVar*fzVar + uzVar*fxVar;
+    const dfloat uFyz = uyVar*fzVar + uzVar*fyVar;
+
+    // Related to stress tensor magnitude.
+    // StressMag = (1-omega/2) * auxStressMag
+    const dfloat auxStressMag = sqrt(0.5 * (
+        (momNeqXX + uFxxd2) * (momNeqXX + uFxxd2) +
+        (momNeqYY + uFyyd2) * (momNeqYY + uFyyd2) +
+        (momNeqZZ + uFzzd2) * (momNeqZZ + uFzzd2) +
+        0.5 * (momNeqXYt2 + uFxy) * 0.5 * (momNeqXYt2 + uFxy) +
+        0.5 * (momNeqXZt2 + uFxz) * 0.5 * (momNeqXZt2 + uFxz) + 
+        0.5 * (momNeqYZt2 + uFyz) * 0.5 * (momNeqYZt2 + uFyz)));
 
     // Update omega (related to fluid viscosity) locally for non newtonian fluid
     dfloat omegaVar = macr.omega[idxScalar(x, y, z)];
-    omegaVar = calcOmega(omegaVar, stressMag);
-    macr.omega[idxScalar(x, y, z)] = omegaVar; 
+    omegaVar = calcOmega(omegaVar, auxStressMag);
+    macr.omega[idxScalar(x, y, z)] = omegaVar;
 
     #else
     const dfloat omegaVar = OMEGA;

@@ -1,18 +1,19 @@
 #include "particleNode.h"
 #include "particle.h"
 
-#ifdef IBM
-
 ParticleNodeSoA::particleNodeSoA()
 {
     this->S = nullptr;
+    this->particleCenterIdx = nullptr;
 }
 
 ParticleNodeSoA::~particleNodeSoA()
 {
     this->S = nullptr;
+    this->particleCenterIdx = nullptr;
 }
 
+#ifdef IBM
 void ParticleNodeSoA::allocateMemory(unsigned int numNodes)
 {
     this->numNodes = numNodes;

@@ -31,11 +31,9 @@
 #include "boundaryConditionsBuilder.h"
 #include "structs/boundaryConditionsInfo.h"
 
-#ifdef IBM
 #include "IBM/ibm.h"
 #include "IBM/ibmParticlesCreation.h"
 #include "IBM/structs/ibmProc.h"
-#endif // IBM
 
 
 int main()
@@ -403,6 +401,7 @@ int main()
         }
 
         // Report IBM data
+        #ifdef IBM
         if(repIBM){
             ibmProcessData.treatData();
             ibmProcessData.printTreatData();
@@ -417,6 +416,7 @@ int main()
                     break;
             }
         }
+        #endif
     }
     /* ---------------------------------------------------------------------- */
 

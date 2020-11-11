@@ -18,8 +18,8 @@
 #define SINGLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
 #define D3Q19               // velocity set to use (D3Q19 OR D3Q27)
 // Comment to disable IBM
-#define IBM
-/* ------------------------------------------------------------------------- */
+// #define IBM
+/* -------------------------------------------------------------------------- */
 
 /* ------------------------ NON NEWTONIAN FLUID TYPE ------------------------ */
 // Uncomment the one to use. Comment all to simulate newtonian fluid
@@ -100,7 +100,7 @@ constexpr dfloat RHO_0 = 1;         // initial rho
 
 constexpr dfloat FX = 0;        // force in x
 constexpr dfloat FY = 0;        // force in y
-constexpr dfloat FZ = 0;     // force in z (flow direction in most cases)
+constexpr dfloat FZ = 1e-4;     // force in z (flow direction in most cases)
 
 // values options for boundary conditions
 __device__ const dfloat UX_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
