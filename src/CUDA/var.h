@@ -15,12 +15,18 @@
 
 
 /* ------------------------ GENERAL SIMULATION DEFINES ---------------------- */
-typedef float dfloat;      // single or double precision
-#define D3Q19              // velocity set to use
+#define SINGLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
+#define D3Q19               // velocity set to use (D3Q19 OR D3Q27)
 // Comment to disable IBM
 #define IBM
 /* ------------------------------------------------------------------------- */
 
+#ifdef SINGLE_PRECISION
+    typedef float dfloat;      // single or double precision
+#endif
+#ifdef DOUBLE_PRECISION
+    typedef double dfloat;      // single or double precision
+#endif
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
 #define ID_SIM "999"            // prefix for simulation's files
@@ -118,6 +124,13 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
 #ifdef D3Q27
 #include "velocitySets/D3Q27.h"
 #endif // !D3Q27
+
+// Pow function to use
+#ifdef SINGLE_PRECISION
+    #define POW_FUNCTION powf 
+#else
+    #define POW_FUNCTION pow
+#endif
 
 /* --------------------------- AUXILIARY DEFINES --------------------------- */ 
 #define IN_HOST 1       // variable accessible only for host
