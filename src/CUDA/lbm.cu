@@ -194,10 +194,8 @@ void gpuMacrCollisionStream(
         (sumPopYZ - rhoVar*uyVar*uzVar + uFyzd2) * (sumPopYZ - rhoVar*uyVar*uzVar + uFyzd2)));
 
     // Update omega (related to fluid viscosity) locally for non newtonian fluid
-    dfloat omegaVar = macr.omega[idxScalar(x, y, z)];
-    omegaVar = calcOmega(omegaVar, auxStressMag);
-    macr.omega[idxScalar(x, y, z)] = omegaVar;
-
+    omegaVar = calcOmega(OMEGA_P, auxStressMag);
+    
     #else
     const dfloat omegaVar = OMEGA;
     #endif
@@ -211,6 +209,9 @@ void gpuMacrCollisionStream(
         macr.ux[idxScalar(x, y, z)] = uxVar;
         macr.uy[idxScalar(x, y, z)] = uyVar;
         macr.uz[idxScalar(x, y, z)] = uzVar;
+        #ifdef NON_NEWTONIAN_FLUID
+        macr.omega[idxScalar(x, y, z)] = omegaVar;
+        #endif
     }
 
     // Calculate regularization terms 
