@@ -259,6 +259,15 @@ int main()
     }
     /* ---------------------------------------------------------------------- */
 
+    if(!LOAD_MACR){
+        for(int i = 0; i < N_GPUS; i++){
+            size_t baseIdx = i*NUMBER_LBM_NODES;
+            macrCPUCurrent.copyMacr(&macr[i], baseIdx, 0, false);
+            checkCudaErrors(cudaDeviceSynchronize());
+        }
+        macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
+    }
+
     // Grid and thread definition for boundary conditions
     for(int i = 0; i < N_GPUS; i++)
         gridsBC[i] = dim3(((bcInfos[i].totalBCNodes%32)? (bcInfos[i].totalBCNodes/32+1) : 

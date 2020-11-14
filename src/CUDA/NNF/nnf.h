@@ -14,14 +14,18 @@ constexpr dfloat GAMMA_0 = 0;               // TODO: what it is?
 
 #ifdef BINGHAM
 // Inputs
-constexpr dfloat ETA_P = 1e-3;              // Plastic viscosity
-constexpr dfloat S_Y = 1e-5;                // Yield stress
+constexpr dfloat ETA_P = 6.25e-3;              // Plastic viscosity
+constexpr dfloat S_Y = 1.05e-4;                // Yield stress
 // Calculated variables
 constexpr dfloat OMEGA_P = 1 / (3*ETA_P+0.5); // 1/tau_p = 1/(3*eta_p+0.5)
 #endif
 /* -------------------------------------------------------------------------- */
 
+#if defined(HERSCHEL_BULKLEY) || defined(POWERLAW) || defined(BINGHAM)
+    #define NON_NEWTONIAN_FLUID
+#endif
 
+#ifdef NON_NEWTONIAN_FLUID
 __device__ 
 dfloat __forceinline__ calcOmega(
     dfloat omegaOld, dfloat const auxStressMag
@@ -46,16 +50,12 @@ dfloat __forceinline__ calcOmega(
 #endif // POWERLAW
 
 #ifdef BINGHAM
-    omega = OMEGA_P * (1 - S_Y / auxStressMag);
-    if(omega < 0)
-        omega = 0;
+    omega = OMEGA_P * myMax(0.0, (1 - S_Y / auxStressMag));
 #endif // BINGHAM
 
     return omega;
 }
+#endif // NON_NEWTONIAN_FLUID
 
-#if defined(HERSCHEL_BULKLEY) || defined(POWERLAW) || defined(BINGHAM)
-    #define NON_NEWTONIAN_FLUID
-#endif
 
 #endif // __NNF_H

@@ -124,26 +124,28 @@ void gpuMacrCollisionStream(
     // Calculate momNeq(alfa, beta)
     // momNeqAB = pops - popsEquilibrium
     #ifdef D3Q19
-    const dfloat momNeqXX = (fNode[1] + fNode[2] + fNode[7] + fNode[8] + fNode[9] 
-            + fNode[10] + fNode[13] + fNode[14] + fNode[15] + fNode[16]) -
-            (2*rhoW1*(p1_muu15 + ux3ux3d2) + 
+    const dfloat sumPopXX = fNode[1] + fNode[2] + fNode[7] + fNode[8] + fNode[9] 
+            + fNode[10] + fNode[13] + fNode[14] + fNode[15] + fNode[16];
+    const dfloat sumPopYY = fNode[3] + fNode[4] + fNode[7] + fNode[8] + fNode[11]
+            + fNode[12] + fNode[13] + fNode[14] + fNode[17] + fNode[18];
+    const dfloat sumPopZZ = fNode[5] + fNode[6] + fNode[9] + fNode[10] + fNode[11]
+            + fNode[12] + fNode[15] + fNode[16] + fNode[17] + fNode[18];
+    const dfloat sumPopXY = fNode[7] + fNode[8] - fNode[13] - fNode[14];
+    const dfloat sumPopXZ = fNode[9] + fNode[10] - fNode[15] - fNode[16];
+    const dfloat sumPopYZ = fNode[11] + fNode[12] - fNode[17] - fNode[18];
+    
+    const dfloat momNeqXX = sumPopXX - (2*rhoW1*(p1_muu15 + ux3ux3d2) + 
              4*rhoW2*(2*p1_muu15 + 2*ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
-    const dfloat momNeqYY = (fNode[3] + fNode[4] + fNode[7] + fNode[8] + fNode[11]
-            + fNode[12] + fNode[13] + fNode[14] + fNode[17] + fNode[18]) -
-            (2*rhoW1*(p1_muu15 + uy3uy3d2) + 
+    const dfloat momNeqYY = sumPopYY - (2*rhoW1*(p1_muu15 + uy3uy3d2) + 
              4*rhoW2*(2*p1_muu15 + ux3ux3d2 + 2*uy3uy3d2 + uz3uz3d2)); 
-    const dfloat momNeqZZ = (fNode[5] + fNode[6] + fNode[9] + fNode[10] + fNode[11]
-            + fNode[12] + fNode[15] + fNode[16] + fNode[17] + fNode[18]) -
-            (2*rhoW1*(p1_muu15 + uz3uz3d2) + 
+    const dfloat momNeqZZ = sumPopZZ - (2*rhoW1*(p1_muu15 + uz3uz3d2) + 
              4*rhoW2*(2*p1_muu15 + ux3ux3d2 + uy3uy3d2 + 2*uz3uz3d2));
-    const dfloat momNeqXYt2 = ((fNode[7] + fNode[8] - fNode[13] - fNode[14]) - 
-            (4*rhoW2*(ux3uy3))) * 2;
-    const dfloat momNeqXZt2 = ((fNode[9] + fNode[10] - fNode[15] - fNode[16]) -
-            (4*rhoW2*(ux3uz3))) * 2;
-    const dfloat momNeqYZt2 = ((fNode[11] + fNode[12] - fNode[17] - fNode[18]) -
-            (4*rhoW2*(uy3uz3))) * 2;
+    const dfloat momNeqXYt2 = (sumPopXY - (4*rhoW2*(ux3uy3))) * 2;
+    const dfloat momNeqXZt2 = (sumPopXZ - (4*rhoW2*(ux3uz3))) * 2;
+    const dfloat momNeqYZt2 = (sumPopYZ - (4*rhoW2*(uy3uz3))) * 2;
     #endif // !D3Q19 
     #ifdef D3Q27
+    // ERROR: DEPRECATED FOR NON NEWTONIAN!!!!!!!!
     const dfloat aux = (fNode[19] + fNode[20] + fNode[21] + fNode[22] + fNode[23]
             + fNode[24] + fNode[25] + fNode[26]) - 
             (8*rhoW3*(ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
@@ -172,6 +174,44 @@ void gpuMacrCollisionStream(
             + fNode[26]) - 
             (4*rhoW2*(uy3uz3) + 8*rhoW3*(uy3uz3))) * 2;
     #endif // !D3Q27
+
+    #ifdef NON_NEWTONIAN_FLUID
+    const dfloat uFxxd2 = uxVar*fxVar; // d2 = uFxx Divided by two
+    const dfloat uFyyd2 = uyVar*fyVar;
+    const dfloat uFzzd2 = uzVar*fzVar;
+    const dfloat uFxyd2 = (uxVar*fyVar + uyVar*fxVar) / 2;
+    const dfloat uFxzd2 = (uxVar*fzVar + uzVar*fxVar) / 2;
+    const dfloat uFyzd2 = (uyVar*fzVar + uzVar*fyVar) / 2;
+    const dfloat cs2 = 1.0/3.0;
+    // Related to stress tensor magnitude.
+    // StressMag = (1-omega/2) * auxStressMag
+    const dfloat auxStressMag = sqrt(0.5 * (
+        (sumPopXX - rhoVar*(uxVar + cs2) + uFxxd2) * (sumPopXX - rhoVar*(uxVar + cs2) + uFxxd2) +
+        (sumPopYY - rhoVar*(uyVar + cs2) + uFyyd2) * (sumPopYY - rhoVar*(uyVar + cs2) + uFyyd2) +
+        (sumPopZZ - rhoVar*(uzVar + cs2) + uFzzd2) * (sumPopZZ - rhoVar*(uzVar + cs2) + uFzzd2) +
+        (sumPopXY - rhoVar*uxVar*uyVar + uFxyd2) * (sumPopXY - rhoVar*uxVar*uyVar + uFxyd2) +
+        (sumPopXZ - rhoVar*uxVar*uzVar + uFxzd2) * (sumPopXZ - rhoVar*uxVar*uzVar + uFxzd2) + 
+        (sumPopYZ - rhoVar*uyVar*uzVar + uFyzd2) * (sumPopYZ - rhoVar*uyVar*uzVar + uFyzd2)));
+
+    // Update omega (related to fluid viscosity) locally for non newtonian fluid
+    dfloat omegaVar = macr.omega[idxScalar(x, y, z)];
+    omegaVar = calcOmega(omegaVar, auxStressMag);
+    macr.omega[idxScalar(x, y, z)] = omegaVar;
+
+    #else
+    const dfloat omegaVar = OMEGA;
+    #endif
+
+    const dfloat t_omegaVar = 1 - omegaVar;
+    const dfloat tt_omegaVar = 1 - 0.5*omegaVar;
+
+    if (save)
+    {
+        macr.rho[idxScalar(x, y, z)] = rhoVar;
+        macr.ux[idxScalar(x, y, z)] = uxVar;
+        macr.uy[idxScalar(x, y, z)] = uyVar;
+        macr.uz[idxScalar(x, y, z)] = uzVar;
+    }
 
     // Calculate regularization terms 
     // terms[i] = Q[i, alfa, beta]*pi[i, alfa, beta] - c[i, alfa]*F[alfa]/3
@@ -236,44 +276,6 @@ void gpuMacrCollisionStream(
     fNode[25] = multiplyTerm*(terms[9] + ( fxVar_D3 + momNeqXX - momNeqXYt2 - momNeqXZt2));
     fNode[26] = multiplyTerm*(terms[10] + (-fxVar_D3 + momNeqXX - momNeqXYt2 - momNeqXZt2));
     #endif
-
-    #ifdef NON_NEWTONIAN_FLUID
-    const dfloat uFxxd2 = uxVar*fxVar; // d2 = uFxx Divided by two
-    const dfloat uFyyd2 = uyVar*fyVar;
-    const dfloat uFzzd2 = uzVar*fzVar;
-    const dfloat uFxy = uxVar*fyVar + uyVar*fxVar;
-    const dfloat uFxz = uxVar*fzVar + uzVar*fxVar;
-    const dfloat uFyz = uyVar*fzVar + uzVar*fyVar;
-
-    // Related to stress tensor magnitude.
-    // StressMag = (1-omega/2) * auxStressMag
-    const dfloat auxStressMag = sqrt(0.5 * (
-        (momNeqXX + uFxxd2) * (momNeqXX + uFxxd2) +
-        (momNeqYY + uFyyd2) * (momNeqYY + uFyyd2) +
-        (momNeqZZ + uFzzd2) * (momNeqZZ + uFzzd2) +
-        0.5 * (momNeqXYt2 + uFxy) * 0.5 * (momNeqXYt2 + uFxy) +
-        0.5 * (momNeqXZt2 + uFxz) * 0.5 * (momNeqXZt2 + uFxz) + 
-        0.5 * (momNeqYZt2 + uFyz) * 0.5 * (momNeqYZt2 + uFyz)));
-
-    // Update omega (related to fluid viscosity) locally for non newtonian fluid
-    dfloat omegaVar = macr.omega[idxScalar(x, y, z)];
-    omegaVar = calcOmega(omegaVar, auxStressMag);
-    macr.omega[idxScalar(x, y, z)] = omegaVar;
-
-    #else
-    const dfloat omegaVar = OMEGA;
-    #endif
-
-    const dfloat t_omegaVar = 1 - omegaVar;
-    const dfloat tt_omegaVar = 1 - 0.5*omegaVar;
-
-    if (save)
-    {
-        macr.rho[idxScalar(x, y, z)] = rhoVar;
-        macr.ux[idxScalar(x, y, z)] = uxVar;
-        macr.uy[idxScalar(x, y, z)] = uyVar;
-        macr.uz[idxScalar(x, y, z)] = uzVar;
-    }
 
     // Collision to fNode:
     // fNode = (1 - 1/TAU)*f1 + fEq + (1 - 0.5/TAU)*force ->

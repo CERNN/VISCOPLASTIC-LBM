@@ -36,7 +36,7 @@
 #endif
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
-#define ID_SIM "999"            // prefix for simulation's files
+#define ID_SIM "000"            // prefix for simulation's files
 #define PATH_FILES "ParallelPlatesBB"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
@@ -44,9 +44,9 @@
 
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
-constexpr int N_STEPS = 1000;          // maximum number of time steps
-#define MACR_SAVE 100                  // saves macroscopics every MACR_SAVE steps
-#define DATA_REPORT 0                // report every DATA_REPORT steps
+constexpr int N_STEPS = 400000;          // maximum number of time steps
+#define MACR_SAVE 1000                  // saves macroscopics every MACR_SAVE steps
+#define DATA_REPORT 1000                // report every DATA_REPORT steps
  
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
@@ -84,11 +84,11 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 /* --------------------------  SIMULATION DEFINES -------------------------- */
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 
-constexpr unsigned int N = 160;
-constexpr unsigned int NX = 100;        // size x of the grid 
+constexpr unsigned int N = 128;
+constexpr unsigned int NX = 3;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr unsigned int NY = 100;        // size y of the grid
-constexpr unsigned int NZ = 160;        // size z of the grid in one GPU
+constexpr unsigned int NY = N;        // size y of the grid
+constexpr unsigned int NZ = N;        // size z of the grid in one GPU
 constexpr unsigned int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
 constexpr dfloat U_MAX = 0.05;           // max velocity
@@ -100,7 +100,7 @@ constexpr dfloat RHO_0 = 1;         // initial rho
 
 constexpr dfloat FX = 0;        // force in x
 constexpr dfloat FY = 0;        // force in y
-constexpr dfloat FZ = 1e-4;     // force in z (flow direction in most cases)
+constexpr dfloat FZ = 2.04e-6;     // force in z (flow direction in most cases)
 
 // values options for boundary conditions
 __device__ const dfloat UX_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
@@ -161,5 +161,14 @@ const size_t TOTAL_MEM_SIZE_POP = sizeof(dfloat) * TOTAL_NUMBER_LBM_NODES * Q;
 const size_t TOTAL_MEM_SIZE_SCALAR = sizeof(dfloat) * TOTAL_NUMBER_LBM_NODES;
 const size_t TOTAL_MEM_SIZE_MAP_BC = sizeof(uint32_t) * TOTAL_NUMBER_LBM_NODES;
 /* ------------------------------------------------------------------------- */
+
+
+#ifndef myMax
+#define myMax(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef myMin
+#define myMin(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
 
 #endif // !__VAR_H
