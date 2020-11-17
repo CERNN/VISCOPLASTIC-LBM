@@ -168,7 +168,7 @@ void gpuMacrInitValue(
     macr->fz[idxScalar(x, y, z)] = FZ;
     #endif
     #ifdef NON_NEWTONIAN_FLUID
-    macr->omega[idxScalar(x, y, z)] = OMEGA;
+    macr->omega[idxScalar(x, y, z)] = 0;
     #endif
 
     // Example of usage of random numbers for turbulence in parallel plates flow in z
