@@ -7,9 +7,11 @@
 
 /* ------------------------ NON NEWTONIAN FLUID TYPE ------------------------ */
 #ifdef POWERLAW
-constexpr dfloat N_INDEX = 0.55;            // Power index
-constexpr dfloat K_CONSISTENCY = 1e-1;      // Consistency factor
-constexpr dfloat GAMMA_0 = 0;               // TODO: what it is?
+constexpr dfloat N_INDEX = 1.5;                         // Power index
+constexpr dfloat K_CONSISTENCY = RHO_0*(TAU-0.5)/3;      // Consistency factor
+constexpr dfloat GAMMA_0 = 0;       // Truncated Power-Law. 
+                                    // Leave as 0 to no truncate
+#define OMEGA_LAST_STEP // Needs omega from last step
 #endif
 
 #ifdef BINGHAM
@@ -17,7 +19,7 @@ constexpr dfloat GAMMA_0 = 0;               // TODO: what it is?
 constexpr dfloat ETA_P = 0.3979814;              // Plastic viscosity
 constexpr dfloat S_Y = 3.4545e-4;                // Yield stress
 // Calculated variables
-constexpr dfloat OMEGA_P = 1 / (3*ETA_P+0.5); // 1/tau_p = 1/(3*eta_p+0.5)
+constexpr dfloat OMEGA_P = 1 / (3*ETA_P+0.5);    // 1/tau_p = 1/(3*eta_p+0.5)
 #endif
 /* -------------------------------------------------------------------------- */
 
@@ -39,11 +41,11 @@ dfloat __forceinline__ calcOmega(
     // Rate of strain
     const dfloat gammaDot = (1 - 0.5 * omegaOld) * auxStressMag / eta;
 
-    if (gamma_dot <= GAMMA_0) {
-        eta = ETA_0;
+    if (gammaDot <= GAMMA_0) {
+        eta = K_CONSISTENCY;
     }
     else {
-        eta = ETA_0 * POW_FUNCTION(gammaDot, N_INDEX - 1);
+        eta = K_CONSISTENCY * POW_FUNCTION(gammaDot, N_INDEX - 1);
     }
 
     omega = 1 / (0.5 + 3 * eta);

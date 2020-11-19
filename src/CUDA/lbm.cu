@@ -190,8 +190,16 @@ void gpuMacrCollisionStream(
         (momNeqYZt2/2 + uFyzd2) * (momNeqYZt2/2 + uFyzd2))));
 
     // Update omega (related to fluid viscosity) locally for non newtonian fluid
+    #if defined(BINGHAM)
     const dfloat omegaVar = calcOmega(OMEGA_P, auxStressMag);
-    
+    #endif
+
+    #ifdef OMEGA_LAST_STEP
+    dfloat omegaVar = macr.omega[idxScalar(x, y, z)];
+    omegaVar = calcOmega(omegaVar, auxStressMag);
+    macr.omega[idxScalar(x, y, z)] = omegaVar;
+    #endif
+
     #else
     const dfloat omegaVar = OMEGA;
     #endif
@@ -205,7 +213,8 @@ void gpuMacrCollisionStream(
         macr.ux[idxScalar(x, y, z)] = uxVar;
         macr.uy[idxScalar(x, y, z)] = uyVar;
         macr.uz[idxScalar(x, y, z)] = uzVar;
-        #ifdef NON_NEWTONIAN_FLUID
+        // Only Bingham does not save local omega
+        #ifndef OMEGA_LAST_STEP
         macr.omega[idxScalar(x, y, z)] = omegaVar;
         #endif
     }

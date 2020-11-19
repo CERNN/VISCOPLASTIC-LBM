@@ -378,7 +378,8 @@ int main()
         {
             printf("\n------------------------- Synchronizing in step %06d -------------------------\n", step); 
             fflush(stdout);
-            macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
+            if(rep)
+                macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
             for(int i = 0; i < N_GPUS; i++){
                 macrCPUCurrent.copyMacr(&macr[i], NUMBER_LBM_NODES*i);
             } 
