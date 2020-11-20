@@ -151,8 +151,7 @@ int main()
     /* ---------------------------------------------------------------------- */
 
     /* ------------------------------- REPORT ------------------------------- */
-    printParamInfo(&info, true); fflush(stdout);
-    printGPUInfo(&info); fflush(stdout);
+    printSimInfo(&info);
     /* ---------------------------------------------------------------------- */
 
 
@@ -464,9 +463,7 @@ int main()
         if(DATA_SAVE)
             saveTreatData(&processData);
     }
-    printParamInfo(&info, true);
-    printGPUInfo(&info);
-    fflush(stdout);
+    printSimInfo(&info);
 
     /* ---------------------------- FREE MEMORY ----------------------------- */
     // Free memory for each GPU

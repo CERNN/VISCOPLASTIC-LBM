@@ -197,6 +197,81 @@ void saveAllMacrCsv(
     }
 }
 
+std::string getSimInfoString(SimInfo* info)
+{
+    
+    std::ostringstream strSimInfo("");
+    
+    strSimInfo << std::scientific;
+    strSimInfo << std::setprecision(6);
+    
+    strSimInfo << "---------------------------- SIMULATION INFORMATION ----------------------------\n";
+    strSimInfo << "      Simulation ID: " << ID_SIM << "\n";
+    #ifdef D3Q19
+    strSimInfo << "       Velocity set: D3Q19\n";
+    #endif // !D3Q19
+    #ifdef D3Q27
+    strSimInfo << "       Velocity set: D3Q27\n";
+    #endif // !D3Q27
+    #ifdef SINGLE_PRECISION
+        strSimInfo << "          Precision: float\n";
+    #else
+        strSimInfo << "          Precision: double\n";
+    #endif
+    strSimInfo << "                 NX: " << NX << "\n";
+    strSimInfo << "                 NY: " << NY << "\n";
+    strSimInfo << "                 NZ: " << NZ << "\n";
+    strSimInfo << "           NZ_TOTAL: " << NZ_TOTAL << "\n";
+    strSimInfo << std::scientific << std::setprecision(6);
+    strSimInfo << "                Tau: " << TAU << "\n";
+    strSimInfo << "               Umax: " << U_MAX << "\n";
+    strSimInfo << "                 FX: " << FX << "\n";
+    strSimInfo << "                 FY: " << FY << "\n";
+    strSimInfo << "                 FZ: " << FZ << "\n";
+    strSimInfo << "       Report steps: " << DATA_REPORT << "\n";
+    strSimInfo << "         Save steps: " << MACR_SAVE << "\n";
+    strSimInfo << "             Nsteps: " << info->totalSteps << "\n";
+    strSimInfo << std::fixed << std::setprecision(1);
+    strSimInfo << "              MLUPS: " << info->MLUPS << "\n";
+    strSimInfo << "          Bandwidht: " << info->bandwidth << " (Gb/s)\n";
+    strSimInfo << std::setprecision(3);
+    strSimInfo << "       Time elapsed: " << info->timeElapsed << " (s)\n";
+    strSimInfo << "            threads: (" << N_THREADS << " , 1, 1)\n";
+    strSimInfo << "--------------------------------------------------------------------------------\n";
+
+    #ifdef NON_NEWTONIAN_FLUID
+    strSimInfo << "\n------------------------------ NON NEWTONIAN FLUID -----------------------------\n";
+    strSimInfo << std::scientific << std::setprecision(6);
+    
+    #ifdef POWERLAW
+    strSimInfo << "              Model: Power-Law\n";
+    strSimInfo << "        Power index: " << N_INDEX << "\n";
+    strSimInfo << " Consistency factor: " << K_CONSISTENCY << "\n";
+    strSimInfo << "            Gamma 0: " << GAMMA_0 << "\n";
+    #endif // POWERLAW
+
+    #ifdef BINGHAM
+    strSimInfo << "              Model: Bingham\n";
+    strSimInfo << "  Plastic viscosity: " << ETA_P << "\n";
+    strSimInfo << "       Yield stress: " << S_Y << "\n";
+    strSimInfo << "      Plastic omega: " << OMEGA_P << "\n";
+    #endif // BINGHAM
+    strSimInfo << "--------------------------------------------------------------------------------\n";
+    #endif // NON_NEWTONIAN_FLUID
+
+    strSimInfo << "\n------------------------------- CUDA INFORMATION -------------------------------\n";
+    for(int i = 0; i < info->numDevices; i++)
+    {
+        strSimInfo << "\t      device number: "<< i <<"\n";
+        strSimInfo << "\t               name: " << info->devices[i].name << "\n";
+        strSimInfo << "\t    multiprocessors: " << info->devices[i].multiProcessorCount << "\n";
+        strSimInfo << "\t compute capability: " << info->devices[i].major << "." << info->devices[i].minor << "\n";
+        strSimInfo << "\t        ECC enabled: " << info->devices[i].ECCEnabled << "\n";
+    }
+    strSimInfo << "--------------------------------------------------------------------------------\n";
+
+    return strSimInfo.str();
+}
 
 void saveSimInfo(SimInfo* info)
 {
@@ -211,47 +286,8 @@ void saveSimInfo(SimInfo* info)
     outFile = fopen(strInf.c_str(), "w");
     if(outFile != nullptr)
     {
-        fprintf(outFile, "\n---------------------------- SIMULATION INFORMATION ----------------------------\n");
-        fprintf(outFile, "      Simulation ID: %s\n", ID_SIM);
-        #ifdef D3Q19
-        fprintf(outFile, "       Velocity set: D3Q19\n");
-        #endif // !D3Q19
-        #ifdef D3Q27
-        fprintf(outFile, "       Velocity set: D3Q27\n");
-        #endif // !D3Q27
-        if(sizeof(dfloat) == sizeof(float))
-            fprintf(outFile, "          Precision: float\n");
-        else if(sizeof(dfloat) == sizeof(double))
-            fprintf(outFile, "          Precision: double\n");
-        fprintf(outFile, "                 NX: %d\n", NX);
-        fprintf(outFile, "                 NY: %d\n", NY);
-        fprintf(outFile, "                 NZ: %d\n", NZ);
-        fprintf(outFile, "           NZ_TOTAL: %d\n", NZ_TOTAL);
-        fprintf(outFile, "                Tau: %.6f\n", TAU);
-        fprintf(outFile, "               Umax: %.6e\n", U_MAX);
-        fprintf(outFile, "                 FX: %.6e\n", FX);
-        fprintf(outFile, "                 FY: %.6e\n", FY);
-        fprintf(outFile, "                 FZ: %.6e\n", FZ);  
-        fprintf(outFile, "       Report steps: %d\n", DATA_REPORT);
-        fprintf(outFile, "         Save steps: %d\n", MACR_SAVE);
-        fprintf(outFile, "             Nsteps: %d\n", info->totalSteps);
-        fprintf(outFile, "              MLUPS: %.1f\n", info->MLUPS);
-        fprintf(outFile, "          Bandwidht: %.1f (Gb/s)\n", info->bandwidth);
-        fprintf(outFile, "       Time elapsed: %.3f (s)\n", info->timeElapsed);
-        fprintf(outFile, "            threads: (%d, %d, %d)\n", N_THREADS, 1, 1);
-        fprintf(outFile, "--------------------------------------------------------------------------------\n");
-    
-        fprintf(outFile, "\n------------------------------- CUDA INFORMATION -------------------------------\n");
-        for(int i = 0; i < info->numDevices; i++)
-        {
-            fprintf(outFile, "\t      device number: %d\n", i);
-            fprintf(outFile, "\t               name: %s\n", info->devices[i].name);
-            fprintf(outFile, "\t    multiprocessors: %d\n", info->devices[i].multiProcessorCount);
-            fprintf(outFile, "\t compute capability: %d.%d\n", info->devices[i].major, 
-                                                               info->devices[i].minor);
-            fprintf(outFile, "\t        ECC enabled: %d\n", info->devices[i].ECCEnabled);
-        }
-        fprintf(outFile, "--------------------------------------------------------------------------------\n");
+        std::string strSimInfo = getSimInfoString(info);
+        fprintf(outFile, strSimInfo.c_str());
         fclose(outFile);
     }
     else
@@ -262,56 +298,8 @@ void saveSimInfo(SimInfo* info)
 }
 
 
-void printParamInfo(
-    SimInfo* info,
-    bool hasEnded)
-{          
-    printf("\n---------------------------- SIMULATION INFORMATION ----------------------------\n");
-    printf("      Simulation ID: %s\n", ID_SIM);
-#ifdef D3Q19
-    printf("       Velocity set: D3Q19\n");
-#endif // !D3Q19
-#ifdef D3Q27
-    printf("       Velocity set: D3Q27\n");
-#endif // !D3Q27
-    if(sizeof(dfloat) == sizeof(float))
-        printf("          Precision: float\n");
-    else if(sizeof(dfloat) == sizeof(double))
-        printf("          Precision: double\n");
-    printf("                 NX: %d\n", NX);
-    printf("                 NY: %d\n", NY);
-    printf("                 NZ: %d\n", NZ);
-    printf("           NZ_TOTAL: %d\n", NZ_TOTAL);
-    printf("                Tau: %.6e\n", TAU);
-    printf("               Umax: %.6e\n", U_MAX);
-    printf("                 FX: %.6e\n", FX);
-    printf("                 FY: %.6e\n", FY);
-    printf("                 FZ: %.6e\n", FZ);  
-    printf("     Residual steps: %d\n", DATA_REPORT);
-    printf("         Save steps: %d\n", MACR_SAVE);
-    printf("             Nsteps: %d\n", info->totalSteps);
-    if(hasEnded)
-    {
-        printf("              MLUPS: %.1f\n", info->MLUPS);
-        printf("          Bandwidht: %.1f (Gb/s)\n", info->bandwidth);
-        printf("       Time elapsed: %.3f (s)\n", info->timeElapsed);
-    }
-    printf("            threads: (%d, %d, %d)\n", N_THREADS, 1, 1);
-    printf("--------------------------------------------------------------------------------\n");
-}
-
-
-void printGPUInfo(SimInfo* info)
+void printSimInfo(
+    SimInfo* info)
 {
-    printf("\n------------------------------- CUDA INFORMATION -------------------------------\n");
-    for(int i = 0; i < info->numDevices; i++)
-    {
-        printf("\t      device number: %d\n", i);
-        printf("\t               name: %s\n", info->devices[i].name);
-        printf("\t    multiprocessors: %d\n", info->devices[i].multiProcessorCount);
-        printf("\t compute capability: %d.%d\n", info->devices[i].major, 
-                                                 info->devices[i].minor);
-        printf("\t        ECC enabled: %d\n", info->devices[i].ECCEnabled);
-        printf("--------------------------------------------------------------------------------\n");
-    }
+    printf(getSimInfoString(info).c_str()); fflush(stdout);
 }

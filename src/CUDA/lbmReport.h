@@ -10,6 +10,10 @@
 #define __LBM_REPORT_H
 
 #include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>     // std::cout, std::fixed
+#include <iomanip>      // std::setprecision
 #include <cuda.h>
 #include "globalFunctions.h"
 #include "errorDef.h"
@@ -95,6 +99,12 @@ void saveAllMacrCsv(
     unsigned int nSteps
 );
 
+/*
+*   Get string with simulation information
+*   @param info: simulation's informations
+*   @return string with simulation info
+*/
+std::string getSimInfoString(SimInfo* info);
 
 /*
 *   Save simulation's information
@@ -106,22 +116,10 @@ void saveSimInfo(
 
 
 /*
-*   Print simulation parameters
+*   Print simulation information
 *   @param info: simulation's informations
-*   @param hasEnded: simulation has ended or not
 */
-void printParamInfo(
-    SimInfo* info,
-    bool hasEnded
-);
-
-
-/*
-*   Print GPUs information
-*   @param info: simulation's informations
-*   @param hasEnded: simulation has ended or not
-*/
-void printGPUInfo(
+void printSimInfo(
     SimInfo* info
 );
 
