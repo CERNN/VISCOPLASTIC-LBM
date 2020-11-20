@@ -10,7 +10,7 @@
 #define __BOUNDARY_CONDITIONS_HANDLER_H
 
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h>
+// #include <device_launch_parameters.h>
 #include "structs/populations.h"
 #include "boundaryConditionsSchemes/bounceBack.h"
 #include "boundaryConditionsSchemes/freeSlip.h"

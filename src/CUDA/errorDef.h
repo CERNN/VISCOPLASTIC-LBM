@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <cuda_runtime.h>
 #include <builtin_types.h>
-#include <device_launch_parameters.h>
+// #include <device_launch_parameters.h>
 
 
 #define checkCudaErrors(err)  __checkCudaErrors(err,#err,__FILE__,__LINE__)
