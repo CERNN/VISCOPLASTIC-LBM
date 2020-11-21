@@ -15,7 +15,6 @@
 #include <curand.h>
 #include <cuda_runtime.h>
 #include <builtin_types.h>
-// #include <device_launch_parameters.h>
 #include "globalFunctions.h"
 #include "structs/macroscopics.h"
 #include "structs/populations.h"
