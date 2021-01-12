@@ -214,7 +214,7 @@ void gpuMacrCollisionStream(
         macr.uy[idxScalar(x, y, z)] = uyVar;
         macr.uz[idxScalar(x, y, z)] = uzVar;
         // Only Bingham does not save local omega
-        #ifndef OMEGA_LAST_STEP
+        #if !defined(OMEGA_LAST_STEP) && defined(NON_NEWTONIAN_FLUID)
         macr.omega[idxScalar(x, y, z)] = omegaVar;
         #endif
     }

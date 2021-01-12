@@ -20,6 +20,7 @@
 #include "structs/macroscopics.h"
 #include "structs/populations.h"
 #include "structs/simInfo.h"
+#include "IBM/ibmVar.h"
 
 
 

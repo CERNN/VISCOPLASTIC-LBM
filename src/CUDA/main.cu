@@ -33,7 +33,7 @@
 
 #include "IBM/ibm.h"
 #include "IBM/ibmParticlesCreation.h"
-#include "IBM/structs/ibmProc.h"
+#include "IBM/ibmTreatData.h"
 
 
 int main()
@@ -56,7 +56,7 @@ int main()
     dfloat3SoA velAuxIBM[N_GPUS];
 
     IBMProc ibmProcessData;
-    ibmProcessData.allocateIBMProc();
+    allocateIBMProc(&ibmProcessData);
     #endif
 
     // Setup saving folder
@@ -136,7 +136,6 @@ int main()
     
     ibmProcessData.step = &step;
     ibmProcessData.macrCurr = &macrCPUCurrent;
-    ibmProcessData.pCenter = particlesSoA.pCenterArray;
     #endif
     /* ---------------------------------------------------------------------- */
 
@@ -377,6 +376,7 @@ int main()
         {
             printf("\n------------------------- Synchronizing in step %06d -------------------------\n", step); 
             fflush(stdout);
+
             if(rep)
                 macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
             for(int i = 0; i < N_GPUS; i++){
@@ -412,17 +412,23 @@ int main()
         // Report IBM data
         #ifdef IBM
         if(repIBM){
-            ibmProcessData.treatData();
-            ibmProcessData.printTreatData();
+            // ParticleCenter pc = particlesSoA.pCenterArray[0];
+            // printf("teste %f\n", pc.pos.x); fflush(stdout);
+            treatDataIBM(&ibmProcessData, particlesSoA);
+            printf("passout treatData\n");
+            printTreatDataIBM(&ibmProcessData);
+            printf("passout printTreatData\n");
             fflush(stdout);
             if(IBM_DATA_SAVE)
             {
-                ibmProcessData.saveTreatData();
+                saveTreatDataIBM(&ibmProcessData);
+                printf("passout saveTreatData\n");
             }
             if(IBM_DATA_STOP)
             {
-                if(ibmProcessData.stopSim())
+                if(stopSimIBM(&ibmProcessData, particlesSoA))
                     break;
+                printf("passout stopSimIBM\n");
             }
         }
         #endif
@@ -490,7 +496,7 @@ int main()
     free(gridsBC);
 
     #ifdef IBM
-    ibmProcessData.freeIBMProc();
+    freeIBMProc(&ibmProcessData);
     for(int i = 0; i < NUM_PARTICLES; i++){
         free(particles[i].nodes);
     }

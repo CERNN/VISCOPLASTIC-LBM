@@ -1,14 +1,20 @@
 #ifndef __IBM_TREAT_DATA_H
 #define __IBM_TREAT_DATA_H
 
-#include "structs/particleProc.h"
+#include "structs/ibmProc.h"
 
-void treatDataIBM(ParticleProc* processingIBM);
+/* Allocate necessary variables, if required dynamic allocation */
+void allocateIBMProc(IBMProc* processingIBM);
 
-bool stopSimIBM(ParticleProc* processingIBM);
+/* Free allocated variables, if required dynamic allocation */
+void freeIBMProc(IBMProc* processingIBM);
 
-void printTreatDataIBM(ParticleProc* processingIBM);
+void treatDataIBM(IBMProc* processingIBM, ParticlesSoA particles);
 
-void saveTreatDataIBM(ParticleProc* processingIBM);
+bool stopSimIBM(IBMProc* processingIBM, ParticlesSoA particles);
+
+void printTreatDataIBM(IBMProc* processingIBM);
+
+void saveTreatDataIBM(IBMProc* processingIBM);
 
 #endif //!__IBM_TREAT_DATA_H

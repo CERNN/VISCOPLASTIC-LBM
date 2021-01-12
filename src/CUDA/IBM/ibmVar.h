@@ -17,15 +17,15 @@
 // Total number of IB particles in the system
 #define NUM_PARTICLES 1
 // Number of IBM inner iterations
-#define IBM_MAX_ITERATION 10
+#define IBM_MAX_ITERATION 1
 // Particles diameters
 #define PARTICLE_DIAMETER 15.0
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
 #define MESH_COULOMB 0
-// Lock particle rotation
-#define ROTATION_LOCK true
+// Lock particle rotation (UNUSED)
+// #define ROTATION_LOCK true
 // Assumed boundary thickness for IBM
 #define IBM_THICKNESS (1) 
 /* ------------------------------------------------------------------------- */
