@@ -23,7 +23,7 @@ constexpr dfloat OMEGA_P = 1 / (3*ETA_P+0.5);    // 1/tau_p = 1/(3*eta_p+0.5)
 #endif
 /* -------------------------------------------------------------------------- */
 
-#if defined(HERSCHEL_BULKLEY) || defined(POWERLAW) || defined(BINGHAM)
+#if defined(POWERLAW) || defined(BINGHAM)
     #define NON_NEWTONIAN_FLUID
 #endif
 
