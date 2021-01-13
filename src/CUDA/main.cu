@@ -380,7 +380,9 @@ int main()
             if(rep)
                 macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
             for(int i = 0; i < N_GPUS; i++){
+                checkCudaErrors(cudaSetDevice(i));
                 macrCPUCurrent.copyMacr(&macr[i], NUMBER_LBM_NODES*i);
+                checkCudaErrors(cudaDeviceSynchronize());
             } 
         }
 
@@ -412,23 +414,17 @@ int main()
         // Report IBM data
         #ifdef IBM
         if(repIBM){
-            // ParticleCenter pc = particlesSoA.pCenterArray[0];
-            // printf("teste %f\n", pc.pos.x); fflush(stdout);
             treatDataIBM(&ibmProcessData, particlesSoA);
-            printf("passout treatData\n");
             printTreatDataIBM(&ibmProcessData);
-            printf("passout printTreatData\n");
             fflush(stdout);
             if(IBM_DATA_SAVE)
             {
                 saveTreatDataIBM(&ibmProcessData);
-                printf("passout saveTreatData\n");
             }
             if(IBM_DATA_STOP)
             {
                 if(stopSimIBM(&ibmProcessData, particlesSoA))
                     break;
-                printf("passout stopSimIBM\n");
             }
         }
         #endif

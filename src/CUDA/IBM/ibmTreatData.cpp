@@ -13,23 +13,20 @@ void freeIBMProc(IBMProc* procIBM)
 }
 
 void treatDataIBM(IBMProc* procIBM, ParticlesSoA particles)
-{   
-    printf("aqui\n"); fflush(stdout);
+{
     ParticleCenter* pc = &(particles.pCenterArray[0]);
-    printf("passou\n"); fflush(stdout);
     // Kinematic viscosity
     dfloat nu = RHO_0*(TAU - 0.5)/3;
 
-    /* MEMORY ERROR
     procIBM->reynolds = pc->vel.z*pc->radius*2/nu;
-    
+
     // Cross section area
     dfloat tArea = M_PI*pc->radius*pc->radius;
     procIBM->clx = 2*pc->f.x/(RHO_0*pc->vel.z*pc->vel.z*tArea);
     procIBM->cly = 2*pc->f.y/(RHO_0*pc->vel.z*pc->vel.z*tArea);
 
     procIBM->cd = 2*pc->f.z/(RHO_0*pc->vel.z*pc->vel.z*tArea);
-    */
+    
 }
 
 bool stopSimIBM(IBMProc* procIBM, ParticlesSoA particles)
@@ -37,11 +34,9 @@ bool stopSimIBM(IBMProc* procIBM, ParticlesSoA particles)
     ParticleCenter* pc = &(particles.pCenterArray[0]);
 
     // Stop when the particle is near bottom wall
-    /*
     if((pc->pos.z - pc->radius) < 5){
         return true;
     }
-    */
     return false;
 }
 
