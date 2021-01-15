@@ -28,6 +28,7 @@ typedef struct dfloat3 {
 } dfloat3;
 
 typedef struct dfloat3SoA {
+    int varLocation;
     dfloat* x; // x array
     dfloat* y; // y array
     dfloat* z; // z array
@@ -35,6 +36,7 @@ typedef struct dfloat3SoA {
     __host__ __device__
     dfloat3SoA()
     {
+        varLocation = 0;
         x = nullptr;
         y = nullptr;
         z = nullptr;
@@ -43,25 +45,80 @@ typedef struct dfloat3SoA {
     __host__ __device__
     ~dfloat3SoA()
     {
+        varLocation = 0;
         x = nullptr;
         y = nullptr;
         z = nullptr;
     }
 
     __host__
-    void allocateMemory(size_t arraySize){
+    void allocateMemory(size_t arraySize, int location = IN_VIRTUAL){
         size_t memSize = sizeof(dfloat) * arraySize;
 
-        checkCudaErrors(cudaMallocManaged((void**)&(this->x), memSize));
-        checkCudaErrors(cudaMallocManaged((void**)&(this->y), memSize));
-        checkCudaErrors(cudaMallocManaged((void**)&(this->z), memSize));
+        this->varLocation = location;
+        switch(location){
+        case IN_VIRTUAL:
+            checkCudaErrors(cudaMallocManaged((void**)&(this->x), memSize));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->y), memSize));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->z), memSize));
+            break;
+        case IN_HOST:
+            checkCudaErrors(cudaMallocHost((void**)&(this->x), memSize));
+            checkCudaErrors(cudaMallocHost((void**)&(this->y), memSize));
+            checkCudaErrors(cudaMallocHost((void**)&(this->z), memSize));
+            break;
+        default:
+            break;
+        }
     }
 
     __host__
     void freeMemory(){
-        checkCudaErrors(cudaFree(this->x));
-        checkCudaErrors(cudaFree(this->y));
-        checkCudaErrors(cudaFree(this->z));
+        switch (this->varLocation)
+        {
+        case IN_VIRTUAL:
+            checkCudaErrors(cudaFree(this->x));
+            checkCudaErrors(cudaFree(this->y));
+            checkCudaErrors(cudaFree(this->z));
+            break;
+
+        case IN_HOST:
+            checkCudaErrors(cudaFreeHost(this->x));
+            checkCudaErrors(cudaFreeHost(this->y));
+            checkCudaErrors(cudaFreeHost(this->z));
+            break;
+        default:
+            break;
+        }
+    }
+
+    /*  
+        Copies arrayRef to this object
+        this <- arrayRef
+        Use for host/device, not virtual
+    */
+   __host__
+    void copyFromDfloat3SoA(dfloat3SoA arrayRef, size_t memSize, size_t baseIdx=0, size_t baseIdxRef=0){
+
+        cudaStream_t streamX, streamY, streamZ;
+        checkCudaErrors(cudaStreamCreate(&(streamX)));
+        checkCudaErrors(cudaStreamCreate(&(streamY)));
+        checkCudaErrors(cudaStreamCreate(&(streamZ)));
+
+        checkCudaErrors(cudaMemcpyAsync(this->x+baseIdx, arrayRef.x+baseIdxRef, 
+            memSize, cudaMemcpyDefault, streamX));
+        checkCudaErrors(cudaMemcpyAsync(this->y+baseIdx, arrayRef.y+baseIdxRef, 
+            memSize, cudaMemcpyDefault, streamY));
+        checkCudaErrors(cudaMemcpyAsync(this->z+baseIdx, arrayRef.z+baseIdxRef, 
+            memSize, cudaMemcpyDefault, streamZ));
+
+        checkCudaErrors(cudaStreamSynchronize(streamX));
+        checkCudaErrors(cudaStreamSynchronize(streamY));
+        checkCudaErrors(cudaStreamSynchronize(streamZ));
+
+        checkCudaErrors(cudaStreamDestroy(streamX));
+        checkCudaErrors(cudaStreamDestroy(streamY));
+        checkCudaErrors(cudaStreamDestroy(streamZ));
     }
 
     __host__ __device__

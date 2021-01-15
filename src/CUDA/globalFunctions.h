@@ -35,7 +35,7 @@
 #include <curand.h>
 
 #include "var.h"
-
+#include "structs/globalStructs.h"
 
 /*
 *   @brief Evaluate the population of equilibrium
@@ -144,5 +144,7 @@ dfloat __forceinline__ distPoints2D(const dfloat x1, const dfloat y1, const dflo
     return sqrt((float)(x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
 
+__global__
+void copyFromArray(dfloat3SoA dst, dfloat3SoA src);
 
 #endif // !__GLOBAL_FUNCTIONS_H

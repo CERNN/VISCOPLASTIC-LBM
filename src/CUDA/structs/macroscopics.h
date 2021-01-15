@@ -13,6 +13,7 @@
 #include "../globalFunctions.h"
 #include "../errorDef.h"
 #include "../NNF/nnf.h"
+#include "globalStructs.h"
 #include <cuda.h>
 
 /*
@@ -24,14 +25,10 @@ private:
     int varLocation;
 public:
     dfloat* rho;    // density
-    dfloat* ux;     // x velocity
-    dfloat* uy;     // y velocity
-    dfloat* uz;     // z velocity
+    dfloat3SoA u;  // velocity
 
     #ifdef IBM
-    dfloat* fx;     // x force
-    dfloat* fy;     // y force
-    dfloat* fz;     // z force
+    dfloat3SoA f; // force
     #endif
 
     #ifdef NON_NEWTONIAN_FLUID
@@ -43,15 +40,6 @@ public:
     macroscopics()
     {
         this->rho = nullptr;
-        this->ux = nullptr;
-        this->uy = nullptr;
-        this->uz = nullptr;
-        
-        #ifdef IBM
-        this->fx = nullptr;
-        this->fy = nullptr;
-        this->fz = nullptr;
-        #endif
 
         #ifdef NON_NEWTONIAN_FLUID
         this->omega = nullptr;
@@ -63,15 +51,6 @@ public:
     ~macroscopics()
     {
         this->rho = nullptr;
-        this->ux = nullptr;
-        this->uy = nullptr;
-        this->uz = nullptr;
-
-        #ifdef IBM
-        this->fx = nullptr;
-        this->fy = nullptr;
-        this->fz = nullptr;
-        #endif
 
         #ifdef NON_NEWTONIAN_FLUID
         this->omega = nullptr;
@@ -88,13 +67,15 @@ public:
         case IN_HOST:
             // allocate with CUDA for pinned memory and for all GPUS
             checkCudaErrors(cudaMallocHost((void**)&(this->rho), TOTAL_MEM_SIZE_SCALAR));
-            checkCudaErrors(cudaMallocHost((void**)&(this->ux), TOTAL_MEM_SIZE_SCALAR));
-            checkCudaErrors(cudaMallocHost((void**)&(this->uy), TOTAL_MEM_SIZE_SCALAR));
-            checkCudaErrors(cudaMallocHost((void**)&(this->uz), TOTAL_MEM_SIZE_SCALAR));
+            this->u.allocateMemory(TOTAL_NUMBER_LBM_NODES, IN_HOST);
+            // checkCudaErrors(cudaMallocHost((void**)&(this->ux), TOTAL_MEM_SIZE_SCALAR));
+            // checkCudaErrors(cudaMallocHost((void**)&(this->uy), TOTAL_MEM_SIZE_SCALAR));
+            // checkCudaErrors(cudaMallocHost((void**)&(this->uz), TOTAL_MEM_SIZE_SCALAR));
             #ifdef IBM
-            checkCudaErrors(cudaMallocHost((void**)&(this->fx), TOTAL_MEM_SIZE_SCALAR));
-            checkCudaErrors(cudaMallocHost((void**)&(this->fy), TOTAL_MEM_SIZE_SCALAR));
-            checkCudaErrors(cudaMallocHost((void**)&(this->fz), TOTAL_MEM_SIZE_SCALAR));
+            this->f.allocateMemory(TOTAL_NUMBER_LBM_NODES, IN_HOST);
+            // checkCudaErrors(cudaMallocHost((void**)&(this->fx), TOTAL_MEM_SIZE_SCALAR));
+            // checkCudaErrors(cudaMallocHost((void**)&(this->fy), TOTAL_MEM_SIZE_SCALAR));
+            // checkCudaErrors(cudaMallocHost((void**)&(this->fz), TOTAL_MEM_SIZE_SCALAR));
             #endif
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaMallocHost((void**)&(this->omega), TOTAL_MEM_SIZE_SCALAR));
@@ -102,13 +83,9 @@ public:
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaMallocManaged((void**)&(this->rho), MEM_SIZE_SCALAR));
-            checkCudaErrors(cudaMallocManaged((void**)&(this->ux), MEM_SIZE_SCALAR));
-            checkCudaErrors(cudaMallocManaged((void**)&(this->uy), MEM_SIZE_SCALAR));
-            checkCudaErrors(cudaMallocManaged((void**)&(this->uz), MEM_SIZE_SCALAR));
+            this->u.allocateMemory(TOTAL_NUMBER_LBM_NODES, IN_VIRTUAL);
             #ifdef IBM
-            checkCudaErrors(cudaMallocManaged((void**)&(this->fx), MEM_SIZE_SCALAR));
-            checkCudaErrors(cudaMallocManaged((void**)&(this->fy), MEM_SIZE_SCALAR));
-            checkCudaErrors(cudaMallocManaged((void**)&(this->fz), MEM_SIZE_SCALAR));
+            this->f.allocateMemory(TOTAL_NUMBER_LBM_NODES, IN_VIRTUAL);
             #endif
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaMallocManaged((void**)&(this->omega), TOTAL_MEM_SIZE_SCALAR));
@@ -123,17 +100,13 @@ public:
     __host__
     void macrFree()
     {
-        switch (varLocation)
+        switch (this->varLocation)
         {
         case IN_HOST:
             checkCudaErrors(cudaFreeHost(this->rho));
-            checkCudaErrors(cudaFreeHost(this->ux));
-            checkCudaErrors(cudaFreeHost(this->uy));
-            checkCudaErrors(cudaFreeHost(this->uz));
+            this->u.freeMemory();
             #ifdef IBM
-            checkCudaErrors(cudaFreeHost(this->fx));
-            checkCudaErrors(cudaFreeHost(this->fy));
-            checkCudaErrors(cudaFreeHost(this->fz));
+            this->f.freeMemory();
             #endif
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaFreeHost(this->omega));
@@ -141,13 +114,9 @@ public:
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaFree(this->rho));
-            checkCudaErrors(cudaFree(this->ux));
-            checkCudaErrors(cudaFree(this->uy));
-            checkCudaErrors(cudaFree(this->uz));
+            this->u.freeMemory();
             #ifdef IBM
-            checkCudaErrors(cudaFree(this->fx));
-            checkCudaErrors(cudaFree(this->fy));
-            checkCudaErrors(cudaFree(this->fz));
+            this->f.freeMemory();
             #endif
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaFree(this->omega));
@@ -191,19 +160,19 @@ public:
 
         checkCudaErrors(cudaMemcpyAsync(this->rho+baseIdx, macrRef->rho+baseIdxRef, 
             memSize, cudaMemcpyDefault, streamRho));
-        checkCudaErrors(cudaMemcpyAsync(this->ux+baseIdx, macrRef->ux+baseIdxRef, 
+        checkCudaErrors(cudaMemcpyAsync(this->u.x+baseIdx, macrRef->u.x+baseIdxRef, 
             memSize, cudaMemcpyDefault, streamUx));
-        checkCudaErrors(cudaMemcpyAsync(this->uy+baseIdx, macrRef->uy+baseIdxRef, 
+        checkCudaErrors(cudaMemcpyAsync(this->u.y+baseIdx, macrRef->u.y+baseIdxRef, 
             memSize, cudaMemcpyDefault, streamUy));
-        checkCudaErrors(cudaMemcpyAsync(this->uz+baseIdx, macrRef->uz+baseIdxRef,
+        checkCudaErrors(cudaMemcpyAsync(this->u.z+baseIdx, macrRef->u.z+baseIdxRef,
             memSize, cudaMemcpyDefault, streamUz));
 
         #ifdef IBM
-        checkCudaErrors(cudaMemcpyAsync(this->fx+baseIdx, macrRef->fx+baseIdxRef, 
+        checkCudaErrors(cudaMemcpyAsync(this->f.x+baseIdx, macrRef->f.x+baseIdxRef, 
             memSize, cudaMemcpyDefault, streamFx));
-        checkCudaErrors(cudaMemcpyAsync(this->fy+baseIdx, macrRef->fy+baseIdxRef, 
+        checkCudaErrors(cudaMemcpyAsync(this->f.y+baseIdx, macrRef->f.y+baseIdxRef, 
             memSize, cudaMemcpyDefault, streamFy));
-        checkCudaErrors(cudaMemcpyAsync(this->fz+baseIdx, macrRef->fz+baseIdxRef,
+        checkCudaErrors(cudaMemcpyAsync(this->f.z+baseIdx, macrRef->f.z+baseIdxRef,
             memSize, cudaMemcpyDefault, streamFz));
         #endif
 

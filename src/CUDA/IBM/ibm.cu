@@ -2,6 +2,7 @@
 
 #ifdef IBM
 
+
 __host__
 void immersedBoundaryMethod(
     ParticlesSoA particles,
@@ -34,42 +35,27 @@ void immersedBoundaryMethod(
     // Calculate collision force between particles
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
-    gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
-    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-
-    ParticleCenter* pc = &particles.pCenterArray[0];
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
+        // Update particle velocity using body center force and constant forces
+        gpuUpdateParticleCenterVelocityAndRotation <<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0] >>>(
+            particles.pCenterArray);
+        checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+
         // Make the interpolation of LBM and spreading of IBM forces
         gpuForceInterpolationSpread<<<gridNodesIBM, threadsNodesIBM, 
             sharedMemInterpSpread, streamIBM[0]>>>(
             particles.nodesSoA, particles.pCenterArray, macr[0], velsAuxIBM[0]);
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-        // printf("Passo %d iter %d fz %.6e fz_old %.6e vz %.6e vz_old %.6e wz %.6e wz_old %.6e\n", 
-        //    step, i, pc->f.z, pc->f_old.z, pc->vel.z, pc->vel_old.z, pc->w.z, pc->w_old.z);
 
-        // Swapping velocity vectors
-        dfloat* tmp = macr[0].ux;
-        macr[0].ux = velsAuxIBM[0].x;
-        velsAuxIBM[0].x = tmp;
-
-        tmp = macr[0].uy;
-        macr[0].uy = velsAuxIBM[0].y;
-        velsAuxIBM[0].y = tmp;
-
-        tmp = macr[0].uz;
-        macr[0].uz = velsAuxIBM[0].z;
-        velsAuxIBM[0].z = tmp;
-
-        // Update particle velocity using body center force and constant forces
-        gpuUpdateParticleCenterVelocityAndRotation<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
-            particles.pCenterArray);
-
+        copyFromArray<<<gridLBM, threadsLBM, 0, streamIBM[0]>>>(macr[0].u, velsAuxIBM[0]);
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     }
 
-    // Update particle center position and its old values
+    gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
+    // Update particle center position and its old values
     gpuParticleMovement<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
         particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
@@ -136,9 +122,9 @@ void gpuForceInterpolationSpread(
                 sumAux_interp += aux;
 
                 rhoVar += macr.rho[idx] * aux;
-                uxVar += macr.ux[idx] * aux;
-                uyVar += macr.uy[idx] * aux;
-                uzVar += macr.uz[idx] * aux;
+                uxVar += macr.u.x[idx] * aux;
+                uyVar += macr.u.y[idx] * aux;
+                uzVar += macr.u.z[idx] * aux;
             }
         }
     }
@@ -177,10 +163,10 @@ void gpuForceInterpolationSpread(
     const dfloat dA = particlesNodes.S[i];
     aux = 2 * rhoVar * dA * IBM_THICKNESS;
 
-    const dfloat3 deltaF = dfloat3(
-        aux * (uxVar - ux_calc),
-        aux * (uyVar - uy_calc),
-        aux * (uzVar - uz_calc));
+    dfloat3 deltaF;
+    deltaF.x = aux * (uxVar - ux_calc);
+    deltaF.y = aux * (uyVar - uy_calc);
+    deltaF.z = aux * (uzVar - uz_calc);
 
     // Calculate IBM forces
     const dfloat fxIBM = particlesNodes.f.x[i] + deltaF.x;
@@ -204,25 +190,22 @@ void gpuForceInterpolationSpread(
                 // TODO: update rho and velocities of LBM here, but with 
                 // different array to not have concurrent problems with loading 
                 // the velocities
-                atomicAdd(&(macr.fx[idx]), -deltaF.x * aux);
-                atomicAdd(&(macr.fy[idx]), -deltaF.y * aux);
-                atomicAdd(&(macr.fz[idx]), -deltaF.z * aux);
+
+                atomicAdd(&(macr.f.x[idx]), -deltaF.x * aux);
+                atomicAdd(&(macr.f.y[idx]), -deltaF.y * aux);
+                atomicAdd(&(macr.f.z[idx]), -deltaF.z * aux);
 
                 const dfloat inv_rho = 1 / macr.rho[idx];
                 atomicAdd(&(velAuxIBM.x[idx]), 0.5 * -deltaF.x * aux * inv_rho);
                 atomicAdd(&(velAuxIBM.y[idx]), 0.5 * -deltaF.y * aux * inv_rho);
                 atomicAdd(&(velAuxIBM.z[idx]), 0.5 * -deltaF.z * aux * inv_rho);
+
             }
         }
     }
     // if(i == 0)
-    //     printf("id %d xMin %d xMax %d xIBM %.2e deltaFz %.2e aux_spread %.2e aux_interp %.2e\n", 
-    //     i, xMin, xMax, xIBM, deltaF.z, sumAux_spread, sumAux_interp);
-
-    // Update node velocity
-    particlesNodes.vel.x[i] = ux_calc;
-    particlesNodes.vel.y[i] = uy_calc;
-    particlesNodes.vel.z[i] = uz_calc;
+    //    printf("id %d xMin %d xMax %d xIBM %.2e deltaFz %.2e aux_spread %.2e aux_interp %.2e\n", 
+    //        i, xMin, xMax, xIBM, deltaF.z, sumAux_spread, sumAux_interp);
 
     // Update node force
     particlesNodes.f.x[i] = fxIBM;
@@ -235,7 +218,6 @@ void gpuForceInterpolationSpread(
     particlesNodes.deltaF.z[i] = deltaF.z;
 
     // Particle node delta momentum
-    
     idx = particlesNodes.particleCenterIdx[i];
 
     const dfloat3 deltaMomentum = dfloat3(
@@ -271,9 +253,9 @@ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA vel
     for (unsigned char i = 0; i < Q; i++)
         fNode[i] = pop.pop[idxPop(x, y, z, i)];
 
-    macr.fx[idx] = FX;
-    macr.fy[idx] = FY;
-    macr.fz[idx] = FZ;
+    macr.f.x[idx] = FX;
+    macr.f.y[idx] = FY;
+    macr.f.z[idx] = FZ;
 
     const dfloat3 f = dfloat3(FX, FY, FZ);
 
@@ -317,14 +299,12 @@ void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA vel
 #endif // !D3Q27
 
     macr.rho[idx] = rhoVar;
-    macr.ux[idx] = uxVar;
-    macr.uy[idx] = uyVar;
-    macr.uz[idx] = uzVar;
+    macr.u.x[idx] = uxVar;
+    macr.u.y[idx] = uyVar;
+    macr.u.z[idx] = uzVar;
     velAuxIBM.x[idx] = uxVar;
     velAuxIBM.y[idx] = uyVar;
     velAuxIBM.z[idx] = uzVar;
-    
-
 }
 
 __global__ 
@@ -395,9 +375,9 @@ void gpuUpdateParticleCenterVelocityAndRotation(
         wAux.z = wNew.z;
     }
     // Store new velocities in particle center
-    pc->w.x = 0; //wNew.x;
-    pc->w.y = 0; //wNew.y;
-    pc->w.z = 0; //wNew.z;
+    pc->w.x = wNew.x;
+    pc->w.y = wNew.y;
+    pc->w.z = wNew.z;
 }
 
 __global__

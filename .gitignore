@@ -21,3 +21,4 @@ src/CUDA/.vs/
 src/CUDA/x64
 *.vcxproj*
 *.sln
+*.csv

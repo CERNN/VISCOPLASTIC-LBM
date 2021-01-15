@@ -40,14 +40,14 @@ void treatData(MacrProc* processing)
                 size_t idx = idxScalar(x, y, z);
                 
                 /* ------- Residual calculation ------- */
-                const dfloat diff_ux = macrCurr->ux[idx] - macrOld->ux[idx];
-                const dfloat diff_uy = macrCurr->uy[idx] - macrOld->uy[idx];
-                const dfloat diff_uz = macrCurr->uz[idx] - macrOld->uz[idx];
+                const dfloat diff_ux = macrCurr->u.x[idx] - macrOld->u.x[idx];
+                const dfloat diff_uy = macrCurr->u.y[idx] - macrOld->u.y[idx];
+                const dfloat diff_uz = macrCurr->u.z[idx] - macrOld->u.z[idx];
 
                 numRes += std::sqrt(diff_ux * diff_ux + diff_uy * diff_uy + diff_uz * diff_uz);
-                denRes += std::sqrt(macrCurr->ux[idx] * macrCurr->ux[idx]
-                    + macrCurr->uy[idx] * macrCurr->uy[idx]
-                    + macrCurr->uz[idx] * macrCurr->uz[idx]);
+                denRes += std::sqrt(macrCurr->u.x[idx] * macrCurr->u.x[idx]
+                    + macrCurr->u.y[idx] * macrCurr->u.y[idx]
+                    + macrCurr->u.z[idx] * macrCurr->u.z[idx]);
                 /* ------------------------------------ */
 
                 /* ------- Avg. rho calculation ------- */
@@ -55,7 +55,7 @@ void treatData(MacrProc* processing)
                 /* ------------------------------------ */
                 
                 /* ----- Avg. Uz plan calculation ----- */
-                processing->avgUzPlanXZ[y] += macrCurr->uz[idx];
+                processing->avgUzPlanXZ[y] += macrCurr->u.z[idx];
                 /* ------------------------------------ */
             }
         }
@@ -94,11 +94,11 @@ void printTreatData(MacrProc* processing)
 {
     /* PRINT TREATED DATA EXAMPLE */
     printf("\n--------------------------------- TREATED DATA ---------------------------------\n");
-    printf("               Step: %d\n", *(processing->step));
-    printf("           Residual: %.4e\n", processing->residual);
-    printf("       Avg. density: %.4e\n", processing->avgRho);
-    printf("   Avg. Uz (y=NY/2): %.4e\n", processing->avgUzPlanXZ[NY/2]);
-    printf("  ux(x=0, y=0, z=0): %.4e\n", processing->macrCurr->ux[idxScalar(0, 0, 0)]);
+    printf("                   Step: %d\n", *(processing->step));
+    printf("               Residual: %.4e\n", processing->residual);
+    printf("           Avg. density: %.4e\n", processing->avgRho);
+    printf("       Avg. Uz (y=NY/2): %.4e\n", processing->avgUzPlanXZ[NY/2]);
+    printf("ux(x=0.5, y=0.5, z=0.5): %.4e\n", processing->macrCurr->u.x[idxScalar(NX/2, NY/2, NZ/2)]);
     printf("--------------------------------------------------------------------------------\n");
 }
 
@@ -114,7 +114,7 @@ void saveTreatData(MacrProc* processing)
     if(fileAvgUz != nullptr)
     {
         // write header
-        fprintf(fileAvgUz, "y\tavg.Uz\n");
+        fprintf(fileAvgUz, "y\tavg uz\n");
         for(int y = 0; y < NY; y++)
         {
             fprintf(fileAvgUz, "%d\t%.6e\n", y, processing->avgUzPlanXZ[y]);

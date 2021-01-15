@@ -111,6 +111,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
         zeta[i] = r * sin(theta[i]); // Height of each layer
     }
 
+    /*
     for (int i = 0; i < nLayer; i++) {
         // Calculate the distance to the south pole to the mid distance of the layer and previous layer
         S[i] = (zeta[i] + zeta[i + 1]) / 2.0 - zeta[0]; 
@@ -122,9 +123,10 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     }
     for (int i = nLayer; i > 0; i--) {
         // Calculate the area of the layer
-        S[i] = S[i] - S[i - 1]; 
+        S[i] = S[i] - S[i - 1];
     }
     S[0] = S[nLayer];
+    */
 
     particleRet.nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * particleRet.numNodes);
 
@@ -135,7 +137,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     first_node->pos.y = center.y;
     first_node->pos.z = center.z + r * sin(theta[0]);
 
-    first_node->S = S[0];
+    // first_node->S = S[0];
 
     int nodeIndex = 1;
     for (int i = 1; i < nLayer; i++) {
@@ -152,7 +154,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
             // The area of sphere segment is divided by the number of node
             // in the layer, so all nodes have the same area
-            particleRet.nodes[nodeIndex].S = S[i] / nNodesLayer[i];
+            // particleRet.nodes[nodeIndex].S = particleRet.bodyCenter.S/particleRet.numNodes;
 
             // Add one node
             nodeIndex++;
@@ -165,9 +167,13 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     last_node->pos.x = center.x;
     last_node->pos.y = center.y;
     last_node->pos.z = center.z + r * sin(theta[nLayer]);
-    last_node->S = S[nLayer];
+    // last_node->S = S[nLayer];
 
     unsigned int numNodes = particleRet.numNodes;
+    dfloat dA =  particleRet.bodyCenter.S/particleRet.numNodes;
+    for(int i = 0; i < numNodes; i++){
+        particleRet.nodes[i].S = dA;
+    }
 
     // Coulomb node positions distribution
     if (coulomb != 0) {

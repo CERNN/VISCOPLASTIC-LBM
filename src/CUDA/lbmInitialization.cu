@@ -65,23 +65,23 @@ void initializationMacr(
     checkCudaErrors(cudaMemcpy(macr->rho, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
 
     fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileUx);
-    checkCudaErrors(cudaMemcpy(macr->ux, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+    checkCudaErrors(cudaMemcpy(macr->u.x, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
 
     fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileUy);
-    checkCudaErrors(cudaMemcpy(macr->uy, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+    checkCudaErrors(cudaMemcpy(macr->u.y, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
 
     fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileUz);
-    checkCudaErrors(cudaMemcpy(macr->uz, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+    checkCudaErrors(cudaMemcpy(macr->u.z, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
 
     #ifdef IBM
     fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileFx);
-    checkCudaErrors(cudaMemcpy(macr->fx, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+    checkCudaErrors(cudaMemcpy(macr->f.x, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
 
     fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileFy);
-    checkCudaErrors(cudaMemcpy(macr->fy, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+    checkCudaErrors(cudaMemcpy(macr->f.y, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
 
     fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileFz);
-    checkCudaErrors(cudaMemcpy(macr->fz, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+    checkCudaErrors(cudaMemcpy(macr->f.z, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
     #endif
 
     #ifdef NON_NEWTONIAN_FLUID
@@ -140,10 +140,10 @@ void gpuInitialization(
     {
         // calculate equilibrium population and initialize populations to equilibrium
         dfloat feq = gpu_f_eq(w[i] * macr.rho[index],
-            3 * (macr.ux[index] * cx[i] + macr.uy[index] * cy[i] + macr.uz[index] * cz[i]),
-            1 - 1.5*(  macr.ux[index] * macr.ux[index] 
-                 + macr.uy[index] * macr.uy[index] 
-                 + macr.uz[index] * macr.uz[index]));
+            3 * (macr.u.x[index] * cx[i] + macr.u.y[index] * cy[i] + macr.u.z[index] * cz[i]),
+            1 - 1.5*(  macr.u.x[index] * macr.u.x[index] 
+                 + macr.u.y[index] * macr.u.y[index] 
+                 + macr.u.z[index] * macr.u.z[index]));
         
         pop.pop[idxPop(x, y, z, i)] = feq;
         pop.popAux[idxPop(x, y, z, i)] = feq;
@@ -158,14 +158,14 @@ void gpuMacrInitValue(
     int x, int y, int z)
 {
     macr->rho[idxScalar(x, y, z)] = RHO_0;
-    macr->ux[idxScalar(x, y, z)] = 0;
-    macr->uy[idxScalar(x, y, z)] = 0;
-    macr->uz[idxScalar(x, y, z)] = 0;
+    macr->u.x[idxScalar(x, y, z)] = 0;
+    macr->u.y[idxScalar(x, y, z)] = 0;
+    macr->u.z[idxScalar(x, y, z)] = 0;
 
     #ifdef IBM
-    macr->fx[idxScalar(x, y, z)] = FX;
-    macr->fy[idxScalar(x, y, z)] = FY;
-    macr->fz[idxScalar(x, y, z)] = FZ;
+    macr->f.x[idxScalar(x, y, z)] = FX;
+    macr->f.y[idxScalar(x, y, z)] = FY;
+    macr->f.z[idxScalar(x, y, z)] = FZ;
     #endif
     #ifdef NON_NEWTONIAN_FLUID
     macr->omega[idxScalar(x, y, z)] = 0;
@@ -180,16 +180,16 @@ void gpuMacrInitValue(
     dfloat uz_log, pos = (y < NY/2 ? y + 0.5 : NY - (y + 0.5));
     uz_log = (uc_f*U_TAU)*(pos/del)*(pos/del);
 ​
-    macr->uz[idxScalar(x, y, z)] = uz_log;
-    macr->ux[idxScalar(x, y, z)] = 0.0;
-    macr->uy[idxScalar(x, y, z)] = 0.0;
+    macr->u.z[idxScalar(x, y, z)] = uz_log;
+    macr->u.x[idxScalar(x, y, z)] = 0.0;
+    macr->u.y[idxScalar(x, y, z)] = 0.0;
     macr->rho[idxScalar(x, y, z)] = RHO_0;
 ​
     // perturbation
     dfloat pert = 0.1;
     int l = idxScalar(x, y, z), Nt = NUMBER_LBM_NODES;
-    macr->uz[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NZ - Nt*((l + NZ) / Nt)];
-    macr->ux[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NX - Nt*((l + NX) / Nt)];
-    macr->uy[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NY - Nt*((l + NY) / Nt)];
+    macr->u.z[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NZ - Nt*((l + NZ) / Nt)];
+    macr->u.x[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NX - Nt*((l + NX) / Nt)];
+    macr->u.y[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NY - Nt*((l + NY) / Nt)];
     */
 }

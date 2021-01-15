@@ -144,18 +144,18 @@ void saveAllMacrBin(
 
     // saving files
     saveVarBin(strFileRho, macr->rho, TOTAL_MEM_SIZE_SCALAR, false);
-    saveVarBin(strFileUx, macr->ux, TOTAL_MEM_SIZE_SCALAR, false);
-    saveVarBin(strFileUy, macr->uy, TOTAL_MEM_SIZE_SCALAR, false);
-    saveVarBin(strFileUz, macr->uz, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileUx, macr->u.x, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileUy, macr->u.y, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileUz, macr->u.z, TOTAL_MEM_SIZE_SCALAR, false);
 
     #ifdef IBM
     std::string strFileFx = getVarFilename("fx", nSteps, ".bin");
     std::string strFileFy = getVarFilename("fy", nSteps, ".bin");
     std::string strFileFz = getVarFilename("fz", nSteps, ".bin");
 
-    saveVarBin(strFileFx, macr->fx, TOTAL_MEM_SIZE_SCALAR, false);
-    saveVarBin(strFileFy, macr->fy, TOTAL_MEM_SIZE_SCALAR, false);
-    saveVarBin(strFileFz, macr->fz, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileFx, macr->f.x, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileFy, macr->f.y, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileFz, macr->f.z, TOTAL_MEM_SIZE_SCALAR, false);
     #endif
     
     #ifdef NON_NEWTONIAN_FLUID
@@ -186,8 +186,8 @@ void saveAllMacrCsv(
                 {
                     size_t idx = idxScalar(x, y, z);
                     fprintf(outFile, "%d\t%d\t%d\t%.6e\t%.6e\t%.6e\t%.6e\n", 
-                        x, y, z, macr->rho[idx], macr->ux[idx], macr->uy[idx], 
-                        macr->uz[idx]);
+                        x, y, z, macr->rho[idx], macr->u.x[idx], macr->u.y[idx], 
+                        macr->u.z[idx]);
                 }
         fclose(outFile);
     }

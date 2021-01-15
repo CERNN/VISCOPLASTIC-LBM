@@ -34,9 +34,9 @@ void gpuMacrCollisionStream(
         fNode[i] = pop[idxPop(x, y, z, i)];
 
     #ifdef IBM
-    const dfloat fxVar = macr.fx[idxScalar(x, y, z)];
-    const dfloat fyVar = macr.fy[idxScalar(x, y, z)];
-    const dfloat fzVar = macr.fz[idxScalar(x, y, z)];
+    const dfloat fxVar = macr.f.x[idxScalar(x, y, z)];
+    const dfloat fyVar = macr.f.y[idxScalar(x, y, z)];
+    const dfloat fzVar = macr.f.z[idxScalar(x, y, z)];
     const dfloat fxVar_D3 = fxVar / 3;
     const dfloat fyVar_D3 = fyVar / 3;
     const dfloat fzVar_D3 = fzVar / 3;
@@ -210,9 +210,9 @@ void gpuMacrCollisionStream(
     if (save)
     {
         macr.rho[idxScalar(x, y, z)] = rhoVar;
-        macr.ux[idxScalar(x, y, z)] = uxVar;
-        macr.uy[idxScalar(x, y, z)] = uyVar;
-        macr.uz[idxScalar(x, y, z)] = uzVar;
+        macr.u.x[idxScalar(x, y, z)] = uxVar;
+        macr.u.y[idxScalar(x, y, z)] = uyVar;
+        macr.u.z[idxScalar(x, y, z)] = uzVar;
         // Only Bingham does not save local omega
         #if !defined(OMEGA_LAST_STEP) && defined(NON_NEWTONIAN_FLUID)
         macr.omega[idxScalar(x, y, z)] = omegaVar;
@@ -480,9 +480,9 @@ void gpuUpdateMacr(
         fNode[i] = pop.pop[idxPop(x, y, z, i)];
 
     #ifdef IBM
-    const dfloat fxVar = macr.fx[idx_s];
-    const dfloat fyVar = macr.fy[idx_s];
-    const dfloat fzVar = macr.fz[idx_s];
+    const dfloat fxVar = macr.f.x[idx_s];
+    const dfloat fyVar = macr.f.y[idx_s];
+    const dfloat fzVar = macr.f.z[idx_s];
     #else
     const dfloat fxVar = FX;
     const dfloat fyVar = FY;
@@ -528,9 +528,9 @@ void gpuUpdateMacr(
         + fNode[21] + fNode[24] + fNode[26]) + 0.5*fzVar) * invRho;
     #endif // !D3Q27
     macr.rho[idx_s] = rhoVar;
-    macr.ux[idx_s] = uxVar;
-    macr.uy[idx_s] = uyVar;
-    macr.uz[idx_s] = uzVar;
+    macr.u.x[idx_s] = uxVar;
+    macr.u.y[idx_s] = uyVar;
+    macr.u.z[idx_s] = uzVar;
 }
 
 
