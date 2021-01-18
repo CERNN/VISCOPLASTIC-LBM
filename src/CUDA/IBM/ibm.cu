@@ -35,20 +35,26 @@ void immersedBoundaryMethod(
     // Calculate collision force between particles
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
+    // First update particle velocity using body center force and constant forces
+    gpuUpdateParticleCenterVelocityAndRotation <<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0] >>>(
+        particles.pCenterArray);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
-        // Update particle velocity using body center force and constant forces
-        gpuUpdateParticleCenterVelocityAndRotation <<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0] >>>(
-            particles.pCenterArray);
-        checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-
         // Make the interpolation of LBM and spreading of IBM forces
         gpuForceInterpolationSpread<<<gridNodesIBM, threadsNodesIBM, 
             sharedMemInterpSpread, streamIBM[0]>>>(
             particles.nodesSoA, particles.pCenterArray, macr[0], velsAuxIBM[0]);
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
-        copyFromArray<<<gridLBM, threadsLBM, 0, streamIBM[0]>>>(macr[0].u, velsAuxIBM[0]);
+        // Update particle velocity using body center force and constant forces
+        gpuUpdateParticleCenterVelocityAndRotation<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
+            particles.pCenterArray);
+
+        copyFromArray<<<gridLBM, threadsLBM, 0, streamLBM[0]>>>(macr[0].u, velsAuxIBM[0]);
+
+        checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     }
 
@@ -341,10 +347,14 @@ void gpuUpdateParticleCenterVelocityAndRotation(
         return;
 
     const dfloat inv_volume = 1 / pc->volume;
+
     // Update particle center velocity using its surface forces and the body forces
-    pc->vel.x = pc->vel_old.x + (0.5 * (pc->f_old.x + pc->f.x) * inv_volume + (PARTICLE_DENSITY - FLUID_DENSITY) * GX) / (PARTICLE_DENSITY);
-    pc->vel.y = pc->vel_old.y + (0.5 * (pc->f_old.y + pc->f.y) * inv_volume + (PARTICLE_DENSITY - FLUID_DENSITY) * GY) / (PARTICLE_DENSITY);
-    pc->vel.z = pc->vel_old.z + (0.5 * (pc->f_old.z + pc->f.z) * inv_volume + (PARTICLE_DENSITY - FLUID_DENSITY) * GZ) / (PARTICLE_DENSITY);
+    pc->vel.x = pc->vel_old.x + ((0.5 * (pc->f_old.x + pc->f.x) + pc->dP_internal.x) * inv_volume 
+        + (PARTICLE_DENSITY - FLUID_DENSITY) * GX) / (PARTICLE_DENSITY);
+    pc->vel.y = pc->vel_old.y + ((0.5 * (pc->f_old.y + pc->f.y) + pc->dP_internal.y) * inv_volume 
+        + (PARTICLE_DENSITY - FLUID_DENSITY) * GY) / (PARTICLE_DENSITY);
+    pc->vel.z = pc->vel_old.z + ((0.5 * (pc->f_old.z + pc->f.z) + pc->dP_internal.z) * inv_volume 
+        + (PARTICLE_DENSITY - FLUID_DENSITY) * GZ) / (PARTICLE_DENSITY);
 
     // Auxiliary variables for angular velocity update
     dfloat error = 1;
@@ -362,9 +372,9 @@ void gpuUpdateParticleCenterVelocityAndRotation(
     // (Crank-Nicolson implicit scheme)
     for (int i = 0; error > 1e-6; i++)
     {
-        wNew.x = pc->w_old.x + (0.5*(M.x + M_old.x) - (I.z - I.y)*0.25*(w_old.y + wAux.y)*(w_old.z + wAux.z))/I.x;
-        wNew.y = pc->w_old.y + (0.5*(M.y + M_old.y) - (I.x - I.z)*0.25*(w_old.x + wAux.x)*(w_old.z + wAux.z))/I.y;
-        wNew.z = pc->w_old.z + (0.5*(M.z + M_old.z) - (I.y - I.x)*0.25*(w_old.x + wAux.x)*(w_old.y + wAux.y))/I.z;
+        wNew.x = pc->w_old.x + ((0.5*(M.x + M_old.x) + pc->dL_internal.x) - (I.z - I.y)*0.25*(w_old.y + wAux.y)*(w_old.z + wAux.z))/I.x;
+        wNew.y = pc->w_old.y + ((0.5*(M.y + M_old.y) + pc->dL_internal.y) - (I.x - I.z)*0.25*(w_old.x + wAux.x)*(w_old.z + wAux.z))/I.y;
+        wNew.z = pc->w_old.z + ((0.5*(M.z + M_old.z) + pc->dL_internal.z) - (I.y - I.x)*0.25*(w_old.x + wAux.x)*(w_old.y + wAux.y))/I.z;
 
         error = (wNew.x - wAux.x)*(wNew.x - wAux.x)/(wNew.x*wNew.x);
         error += (wNew.y - wAux.y)*(wNew.y - wAux.y)/(wNew.y*wNew.y);
@@ -413,6 +423,18 @@ void gpuUpdateParticleOldValues(
         return;
 
     ParticleCenter *pc = &(particleCenters[p]);
+
+    // Internal linear momentum delta = rho*volume*delta(v)/delta(t)
+    // https://doi.org/10.1016/j.compfluid.2011.05.011
+    pc->dP_internal.x = RHO_0 * pc->volume * (pc->vel.x - pc->vel_old.x);
+    pc->dP_internal.y = RHO_0 * pc->volume * (pc->vel.y - pc->vel_old.y);
+    pc->dP_internal.z = RHO_0 * pc->volume * (pc->vel.z - pc->vel_old.z);
+
+    // Internal angular momentum delta = I*delta(omega)/delta(t)
+    // https://doi.org/10.1016/j.compfluid.2011.05.011
+    pc->dL_internal.x = pc->I.x * (pc->w.x - pc->w_old.x);
+    pc->dL_internal.y = pc->I.y * (pc->w.y - pc->w_old.y);
+    pc->dL_internal.z = pc->I.z * (pc->w.z - pc->w_old.z);
 
     pc->pos_old.x = pc->pos.x;
     pc->pos_old.y = pc->pos.y;

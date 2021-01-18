@@ -27,8 +27,10 @@ typedef struct particleCenter {
     dfloat3 f;          // Sum of the forces acting on particle
     dfloat3 f_old;      // Old sum of the forces acting on particle
     dfloat3 M;          // Total momentum acting on particle
-    dfloat3 M_old;       // Old total momentum acting on particle
+    dfloat3 M_old;      // Old total momentum acting on particle
     dfloat3 I;          // I innertia moment I.x = Ixx
+    dfloat3 dP_internal; // Linear momentum of fluid mass inside IBM particle mesh (delta - backward Euler)
+    dfloat3 dL_internal; // Angular momentum of fluid mass inside IBM particle mesh (delta - backward Euler)
     dfloat S;           // Total area of the particle
     dfloat radius;      // Sphere radius
     dfloat volume;      // Particle volume
@@ -50,6 +52,8 @@ typedef struct particleCenter {
         M = dfloat3();
         M_old = dfloat3();
         I = dfloat3();
+        dP_internal = dfloat3();
+        dL_internal = dfloat3();
 
         S = 0;
         radius = 0;

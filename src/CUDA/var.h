@@ -17,15 +17,14 @@
 /* ------------------------ GENERAL SIMULATION DEFINES ---------------------- */
 #define SINGLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
 #define D3Q19               // velocity set to use (D3Q19 OR D3Q27)
-// Comment to disable IBM
-// #define IBM
+// Comment to disable IBM. Uncomment to enable IBM
+#define IBM
 /* -------------------------------------------------------------------------- */
 
 /* ------------------------ NON NEWTONIAN FLUID TYPE ------------------------ */
 // Uncomment the one to use. Comment all to simulate newtonian fluid
-//#define POWERLAW
-#define BINGHAM
-//#define HERSCHEL_BULKLEY
+// #define POWERLAW
+// #define BINGHAM
 /* -------------------------------------------------------------------------- */
 
 #ifdef SINGLE_PRECISION
@@ -44,9 +43,9 @@
 
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
-constexpr int N_STEPS = 400000;          // maximum number of time steps
-#define MACR_SAVE 1000                  // saves macroscopics every MACR_SAVE steps
-#define DATA_REPORT 1000                // report every DATA_REPORT steps
+constexpr int N_STEPS = 10000;          // maximum number of time steps
+#define MACR_SAVE 100                  // saves macroscopics every MACR_SAVE steps
+#define DATA_REPORT 100                // report every DATA_REPORT steps
  
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
@@ -84,23 +83,23 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 /* --------------------------  SIMULATION DEFINES -------------------------- */
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 
-constexpr unsigned int N = 128;
-constexpr unsigned int NX = 3;        // size x of the grid 
+constexpr unsigned int N = 180;
+constexpr unsigned int NX = N;        // size x of the grid 
                                       // (32 multiple for better performance)
 constexpr unsigned int NY = N;        // size y of the grid
-constexpr unsigned int NZ = N;        // size z of the grid in one GPU
+constexpr unsigned int NZ = 2*N;        // size z of the grid in one GPU
 constexpr unsigned int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
 constexpr dfloat U_MAX = 0.05;           // max velocity
 
-constexpr dfloat TAU = 0.7294244564;     // relaxation time
+constexpr dfloat TAU = 0.72942;     // relaxation time
 constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
 
 constexpr dfloat RHO_0 = 1;         // initial rho
 
 constexpr dfloat FX = 0;        // force in x
 constexpr dfloat FY = 0;        // force in y
-constexpr dfloat FZ = 2.04e-6;     // force in z (flow direction in most cases)
+constexpr dfloat FZ = 0; //1e-6;     // force in z (flow direction in most cases)
 
 // values options for boundary conditions
 __device__ const dfloat UX_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
@@ -152,10 +151,12 @@ constexpr size_t BYTES_PER_MB = (1<<20);
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------ MEMORY SIZE ------------------------------ */ 
+// Values for each GPU
 const size_t NUMBER_LBM_NODES = NX*NY*NZ;
 const size_t MEM_SIZE_POP = sizeof(dfloat) * NUMBER_LBM_NODES * Q;
 const size_t MEM_SIZE_SCALAR = sizeof(dfloat) * NUMBER_LBM_NODES;
 const size_t MEM_SIZE_MAP_BC = sizeof(uint32_t) * NUMBER_LBM_NODES;
+// Values for all GPUs
 const size_t TOTAL_NUMBER_LBM_NODES = NX*NY*NZ_TOTAL;
 const size_t TOTAL_MEM_SIZE_POP = sizeof(dfloat) * TOTAL_NUMBER_LBM_NODES * Q;
 const size_t TOTAL_MEM_SIZE_SCALAR = sizeof(dfloat) * TOTAL_NUMBER_LBM_NODES;

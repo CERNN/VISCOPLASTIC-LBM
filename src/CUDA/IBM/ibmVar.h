@@ -17,7 +17,7 @@
 // Total number of IB particles in the system
 #define NUM_PARTICLES 1
 // Number of IBM inner iterations
-#define IBM_MAX_ITERATION 1
+#define IBM_MAX_ITERATION 6
 // Particles diameters
 #define PARTICLE_DIAMETER 15.0
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
@@ -44,7 +44,7 @@
 
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 1.154639175;
+constexpr dfloat PARTICLE_DENSITY = 1.1564;
 constexpr dfloat FLUID_DENSITY = 1;
 
 // Gravity accelaration on particle (Lattice units)
