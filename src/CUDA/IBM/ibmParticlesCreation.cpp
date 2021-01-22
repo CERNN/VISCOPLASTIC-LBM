@@ -29,20 +29,21 @@ void createParticles(Particle particles[NUM_PARTICLES])
             break;
     }
     */
-    for (int p = 0; p < NUM_PARTICLES; p++)
-    {
-        dfloat3 center;
-        center.x = (NX-1.0)/2.0;
-        center.y = (NY-1.0)/2.0;
-        center.z = (NZ-1.0)*0.796875;
-        particles[p] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true);
-    }
+
     /*
+    // Falling sphere
+    dfloat3 center;
+    center.x = (NX-1.0)/2.0;
+    center.y = (NY-1.0)/2.0;
+    center.z = 3*(NZ-1.0)/4.0+PARTICLE_DIAMETER/2.0;
+    particles[0] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true);
+    */
+
+    // Fixed sphere
     particles[0] = makeSpherePolar(
         PARTICLE_DIAMETER, 
-        dfloat3((NX-1.0)/2.0, (NY-1.0)/2.0, (NZ-1.0)/2.0), 
-        MESH_COULOMB, true);
-    */
+        dfloat3((NX-1.0)/2.0, (NY-1.0)/2.0, (NZ-1.0)/4.0), 
+        MESH_COULOMB, false);
 }
 
 #endif // !IBM

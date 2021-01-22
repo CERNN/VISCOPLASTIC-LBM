@@ -19,6 +19,10 @@ typedef struct ibmProc{
     dfloat clx;
     // Lift coefficient in y
     dfloat cly;
+    // Particle position
+    dfloat3 pos;
+    // Particle velocity
+    dfloat3 vel;
 
     /* Constructor */
     __host__

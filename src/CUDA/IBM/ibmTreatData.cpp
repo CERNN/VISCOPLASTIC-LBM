@@ -18,15 +18,20 @@ void treatDataIBM(IBMProc* procIBM, ParticlesSoA particles)
     // Kinematic viscosity
     dfloat nu = RHO_0*(TAU - 0.5)/3;
 
-    procIBM->reynolds = pc->vel.z*pc->radius*2/nu;
-
     // Cross section area
     dfloat tArea = M_PI*pc->radius*pc->radius;
-    procIBM->clx = 2*pc->f.x/(RHO_0*pc->vel.z*pc->vel.z*tArea);
-    procIBM->cly = 2*pc->f.y/(RHO_0*pc->vel.z*pc->vel.z*tArea);
 
-    procIBM->cd = 2*pc->f.z/(RHO_0*pc->vel.z*pc->vel.z*tArea);
-    
+    // Fixed sphere
+    procIBM->reynolds = U_MAX*2*pc->radius/nu;
+    procIBM->cd = 2*pc->f.z/(U_MAX*U_MAX*tArea);
+
+    // Falling sphere
+    // procIBM->reynolds = pc->vel.z*pc->radius*2/nu;
+    // procIBM->cd = 2*pc->f.z/(RHO_0*pc->vel.z*pc->vel.z*tArea);
+    // procIBM->clx = 2*pc->f.x/(RHO_0*pc->vel.z*pc->vel.z*tArea);
+    // procIBM->cly = 2*pc->f.y/(RHO_0*pc->vel.z*pc->vel.z*tArea);
+    procIBM->vel = pc->vel;
+    procIBM->pos = pc->pos;
 }
 
 bool stopSimIBM(IBMProc* procIBM, ParticlesSoA particles)
@@ -49,6 +54,8 @@ void printTreatDataIBM(IBMProc* procIBM)
     printf("                 Cd: %.4e\n", procIBM->cd);
     printf("                Clx: %.4e\n", procIBM->clx);
     printf("                Cly: %.4e\n", procIBM->cly);
+    printf("       pos(x, y, z): (%.4e, %.4e, %.4e)\n", procIBM->pos.x, procIBM->pos.y, procIBM->pos.z);
+    printf("       vel(x, y, z): (%.4e, %.4e, %.4e)\n", procIBM->vel.x, procIBM->vel.y, procIBM->vel.z);
     printf("--------------------------------------------------------------------------------\n");
 }
 

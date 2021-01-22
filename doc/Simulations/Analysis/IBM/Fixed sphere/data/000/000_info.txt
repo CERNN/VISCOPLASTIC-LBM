@@ -1,0 +1,54 @@
+---------------------------- SIMULATION INFORMATION ----------------------------
+      Simulation ID: 000
+       Velocity set: D3Q19
+          Precision: double
+                 NX: 60
+                 NY: 60
+                 NZ: 120
+           NZ_TOTAL: 120
+                Tau: 5.300000e-01
+               Umax: 1.000000e-01
+                 FX: 0.000000e+00
+                 FY: 0.000000e+00
+                 FZ: 0.000000e+00
+       Report steps: 250
+         Save steps: 250
+             Nsteps: 25000
+              MLUPS: 35.7
+          Bandwidht: 10.1 (Gb/s)
+       Time elapsed: 302.492 (s)
+            threads: (60 , 1, 1)
+--------------------------------------------------------------------------------
+
+------------------------------------- IBM ------------------------------------
+Number of particles: 1
+     IBM iterations: 6
+       Stencil size: 4
+   Particle density: 1.156400e+00
+      Fluid density: 1.000000e+00
+                 GX: 0.000000e+00
+                 GY: 0.000000e+00
+                 GZ: 0.000000e+00
+         Mesh scale: 1.00
+       Mesh coulomb: 0
+      IBM thickness: 1
+      Particles save: 250
+Particles nodes save: 1
+     IBM data report: 250
+     IBM data stop: 1
+     IBM data save: 1
+--------------------------------- IBM Collision --------------------------------
+	                 Zeta: 1.00
+	           Stiff wall: 1.00
+	           Stiff soft: 1.00
+	           Stiff hard: 0.10
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+------------------------------- CUDA INFORMATION -------------------------------
+	      device number: 0
+	               name: GeForce GTX 1050 Ti
+	    multiprocessors: 6
+	 compute capability: 6.1
+	        ECC enabled: 0
+--------------------------------------------------------------------------------

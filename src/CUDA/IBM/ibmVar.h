@@ -17,9 +17,9 @@
 // Total number of IB particles in the system
 #define NUM_PARTICLES 1
 // Number of IBM inner iterations
-#define IBM_MAX_ITERATION 6
+#define IBM_MAX_ITERATION 3
 // Particles diameters
-#define PARTICLE_DIAMETER 15.0
+#define PARTICLE_DIAMETER (10*SCALE)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -32,8 +32,8 @@
 
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE 100               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT 100                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (150*SCALE*SCALE)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (150*SCALE*SCALE)                   // Report IBM treated data every given steps (0 not report)
  
 #define IBM_DATA_STOP true                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE true                 // save reported IBM data to file
@@ -44,13 +44,13 @@
 
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 1.1564;
+constexpr dfloat PARTICLE_DENSITY = 1.154639175;
 constexpr dfloat FLUID_DENSITY = 1;
 
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = -3.88e-4;
+constexpr dfloat GZ = 0.0;
 /* -------------------------------------------------------------------------- */
 
 /* -------------------------- COLLISION PARAMETERS -------------------------- */

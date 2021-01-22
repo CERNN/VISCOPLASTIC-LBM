@@ -151,6 +151,7 @@ int main()
 
     /* ------------------------------- REPORT ------------------------------- */
     printSimInfo(&info);
+    saveSimInfo(&info);
     /* ---------------------------------------------------------------------- */
 
 
@@ -221,7 +222,16 @@ int main()
                 || fileOmega == nullptr
                 #endif
             ){
-                printf("Error reading macroscopics files\n");
+                printf("Error reading macroscopics files. (1 for not found):\n");
+                printf("FILE_RHO=%d; FILE_UX=%d; FILE_UY=%d; FILE_UZ=%d;\n", 
+                    fileRho==nullptr, fileUx==nullptr, fileUy==nullptr, fileUz==nullptr);
+                #ifdef IBM
+                printf("FILE_FX=%d; FILE_FY=%d; FILE_FZ=%d;\n", 
+                    fileFx==nullptr, fileFy==nullptr, fileFz==nullptr);
+                #endif
+                #ifdef NON_NEWTONIAN_FLUID
+                printf("FILE_OMEGA=%d\n", fileOmega==nullptr);
+                #endif
                 return -1;
             }
             // Load macroscopics from files
@@ -295,7 +305,7 @@ int main()
         int aux = step-INI_STEP;
         // WHAT NEEDS TO BE DONE IN THIS TIME STEP
         bool save = false, rep = false, repIBM = false;
-        if(aux != 0)
+        if(aux != 0 || true)
         {
             if(MACR_SAVE != 0)
                 save = !(aux % MACR_SAVE);
@@ -407,7 +417,10 @@ int main()
             if(DATA_STOP)
             {
                 if(stopSim(&processData))
+                {
+                    printf("Stopping because of LBM\n");
                     break;
+                }
             }
         }
 
@@ -424,7 +437,10 @@ int main()
             if(IBM_DATA_STOP)
             {
                 if(stopSimIBM(&ibmProcessData, particlesSoA))
+                {
+                    printf("Stopping because of IBM\n");
                     break;
+                }
             }
         }
         #endif
@@ -435,13 +451,23 @@ int main()
     checkCudaErrors(cudaEventRecord(stop, 0));
     checkCudaErrors(cudaEventSynchronize(stop));
     checkCudaErrors(cudaEventElapsedTime(&(info.timeElapsed), start, stop));
+
     info.timeElapsed *= 0.001;
 
     // Save final macroscopics
     for(int i = 0; i < N_GPUS; i++){
         macrCPUCurrent.copyMacr(&macr[i], NUMBER_LBM_NODES*i);
-    } 
+    }
     saveAllMacrBin(&macrCPUCurrent, step);
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    // Save final IBM values
+    #ifdef IBM
+    saveParticlesInfo(particlesSoA, step, IBM_PARTICLES_NODES_SAVE);
+    if(IBM_DATA_SAVE){
+        saveTreatDataIBM(&ibmProcessData);
+    }
+    #endif
 
     // Save final populations (if required)
     if(POP_SAVE)

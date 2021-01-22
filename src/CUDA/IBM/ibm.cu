@@ -70,7 +70,6 @@ void immersedBoundaryMethod(
         particles.nodesSoA, particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
-    // Synchronize and swap populations
     checkCudaErrors(cudaDeviceSynchronize());
 }
 
@@ -478,19 +477,17 @@ void gpuParticleNodeMovement(
         + (pc.w_avg.y * pc.w_avg.y) 
         + (pc.w_avg.z * pc.w_avg.z));
 
-    // if(w_norm <= 1e-8)
-    // {
-    //     particlesNodes.pos.x[i] += pc.pos.x - pc.pos_old.x;
-    //     particlesNodes.pos.y[i] += pc.pos.y - pc.pos_old.y;
-    //     particlesNodes.pos.z[i] += pc.pos.z - pc.pos_old.z;
-    //     return;
-    // }
+    if(w_norm <= 1e-8)
+    {
+        particlesNodes.pos.x[i] += pc.pos.x - pc.pos_old.x;
+        particlesNodes.pos.y[i] += pc.pos.y - pc.pos_old.y;
+        particlesNodes.pos.z[i] += pc.pos.z - pc.pos_old.z;
+        return;
+    }
 
-    particlesNodes.pos.x[i] += (pc.pos.x - pc.pos_old.x);
-    particlesNodes.pos.y[i] += (pc.pos.y - pc.pos_old.y);
-    particlesNodes.pos.z[i] += (pc.pos.z - pc.pos_old.z);
-    return;
-    
+    // particlesNodes.pos.x[i] += (pc.pos.x - pc.pos_old.x);
+    // particlesNodes.pos.y[i] += (pc.pos.y - pc.pos_old.y);
+    // particlesNodes.pos.z[i] += (pc.pos.z - pc.pos_old.z);
 
     // TODO: these variables are the same for every particle center, optimize it
     const dfloat q0 = cos(0.5*w_norm);

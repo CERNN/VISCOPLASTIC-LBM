@@ -160,7 +160,7 @@ void gpuMacrInitValue(
     macr->rho[idxScalar(x, y, z)] = RHO_0;
     macr->u.x[idxScalar(x, y, z)] = 0;
     macr->u.y[idxScalar(x, y, z)] = 0;
-    macr->u.z[idxScalar(x, y, z)] = 0;
+    macr->u.z[idxScalar(x, y, z)] = U_MAX;
 
     #ifdef IBM
     macr->f.x[idxScalar(x, y, z)] = FX;
