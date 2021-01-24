@@ -86,7 +86,7 @@ void gpuForceInterpolationSpread(
     if (i >= particlesNodes.numNodes)
         return;
 
-    dfloat aux; // aux variable for many things
+    dfloat aux, aux1, aux2; // aux variable for many things
     size_t idx; // index for many things
 
     const dfloat xIBM = particlesNodes.pos.x[i];
@@ -116,13 +116,16 @@ void gpuForceInterpolationSpread(
     //  Interpolation
     for (int z = zMin; z < zMax; z++)
     {
+        aux1 = stencil(z - zIBM);
         for (int y = yMin; y < yMax; y++)
         {
+            aux2 = aux1*stencil(y - yIBM);
             for (int x = xMin; x < xMax; x++)
             {
-                idx = idxScalar(x, y, z);
                 // Dirac delta (kernel)
-                aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
+                aux = stencil(x - xIBM) * aux2;
+                // aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
+                idx = idxScalar(x, y, z);
 
                 sumAux_interp += aux;
 
@@ -182,35 +185,29 @@ void gpuForceInterpolationSpread(
     // Spreading
     for (int z = zMin; z < zMax; z++)
     {
+        aux1 = stencil(z - zIBM);
         for (int y = yMin; y < yMax; y++)
         {
+            aux2 = aux1*stencil(y - yIBM);
             for (int x = xMin; x < xMax; x++)
             {
                 idx = idxScalar(x, y, z);
 
                 // Dirac delta (kernel)
-                aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
-                sumAux_spread += aux;
-
-                // TODO: update rho and velocities of LBM here, but with 
-                // different array to not have concurrent problems with loading 
-                // the velocities
-
+                aux = stencil(x - xIBM) * aux2;
+                // aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
                 atomicAdd(&(macr.f.x[idx]), -deltaF.x * aux);
                 atomicAdd(&(macr.f.y[idx]), -deltaF.y * aux);
                 atomicAdd(&(macr.f.z[idx]), -deltaF.z * aux);
 
+                // Update velocities field
                 const dfloat inv_rho = 1 / macr.rho[idx];
                 atomicAdd(&(velAuxIBM.x[idx]), 0.5 * -deltaF.x * aux * inv_rho);
                 atomicAdd(&(velAuxIBM.y[idx]), 0.5 * -deltaF.y * aux * inv_rho);
                 atomicAdd(&(velAuxIBM.z[idx]), 0.5 * -deltaF.z * aux * inv_rho);
-
             }
         }
     }
-    // if(i == 0)
-    //    printf("id %d xMin %d xMax %d xIBM %.2e deltaFz %.2e aux_spread %.2e aux_interp %.2e\n", 
-    //        i, xMin, xMax, xIBM, deltaF.z, sumAux_spread, sumAux_interp);
 
     // Update node force
     particlesNodes.f.x[i] = fxIBM;

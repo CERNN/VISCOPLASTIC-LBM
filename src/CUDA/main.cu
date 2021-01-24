@@ -305,7 +305,7 @@ int main()
         int aux = step-INI_STEP;
         // WHAT NEEDS TO BE DONE IN THIS TIME STEP
         bool save = false, rep = false, repIBM = false;
-        if(aux != 0 || true)
+        if(aux != 0)
         {
             if(MACR_SAVE != 0)
                 save = !(aux % MACR_SAVE);
