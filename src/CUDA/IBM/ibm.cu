@@ -86,26 +86,40 @@ void gpuForceInterpolationSpread(
     if (i >= particlesNodes.numNodes)
         return;
 
-    dfloat aux, aux1, aux2; // aux variable for many things
+    dfloat aux, aux1; // aux variable for many things
     size_t idx; // index for many things
 
     const dfloat xIBM = particlesNodes.pos.x[i];
     const dfloat yIBM = particlesNodes.pos.y[i];
     const dfloat zIBM = particlesNodes.pos.z[i];
+    const dfloat pos[3] = {xIBM, yIBM, zIBM};
 
-    // Minimum number of xyz for LBM interpolation
-    const unsigned int xMin = (((int)xIBM - P_DIST) < 0) ? 0 : (int)xIBM - P_DIST;
-    const unsigned int yMin = (((int)yIBM - P_DIST) < 0) ? 0 : (int)yIBM - P_DIST;
-    const unsigned int zMin = (((int)zIBM - P_DIST) < 0) ? 0 : (int)zIBM - P_DIST;
-
-    // Maximum number of xyz for LBM interpolation, excluding last
-    // (e.g. NX goes just until NX-1)
-    const unsigned int xMax = (((int)xIBM + 1 + P_DIST) > NX) ? NX : (int)xIBM + P_DIST + 1;
-    const unsigned int yMax = (((int)yIBM + 1 + P_DIST) > NY) ? NY : (int)yIBM + P_DIST + 1;
-    const unsigned int zMax = (((int)zIBM + 1 + P_DIST) > NZ) ? NZ : (int)zIBM + P_DIST + 1;
-
-    if(xMin >= NX || yMin >= NY || zMin >= NZ || xMax <= 0 || yMax <= 0 || zMax <= 0)
+    // Calculate stencils to use and the valid interval [xyz][idx]
+    dfloat stencilVal[3][P_DIST*2];
+    // Base position for every index (leftest in x)
+    const int posBase[3] = {int(xIBM-P_DIST+1), int(yIBM-P_DIST+1), int(zIBM-P_DIST+1)};
+    // Maximum stencil index for each direction xyz ("index" to stop)
+    const int maxIdx[3] = {
+        (posBase[0]+P_DIST*2-1) < (int)NX? P_DIST*2-1 : ((int)NX-1-posBase[0]), 
+        (posBase[1]+P_DIST*2-1) < (int)NY? P_DIST*2-1 : ((int)NY-1-posBase[1]), 
+        (posBase[2]+P_DIST*2-1) < (int)NZ? P_DIST*2-1 : ((int)NZ-1-posBase[2])};
+    // Particle stencil out of the domain
+    if(maxIdx[0] <= 0 || maxIdx[1] <= 0 || maxIdx[2] <= 0)
         return;
+    // Minimum stencil index for each direction xyz ("index" to start)
+    const int minIdx[3] = {
+        posBase[0] >= 0? 0 : -posBase[0], 
+        posBase[1] >= 0? 0 : -posBase[1], 
+        posBase[2] >= 0? 0 : -posBase[2]};
+    // Particle stencil out of the domain
+    if(minIdx[0] >= P_DIST*2 || minIdx[1] >= P_DIST*2 || minIdx[2] >= P_DIST*2)
+        return;
+    // printf("%f %d %d %d\n", xIBM, maxIdx[0], minIdx[0], i);
+    for(int i = 0; i < 3; i++){
+        for(int j=minIdx[i]; j <= maxIdx[i]; j++){
+            stencilVal[i][j] = stencil(posBase[i]+j-pos[i]);
+        }
+    }
 
     dfloat rhoVar = 0;
     dfloat uxVar = 0;
@@ -113,19 +127,19 @@ void gpuForceInterpolationSpread(
     dfloat uzVar = 0;
 
     dfloat sumAux_interp = 0;
-    //  Interpolation
-    for (int z = zMin; z < zMax; z++)
+    // Interpolation (zyx for memory locality)
+    for (int zk = minIdx[2]; zk <= maxIdx[2]; zk++) // z
     {
-        aux1 = stencil(z - zIBM);
-        for (int y = yMin; y < yMax; y++)
+        for (int yj = minIdx[1]; yj <= maxIdx[1]; yj++) // y
         {
-            aux2 = aux1*stencil(y - yIBM);
-            for (int x = xMin; x < xMax; x++)
+            aux1 = stencilVal[2][zk]*stencilVal[1][yj];
+            for (int xi = minIdx[0]; xi <= maxIdx[0]; xi++) // x
             {
                 // Dirac delta (kernel)
-                aux = stencil(x - xIBM) * aux2;
-                // aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
-                idx = idxScalar(x, y, z);
+                aux = aux1 * stencilVal[0][xi];
+                // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
+
+                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk);
 
                 sumAux_interp += aux;
 
@@ -181,20 +195,22 @@ void gpuForceInterpolationSpread(
     const dfloat fyIBM = particlesNodes.f.y[i] + deltaF.y;
     const dfloat fzIBM = particlesNodes.f.z[i] + deltaF.z;
 
-    dfloat sumAux_spread = 0;
-    // Spreading
-    for (int z = zMin; z < zMax; z++)
+    dfloat sumAux_spread = 0; 
+    // Spreading (zyx for memory locality)
+    for (int zk = minIdx[2]; zk <= maxIdx[2]; zk++) // z
     {
-        aux1 = stencil(z - zIBM);
-        for (int y = yMin; y < yMax; y++)
+        for (int yj = minIdx[1]; yj <= maxIdx[1]; yj++) // y
         {
-            aux2 = aux1*stencil(y - yIBM);
-            for (int x = xMin; x < xMax; x++)
+            aux1 = stencilVal[2][zk]*stencilVal[1][yj];
+            for (int xi = minIdx[0]; xi <= maxIdx[0]; xi++) // x
             {
-                idx = idxScalar(x, y, z);
-
                 // Dirac delta (kernel)
-                aux = stencil(x - xIBM) * aux2;
+                aux = aux1 * stencilVal[0][xi];
+                // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
+
+                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk);
+
+
                 // aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
                 atomicAdd(&(macr.f.x[idx]), -deltaF.x * aux);
                 atomicAdd(&(macr.f.y[idx]), -deltaF.y * aux);
