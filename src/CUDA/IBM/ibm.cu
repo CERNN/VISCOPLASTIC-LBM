@@ -15,7 +15,9 @@ void immersedBoundaryMethod(
     unsigned int threadsNodesIBM,
     cudaStream_t streamLBM[N_GPUS],
     cudaStream_t streamIBM[N_GPUS],
-    unsigned int step)
+    unsigned int step,
+    ParticleEulerNodesUpdate pEulerNodes
+    )
 {
     // Update particle center position and its old values
     gpuUpdateParticleOldValues<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
@@ -26,9 +28,17 @@ void immersedBoundaryMethod(
     // Size of shared memory to use for optimization in interpolation/spread
     const unsigned int sharedMemInterpSpread = threadsNodesIBM * sizeof(dfloat3);
 
+    #if IBM_EULER_OPTIMIZATION
+    // Grid size for euler nodes update
+    dim3 currGrid(pEulerNodes.currEulerNodes/64+(pEulerNodes.currEulerNodes%64? 1 : 0), 1, 1);
+    // Update macroscopics post boundary conditions and reset forces
+    gpuUpdateMacrResetForces<<<currGrid, 64, 0, streamLBM[0]>>>(pop[0], macr[0], velsAuxIBM[0], 
+        pEulerNodes.eulerIndexesUpdate, pEulerNodes.currEulerNodes);
+    #else
     // Update macroscopics post boundary conditions and reset forces
     gpuUpdateMacrResetForces<<<gridLBM, threadsLBM, 0, streamLBM[0]>>>(pop[0], macr[0], velsAuxIBM[0]);
     checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
+    #endif
 
     // Reset forces in all IBM nodes
     gpuResetNodesForces<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(particles.nodesSoA);
@@ -52,7 +62,12 @@ void immersedBoundaryMethod(
         gpuUpdateParticleCenterVelocityAndRotation<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
             particles.pCenterArray);
 
+        #if IBM_EULER_OPTIMIZATION
+        ibmEulerCopyVelocities<<<currGrid, 64, 0, streamLBM[0]>>>(macr[0].u, velsAuxIBM[0], 
+            pEulerNodes.eulerIndexesUpdate, pEulerNodes.currEulerNodes);
+        #else
         copyFromArray<<<gridLBM, threadsLBM, 0, streamLBM[0]>>>(macr[0].u, velsAuxIBM[0]);
+        #endif
 
         checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
@@ -114,7 +129,7 @@ void gpuForceInterpolationSpread(
     // Particle stencil out of the domain
     if(minIdx[0] >= P_DIST*2 || minIdx[1] >= P_DIST*2 || minIdx[2] >= P_DIST*2)
         return;
-    // printf("%f %d %d %d\n", xIBM, maxIdx[0], minIdx[0], i);
+
     for(int i = 0; i < 3; i++){
         for(int j=minIdx[i]; j <= maxIdx[i]; j++){
             stencilVal[i][j] = stencil(posBase[i]+j-pos[i]);
@@ -210,8 +225,6 @@ void gpuForceInterpolationSpread(
 
                 idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk);
 
-
-                // aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
                 atomicAdd(&(macr.f.x[idx]), -deltaF.x * aux);
                 atomicAdd(&(macr.f.y[idx]), -deltaF.y * aux);
                 atomicAdd(&(macr.f.z[idx]), -deltaF.z * aux);
@@ -256,20 +269,32 @@ void gpuForceInterpolationSpread(
 }
 
 __global__
-void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM)
+void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
+    #if IBM_EULER_OPTIMIZATION
+    , size_t* eulerIdxsUpdate, unsigned int currEulerNodes
+    #endif
+)
 {
+    #if IBM_EULER_OPTIMIZATION
+    unsigned int j = threadIdx.x + blockDim.x * blockIdx.x;
+    if(j >= currEulerNodes)
+        return;
+    size_t idx = eulerIdxsUpdate[j];
+    #else
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
     int z = threadIdx.z + blockDim.z * blockIdx.z;
     if (x >= NX || y >= NY || z >= NZ)
-        return;
+       return;
 
     size_t idx = idxScalar(x, y, z);
-
+    #endif
+    
     // load populations
     dfloat fNode[Q];
     for (unsigned char i = 0; i < Q; i++)
-        fNode[i] = pop.pop[idxPop(x, y, z, i)];
+        // fNode[i] = pop.pop[idxPop(x, y, z, i)];
+        fNode[i] = pop.pop[idx*(1+i)];
 
     macr.f.x[idx] = FX;
     macr.f.y[idx] = FY;

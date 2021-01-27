@@ -262,9 +262,9 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "\n------------------------------------- IBM ------------------------------------\n";
     strSimInfo << std::scientific << std::setprecision(6);
 
-    strSimInfo << "Number of particles: " << NUM_PARTICLES << "\n";
-    strSimInfo << "     IBM iterations: " << IBM_MAX_ITERATION << "\n";
-    strSimInfo << "       Stencil size: ";
+    strSimInfo << "   Number of particles: " << NUM_PARTICLES << "\n";
+    strSimInfo << "        IBM iterations: " << IBM_MAX_ITERATION << "\n";
+    strSimInfo << "          Stencil size: ";
 
     #if defined STENCIL_2
     strSimInfo << "2" << "\n";
@@ -274,20 +274,24 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "Invalid" << "\n";
     #endif
 
-    strSimInfo << "   Particle density: " << PARTICLE_DENSITY << "\n";
-    strSimInfo << "      Fluid density: " << FLUID_DENSITY << "\n";
-    strSimInfo << "                 GX: " << GX << "\n";
-    strSimInfo << "                 GY: " << GY << "\n";
-    strSimInfo << "                 GZ: " << GZ << "\n";
+    strSimInfo << "      Particle density: " << PARTICLE_DENSITY << "\n";
+    strSimInfo << "         Fluid density: " << FLUID_DENSITY << "\n";
+    strSimInfo << "                    GX: " << GX << "\n";
+    strSimInfo << "                    GY: " << GY << "\n";
+    strSimInfo << "                    GZ: " << GZ << "\n";
     strSimInfo << std::fixed << std::setprecision(2);
-    strSimInfo << "         Mesh scale: " << MESH_SCALE << "\n";
-    strSimInfo << "       Mesh coulomb: " << MESH_COULOMB << "\n";
-    strSimInfo << "      IBM thickness: " << IBM_THICKNESS << "\n";
-    strSimInfo << "      Particles save: " << IBM_PARTICLES_SAVE << "\n";
-    strSimInfo << "Particles nodes save: " << IBM_PARTICLES_NODES_SAVE << "\n";
-    strSimInfo << "     IBM data report: " << IBM_DATA_REPORT << "\n";
-    strSimInfo << "     IBM data stop: " << IBM_DATA_STOP << "\n";
-    strSimInfo << "     IBM data save: " << IBM_DATA_SAVE << "\n";
+    strSimInfo << "            Mesh scale: " << MESH_SCALE << "\n";
+    strSimInfo << "          Mesh coulomb: " << MESH_COULOMB << "\n";
+    strSimInfo << "         IBM thickness: " << IBM_THICKNESS << "\n";
+    strSimInfo << "        Particles save: " << IBM_PARTICLES_SAVE << "\n";
+    strSimInfo << "  Particles nodes save: " << IBM_PARTICLES_NODES_SAVE << "\n";
+    strSimInfo << "       IBM data report: " << IBM_DATA_REPORT << "\n";
+    strSimInfo << "         IBM data stop: " << IBM_DATA_STOP << "\n";
+    strSimInfo << "         IBM data save: " << IBM_DATA_SAVE << "\n";
+    strSimInfo << "IBM Euler optimization: " << IBM_EULER_OPTIMIZATION << "\n";
+    #if IBM_EULER_OPTIMIZATION
+    strSimInfo << "       Shell thickness: " << IBM_EULER_SHELL_THICKNESS << "\n";
+    #endif
 
     strSimInfo << "--------------------------------- IBM Collision --------------------------------\n";
     strSimInfo << "\t                 Zeta: " << ZETA << "\n";
@@ -295,7 +299,6 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "\t           Stiff soft: " << STIFF_SOFT << "\n";
     strSimInfo << "\t           Stiff hard: " << STIFF_HARD << "\n";
     strSimInfo << "--------------------------------------------------------------------------------\n";
-    
 
     strSimInfo << "--------------------------------------------------------------------------------\n";
     #endif // IBM

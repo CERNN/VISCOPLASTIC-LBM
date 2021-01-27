@@ -54,6 +54,7 @@ int main()
     Particle particles[NUM_PARTICLES];
     ParticlesSoA particlesSoA;
     dfloat3SoA velAuxIBM[N_GPUS];
+    ParticleEulerNodesUpdate pEulerNodes;
 
     IBMProc ibmProcessData;
     allocateIBMProc(&ibmProcessData);
@@ -129,7 +130,9 @@ int main()
     printf("Particles created!\n"); fflush(stdout);
 
     particlesSoA.updateParticlesAsSoA(particles);
-
+    #if IBM_EULER_OPTIMIZATION
+    pEulerNodes.initializeEulerNodes(particlesSoA.pCenterArray);
+    #endif
     const unsigned int threadsIBM = 64;
     const unsigned int pNumNodes = particlesSoA.nodesSoA.numNodes;
     const unsigned int gridIBM = pNumNodes % threadsIBM ? pNumNodes / threadsIBM + 1 : pNumNodes / threadsIBM;
@@ -334,6 +337,11 @@ int main()
             getLastCudaError("LBM kernel error\n");
         }
 
+        // While running kernel code, organize IBM Euler nodes
+        #if defined(IBM) && IBM_EULER_OPTIMIZATION
+        pEulerNodes.checkParticlesMovement();
+        #endif
+
         for(int i = 0; i < N_GPUS; i++) {
             checkCudaErrors(cudaSetDevice(i));
             checkCudaErrors(cudaDeviceSynchronize());
@@ -373,7 +381,8 @@ int main()
         #ifdef IBM
         immersedBoundaryMethod(
             particlesSoA, macr, velAuxIBM, pop, grid, threads,
-            gridIBM, threadsIBM, streamsLBM, streamsIBM, step);
+            gridIBM, threadsIBM, streamsLBM, streamsIBM, step, 
+            pEulerNodes);
 
         // Save particles informations
         if(IBM_PARTICLES_SAVE != 0 && !(step % IBM_PARTICLES_SAVE)){
@@ -393,7 +402,7 @@ int main()
                 checkCudaErrors(cudaSetDevice(i));
                 macrCPUCurrent.copyMacr(&macr[i], NUMBER_LBM_NODES*i);
                 checkCudaErrors(cudaDeviceSynchronize());
-            } 
+            }
         }
 
         // Save macroscopics

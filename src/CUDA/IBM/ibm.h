@@ -20,6 +20,7 @@
 #include "../structs/populations.h"
 #include "../structs/globalStructs.h"
 #include "structs/particle.h"
+#include "structs/particleEulerNodesUpdate.h"
 #include "ibmReport.h"
 
 
@@ -35,7 +36,8 @@ void immersedBoundaryMethod(
     unsigned int threadsIBM,
     cudaStream_t streamLBM[N_GPUS],
     cudaStream_t streamIBM[N_GPUS],
-    unsigned int step
+    unsigned int step,
+    ParticleEulerNodesUpdate pEulerNodes
 );
 
 
@@ -49,7 +51,11 @@ void gpuForceInterpolationSpread(
 
 
 __global__
-void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM);
+void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
+    #if IBM_EULER_OPTIMIZATION
+    , size_t* eulerIdxsUpdate, unsigned int currEulerNodes
+    #endif
+);
 
 
 __global__

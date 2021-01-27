@@ -13,13 +13,14 @@
 #include "../var.h"
 #include <stdio.h>
 
+
 /* -------------------------- IBM GENERAL DEFINES --------------------------- */
 // Total number of IB particles in the system
 #define NUM_PARTICLES 1
 // Number of IBM inner iterations
 #define IBM_MAX_ITERATION 3
 // Particles diameters
-#define PARTICLE_DIAMETER (10*SCALE)
+#define PARTICLE_DIAMETER (10)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -31,17 +32,32 @@
 /* ------------------------------------------------------------------------- */
 
 
+/* ---------------------------- IBM OPTIMIZATION --------------------------- */
+// Optimize Euler nodes updates for IBM (only recommended to test false
+// with a ratio of more than 5% between lagrangian and eulerian nodes)
+#define IBM_EULER_OPTIMIZATION false
+// "Shell thickness" to consider. The Euler nodes are updated every time 
+// the particle moves more than this value. For fixed particle this does 
+// not influence. 
+// The higher the value of this, more Euler nodes will be updated every step and
+// performance may decrease.
+// This value is a tradeoff between:
+// Calculate euler nodes that must be updated (lower the value or higher the 
+//        particle movement, more frequent this update will be)
+// vs.
+// Number of euler nodes updated (higher value, higher the eulerian nodes)
+#define IBM_EULER_SHELL_THICKNESS (2.0)
+/* ------------------------------------------------------------------------- */
+
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (150*SCALE*SCALE)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (150*SCALE*SCALE)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (0)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (0)                   // Report IBM treated data every given steps (0 not report)
  
 #define IBM_DATA_STOP true                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE true                 // save reported IBM data to file
 
-#define IBM_PARTICLES_NODES_SAVE true      // Saves particles nodes data
+#define IBM_PARTICLES_NODES_SAVE false      // Saves particles nodes data
 /* ------------------------------------------------------------------------- */
-
-
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
 constexpr dfloat PARTICLE_DENSITY = 1.154639175;
@@ -68,11 +84,11 @@ constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 #define STENCIL_4 // Peskin Stencil
 
 // Stencil distance
-#if defined STENCIL_2
+#if defined(STENCIL_2)
 #define P_DIST 1
 #endif
 
-#if defined STENCIL_4
+#if defined(STENCIL_4)
 #define P_DIST 2
 #endif
 /* -------------------------------------------------------------------------- */

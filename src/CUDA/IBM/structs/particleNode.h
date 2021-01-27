@@ -14,8 +14,6 @@
 #include "../ibmVar.h"
 #include "../../structs/globalStructs.h"
 
-// struct Particle;
-
 /*
 *   Describe the IBM node properties
 */
