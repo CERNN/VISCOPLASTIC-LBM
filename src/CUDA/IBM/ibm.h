@@ -37,7 +37,7 @@ void immersedBoundaryMethod(
     cudaStream_t streamLBM[N_GPUS],
     cudaStream_t streamIBM[N_GPUS],
     unsigned int step,
-    ParticleEulerNodesUpdate pEulerNodes
+    ParticleEulerNodesUpdate* pEulerNodes
 );
 
 

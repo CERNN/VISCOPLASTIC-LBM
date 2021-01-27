@@ -16,7 +16,7 @@ void immersedBoundaryMethod(
     cudaStream_t streamLBM[N_GPUS],
     cudaStream_t streamIBM[N_GPUS],
     unsigned int step,
-    ParticleEulerNodesUpdate pEulerNodes
+    ParticleEulerNodesUpdate* pEulerNodes
     )
 {
     // Update particle center position and its old values
@@ -30,10 +30,10 @@ void immersedBoundaryMethod(
 
     #if IBM_EULER_OPTIMIZATION
     // Grid size for euler nodes update
-    dim3 currGrid(pEulerNodes.currEulerNodes/64+(pEulerNodes.currEulerNodes%64? 1 : 0), 1, 1);
+    dim3 currGrid(pEulerNodes->currEulerNodes/64+(pEulerNodes->currEulerNodes%64? 1 : 0), 1, 1);
     // Update macroscopics post boundary conditions and reset forces
     gpuUpdateMacrResetForces<<<currGrid, 64, 0, streamLBM[0]>>>(pop[0], macr[0], velsAuxIBM[0], 
-        pEulerNodes.eulerIndexesUpdate, pEulerNodes.currEulerNodes);
+        pEulerNodes->eulerIndexesUpdate, pEulerNodes->currEulerNodes);
     #else
     // Update macroscopics post boundary conditions and reset forces
     gpuUpdateMacrResetForces<<<gridLBM, threadsLBM, 0, streamLBM[0]>>>(pop[0], macr[0], velsAuxIBM[0]);
@@ -50,6 +50,10 @@ void immersedBoundaryMethod(
         particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
+    #if IBM_EULER_OPTIMIZATION
+    checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
+    #endif
+
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
         // Make the interpolation of LBM and spreading of IBM forces
@@ -64,7 +68,7 @@ void immersedBoundaryMethod(
 
         #if IBM_EULER_OPTIMIZATION
         ibmEulerCopyVelocities<<<currGrid, 64, 0, streamLBM[0]>>>(macr[0].u, velsAuxIBM[0], 
-            pEulerNodes.eulerIndexesUpdate, pEulerNodes.currEulerNodes);
+            pEulerNodes->eulerIndexesUpdate, pEulerNodes->currEulerNodes);
         #else
         copyFromArray<<<gridLBM, threadsLBM, 0, streamLBM[0]>>>(macr[0].u, velsAuxIBM[0]);
         #endif

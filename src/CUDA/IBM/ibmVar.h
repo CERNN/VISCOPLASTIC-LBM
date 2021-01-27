@@ -35,7 +35,7 @@
 /* ---------------------------- IBM OPTIMIZATION --------------------------- */
 // Optimize Euler nodes updates for IBM (only recommended to test false
 // with a ratio of more than 5% between lagrangian and eulerian nodes)
-#define IBM_EULER_OPTIMIZATION false
+#define IBM_EULER_OPTIMIZATION true
 // "Shell thickness" to consider. The Euler nodes are updated every time 
 // the particle moves more than this value. For fixed particle this does 
 // not influence. 
@@ -94,6 +94,8 @@ constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 /* -------------------------------------------------------------------------- */
 
 /* ------------------------ THREADS AND GRIDS FOR IBM ----------------------- */
+
+#define IBM_DEBUG false
 // Threads for IBM particles
 constexpr unsigned int THREADS_PARTICLES_IBM = NUM_PARTICLES > 64 ? 64 : NUM_PARTICLES;
 // Grid for IBM particles

@@ -3,7 +3,7 @@
 
 #include "../ibmVar.h"
 #include "particle.h"
-
+#include "../../globalFunctions.h"
 
 /*
 *   Struct to describe and update the Eulerian nodes that must update
@@ -15,14 +15,17 @@ typedef struct particleEulerNodesUpdate{
     // Array with indexes values to update
     size_t* eulerIndexesUpdate;
     // Maximum number of euler nodes to update
-    unsigned int nEulerNodes;
+    unsigned int maxEulerNodes;
     // Current number of euler nodes to update
     unsigned int currEulerNodes;
 
     // Movable particles centers pointers
-    ParticleCenter* pCenterMovable;
+    ParticleCenter** pCenterMovable;
     // Particles last position
     dfloat3* particlesLastPos;
+    // Has fixed particles
+    bool hasFixed;
+    // TODO: keep particle angle as well to count rotation
     // Number of movable particles
     unsigned int nParticlesMovable;
 
@@ -39,7 +42,7 @@ typedef struct particleEulerNodesUpdate{
     void removeUnneededEulerNodes();
 
     __host__
-    void updateEulerNodes(ParticleCenter p, uint32_t mask);
+    void updateEulerNodes(ParticleCenter* p, uint32_t mask);
 
 } ParticleEulerNodesUpdate;
 

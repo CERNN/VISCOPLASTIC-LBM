@@ -382,7 +382,7 @@ int main()
         immersedBoundaryMethod(
             particlesSoA, macr, velAuxIBM, pop, grid, threads,
             gridIBM, threadsIBM, streamsLBM, streamsIBM, step, 
-            pEulerNodes);
+            &pEulerNodes);
 
         // Save particles informations
         if(IBM_PARTICLES_SAVE != 0 && !(step % IBM_PARTICLES_SAVE)){

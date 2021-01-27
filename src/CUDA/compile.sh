@@ -15,7 +15,7 @@ if [[ "$1" = "D3Q19" || "$1" = "D3Q27" ]]
 then
     nvcc -gencode arch=compute_${CC},code=sm_${CC} -rdc=true --ptxas-options=-v -O3 --restrict \
         ./IBM/*.cu ./IBM/*.cpp \
-        ./IBM/structs/*.cpp \
+        ./IBM/structs/*.cpp ./IBM/structs/*.cu \
         *.cu *.cpp \
         ./boundaryConditionsSchemes/*.cu \
         -lcudadevrt -lcurand -o ./../../bin/$2sim_$1_sm${CC}
