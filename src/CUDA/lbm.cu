@@ -14,7 +14,9 @@ void gpuMacrCollisionStream(
     const short unsigned int z = threadIdx.z + blockDim.z * blockIdx.z;
     if (x >= NX || y >= NY || z >= NZ)
         return;
-    if(!mapBC[idxScalar(x, y, z)].getIsUsed())
+
+    size_t idx = idxScalar(x, y, z);
+    if(!mapBC[idx].getIsUsed())
         return;
 
     // Adjacent coordinates
@@ -27,6 +29,7 @@ void gpuMacrCollisionStream(
 
     // Node populations
     dfloat fNode[Q];
+    // Aux idx
 
     // Load populations
     #pragma unroll
@@ -34,9 +37,13 @@ void gpuMacrCollisionStream(
         fNode[i] = pop[idxPop(x, y, z, i)];
 
     #ifdef IBM
-    const dfloat fxVar = macr.f.x[idxScalar(x, y, z)];
-    const dfloat fyVar = macr.f.y[idxScalar(x, y, z)];
-    const dfloat fzVar = macr.f.z[idxScalar(x, y, z)];
+    const dfloat fxVar = macr.f.x[idx];
+    const dfloat fyVar = macr.f.y[idx];
+    const dfloat fzVar = macr.f.z[idx];
+    // Reset IBM forces
+    macr.f.x[idx] = FX;
+    macr.f.y[idx] = FY;
+    macr.f.z[idx] = FZ;
     const dfloat fxVar_D3 = fxVar / 3;
     const dfloat fyVar_D3 = fyVar / 3;
     const dfloat fzVar_D3 = fzVar / 3;
@@ -209,13 +216,13 @@ void gpuMacrCollisionStream(
 
     if (save)
     {
-        macr.rho[idxScalar(x, y, z)] = rhoVar;
-        macr.u.x[idxScalar(x, y, z)] = uxVar;
-        macr.u.y[idxScalar(x, y, z)] = uyVar;
-        macr.u.z[idxScalar(x, y, z)] = uzVar;
+        macr.rho[idx] = rhoVar;
+        macr.u.x[idx] = uxVar;
+        macr.u.y[idx] = uyVar;
+        macr.u.z[idx] = uzVar;
         // Only Bingham does not save local omega
         #if !defined(OMEGA_LAST_STEP) && defined(NON_NEWTONIAN_FLUID)
-        macr.omega[idxScalar(x, y, z)] = omegaVar;
+        macr.omega[idx] = omegaVar;
         #endif
     }
 
@@ -420,7 +427,7 @@ void gpuMacrCollisionStream(
     #endif
 
     // Save post collision populations of boundary conditions nodes
-    if(mapBC[idxScalar(x, y, z)].getSavePostCol())  
+    if(mapBC[idx].getSavePostCol())  
     {
         #pragma unroll
         for (char i = 0; i < Q; i++)

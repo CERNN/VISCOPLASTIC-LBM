@@ -336,11 +336,13 @@ int main()
             //checkCudaErrors(cudaDeviceSynchronize());
             getLastCudaError("LBM kernel error\n");
         }
-
+        
+        /*
         // While running kernel code, organize IBM Euler nodes
         #if defined(IBM) && IBM_EULER_OPTIMIZATION
         pEulerNodes.checkParticlesMovement();
         #endif
+        */
 
         for(int i = 0; i < N_GPUS; i++) {
             checkCudaErrors(cudaSetDevice(i));
@@ -379,6 +381,13 @@ int main()
 
         // IBM
         #ifdef IBM
+
+        #if IBM_EULER_OPTIMIZATION
+        // printf("step %d\n", step);
+        if(step % IBM_EULER_UPDATE_INTERVAL)
+            pEulerNodes.checkParticlesMovement();
+        #endif
+
         immersedBoundaryMethod(
             particlesSoA, macr, velAuxIBM, pop, grid, threads,
             gridIBM, threadsIBM, streamsLBM, streamsIBM, step, 
@@ -533,6 +542,9 @@ int main()
     }
     free(particles);
     particlesSoA.freeNodesAndCenters();
+    #if IBM_EULER_OPTIMIZATION
+    pEulerNodes.freeEulerNodes();
+    #endif
     #endif
     /* ---------------------------------------------------------------------- */
 

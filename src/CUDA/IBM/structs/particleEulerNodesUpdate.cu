@@ -6,6 +6,7 @@ ParticleEulerNodesUpdate::particleEulerNodesUpdate(){
     eulerIndexesUpdate = nullptr;
     maxEulerNodes = 0;
     currEulerNodes = 0;
+    eulerFixedNodes = 0;
     pCenterMovable = nullptr;
     particlesLastPos = nullptr;
     hasFixed = false;
@@ -62,7 +63,7 @@ void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICL
 
     for(int i=0; i < nParticlesFixed; i++){
         // Mask for fixes particles is always 0b1
-        this->updateEulerNodes(&p[idxFixed[i]], 0b1);
+        eulerFixedNodes += this->updateEulerNodes(&p[idxFixed[i]], 0b1);
     }
 
     const char shift = this->hasFixed? 1 : 0;
@@ -77,17 +78,100 @@ void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICL
 }
 
 __host__
+void ParticleEulerNodesUpdate::freeEulerNodes(){
+    // Free variables
+    checkCudaErrors(cudaFree(this->eulerIndexesUpdate));
+    free(this->eulerMaskArray);
+    free(this->pCenterMovable);
+    free(this->particlesLastPos);
+}
+
+__host__
 void ParticleEulerNodesUpdate::checkParticlesMovement(){
-    
+    // No need to check for movement if there are no movable particles
+    if(this->nParticlesMovable == 0)
+        return;
+
+    uint32_t maskRemove = 0b0;
+    const unsigned int shift = this->hasFixed? 1 : 0;
+
+    for(int i = 0; i < nParticlesMovable; i++){
+        dfloat3 pos = this->pCenterMovable[i]->pos;
+        dfloat3 posOld = this->particlesLastPos[i];
+        dfloat distSq = (
+            (pos.x-posOld.x)*(pos.x-posOld.x)+
+            (pos.y-posOld.y)*(pos.y-posOld.y)+
+            (pos.z-posOld.z)*(pos.z-posOld.z));
+        // Check if particle moved more than IBM_EULER_SHELL_THICKNESS
+        if(distSq >= (IBM_EULER_UPDATE_DIST*IBM_EULER_UPDATE_DIST)){
+            // Add its particle to remove/update euler nodes
+            maskRemove |= 0b1 << i+shift;
+        }
+    }
+    // If there is any mask to remove/update (particles that moved)
+    if(maskRemove > 0){
+        removeUnneededEulerNodes(maskRemove);
+        int count = 0;
+        // Remove bit from fixed particle
+        maskRemove >>= shift;
+        // While there are still bits from mask (particles that moved) to process
+        while(maskRemove > 0){
+            if(maskRemove & 0b1){
+                this->updateEulerNodes(this->pCenterMovable[count], 0b1 << (count+shift));
+            }
+            maskRemove >>= 1;
+            count += 1;
+        }
+    }
 }
 
 __host__
-void ParticleEulerNodesUpdate::removeUnneededEulerNodes(){
-    
+void ParticleEulerNodesUpdate::removeUnneededEulerNodes(uint32_t maskRemove){
+    // Indexes to write to the left (keep coalesced array)
+    // When a node that isn't used anymore is found, this is incremented by one
+    // After its first increment, all other indexes that are read are written to
+    // the array back again shifted idxLeft to the left
+    // Obs.: "left" means closer to start of the array
+
+    unsigned int idxLeft = 0;
+    unsigned int newCurrEulerNodes = (int)this->currEulerNodes;
+    #if IBM_DEBUG
+    int idxsUpdated = 0;
+    #endif
+    // Start after fixed nodes
+    for(int i = this->eulerFixedNodes; i < this->currEulerNodes; i++){
+        const size_t idx = eulerIndexesUpdate[i];
+        const uint32_t val = this->eulerMaskArray[idx];
+        // Val with mask (~maskRemove) passed
+        const uint32_t valWithMask = val & ~maskRemove;
+        // If maskVal with bits removed is 0, it means that the node 
+        // should no longer be used
+        if(valWithMask == 0){
+            idxLeft += 1;
+            newCurrEulerNodes -= 1;
+        }
+        // If node is used, the value must be writed back to the array, 
+        // idxLeft to the left and with the bits removed
+        else {
+            // Check if it is required to write back
+            if(idxLeft > 0 || val != valWithMask) {
+                #if IBM_DEBUG
+                idxsUpdated += 1;
+                #endif
+                this->eulerIndexesUpdate[i-idxLeft] = valWithMask;
+            }
+        }
+    }
+
+    #if IBM_DEBUG
+    printf("For mask %x, Idx removed: %d; Updated: %d\n", maskRemove, 
+        this->currEulerNodes - newCurrEulerNodes, idxsUpdated);
+    #endif
+    this->currEulerNodes = (unsigned int)newCurrEulerNodes;
 }
 
 __host__
-void ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint32_t mask){
+unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint32_t mask){
     dfloat3 pos = pc->pos;
     dfloat radius = pc->radius;
     // TODO: update this for other geometries than sphere
@@ -96,22 +180,22 @@ void ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint32_t mas
         sphereShellThick += IBM_EULER_SHELL_THICKNESS;
     dfloat addTerm = radius+sphereShellThick;
 
-    int maxX= myMin(pos.x+addTerm+1, NX); // +1 for ceil
-    int maxY= myMin(pos.y+addTerm+1, NY); 
-    int maxZ= myMin(pos.z+addTerm+1, NZ); 
+    const int maxX = myMin(pos.x+addTerm+1, NX); // +1 for ceil
+    const int maxY = myMin(pos.y+addTerm+1, NY); 
+    const int maxZ = myMin(pos.z+addTerm+1, NZ); 
 
-    int minX = myMax(pos.x-addTerm, 0);
-    int minY = myMax(pos.y-addTerm, 0);
-    int minZ = myMax(pos.z-addTerm, 0);
-    
+    const int minX = myMax(pos.x-addTerm, 0);
+    const int minY = myMax(pos.y-addTerm, 0);
+    const int minZ = myMax(pos.z-addTerm, 0);
+
     const dfloat maxDistSq = (radius+sphereShellThick)*(radius+sphereShellThick);
     const dfloat minDistSq = (radius-sphereShellThick)*(radius-sphereShellThick);
-    
+    unsigned int oldCurrNodes = this->currEulerNodes;
     #if IBM_DEBUG
     unsigned int hit = 0;
     const unsigned int totalNodes = (maxZ-minZ+1)*(maxY-minY+1)*(maxX-minX+1);
     #endif
-
+    printf("pos %f %f %f\n", pos.x, pos.y, pos.z);
     for(int k=minZ; k <= maxZ; k++){
         for(int j=minY; j <= maxY; j++){
             for(int i=minX; i <= maxX; i++){
@@ -138,6 +222,8 @@ void ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint32_t mas
     printf("Hit ratio for mask %x with %d nodes: %%%.2f\n", mask, totalNodes, 100.0*(dfloat)hit/totalNodes);
     #endif
 
+    // Return number of added nodes
+    return this->currEulerNodes - oldCurrNodes;
 }
 
 __global__

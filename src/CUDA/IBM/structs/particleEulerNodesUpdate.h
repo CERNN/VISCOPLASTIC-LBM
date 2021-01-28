@@ -18,6 +18,8 @@ typedef struct particleEulerNodesUpdate{
     unsigned int maxEulerNodes;
     // Current number of euler nodes to update
     unsigned int currEulerNodes;
+    // Number of euler nodes that are fixed
+    unsigned int eulerFixedNodes;
 
     // Movable particles centers pointers
     ParticleCenter** pCenterMovable;
@@ -36,13 +38,16 @@ typedef struct particleEulerNodesUpdate{
     void initializeEulerNodes(ParticleCenter p[NUM_PARTICLES]);
 
     __host__
+    void freeEulerNodes();
+
+    __host__
     void checkParticlesMovement();
 
     __host__
-    void removeUnneededEulerNodes();
+    void removeUnneededEulerNodes(uint32_t maskRemove);
 
     __host__
-    void updateEulerNodes(ParticleCenter* p, uint32_t mask);
+    unsigned int updateEulerNodes(ParticleCenter* p, uint32_t mask);
 
 } ParticleEulerNodesUpdate;
 

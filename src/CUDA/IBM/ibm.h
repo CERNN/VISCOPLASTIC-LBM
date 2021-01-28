@@ -51,7 +51,7 @@ void gpuForceInterpolationSpread(
 
 
 __global__
-void gpuUpdateMacrResetForces(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
+void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
     #if IBM_EULER_OPTIMIZATION
     , size_t* eulerIdxsUpdate, unsigned int currEulerNodes
     #endif

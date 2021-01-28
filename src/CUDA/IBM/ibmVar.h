@@ -37,16 +37,28 @@
 // with a ratio of more than 5% between lagrangian and eulerian nodes)
 #define IBM_EULER_OPTIMIZATION true
 // "Shell thickness" to consider. The Euler nodes are updated every time 
-// the particle moves more than this value. For fixed particle this does 
-// not influence. 
-// The higher the value of this, more Euler nodes will be updated every step and
+// the particle moves more than IBM_EULER_UPDATE_DIST value and all nodes with 
+// less than IBM_EULER_SHELL_THICKNESS+P_DIST distant from the particle are updated.
+// For fixed particles these values does not influence.
+// The higher the value, more Euler nodes will be updated every step and
 // performance may decrease.
 // This value is a tradeoff between:
 // Calculate euler nodes that must be updated (lower the value or higher the 
 //        particle movement, more frequent this update will be)
 // vs.
 // Number of euler nodes updated (higher value, higher the eulerian nodes)
-#define IBM_EULER_SHELL_THICKNESS (2.0)
+// The difference between IBM_EULER_SHELL_THICKNESS and IBM_EULER_UPDATE_DIST must
+// be low enough so that the particle doesn't move more than that in 
+// IBM_EULER_UPDATE_INTERVAL steps
+#define IBM_EULER_SHELL_THICKNESS (0.5)
+// MUST BE LOWER OR EQUAL TO IBM_EULER_SHELL_THICKNESS, 
+// (equal if IBM_EULER_UPDATE_INTERVAL=1)
+#define IBM_EULER_UPDATE_DIST (0.5)
+// Every interval to check for update of particles. Note that if particle moves
+// more than plannes in this interval it may lead to simulations errors. Leave
+// 1 if you're not interested in this optimization
+#define IBM_EULER_UPDATE_INTERVAL (1)
+
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
@@ -66,7 +78,7 @@ constexpr dfloat FLUID_DENSITY = 1;
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = 0.0;
+constexpr dfloat GZ = 1e-3;
 /* -------------------------------------------------------------------------- */
 
 /* -------------------------- COLLISION PARAMETERS -------------------------- */
@@ -93,9 +105,10 @@ constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 #endif
 /* -------------------------------------------------------------------------- */
 
-/* ------------------------ THREADS AND GRIDS FOR IBM ----------------------- */
+// Some prints to test IBM
+#define IBM_DEBUG true
 
-#define IBM_DEBUG false
+/* ------------------------ THREADS AND GRIDS FOR IBM ----------------------- */
 // Threads for IBM particles
 constexpr unsigned int THREADS_PARTICLES_IBM = NUM_PARTICLES > 64 ? 64 : NUM_PARTICLES;
 // Grid for IBM particles
