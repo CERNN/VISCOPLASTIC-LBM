@@ -20,7 +20,6 @@ ParticleEulerNodesUpdate::~particleEulerNodesUpdate(){
 #if IBM_EULER_OPTIMIZATION
 __host__
 void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICLES]){
-    
     int nParticlesFixed = 0;
     int idxFixed[NUM_PARTICLES], idxMoving[NUM_PARTICLES];
     // Pre process particles to calculate some necessary values
@@ -102,6 +101,10 @@ void ParticleEulerNodesUpdate::checkParticlesMovement(){
             (pos.x-posOld.x)*(pos.x-posOld.x)+
             (pos.y-posOld.y)*(pos.y-posOld.y)+
             (pos.z-posOld.z)*(pos.z-posOld.z));
+        #if IBM_DEBUG
+        // printf("pos %d: %f %f %f. Old: %f %f %f\n", i, pos.x, pos.y, pos.z, posOld.x, posOld.y, posOld.z);
+        // printf("dist %d: %f. Min: %f\n", i, distSq, IBM_EULER_UPDATE_DIST*IBM_EULER_UPDATE_DIST);
+        #endif
         // Check if particle moved more than IBM_EULER_SHELL_THICKNESS
         if(distSq >= (IBM_EULER_UPDATE_DIST*IBM_EULER_UPDATE_DIST)){
             // Add its particle to remove/update euler nodes
@@ -118,6 +121,7 @@ void ParticleEulerNodesUpdate::checkParticlesMovement(){
         while(maskRemove > 0){
             if(maskRemove & 0b1){
                 this->updateEulerNodes(this->pCenterMovable[count], 0b1 << (count+shift));
+                this->particlesLastPos[count] = this->pCenterMovable[count]->pos;
             }
             maskRemove >>= 1;
             count += 1;
@@ -180,9 +184,9 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
         sphereShellThick += IBM_EULER_SHELL_THICKNESS;
     dfloat addTerm = radius+sphereShellThick;
 
-    const int maxX = myMin(pos.x+addTerm+1, NX); // +1 for ceil
-    const int maxY = myMin(pos.y+addTerm+1, NY); 
-    const int maxZ = myMin(pos.z+addTerm+1, NZ); 
+    const int maxX = myMin(pos.x+addTerm+1, NX-1); // +1 for ceil
+    const int maxY = myMin(pos.y+addTerm+1, NY-1); 
+    const int maxZ = myMin(pos.z+addTerm+1, NZ-1); 
 
     const int minX = myMax(pos.x-addTerm, 0);
     const int minY = myMax(pos.y-addTerm, 0);
@@ -193,9 +197,11 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
     unsigned int oldCurrNodes = this->currEulerNodes;
     #if IBM_DEBUG
     unsigned int hit = 0;
-    const unsigned int totalNodes = (maxZ-minZ+1)*(maxY-minY+1)*(maxX-minX+1);
+    const int totalNodes = (maxZ-minZ+1)*(maxY-minY+1)*(maxX-minX+1);
+    printf("Mask %x pos %d %d %d min %d %d %d max %d %d %d total nodes %d\n", mask, 
+        pos.x, pos.y, pos.z, minX, minY, minZ, maxX, maxY, maxZ, totalNodes);
     #endif
-    printf("pos %f %f %f\n", pos.x, pos.y, pos.z);
+
     for(int k=minZ; k <= maxZ; k++){
         for(int j=minY; j <= maxY; j++){
             for(int i=minX; i <= maxX; i++){
@@ -205,6 +211,7 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
                     +(i-pos.x)*(i-pos.x));
                 if(distSq <= maxDistSq && distSq >= minDistSq){
                     size_t idx = idxScalar(i, j, k);
+                    // printf("%d=%d, %d=%d, %d=%d\n", i, idx%NX, j, (idx/NX)%NY, k, (idx/NX)/NY);
                     // Add Euler indexes to update
                     this->eulerIndexesUpdate[this->currEulerNodes] = idx;
                     // Update mask array
@@ -220,6 +227,7 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
     }
     #if IBM_DEBUG
     printf("Hit ratio for mask %x with %d nodes: %%%.2f\n", mask, totalNodes, 100.0*(dfloat)hit/totalNodes);
+    printf("Max nodes: %d. Curr nodes: %d \n", this->maxEulerNodes, this->currEulerNodes);
     #endif
 
     // Return number of added nodes

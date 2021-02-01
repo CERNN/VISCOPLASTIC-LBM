@@ -28,24 +28,25 @@
 /* -------------------------------------------------------------------------- */
 
 #ifdef SINGLE_PRECISION
-    typedef float dfloat;      // single or double precision
+    typedef float dfloat;      // single precision
 #endif
 #ifdef DOUBLE_PRECISION
-    typedef double dfloat;      // single or double precision
+    typedef double dfloat;      // double precision
 #endif
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
-#define ID_SIM "000"            // prefix for simulation's files
-#define PATH_FILES "ParallelPlatesBB"  // path to save simulation's files
+#define ID_SIM "800"            // prefix for simulation's files
+#define PATH_FILES "testeIBMPart"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
 /* ------------------------------------------------------------------------- */
 
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
-constexpr int N_STEPS = 10000;          // maximum number of time steps
-#define MACR_SAVE 100                  // saves macroscopics every MACR_SAVE steps
-#define DATA_REPORT 100                // report every DATA_REPORT steps
+constexpr unsigned int SCALE = 1;
+constexpr int N_STEPS = 5;          // maximum number of time steps
+#define MACR_SAVE (222500)                  // saves macroscopics every MACR_SAVE steps
+#define DATA_REPORT (1)                // report every DATA_REPORT steps
  
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
@@ -67,14 +68,14 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 // File names to load
 #define STR_POP "pop.bin"
 #define STR_POP_AUX "pop_aux.bin"
-#define STR_RHO "rho.bin"
-#define STR_UX "ux.bin"
-#define STR_UY "uy.bin"
-#define STR_UZ "uz.bin"
+#define STR_RHO "./fixedSphere/001/001_rho050000.bin"
+#define STR_UX "./fixedSphere/001/001_ux050000.bin"
+#define STR_UY "./fixedSphere/001/001_uy050000.bin"
+#define STR_UZ "./fixedSphere/001/001_uz050000.bin"
 // Files for IBM
-#define STR_FX "ux.bin"
-#define STR_FY "uy.bin"
-#define STR_FZ "uz.bin"
+#define STR_FX "./fixedSphere/001/001_fx050000.bin"
+#define STR_FY "./fixedSphere/001/001_fy050000.bin"
+#define STR_FZ "./fixedSphere/001/001_fz050000.bin"
 // Files for non newtonian
 #define STR_OMEGA "omega.bin"
 /* ------------------------------------------------------------------------- */
@@ -83,27 +84,27 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 /* --------------------------  SIMULATION DEFINES -------------------------- */
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 
-constexpr unsigned int N = 180;
-constexpr unsigned int NX = N;        // size x of the grid 
+constexpr int N = 60*SCALE;
+constexpr int NX = 128;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr unsigned int NY = N;        // size y of the grid
-constexpr unsigned int NZ = 2*N;        // size z of the grid in one GPU
-constexpr unsigned int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
+constexpr int NY = 128;        // size y of the grid
+constexpr int NZ = 360;        // size z of the grid in one GPU
+constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
-constexpr dfloat U_MAX = 0.05;           // max velocity
+constexpr dfloat U_MAX = 1.0/60.0;           // max velocity
 
-constexpr dfloat TAU = 0.72942;     // relaxation time
+constexpr dfloat TAU = 0.6;     // relaxation time
 constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
 
 constexpr dfloat RHO_0 = 1;         // initial rho
 
 constexpr dfloat FX = 0;        // force in x
 constexpr dfloat FY = 0;        // force in y
-constexpr dfloat FZ = 0; //1e-6;     // force in z (flow direction in most cases)
+constexpr dfloat FZ = 0;        // force in z (flow direction in most cases)
 
 // values options for boundary conditions
 __device__ const dfloat UX_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
-__device__ const dfloat UY_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
+__device__ const dfloat UY_BC[8] = { 0, U_MAX/2, -U_MAX/2, 0, 0, 0, 0, 0 };
 __device__ const dfloat UZ_BC[8] = { 0, U_MAX/2, -U_MAX/2, 0, 0, 0, 0, 0 };
 __device__ const dfloat RHO_BC[8] = { RHO_0, 1, 1, 1, 1, 1, 1, 1 };
 

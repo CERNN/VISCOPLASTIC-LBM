@@ -29,16 +29,21 @@ void immersedBoundaryMethod(
     const unsigned int sharedMemInterpSpread = threadsNodesIBM * sizeof(dfloat3) * 2;
 
     #if IBM_EULER_OPTIMIZATION
+    //for(int i = 0; i < pEulerNodes->currEulerNodes; i++){
+    //    printf("%p\n", pEulerNodes->eulerIndexesUpdate[i]);
+    //}
+    //exit(-1);
     // Grid size for euler nodes update
     dim3 currGrid(pEulerNodes->currEulerNodes/64+(pEulerNodes->currEulerNodes%64? 1 : 0), 1, 1);
     if(pEulerNodes->currEulerNodes > 0){
         // Update macroscopics post boundary conditions and reset forces
         gpuUpdateMacrIBM<<<currGrid, 64, 0, streamLBM[0]>>>(pop[0], macr[0], velsAuxIBM[0], 
             pEulerNodes->eulerIndexesUpdate, pEulerNodes->currEulerNodes);
+        checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
     }
     #else
     // Update macroscopics post boundary conditions and reset forces
-    gpuUpdateMacrResetForces<<<gridLBM, threadsLBM, 0, streamLBM[0]>>>(pop[0], macr[0], velsAuxIBM[0]);
+    gpuUpdateMacrIBM<<<gridLBM, threadsLBM, 0, streamLBM[0]>>>(pop[0], macr[0], velsAuxIBM[0]);
     checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
     #endif
 
@@ -51,10 +56,6 @@ void immersedBoundaryMethod(
     gpuUpdateParticleCenterVelocityAndRotation <<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0] >>>(
         particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-
-    #if IBM_EULER_OPTIMIZATION
-    checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
-    #endif
 
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
@@ -106,7 +107,7 @@ void gpuForceInterpolationSpread(
     // TODO: update atomic double add to use only if is double
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
     // Shared memory to sum particles values to particle center
-    __shared__ dfloat3 sumPC[2][64];
+    // __shared__ dfloat3 sumPC[2][64];
 
     if (i >= particlesNodes.numNodes)
         return;
@@ -119,6 +120,7 @@ void gpuForceInterpolationSpread(
     const dfloat zIBM = particlesNodes.pos.z[i];
     const dfloat pos[3] = {xIBM, yIBM, zIBM};
 
+
     // Calculate stencils to use and the valid interval [xyz][idx]
     dfloat stencilVal[3][P_DIST*2];
     // Base position for every index (leftest in x)
@@ -128,14 +130,19 @@ void gpuForceInterpolationSpread(
         (posBase[0]+P_DIST*2-1) < (int)NX? P_DIST*2-1 : ((int)NX-1-posBase[0]), 
         (posBase[1]+P_DIST*2-1) < (int)NY? P_DIST*2-1 : ((int)NY-1-posBase[1]), 
         (posBase[2]+P_DIST*2-1) < (int)NZ? P_DIST*2-1 : ((int)NZ-1-posBase[2])};
-    // Particle stencil out of the domain
-    if(maxIdx[0] <= 0 || maxIdx[1] <= 0 || maxIdx[2] <= 0)
-        return;
     // Minimum stencil index for each direction xyz ("index" to start)
     const int minIdx[3] = {
         posBase[0] >= 0? 0 : -posBase[0], 
         posBase[1] >= 0? 0 : -posBase[1], 
         posBase[2] >= 0? 0 : -posBase[2]};
+
+    //if(pos[0] >= NX || pos[1] >= NY || pos[2] >= NZ){
+    //    printf("mymax %d %d %d mymin %d %d %d\n", maxIdx[0], maxIdx[1],maxIdx[2], minIdx[0],minIdx[1],minIdx[2]);
+    //}
+
+    // Particle stencil out of the domain
+    if(maxIdx[0] <= 0 || maxIdx[1] <= 0 || maxIdx[2] <= 0)
+        return;
     // Particle stencil out of the domain
     if(minIdx[0] >= P_DIST*2 || minIdx[1] >= P_DIST*2 || minIdx[2] >= P_DIST*2)
         return;
@@ -266,90 +273,13 @@ void gpuForceInterpolationSpread(
         (xIBM - x_pc) * deltaF.y - (yIBM - y_pc) * deltaF.x
     );
 
-    // If it is last block, just do atomic add global
-    if(blockIdx.x == (blockDim.x-1)){
-        atomicAdd(&(particleCenters[idx].f.x), deltaF.x);
-        atomicAdd(&(particleCenters[idx].f.y), deltaF.y);
-        atomicAdd(&(particleCenters[idx].f.z), deltaF.z);
+    atomicAdd(&(particleCenters[idx].f.x), deltaF.x);
+    atomicAdd(&(particleCenters[idx].f.y), deltaF.y);
+    atomicAdd(&(particleCenters[idx].f.z), deltaF.z);
 
-        atomicAdd(&(particleCenters[idx].M.x), deltaMomentum.x);
-        atomicAdd(&(particleCenters[idx].M.y), deltaMomentum.y);
-        atomicAdd(&(particleCenters[idx].M.z), deltaMomentum.z);
-        return;
-    }
-
-    // Add node force to particle center
-    // TODO: check if shared memory is more efficient
-    // Map algorithm for sum of the forces on the particle
-    const int idxL = threadIdx.x;
-    sumPC[0][idxL].x = deltaF.x;
-    sumPC[0][idxL].y = deltaF.y;
-    sumPC[0][idxL].z = deltaF.z;
-    sumPC[1][idxL].x = deltaMomentum.x;
-    sumPC[1][idxL].y = deltaMomentum.y;
-    sumPC[1][idxL].z = deltaMomentum.z;
-
-    if(idxL < 64/2){
-        sumPC[0][idxL].x += sumPC[0][idxL+64/2].x;
-        sumPC[0][idxL].y += sumPC[0][idxL+64/2].y;
-        sumPC[0][idxL].z += sumPC[0][idxL+64/2].z;
-        sumPC[1][idxL].x += sumPC[1][idxL+64/2].x;
-        sumPC[1][idxL].y += sumPC[1][idxL+64/2].y;
-        sumPC[1][idxL].z += sumPC[1][idxL+64/2].z;
-    }
-    __syncthreads();
-    if(idxL < 64/4){
-        sumPC[0][idxL].x += sumPC[0][idxL+64/4].x;
-        sumPC[0][idxL].y += sumPC[0][idxL+64/4].y;
-        sumPC[0][idxL].z += sumPC[0][idxL+64/4].z;
-        sumPC[1][idxL].x += sumPC[1][idxL+64/4].x;
-        sumPC[1][idxL].y += sumPC[1][idxL+64/4].y;
-        sumPC[1][idxL].z += sumPC[1][idxL+64/4].z;
-    }
-    __syncthreads();
-    if(idxL < 64/8){
-        sumPC[0][idxL].x += sumPC[0][idxL+64/8].x;
-        sumPC[0][idxL].y += sumPC[0][idxL+64/8].y;
-        sumPC[0][idxL].z += sumPC[0][idxL+64/8].z;
-        sumPC[1][idxL].x += sumPC[1][idxL+64/8].x;
-        sumPC[1][idxL].y += sumPC[1][idxL+64/8].y;
-        sumPC[1][idxL].z += sumPC[1][idxL+64/8].z;
-    }
-    __syncthreads();
-    if(idxL < 64/16){
-        sumPC[0][idxL].x += sumPC[0][idxL+64/16].x;
-        sumPC[0][idxL].y += sumPC[0][idxL+64/16].y;
-        sumPC[0][idxL].z += sumPC[0][idxL+64/16].z;
-        sumPC[1][idxL].x += sumPC[1][idxL+64/16].x;
-        sumPC[1][idxL].y += sumPC[1][idxL+64/16].y;
-        sumPC[1][idxL].z += sumPC[1][idxL+64/16].z;
-    }
-    __syncthreads();
-    if(idxL < 64/32){
-        sumPC[0][idxL].x += sumPC[0][idxL+64/32].x;
-        sumPC[0][idxL].y += sumPC[0][idxL+64/32].y;
-        sumPC[0][idxL].z += sumPC[0][idxL+64/32].z;
-        sumPC[1][idxL].x += sumPC[1][idxL+64/32].x;
-        sumPC[1][idxL].y += sumPC[1][idxL+64/32].y;
-        sumPC[1][idxL].z += sumPC[1][idxL+64/32].z;
-    }
-    __syncthreads();
-
-    if(idxL == 0){
-        sumPC[0][idxL].x += sumPC[0][1].x;
-        sumPC[0][idxL].y += sumPC[0][1].y;
-        sumPC[0][idxL].z += sumPC[0][1].z;
-        sumPC[1][idxL].x += sumPC[1][1].x;
-        sumPC[1][idxL].y += sumPC[1][1].y;
-        sumPC[1][idxL].z += sumPC[1][1].z;
-        atomicAdd(&(particleCenters[idx].f.x), sumPC[0][idxL].x);
-        atomicAdd(&(particleCenters[idx].f.y), sumPC[0][idxL].y);
-        atomicAdd(&(particleCenters[idx].f.z), sumPC[0][idxL].z);
-
-        atomicAdd(&(particleCenters[idx].M.x), sumPC[1][idxL].x);
-        atomicAdd(&(particleCenters[idx].M.y), sumPC[1][idxL].y);
-        atomicAdd(&(particleCenters[idx].M.z), sumPC[1][idxL].z);
-    }
+    atomicAdd(&(particleCenters[idx].M.x), deltaMomentum.x);
+    atomicAdd(&(particleCenters[idx].M.y), deltaMomentum.y);
+    atomicAdd(&(particleCenters[idx].M.z), deltaMomentum.z);
 }
 
 __global__
@@ -364,6 +294,7 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
     if(j >= currEulerNodes)
         return;
     size_t idx = eulerIdxsUpdate[j];
+
     #else
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
@@ -378,7 +309,7 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
     dfloat fNode[Q];
     for (unsigned char i = 0; i < Q; i++)
         // fNode[i] = pop.pop[idxPop(x, y, z, i)];
-        fNode[i] = pop.pop[idx*(1+i)];
+        fNode[i] = pop.pop[idx+i*NUMBER_LBM_NODES];
 
     // Already reseted in LBM kernel, when using IBM
     // macr.f.x[idx] = FX;

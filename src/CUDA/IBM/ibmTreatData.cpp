@@ -22,8 +22,8 @@ void treatDataIBM(IBMProc* procIBM, ParticlesSoA particles)
     dfloat tArea = M_PI*pc->radius*pc->radius;
 
     // Fixed sphere
-    procIBM->reynolds = U_MAX*2*pc->radius/nu;
-    procIBM->cd = 2*pc->f.z/(U_MAX*U_MAX*tArea);
+    // procIBM->reynolds = U_MAX*2*pc->radius/nu;
+    // procIBM->cd = 2*pc->f.z/(U_MAX*U_MAX*tArea);
 
     // Falling sphere
     // procIBM->reynolds = pc->vel.z*pc->radius*2/nu;

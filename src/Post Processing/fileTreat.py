@@ -3,13 +3,13 @@ import glob
 import numpy as np
 
 # ALL FILES IN THE FOLDER MUST BE FROM THE SAME SIMULATION
-PATH = "../../bin/parallelPlatesBB/999/"
+PATH = "../../bin/testeIBMPart/800/"
 
 __macr_names__ = ['ux', 'uy', 'uz', 'rho']
 # Uncomment below for IBM
-# __macr_names__ += ['fx', 'fy', 'fz']
+__macr_names__ += ['fx', 'fy', 'fz']
 # Uncomment below for NNF
-__macr_names__ += ['omega']
+# __macr_names__ += ['omega']
 
 __info__ = dict()
 

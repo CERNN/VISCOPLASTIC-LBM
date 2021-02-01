@@ -321,7 +321,7 @@ int main()
         }
         // Save macroscopics to array in LBM kernel
         bool save_macr_to_array;
-        #ifdef IBM
+        #if defined(IBM) && !(IBM_EULER_OPTIMIZATION)
         save_macr_to_array = false;
         #else
         save_macr_to_array = rep || save || repIBM || ((step+1)>=(int)N_STEPS);
@@ -384,7 +384,7 @@ int main()
 
         #if IBM_EULER_OPTIMIZATION
         // printf("step %d\n", step);
-        if(step % IBM_EULER_UPDATE_INTERVAL)
+        if((step % IBM_EULER_UPDATE_INTERVAL) == 0)
             pEulerNodes.checkParticlesMovement();
         #endif
 

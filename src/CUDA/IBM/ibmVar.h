@@ -50,35 +50,35 @@
 // The difference between IBM_EULER_SHELL_THICKNESS and IBM_EULER_UPDATE_DIST must
 // be low enough so that the particle doesn't move more than that in 
 // IBM_EULER_UPDATE_INTERVAL steps
-#define IBM_EULER_SHELL_THICKNESS (0.5)
+#define IBM_EULER_SHELL_THICKNESS (10.0)
 // MUST BE LOWER OR EQUAL TO IBM_EULER_SHELL_THICKNESS, 
 // (equal if IBM_EULER_UPDATE_INTERVAL=1)
-#define IBM_EULER_UPDATE_DIST (0.5)
+#define IBM_EULER_UPDATE_DIST (5.0)
 // Every interval to check for update of particles. Note that if particle moves
-// more than plannes in this interval it may lead to simulations errors. Leave
-// 1 if you're not interested in this optimization
-#define IBM_EULER_UPDATE_INTERVAL (1)
+// more than plannes in this interval it may lead to simulations errors. 
+// Leave as 1 if you're not interested in this optimization
+#define IBM_EULER_UPDATE_INTERVAL (5)
 
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (0)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (0)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (1)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (1)                   // Report IBM treated data every given steps (0 not report)
  
-#define IBM_DATA_STOP true                 // stop condition by IBM treated data
+#define IBM_DATA_STOP false                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE true                 // save reported IBM data to file
 
-#define IBM_PARTICLES_NODES_SAVE false      // Saves particles nodes data
+#define IBM_PARTICLES_NODES_SAVE true      // Saves particles nodes data
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 1.154639175;
+constexpr dfloat PARTICLE_DENSITY = 2.154639175;
 constexpr dfloat FLUID_DENSITY = 1;
 
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = 1e-3;
+constexpr dfloat GZ = -1e-4;
 /* -------------------------------------------------------------------------- */
 
 /* -------------------------- COLLISION PARAMETERS -------------------------- */
