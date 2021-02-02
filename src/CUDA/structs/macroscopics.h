@@ -137,7 +137,7 @@ public:
         size_t memSize = (all_domain ? TOTAL_MEM_SIZE_SCALAR : MEM_SIZE_SCALAR);
 
         cudaStream_t streamRho, streamUx, streamUy, streamUz;
-        #ifdef IBM
+        #if defined(IBM) && EXPORT_FORCES
         cudaStream_t streamFx, streamFy, streamFz;
         #endif
         #ifdef NON_NEWTONIAN_FLUID
@@ -148,7 +148,7 @@ public:
         checkCudaErrors(cudaStreamCreate(&(streamUx)));
         checkCudaErrors(cudaStreamCreate(&(streamUy)));
         checkCudaErrors(cudaStreamCreate(&(streamUz)));
-        #ifdef IBM
+        #if defined(IBM) && EXPORT_FORCES
         checkCudaErrors(cudaStreamCreate(&(streamFx)));
         checkCudaErrors(cudaStreamCreate(&(streamFy)));
         checkCudaErrors(cudaStreamCreate(&(streamFz)));
@@ -167,7 +167,7 @@ public:
         checkCudaErrors(cudaMemcpyAsync(this->u.z+baseIdx, macrRef->u.z+baseIdxRef,
             memSize, cudaMemcpyDefault, streamUz));
 
-        #ifdef IBM
+        #if defined(IBM) && EXPORT_FORCES
         checkCudaErrors(cudaMemcpyAsync(this->f.x+baseIdx, macrRef->f.x+baseIdxRef, 
             memSize, cudaMemcpyDefault, streamFx));
         checkCudaErrors(cudaMemcpyAsync(this->f.y+baseIdx, macrRef->f.y+baseIdxRef, 
@@ -190,7 +190,7 @@ public:
         checkCudaErrors(cudaStreamDestroy(streamUx));
         checkCudaErrors(cudaStreamDestroy(streamUy));
         checkCudaErrors(cudaStreamDestroy(streamUz));
-        #ifdef IBM
+        #if defined(IBM) && EXPORT_FORCES
         checkCudaErrors(cudaStreamDestroy(streamFx));
         checkCudaErrors(cudaStreamDestroy(streamFy));
         checkCudaErrors(cudaStreamDestroy(streamFz));

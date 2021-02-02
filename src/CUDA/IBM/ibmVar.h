@@ -20,7 +20,7 @@
 // Number of IBM inner iterations
 #define IBM_MAX_ITERATION 3
 // Particles diameters
-#define PARTICLE_DIAMETER (10)
+#define PARTICLE_DIAMETER (15*SCALE)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -28,7 +28,9 @@
 // Lock particle rotation (UNUSED)
 // #define ROTATION_LOCK true
 // Assumed boundary thickness for IBM
-#define IBM_THICKNESS (1) 
+#define IBM_THICKNESS (1)
+// Transfer and save forces along with macroscopics
+#define EXPORT_FORCES false
 /* ------------------------------------------------------------------------- */
 
 
@@ -50,35 +52,35 @@
 // The difference between IBM_EULER_SHELL_THICKNESS and IBM_EULER_UPDATE_DIST must
 // be low enough so that the particle doesn't move more than that in 
 // IBM_EULER_UPDATE_INTERVAL steps
-#define IBM_EULER_SHELL_THICKNESS (10.0)
+#define IBM_EULER_SHELL_THICKNESS (2.0)
 // MUST BE LOWER OR EQUAL TO IBM_EULER_SHELL_THICKNESS, 
 // (equal if IBM_EULER_UPDATE_INTERVAL=1)
-#define IBM_EULER_UPDATE_DIST (5.0)
+#define IBM_EULER_UPDATE_DIST (1.0)
 // Every interval to check for update of particles. Note that if particle moves
 // more than plannes in this interval it may lead to simulations errors. 
 // Leave as 1 if you're not interested in this optimization
-#define IBM_EULER_UPDATE_INTERVAL (5)
+#define IBM_EULER_UPDATE_INTERVAL (10)
 
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (1)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (1)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (100*SCALE*SCALE)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (100*SCALE*SCALE)                   // Report IBM treated data every given steps (0 not report)
  
-#define IBM_DATA_STOP false                 // stop condition by IBM treated data
+#define IBM_DATA_STOP true                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE true                 // save reported IBM data to file
 
 #define IBM_PARTICLES_NODES_SAVE true      // Saves particles nodes data
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 2.154639175;
+constexpr dfloat PARTICLE_DENSITY = 1.154639;
 constexpr dfloat FLUID_DENSITY = 1;
 
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = -1e-4;
+constexpr dfloat GZ = -1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------------------------------------------------------- */
 
 /* -------------------------- COLLISION PARAMETERS -------------------------- */
@@ -106,7 +108,7 @@ constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 /* -------------------------------------------------------------------------- */
 
 // Some prints to test IBM
-#define IBM_DEBUG true
+#define IBM_DEBUG false
 
 /* ------------------------ THREADS AND GRIDS FOR IBM ----------------------- */
 // Threads for IBM particles

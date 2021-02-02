@@ -35,18 +35,18 @@
 #endif
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
-#define ID_SIM "800"            // prefix for simulation's files
-#define PATH_FILES "testeIBMPart"  // path to save simulation's files
+#define ID_SIM "011"            // prefix for simulation's files
+#define PATH_FILES "testeOptFallingSphere"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
 /* ------------------------------------------------------------------------- */
 
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
-constexpr unsigned int SCALE = 1;
-constexpr int N_STEPS = 5;          // maximum number of time steps
-#define MACR_SAVE (222500)                  // saves macroscopics every MACR_SAVE steps
-#define DATA_REPORT (1)                // report every DATA_REPORT steps
+constexpr unsigned int SCALE = 2;
+constexpr int N_STEPS = 500000;          // maximum number of time steps
+#define MACR_SAVE (0)                  // saves macroscopics every MACR_SAVE steps
+#define DATA_REPORT (500*SCALE*SCALE)                // report every DATA_REPORT steps
  
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
@@ -85,15 +85,15 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 
 constexpr int N = 60*SCALE;
-constexpr int NX = 128;        // size x of the grid 
+constexpr int NX = 100*SCALE;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr int NY = 128;        // size y of the grid
-constexpr int NZ = 360;        // size z of the grid in one GPU
+constexpr int NY = 100*SCALE;        // size y of the grid
+constexpr int NZ = 160*SCALE;        // size z of the grid in one GPU
 constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
-constexpr dfloat U_MAX = 1.0/60.0;           // max velocity
+constexpr dfloat U_MAX = 0;           // max velocity
 
-constexpr dfloat TAU = 0.6;     // relaxation time
+constexpr dfloat TAU = 0.9;     // relaxation time
 constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
 
 constexpr dfloat RHO_0 = 1;         // initial rho
@@ -105,7 +105,7 @@ constexpr dfloat FZ = 0;        // force in z (flow direction in most cases)
 // values options for boundary conditions
 __device__ const dfloat UX_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
 __device__ const dfloat UY_BC[8] = { 0, U_MAX/2, -U_MAX/2, 0, 0, 0, 0, 0 };
-__device__ const dfloat UZ_BC[8] = { 0, U_MAX/2, -U_MAX/2, 0, 0, 0, 0, 0 };
+__device__ const dfloat UZ_BC[8] = { 0, U_MAX, -U_MAX, 0, 0, 0, 0, 0 };
 __device__ const dfloat RHO_BC[8] = { RHO_0, 1, 1, 1, 1, 1, 1, 1 };
 
 constexpr dfloat RESID_MAX = 1e-5;      // maximal residual
@@ -120,6 +120,15 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
                                     // in normal distribution
 /* ------------------------------------------------------------------------- */
 
+/* -------------------- BOUNDARY CONDITIONS TO COMPILE --------------------- */
+#define COMP_ALL_BC false                // Compile all boundary conditions
+#define COMP_BOUNCE_BACK true          // Compile bounce back
+#define COMP_FREE_SLIP true            // Compile free slip
+#define COMP_PRES_ZOU_HE false          // Compile pressure zou-he
+#define COMP_VEL_ZOU_HE false           // Compile velocity zou he
+#define COMP_VEL_BOUNCE_BACK true      // Compile velocityr bounce back
+#define COMP_INTERP_BOUNCE_BACK false   // Compile interpolated bounce back
+/* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */

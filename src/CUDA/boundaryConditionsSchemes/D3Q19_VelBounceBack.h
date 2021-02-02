@@ -10,6 +10,7 @@
 #define __BC_VEL_BOUNCE_BACK_D3Q19_H
 
 #include "./../globalFunctions.h"
+#include "./../structs/nodeTypeMap.h"
 #include <cuda_runtime.h>
 
 /*

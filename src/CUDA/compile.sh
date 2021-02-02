@@ -20,7 +20,7 @@ then
         ./boundaryConditionsSchemes/*.cu \
         -lcudadevrt -lcurand -o ./../../bin/$2sim_$1_sm${CC}
 else
-    echo "Input error, example of usage is:" 
+    echo "Input error, example of usage is"
     echo "sh compile.sh D3Q19 011"
     echo "sh compile.sh D3Q27 202"
 fi

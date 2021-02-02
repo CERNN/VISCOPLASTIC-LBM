@@ -37,28 +37,40 @@ void gpuBoundaryConditions(NodeTypeMap* gpuNT,
     */
     switch(gpuNT->getSchemeBC())
     {
+    #ifdef BC_SCHEME_BOUNCE_BACK
     case BC_SCHEME_BOUNCE_BACK:
         gpuSchBounceBack(gpuNT, fPostStream, fPostCol, x, y, z);
         break;
+    #endif
+    #ifdef BC_SCHEME_VEL_BOUNCE_BACK
     case BC_SCHEME_VEL_BOUNCE_BACK:
         gpuSchVelBounceBack(gpuNT, fPostStream, fPostCol, x, y, z);
         break;  
+    #endif
+    #ifdef BC_SCHEME_VEL_ZOUHE
     case BC_SCHEME_VEL_ZOUHE:
         gpuSchVelZouHe(gpuNT, fPostStream, fPostCol, x, y, z);
         break;
+    #endif
+    #ifdef BC_SCHEME_PRES_ZOUHE
     case BC_SCHEME_PRES_ZOUHE:
         gpuSchPresZouHe(gpuNT, fPostStream, fPostCol, x, y, z);
         break;
+    #endif
+    #ifdef BC_SCHEME_FREE_SLIP
     case BC_SCHEME_FREE_SLIP:
         gpuSchFreeSlip(gpuNT, fPostStream, fPostCol, x, y, z);
         break;
-    case BC_SCHEME_SPECIAL:
-        gpuSchSpecial(gpuNT, fPostStream, fPostCol, x, y, z);
-        break;
+    #endif
+    #ifdef BC_SCHEME_INTERP_BOUNCE_BACK
     case BC_SCHEME_INTERP_BOUNCE_BACK:
         gpuBCInterpolatedBounceBack((unsigned char)(gpuNT->getBitsUnknownPopsInterpBB()), 
             (bool)(gpuNT->getIsInsideNodeInterpoBB()),
             fPostStream, fPostCol, x, y, z);
+        break;
+    #endif
+    case BC_SCHEME_SPECIAL:
+        gpuSchSpecial(gpuNT, fPostStream, fPostCol, x, y, z);
         break;
     default:
         break;
@@ -66,6 +78,7 @@ void gpuBoundaryConditions(NodeTypeMap* gpuNT,
 }
 
 
+#ifdef BC_SCHEME_FREE_SLIP
 __device__
 void gpuSchFreeSlip(NodeTypeMap* gpuNT, 
     dfloat* fPostStream,
@@ -103,8 +116,10 @@ void gpuSchFreeSlip(NodeTypeMap* gpuNT,
         break;
     }
 }
+#endif
 
 
+#ifdef BC_SCHEME_BOUNCE_BACK
 __device__
 void gpuSchBounceBack(NodeTypeMap* gpuNT, 
     dfloat* fPostStream,
@@ -243,8 +258,10 @@ void gpuSchBounceBack(NodeTypeMap* gpuNT,
         break;
     }
 }
+#endif
 
 
+#ifdef BC_SCHEME_VEL_BOUNCE_BACK
 __device__
 void gpuSchVelBounceBack(NodeTypeMap* gpuNT, 
     dfloat* fPostStream,
@@ -283,10 +300,12 @@ void gpuSchVelBounceBack(NodeTypeMap* gpuNT,
     default:
         break;
     }
-    #endif
+    #endif // D3Q19
 }
+#endif
 
 
+#ifdef BC_SCHEME_PRES_ZOUHE
 __device__
 void gpuSchPresZouHe(NodeTypeMap* gpuNT, 
     dfloat* fPostStream, 
@@ -324,10 +343,12 @@ void gpuSchPresZouHe(NodeTypeMap* gpuNT,
     default:
         break;
     }
-    #endif
+    #endif // D3Q19
 }
+#endif 
 
 
+#ifdef BC_SCHEME_VEL_ZOUHE
 __device__
 void gpuSchVelZouHe(NodeTypeMap* gpuNT, 
     dfloat* fPostStream,
@@ -371,5 +392,6 @@ void gpuSchVelZouHe(NodeTypeMap* gpuNT,
     default:
         break;
     }
-    #endif
+    #endif // D3Q19
 }
+#endif

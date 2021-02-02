@@ -148,7 +148,7 @@ void saveAllMacrBin(
     saveVarBin(strFileUy, macr->u.y, TOTAL_MEM_SIZE_SCALAR, false);
     saveVarBin(strFileUz, macr->u.z, TOTAL_MEM_SIZE_SCALAR, false);
 
-    #ifdef IBM
+    #if defined(IBM) && EXPORT_FORCES
     std::string strFileFx = getVarFilename("fx", nSteps, ".bin");
     std::string strFileFy = getVarFilename("fy", nSteps, ".bin");
     std::string strFileFz = getVarFilename("fz", nSteps, ".bin");

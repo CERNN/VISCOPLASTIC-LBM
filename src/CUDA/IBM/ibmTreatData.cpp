@@ -39,7 +39,7 @@ bool stopSimIBM(IBMProc* procIBM, ParticlesSoA particles)
     ParticleCenter* pc = &(particles.pCenterArray[0]);
 
     // Stop when the particle is near bottom wall
-    if((pc->pos.z - pc->radius) < 5){
+    if((pc->pos.z - pc->radius) < 2){
         return true;
     }
     return false;

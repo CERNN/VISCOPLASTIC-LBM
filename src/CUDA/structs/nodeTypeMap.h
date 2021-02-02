@@ -30,15 +30,29 @@
 // SAVE POST COLLISION DEFINE
 #define SAVE_POST_COL (0b1 << SAVE_POST_COL_OFFSET)
 
-// BC SCHEME DEFINES
+// BC SCHEME DEFINES (define only if they are compiled)
 #define BC_SCHEME_BITS (0b111 << BC_SCHEME_OFFSET)
 #define BC_NULL (0b000)
+
+#if COMP_VEL_ZOU_HE || COMP_ALL_BC
 #define BC_SCHEME_VEL_ZOUHE (0b001)
+#endif
+#if COMP_VEL_BOUNCE_BACK || COMP_ALL_BC
 #define BC_SCHEME_VEL_BOUNCE_BACK (0b010)
+#endif
+#if COMP_PRES_ZOU_HE || COMP_ALL_BC
 #define BC_SCHEME_PRES_ZOUHE (0b011)
+#endif
+#if COMP_FREE_SLIP || COMP_ALL_BC
 #define BC_SCHEME_FREE_SLIP (0b100)
+#endif
+#if COMP_BOUNCE_BACK || COMP_ALL_BC
 #define BC_SCHEME_BOUNCE_BACK (0b101)
+#endif
+#if COMP_INTERP_BOUNCE_BACK || COMP_ALL_BC
 #define BC_SCHEME_INTERP_BOUNCE_BACK (0b110)
+#endif
+
 #define BC_SCHEME_SPECIAL (0b111)
 
 // DIRECTION DEFINES
@@ -258,8 +272,12 @@ typedef struct nodeTypeMap {
     char isBCLocal()
     {
         // if it's not free slip nor special, is local
+        #ifdef BC_SCHEME_FREE_SLIP
         return !((this->getSchemeBC() == BC_SCHEME_FREE_SLIP) || 
             (this->getSchemeBC() == BC_SCHEME_SPECIAL));
+        #else
+        return !(this->getSchemeBC() == BC_SCHEME_SPECIAL);
+        #endif
     }
 
     __device__ __host__

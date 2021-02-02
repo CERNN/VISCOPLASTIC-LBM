@@ -195,11 +195,12 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
     const dfloat maxDistSq = (radius+sphereShellThick)*(radius+sphereShellThick);
     const dfloat minDistSq = (radius-sphereShellThick)*(radius-sphereShellThick);
     unsigned int oldCurrNodes = this->currEulerNodes;
+
     #if IBM_DEBUG
     unsigned int hit = 0;
-    const int totalNodes = (maxZ-minZ+1)*(maxY-minY+1)*(maxX-minX+1);
-    printf("Mask %x pos %d %d %d min %d %d %d max %d %d %d total nodes %d\n", mask, 
-        pos.x, pos.y, pos.z, minX, minY, minZ, maxX, maxY, maxZ, totalNodes);
+    const int totalNodes = max(1, (maxZ-minZ+1)*(maxY-minY+1)*(maxX-minX+1));
+    printf("Mask %x pos %f %f %f min %d %d %d max %d %d %d total nodes %d\n", mask, 
+       pos.x, pos.y, pos.z, minX, minY, minZ, maxX, maxY, maxZ, totalNodes);
     #endif
 
     for(int k=minZ; k <= maxZ; k++){
@@ -237,13 +238,15 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
 __global__
 void ibmEulerCopyVelocities(dfloat3SoA dst, dfloat3SoA src, size_t* eulerIdxsUpdate, unsigned int currEulerNodes){
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
-    
+
     if (i >= currEulerNodes)
         return;
 
-    dst.x[i] = src.x[i];
-    dst.y[i] = src.y[i];
-    dst.z[i] = src.z[i];
+    const size_t idx = eulerIdxsUpdate[i];
+
+    dst.x[idx] = src.x[idx];
+    dst.y[idx] = src.y[idx];
+    dst.z[idx] = src.z[idx];
 }
 
 

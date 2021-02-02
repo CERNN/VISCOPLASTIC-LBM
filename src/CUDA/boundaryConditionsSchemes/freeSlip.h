@@ -11,6 +11,7 @@
 #define __BC_FREE_SLIP_H
 
 #include "./../globalFunctions.h"
+#include "./../structs/nodeTypeMap.h"
 #include <cuda_runtime.h>
 
 /*

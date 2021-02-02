@@ -21,6 +21,7 @@
 
 #include "D3Q19_VelZouHe.h"
 
+#ifdef BC_SCHEME_VEL_ZOUHE
 #ifdef D3Q19
 
 __device__
@@ -169,3 +170,4 @@ void gpuBCVelZouHeB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned 
 }
 
 #endif //!D3Q19
+#endif 

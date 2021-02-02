@@ -7,8 +7,9 @@ void createParticles(Particle particles[NUM_PARTICLES])
     dfloat3 bCenter[NUM_PARTICLES];
     unsigned int totalIbmNodes = 0;
 
+    /*
     int id = 0;
-    
+
     for (int i = NZ-PARTICLE_DIAMETER/2-3 ; i > PARTICLE_DIAMETER/2+3 && id < NUM_PARTICLES; i-=PARTICLE_DIAMETER-3)
     {
         for (int j = PARTICLE_DIAMETER/2+3; j < (NY-PARTICLE_DIAMETER/2-3) && id < NUM_PARTICLES; j+=PARTICLE_DIAMETER+3)
@@ -29,24 +30,23 @@ void createParticles(Particle particles[NUM_PARTICLES])
         if(id >= NUM_PARTICLES)
             break;
     }
-    
-    /*
-    // Falling sphere
-    dfloat3 center;
-    center.x = (NX-1.0)/2.0;
-    center.y = (NY-1.0)/2.0;
-    center.z = 3*(NZ-1.0)/4.0+PARTICLE_DIAMETER/2.0;
-    particles[0] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true);
     */
 
+    
+    // Falling sphere
+    dfloat3 center;
+    center.x = (NX)/2.0;
+    center.y = (NY)/2.0;
+    center.z = 3*(NZ)/4.0+PARTICLE_DIAMETER/2.0;
+    particles[0] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true);
+    
     /*
     // Fixed sphere
     particles[0] = makeSpherePolar(
         PARTICLE_DIAMETER, 
-        dfloat3((NX-1.0)/2.0, (NY-1.0)/2.0, (NZ-1.0)/4.0), 
+        dfloat3((NX)/2.0, (NY)/2.0, (NZ)/4.0), 
         MESH_COULOMB, false);
     */
-
     /*
     // Sphere in couette flow (Neutrally buoyant particle in a shear flow)
     particles[0] = makeSpherePolar(

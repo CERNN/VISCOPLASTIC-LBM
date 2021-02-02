@@ -21,6 +21,7 @@
 
 #include "D3Q19_VelBounceBack.h"
 
+#ifdef BC_SCHEME_VEL_BOUNCE_BACK
 #ifdef D3Q19
 
 __device__
@@ -146,3 +147,4 @@ void gpuBCVelBounceBackB(dfloat* fPostStream, dfloat* fPostCol, const short unsi
 }
 
 #endif //!D3Q19
+#endif

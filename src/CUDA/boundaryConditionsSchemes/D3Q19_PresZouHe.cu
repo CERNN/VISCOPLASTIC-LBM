@@ -21,6 +21,7 @@
 
 #include "D3Q19_PresZouHe.h"
 
+#ifdef BC_SCHEME_PRES_ZOUHE
 #ifdef D3Q19
 
 __device__
@@ -173,3 +174,4 @@ void gpuBCPresZouHeB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned
 }
 
 #endif //!D3Q19
+#endif //COMP_PRES_ZOU_HE || COMP_ALL_BC
