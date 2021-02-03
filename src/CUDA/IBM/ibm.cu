@@ -19,20 +19,17 @@ void immersedBoundaryMethod(
     ParticleEulerNodesUpdate* pEulerNodes
     )
 {
+    // TODO: Update kernels to multi GPU
+
     // Update particle center position and its old values
     gpuUpdateParticleOldValues<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
         particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
-    // TODO: Update it to multi GPU
     // Size of shared memory to use for optimization in interpolation/spread
-    const unsigned int sharedMemInterpSpread = threadsNodesIBM * sizeof(dfloat3) * 2;
+    // const unsigned int sharedMemInterpSpread = threadsNodesIBM * sizeof(dfloat3) * 2;
 
     #if IBM_EULER_OPTIMIZATION
-    //for(int i = 0; i < pEulerNodes->currEulerNodes; i++){
-    //    printf("%p\n", pEulerNodes->eulerIndexesUpdate[i]);
-    //}
-    //exit(-1);
     // Grid size for euler nodes update
     dim3 currGrid(pEulerNodes->currEulerNodes/64+(pEulerNodes->currEulerNodes%64? 1 : 0), 1, 1);
     if(pEulerNodes->currEulerNodes > 0){
@@ -61,7 +58,7 @@ void immersedBoundaryMethod(
     {
         // Make the interpolation of LBM and spreading of IBM forces
         gpuForceInterpolationSpread<<<gridNodesIBM, threadsNodesIBM, 
-            sharedMemInterpSpread, streamIBM[0]>>>(
+            0, streamIBM[0]>>>(
             particles.nodesSoA, particles.pCenterArray, macr[0], velsAuxIBM[0]);
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
@@ -136,10 +133,6 @@ void gpuForceInterpolationSpread(
         posBase[1] >= 0? 0 : -posBase[1], 
         posBase[2] >= 0? 0 : -posBase[2]};
 
-    //if(pos[0] >= NX || pos[1] >= NY || pos[2] >= NZ){
-    //    printf("mymax %d %d %d mymin %d %d %d\n", maxIdx[0], maxIdx[1],maxIdx[2], minIdx[0],minIdx[1],minIdx[2]);
-    //}
-
     // Particle stencil out of the domain
     if(maxIdx[0] <= 0 || maxIdx[1] <= 0 || maxIdx[2] <= 0)
         return;
@@ -158,7 +151,6 @@ void gpuForceInterpolationSpread(
     dfloat uyVar = 0;
     dfloat uzVar = 0;
 
-    dfloat sumAux_interp = 0;
     // Interpolation (zyx for memory locality)
     for (int zk = minIdx[2]; zk <= maxIdx[2]; zk++) // z
     {
@@ -172,8 +164,6 @@ void gpuForceInterpolationSpread(
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
 
                 idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk);
-
-                sumAux_interp += aux;
 
                 rhoVar += macr.rho[idx] * aux;
                 uxVar += macr.u.x[idx] * aux;
@@ -607,7 +597,7 @@ void gpuParticlesCollision(
     */
 
     const unsigned int row = ceil((-1.0+sqrt((float)1+8*(idx+1)))/2);
-    const unsigned int column = idx - (row-1)*row/2;
+    const unsigned int column = idx - ((row-1)*row)/2;
 
     // Auxiliary variables, for many things
     dfloat aux;

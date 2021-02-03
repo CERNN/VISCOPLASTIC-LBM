@@ -20,7 +20,7 @@
 typedef struct particleNode {
     dfloat3 pos; // node coordinate
     dfloat3 vel; // node velocity
-    dfloat3 vel_old;
+    dfloat3 vel_old; // node last step velocity
     dfloat3 f;  // node force
     dfloat3 deltaF;  // node force variation
     dfloat S; // node surface area
@@ -44,8 +44,25 @@ typedef struct particleNodeSoA {
     particleNodeSoA();
     ~particleNodeSoA();
 
+    /**
+    *   @brief Allocate memory for given number of nodes
+    *   
+    *   @param numNodes: number of nodes that must be allocated
+    */
     void allocateMemory(unsigned int numNodes);
+
+    /**
+    *   @brief Free allocated memory
+    */
     void freeMemory();
+
+    /**
+    *   @brief Copy nodes values from particle
+    *
+    *   @param p: particle with nodes to copy
+    *   @param pCenterIdx: index of particle center for given particle nodes
+    *   @param baseIdx: base index to use while copying
+    */
     void copyNodesFromParticle(struct particle p, unsigned int pCenterIdx, unsigned int baseIdx);
 
 } ParticleNodeSoA;

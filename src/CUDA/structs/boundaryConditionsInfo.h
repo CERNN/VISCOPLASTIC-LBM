@@ -43,6 +43,9 @@ typedef struct boundaryConditionsInfo{
         this->idxBCNodes = nullptr;
     }
 
+    /**
+    *   @brief Allocate BC indexes
+    */
     __host__
     void allocateIdxBC()
     {
@@ -52,6 +55,9 @@ typedef struct boundaryConditionsInfo{
         checkCudaErrors(cudaMallocManaged((void**)&(this->idxBCNodes), memSizeIdxBC));
     }
 
+    /**
+    *   @brief Free BC indexes
+    */
     __host__
     void freeIdxBC()
     {
@@ -61,6 +67,11 @@ typedef struct boundaryConditionsInfo{
         this->idxBCNodes = nullptr;
     }
 
+    /**
+    *   @brief setup boundary conditions informations and nodes, using BC map
+    *   
+    *   @param mapBC: map with simulation's BC
+    */
     __host__
     void setupBoundaryConditionsInfo(NodeTypeMap* mapBC)
     {

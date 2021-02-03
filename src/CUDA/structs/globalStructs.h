@@ -13,6 +13,9 @@
 #include "../var.h"
 #include "../errorDef.h"
 
+/*
+*   Struct for dfloat in x, y, z
+*/
 typedef struct dfloat3 {
     dfloat x;
     dfloat y;
@@ -27,8 +30,11 @@ typedef struct dfloat3 {
     }
 } dfloat3;
 
+/*
+*   Struct for dfloat in x, y, z as structure of arrays (SoA)
+*/
 typedef struct dfloat3SoA {
-    int varLocation;
+    int varLocation; // IN_VIRTUAL or IN_HOST
     dfloat* x; // x array
     dfloat* y; // y array
     dfloat* z; // z array
@@ -51,6 +57,12 @@ typedef struct dfloat3SoA {
         z = nullptr;
     }
 
+    /**
+    *   @brief Allocate memory for SoA
+    *   
+    *   @param arraySize: array size, in number of elements
+    *   @param location: array location, IN_VIRTUAL or IN_HOST
+    */
     __host__
     void allocateMemory(size_t arraySize, int location = IN_VIRTUAL){
         size_t memSize = sizeof(dfloat) * arraySize;
@@ -72,6 +84,9 @@ typedef struct dfloat3SoA {
         }
     }
 
+    /**
+    *   @brief Free memory of SoA
+    */
     __host__
     void freeMemory(){
         switch (this->varLocation)
@@ -92,10 +107,15 @@ typedef struct dfloat3SoA {
         }
     }
 
-    /*  
-        Copies arrayRef to this object
-        this <- arrayRef
-        Use for host/device, not virtual
+   
+
+    /**
+    *   @brief Copy values from another dfloat3SoA array
+    *   
+    *   @param arrayRef: arrays to copy values
+    *   @param memSize: size of memory to copy, in bytes
+    *   @param baseIdx: base index for this
+    *   @param baseIdxRef: base index for arrayRef
     */
    __host__
     void copyFromDfloat3SoA(dfloat3SoA arrayRef, size_t memSize, size_t baseIdx=0, size_t baseIdxRef=0){
@@ -121,15 +141,27 @@ typedef struct dfloat3SoA {
         checkCudaErrors(cudaStreamDestroy(streamZ));
     }
 
+    /**
+    *   @brief Copy value from dfloat3
+    *   
+    *   @param val: dfloat3 to copy values
+    *   @param idx: index to write values to
+    */
     __host__ __device__
-    void copyValuesFromdFloat3(dfloat3 val, size_t idx){
+    void copyValuesFromFloat3(dfloat3 val, size_t idx){
         this->x[idx] = val.x;
         this->y[idx] = val.y;
         this->z[idx] = val.z;
     }
 
+    /**
+    *   @brief Get the falues from given index
+    *   
+    *   @param idx: index to copy from
+    *   @return dfloat3: dfloat3 with values
+    */
     __host__ __device__
-    dfloat3 getValuesFromdIdx(size_t idx){
+    dfloat3 getValuesFromIdx(size_t idx){
         return dfloat3(this->x[idx], this->y[idx], this->z[idx]);
     }
 } dfloat3SoA;

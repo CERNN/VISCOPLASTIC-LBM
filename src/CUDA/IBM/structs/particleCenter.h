@@ -14,7 +14,7 @@
 #include "../ibmVar.h"
 
 /*
-* Describe the particle center properties
+*   Struct for the particle center properties
 */
 typedef struct particleCenter {
     dfloat3 pos;        // Particle center position

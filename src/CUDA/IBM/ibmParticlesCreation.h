@@ -12,6 +12,11 @@
 #include "structs/particle.h"
 #include "ibmVar.h"
 
+/**
+*   @brief Create particles for simulation
+*
+*   @param particles: array with particles to write to
+*/
 void createParticles(Particle particles[NUM_PARTICLES]);
 
 #endif // !__IBM_PARTICLES_CREATION_H

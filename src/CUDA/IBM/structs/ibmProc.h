@@ -7,6 +7,9 @@
 #include "../../structs/macroscopics.h"
 #include "../../lbmReport.h"
 
+/*
+*   Struct for IBM post processing
+*/
 typedef struct ibmProc{
     Macroscopics* macrCurr;  // current macroscopics values
     int* step;               // pointer to step value

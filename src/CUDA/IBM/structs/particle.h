@@ -18,10 +18,12 @@
 // After use_math_defines in "var.h"
 #include <math.h>
 
+/*
+*   Struct for particle representation
+*/
 typedef struct particle {
-    unsigned int numNodes; // number of nodes the particle have
-    // TODO: rename to pCenter?
-    ParticleCenter bodyCenter; // Particle center
+    unsigned int numNodes; // number of nodes of particle
+    ParticleCenter pCenter; // Particle center
     ParticleNode* nodes; // Particle nodes
 
     particle(){
@@ -30,6 +32,10 @@ typedef struct particle {
     }
 } Particle;
 
+
+/*
+*   Particles representation as Struct of arrays (SoA) for better GPU performance
+*/
 typedef struct particlesSoA{
     ParticleNodeSoA nodesSoA;
     ParticleCenter* pCenterArray;
@@ -48,6 +54,6 @@ typedef struct particlesSoA{
 */
 Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move);
 
-Particle makeCylinder(dfloat diameter, dfloat3 begin, dfloat3 end, bool hexa);
+// Particle makeCylinder(dfloat diameter, dfloat3 begin, dfloat3 end, bool hexa);
 
 #endif

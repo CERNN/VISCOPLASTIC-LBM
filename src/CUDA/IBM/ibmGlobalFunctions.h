@@ -50,7 +50,8 @@ __device__ double atomicAdd(double* address, double val)
 #endif
 
 /*
-*   @brief Evaluate the force distributions based on the stencil 
+*   @brief Evaluate the force distributions based on the stencil
+*
 *   @param x: the distance between the node thand the reference position
 *   @return force weight
 */

@@ -50,11 +50,11 @@ void ParticleNodeSoA::copyNodesFromParticle(Particle p, unsigned int pCenterIdx,
     {
         this->particleCenterIdx[i+baseIdx] = pCenterIdx;
 
-        this->pos.copyValuesFromdFloat3(p.nodes[i].pos, i+baseIdx);
-        this->vel.copyValuesFromdFloat3(p.nodes[i].vel, i+baseIdx);
-        this->vel_old.copyValuesFromdFloat3(p.nodes[i].vel_old, i+baseIdx);
-        this->f.copyValuesFromdFloat3(p.nodes[i].f, i+baseIdx);
-        this->deltaF.copyValuesFromdFloat3(p.nodes[i].deltaF, i+baseIdx);
+        this->pos.copyValuesFromFloat3(p.nodes[i].pos, i+baseIdx);
+        this->vel.copyValuesFromFloat3(p.nodes[i].vel, i+baseIdx);
+        this->vel_old.copyValuesFromFloat3(p.nodes[i].vel_old, i+baseIdx);
+        this->f.copyValuesFromFloat3(p.nodes[i].f, i+baseIdx);
+        this->deltaF.copyValuesFromFloat3(p.nodes[i].deltaF, i+baseIdx);
         this->S[i+baseIdx] = p.nodes[i].S;
     }
 }

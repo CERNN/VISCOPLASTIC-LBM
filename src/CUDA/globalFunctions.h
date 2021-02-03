@@ -144,6 +144,12 @@ dfloat __forceinline__ distPoints2D(const dfloat x1, const dfloat y1, const dflo
     return sqrt((float)(x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
 
+/**
+*   @brief Copy values from src to dst (shape [NZ, NY, NX])
+*
+*   @param dst: destiny arrays
+*   @param src: source arrays
+*/
 __global__
 void copyFromArray(dfloat3SoA dst, dfloat3SoA src);
 

@@ -30,7 +30,7 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
     for (int p = 0; p < NUM_PARTICLES; p++)
     {
         this->nodesSoA.copyNodesFromParticle(particles[p], p, baseIdx);
-        this->pCenterArray[p] = particles[p].bodyCenter;
+        this->pCenterArray[p] = particles[p].pCenter;
 
         baseIdx += particles[p].numNodes;
     }
@@ -75,28 +75,28 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
     dfloat phase = 0.0;
 
-    // particleRet.bodyCenter = ParticleCenter();
+    // particleRet.pCenter = ParticleCenter();
 
     // Define the properties of the particle
     dfloat r = diameter / 2.0;
     dfloat volume = r*r*r*4*M_PI/3;
 
-    particleRet.bodyCenter.radius = r;
-    particleRet.bodyCenter.volume = r*r*r*4*M_PI/3;
+    particleRet.pCenter.radius = r;
+    particleRet.pCenter.volume = r*r*r*4*M_PI/3;
     // Particle area
-    particleRet.bodyCenter.S = 4.0 * M_PI * r * r;
+    particleRet.pCenter.S = 4.0 * M_PI * r * r;
 
     // Particle center position
-    particleRet.bodyCenter.pos.x = center.x;
-    particleRet.bodyCenter.pos.y = center.y;
-    particleRet.bodyCenter.pos.z = center.z;
+    particleRet.pCenter.pos.x = center.x;
+    particleRet.pCenter.pos.y = center.y;
+    particleRet.pCenter.pos.z = center.z;
 
     // Innertia momentum
-    particleRet.bodyCenter.I.x = 2.0 * volume * PARTICLE_DENSITY * r * r / 5.0;
-    particleRet.bodyCenter.I.y = 2.0 * volume * PARTICLE_DENSITY * r * r / 5.0;
-    particleRet.bodyCenter.I.z = 2.0 * volume * PARTICLE_DENSITY * r * r / 5.0;
+    particleRet.pCenter.I.x = 2.0 * volume * PARTICLE_DENSITY * r * r / 5.0;
+    particleRet.pCenter.I.y = 2.0 * volume * PARTICLE_DENSITY * r * r / 5.0;
+    particleRet.pCenter.I.z = 2.0 * volume * PARTICLE_DENSITY * r * r / 5.0;
 
-    particleRet.bodyCenter.movable = move;
+    particleRet.pCenter.movable = move;
     // Number of layers in the sphere
     nLayer = (unsigned int)(2.0 * sqrt(2) * r / MESH_SCALE + 1.0); 
 
@@ -154,7 +154,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
             // The area of sphere segment is divided by the number of node
             // in the layer, so all nodes have the same area
-            // particleRet.nodes[nodeIndex].S = particleRet.bodyCenter.S/particleRet.numNodes;
+            // particleRet.nodes[nodeIndex].S = particleRet.pCenter.S/particleRet.numNodes;
 
             // Add one node
             nodeIndex++;
@@ -170,7 +170,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     // last_node->S = S[nLayer];
 
     unsigned int numNodes = particleRet.numNodes;
-    dfloat dA =  particleRet.bodyCenter.S/particleRet.numNodes;
+    dfloat dA =  particleRet.pCenter.S/particleRet.numNodes;
     for(int i = 0; i < numNodes; i++){
         particleRet.nodes[i].S = dA;
     }
@@ -243,7 +243,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
         for (int i = 0; i < numNodes; i++) {
             ParticleNode* node_i = &(particleRet.nodes[i]);
 
-            node_i->S = particleRet.bodyCenter.S / (numNodes);
+            node_i->S = particleRet.pCenter.S / (numNodes);
 
             node_i->pos.x += center.x;
             node_i->pos.y += center.y;
@@ -261,7 +261,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     free(S);
 
     // Update old position value
-    particleRet.bodyCenter.pos_old = particleRet.bodyCenter.pos;
+    particleRet.pCenter.pos_old = particleRet.pCenter.pos;
 
     return particleRet;
 }
