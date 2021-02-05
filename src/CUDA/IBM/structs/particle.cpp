@@ -263,10 +263,6 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
     // Update old position value
     particleRet.pCenter.pos_old = particleRet.pCenter.pos;
-    printf("\n" );  
-    for (int i = 0; i < numNodes; i++) {
-        printf("%f; %f ; %f\n",  particleRet.nodes[i].pos.x, particleRet.nodes[i].pos.y, particleRet.nodes[i].pos.z);
-    }
 
     return particleRet;
 }
