@@ -60,18 +60,13 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     // Particle to be returned
     Particle particleRet;
     // Maximum number of layer of sphere
-    unsigned int maxNumLayers = 5000;
+    //unsigned int maxNumLayers = 5000;
     // Number of layers in sphere
     unsigned int nLayer;
     // Number of nodes per layer in sphere
     unsigned int* nNodesLayer;
     // Angles in polar coordinates and node area
     dfloat *theta, *zeta, *S;
-
-    nNodesLayer = (unsigned int*)malloc(maxNumLayers * sizeof(unsigned int));
-    theta = (dfloat*)malloc(maxNumLayers * sizeof(dfloat));
-    zeta = (dfloat*)malloc(maxNumLayers * sizeof(dfloat));
-    S = (dfloat*)malloc(maxNumLayers * sizeof(dfloat));
 
     dfloat phase = 0.0;
 
@@ -99,6 +94,11 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     particleRet.pCenter.movable = move;
     // Number of layers in the sphere
     nLayer = (unsigned int)(2.0 * sqrt(2) * r / MESH_SCALE + 1.0); 
+
+    nNodesLayer = (unsigned int*)malloc(nLayer * sizeof(unsigned int));
+    theta = (dfloat*)malloc((nLayer+1) * sizeof(dfloat));
+    zeta = (dfloat*)malloc((nLayer+1) * sizeof(dfloat));
+    S = (dfloat*)malloc((nLayer+1) * sizeof(dfloat));
 
     particleRet.numNodes = 0;
     for (int i = 0; i <= nLayer; i++) {
@@ -183,17 +183,18 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
         dfloat3* cForce;
         cForce = (dfloat3*)malloc(numNodes * sizeof(dfloat3));
 
-        for (int i = 0; i < numNodes; i++) {
-            cForce[i].x = 0;
-            cForce[i].y = 0;
-            cForce[i].z = 0;
-        }
 
         scaleF = 0.001;
 
         dfloat fx, fy, fz;
 
         for (unsigned int c = 0; c < coulomb; c++) {
+            for (int i = 0; i < numNodes; i++) {
+                cForce[i].x = 0;
+                cForce[i].y = 0;
+                cForce[i].z = 0;
+            }
+
             for (int i = 0; i < numNodes; i++) {
                 ParticleNode* node_i = &(particleRet.nodes[i]);
 
@@ -207,13 +208,13 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
                     mag = (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
 
-                    cForce[i].x -= dir.x - mag;
-                    cForce[i].y -= dir.y - mag;
-                    cForce[i].z -= dir.z - mag;
+                    cForce[i].x -= dir.x / mag;
+                    cForce[i].y -= dir.y / mag;
+                    cForce[i].z -= dir.z / mag;
 
-                    cForce[j].x -= -dir.x - mag;
-                    cForce[j].y -= -dir.y - mag;
-                    cForce[j].z -= -dir.z - mag;
+                    cForce[j].x -= -dir.x / mag;
+                    cForce[j].y -= -dir.y / mag;
+                    cForce[j].z -= -dir.z / mag;
                 }
             }
             for (int i = 0; i < numNodes; i++) {
