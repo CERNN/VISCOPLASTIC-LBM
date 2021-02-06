@@ -266,4 +266,130 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     return particleRet;
 }
 
+
+Particle makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern)
+{
+    // Particle to be returned
+    Particle particleRet;
+
+    // Define the properties of the cylinder
+    dfloat r = diameter / 2.0;
+    dfloat x = baseTwoCenter.x - baseOneCenter.x;
+    dfloat y = baseTwoCenter.y - baseOneCenter.y;
+    dfloat z = baseTwoCenter.z - baseOneCenter.z;
+    dfloat length = sqrt (x*x +y*y+z*z);
+    dfloat volume = r*r*M_PI*length;
+
+    particleRet.pCenter.radius = r;
+    // Particle volume
+    particleRet.pCenter.volume = volume;
+    // Particle area
+    particleRet.pCenter.S = 2.0*M_PI*r*length;
+
+    // Particle center position
+    particleRet.pCenter.pos.x = (baseOneCenter.x + baseTwoCenter.x)/2;
+    particleRet.pCenter.pos.y = (baseOneCenter.y + baseTwoCenter.y)/2;
+    particleRet.pCenter.pos.z = (baseOneCenter.z + baseTwoCenter.z)/2;
+
+    particleRet.pCenter.movable = false;
+
+
+    int nLayer, nNodesLayer;
+
+    dfloat3* centerLayer;
+    
+
+    dfloat scale = MESH_SCALE;
+
+    dfloat layerDistance = scale;
+    if (pattern)
+        layerDistance = scale*scale*sqrt(3)/4;
+
+    //number of layers
+    nLayer = (int)(length/layerDistance);
+    //number of nodes per layer
+    nNodesLayer = (int)(M_PI * 2.0 *r / scale);
+
+    //total number of nodes
+    particleRet.numNodes = nLayer * nNodesLayer;
+
+    particleRet.nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * particleRet.numNodes);
+
+    //layer center position step
+    dfloat dx = x / nLayer;
+    dfloat dy = y / nLayer;
+    dfloat dz = z / nLayer;
+
+    centerLayer = (dfloat3*)malloc((nLayer) * sizeof(dfloat3));
+    for (int i = 0; i < nLayer ; i++) {
+        centerLayer[i].x = baseOneCenter.x + dx * ((dfloat)i+0.5*scale);
+        centerLayer[i].y = baseOneCenter.y + dy * ((dfloat)i+0.5*scale);
+        centerLayer[i].z = baseOneCenter.z + dz * ((dfloat)i+0.5*scale);
+    }
+
+    //adimensionalise direction vector
+    x = x / length;
+    y = y / length;
+    z = z / length;
+
+    dfloat3 a1;//randon vector for perpicular direction
+    a1.x = 0.9; 
+    a1.y = 0.8; 
+    a1.z = 0.7; 
+    //TODO: it will work as long the created cyclinder does not have the same direction
+    //      make it can work in any direction
+    dfloat a1l = sqrt(a1.x * a1.x + a1.y * a1.y + a1.z * a1.z);
+    a1.x = a1.x / a1l; 
+    a1.y = a1.y / a1l; 
+    a1.z = a1.z / a1l;
+
+    //product of x with a1, v1 is the first axis in the layer plane
+    dfloat3 v1;
+    v1.x = (y * a1.z - z * a1.y);
+    v1.y = (z * a1.x - x * a1.z);
+    v1.z = (x * a1.y - y * a1.x);
+
+    //product of x with v1, v2 is perpendicular to v1, creating the second axis in the layer plane
+    dfloat3 v2;
+    v2.x = (y * v1.z - z * v1.y);
+    v2.y = (z * v1.x - x * v1.z);
+    v2.z = (x * v1.y - y * v1.x);
+
+    //calculate length and make v1 and v2 unitary
+    dfloat v1l = sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
+    dfloat v2l = sqrt(v2.x * v2.x + v2.y * v2.y + v2.z * v2.z);
+
+    v1.x = v1.x / v1l; 
+    v1.y = v1.y / v1l; 
+    v1.z = v1.z / v1l;
+
+    v2.x = v2.x / v2l; 
+    v2.y = v2.y / v2l; 
+    v2.z = v2.z / v2l;
+
+    int nodeIndex = 0;
+    dfloat phase = 0;
+    dfloat angle;
+    for (int i = 0; i < nLayer; i++) {
+        if (pattern) {
+            phase = (i % 2) * M_PI / nNodesLayer;
+        }
+        for (int j = 0; j < nNodesLayer; j++) {
+            angle = (dfloat)j * 2.0 * M_PI / nNodesLayer + phase;
+            particleRet.nodes[nodeIndex].pos.x = centerLayer[i].x + r * cos(angle) * v1.x + r * sin(angle) * v2.x; 
+            particleRet.nodes[nodeIndex].pos.y = centerLayer[i].y + r * cos(angle) * v1.y + r * sin(angle) * v2.y;
+            particleRet.nodes[nodeIndex].pos.z = centerLayer[i].z + r * cos(angle) * v1.z + r * sin(angle) * v2.z;
+
+            particleRet.nodes[i].S = particleRet.pCenter.S/((dfloat)nNodesLayer * nLayer);
+
+            nodeIndex++;
+        }
+    }
+
+    return particleRet;
+
+}
+
+
+
 #endif // !IBM
