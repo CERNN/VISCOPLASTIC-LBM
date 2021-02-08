@@ -292,13 +292,20 @@ std::string getSimInfoString(SimInfo* info)
     #if IBM_EULER_OPTIMIZATION
     strSimInfo << "       Shell thickness: " << IBM_EULER_SHELL_THICKNESS << "\n";
     #endif
-
+    #if defined SOFT_SPHERE
     strSimInfo << "--------------------------------- IBM Collision --------------------------------\n";
     strSimInfo << "\t                 Zeta: " << ZETA << "\n";
     strSimInfo << "\t           Stiff wall: " << STIFF_WALL << "\n";
     strSimInfo << "\t           Stiff soft: " << STIFF_SOFT << "\n";
     strSimInfo << "\t           Stiff hard: " << STIFF_HARD << "\n";
     strSimInfo << "--------------------------------------------------------------------------------\n";
+    #endif //SOFT_SPHERE
+    #if defined HARD_SPHERE
+    strSimInfo << "--------------------------------- IBM Collision --------------------------------\n";
+    strSimInfo << "\t       Friction Coef.: " << FRIC_COEF << "\n";
+    strSimInfo << "\t   Restitution  Coef.: " << REST_COEF << "\n";
+    strSimInfo << "--------------------------------------------------------------------------------\n";
+    #endif //HARD_SPHERE
 
     strSimInfo << "--------------------------------------------------------------------------------\n";
     #endif // IBM

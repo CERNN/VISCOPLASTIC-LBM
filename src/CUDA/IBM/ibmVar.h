@@ -31,6 +31,9 @@
 #define IBM_THICKNESS (1)
 // Transfer and save forces along with macroscopics
 #define EXPORT_FORCES false
+//collision schemes
+//#define SOFT_SPHERE
+#define HARD_SPHERE //https://doi.org/10.1201/b11103  chapter 5
 /* ------------------------------------------------------------------------- */
 
 
@@ -85,10 +88,17 @@ constexpr dfloat GZ = -1.179430e-03/SCALE/SCALE/SCALE;
 
 /* -------------------------- COLLISION PARAMETERS -------------------------- */
 // Soft sphere
+#if defined SOFT_SPHERE
 constexpr dfloat ZETA = 1.0; // Distance threshold
 constexpr dfloat STIFF_WALL = 1.0;  // Stiffness parameter wall
 constexpr dfloat STIFF_SOFT = 1.0;  // Soft stiffness parameter particle
 constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
+#endif
+// Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
+#if defined HARD_SPHERE
+constexpr dfloat FRIC_COEF = 0.1; // friction coeficient
+constexpr dfloat REST_COEF = 0.9; // restitution coeficient   
+#endif
 /* -------------------------------------------------------------------------- */
 
 

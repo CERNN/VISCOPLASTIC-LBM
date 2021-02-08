@@ -145,13 +145,26 @@ void gpuUpdateParticleOldValues(
 
 
 /**
-*   @brief Perform particles collisions with each other and walls
+*   @brief Perform particles collisions with each other and walls with soft sphere model
 *   
 *   @param particleCenters: particles centers to perform colision
 */
 __global__ 
-void gpuParticlesCollision(
+void gpuParticlesCollisionSoft(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
+
+/**
+*   @brief Perform particles collisions with each other and walls with hard sphere model
+*
+*   @param particlesNodes: particles nodes to update
+*   @param particleCenters: particles centers to perform colision
+*/
+__global__ 
+void gpuParticlesCollisionHard(
+    ParticleNodeSoA particlesNodes,
+    ParticleCenter particleCenters[NUM_PARTICLES]
+);
+
 
 #endif // !__IBM_H

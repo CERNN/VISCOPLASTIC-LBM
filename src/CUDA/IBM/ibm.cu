@@ -78,9 +78,10 @@ void immersedBoundaryMethod(
         checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     }
-
-    gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
+    #if defined SOFT_SPHERE
+    gpuParticlesCollisionSoft<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+    #endif
 
     // Update particle center position and its old values
     gpuParticleMovement<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
@@ -90,6 +91,11 @@ void immersedBoundaryMethod(
     gpuParticleNodeMovement<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(
         particles.nodesSoA, particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+
+    #if defined HARD_SPHERE
+    gpuParticlesCollisionHard<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.nodesSoA,particles.pCenterArray);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+    #endif
 
     checkCudaErrors(cudaDeviceSynchronize());
 }
@@ -550,8 +556,9 @@ void gpuParticleNodeMovement(
     particlesNodes.pos.z[i] = pc.pos.z + 2 * ( ((qi*qj) - (q0*qj))*x_vec + ((qj*qk) + (q0*qi))*y_vec +   (tq0m1 + (qk*qk))*z_vec);
 }
 
+#if defined SOFT_SPHERE
 __global__
-void gpuParticlesCollision(
+void gpuParticlesCollisionSoft(
     ParticleCenter particleCenters[NUM_PARTICLES]
 ){
     const unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
@@ -623,7 +630,7 @@ void gpuParticlesCollision(
         // Buoyancy force
         const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * pc_i->volume;
 
-        // West
+        // East
         dfloat pos_mirror = -pos_i.x;
         dfloat dist_abs = abs(pos_i.x - pos_mirror);
         if (dist_abs <= min_dist){
@@ -631,7 +638,7 @@ void gpuParticlesCollision(
             atomicAdd(&(pc_i->f.x), (b_force / STIFF_WALL) * aux * aux);
         }
 
-        // East
+        // Weast
         pos_mirror = 2 * (NX - 1) - pos_i.x;
         dist_abs = abs(pos_i.x - pos_mirror);
         if (dist_abs <= min_dist){
@@ -763,5 +770,360 @@ void gpuParticlesCollision(
         }
     }
 }
+#endif //SOFT_SPHERE
+
+#if defined HARD_SPHERE
+__global__
+void gpuParticlesCollisionHard(
+    ParticleNodeSoA particlesNodes,
+    ParticleCenter particleCenters[NUM_PARTICLES]
+){
+    const unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if(idx > TOTAL_PCOLLISION_IBM_THREADS)
+        return;
+
+    const unsigned int row = ceil((-1.0+sqrt((float)1+8*(idx+1)))/2);
+    const unsigned int column = idx - ((row-1)*row)/2;
+
+
+    // Particle from column
+    ParticleCenter* pc_i = &particleCenters[column];
+
+
+
+    // Collision against walls
+    if(row == NUM_PARTICLES){
+
+        if(!pc_i->movable)
+            return;
+
+        // Particle i info (column)
+        const dfloat r_i = pc_i->radius;
+        const dfloat3 pos_i = pc_i->pos;
+        dfloat3 v_i = pc_i->vel;
+        dfloat3 w_i = pc_i->w;
+
+
+        //velocity mag
+        const dfloat vel_mag = sqrt(v_i.x*v_i.x + v_i.y*v_i.y + v_i.z*v_i.z);
+        const dfloat min_dist = 2 * r_i;
+        dfloat ep_x, ep_y, ep_z, ep_mag;
+
+        //East x=0
+        dfloat pos_mirror = -pos_i.x;
+        dfloat dist_abs = abs(pos_i.x - pos_mirror);
+        if (dist_abs <= min_dist){
+            if ( (v_i.x / vel_mag) < -2 / (7*FRIC_COEF*(REST_COEF+1))){
+                v_i.y = (5/7)*(v_i.y - 2*r_i*w_i.z/5);
+                v_i.z = (5/7)*(v_i.z - 2*r_i*w_i.y/5);
+
+                v_i.x = -REST_COEF * v_i.x;
+
+                w_i.y = v_i.z/r_i;
+                w_i.x = w_i.x;
+                w_i.z = -v_i.y/r_i;
+
+            } else {
+                ep_mag = sqrt(v_i.y*v_i.y + v_i.z*v_i.z);
+                ep_y = v_i.y/ep_mag;
+                ep_z = v_i.z/ep_mag;
+
+                v_i.y = v_i.y + ep_y*FRIC_COEF*(REST_COEF+1)*v_i.x;
+                v_i.z = v_i.z + ep_z*FRIC_COEF*(REST_COEF+1)*v_i.x;
+
+                v_i.x = -REST_COEF * v_i.x;
+
+                w_i.y = w_i.y - (5/(2*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
+                w_i.z = w_i.z + (5/(2*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
+                w_i.x = w_i.x;
+            }
+
+        }
+        //West x = NX-1
+        pos_mirror = 2 * (NX - 1) - pos_i.x;
+        dist_abs = abs(pos_i.x - pos_mirror);
+        if (dist_abs <= min_dist){
+            if ( (v_i.x / vel_mag) < -2 / (7*FRIC_COEF*(REST_COEF+1))){
+                v_i.y = (5/7)*(v_i.y - 2*r_i*w_i.z/5);
+                v_i.z = (5/7)*(v_i.z - 2*r_i*w_i.y/5);
+
+                v_i.x = -REST_COEF * v_i.x;
+
+                w_i.y = v_i.z/r_i;
+                w_i.x = w_i.x;
+                w_i.z = -v_i.y/r_i;
+
+            } else {
+                ep_mag = sqrt(v_i.y*v_i.y + v_i.z*v_i.z);
+                ep_y = v_i.y/ep_mag;
+                ep_z = v_i.z/ep_mag;
+
+                v_i.y = v_i.y + ep_y*FRIC_COEF*(REST_COEF+1)*v_i.x;
+                v_i.z = v_i.z + ep_z*FRIC_COEF*(REST_COEF+1)*v_i.x;
+
+                v_i.x = -REST_COEF * v_i.x;
+
+                w_i.y = w_i.y - (5/(2*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
+                w_i.z = w_i.z + (5/(2*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
+                w_i.x = w_i.x;
+            }
+        }
+
+        //South y = 0
+        pos_mirror = - pos_i.y;
+        dist_abs = abs(pos_i.y - pos_mirror);
+        if (dist_abs <= min_dist){
+            if ( (v_i.y / vel_mag) < -2 / (7*FRIC_COEF*(REST_COEF+1))){
+                v_i.x = (5/7)*(v_i.x - 2*r_i*w_i.z/5);
+                v_i.z = (5/7)*(v_i.z - 2*r_i*w_i.x/5);
+
+                v_i.y = -REST_COEF * v_i.y;
+
+
+                w_i.x = v_i.z/r_i;
+                w_i.y = w_i.y;
+                w_i.z = -v_i.x/r_i;
+
+            } else {
+                ep_mag = sqrt(v_i.x*v_i.x + v_i.z*v_i.z);
+                ep_x = v_i.x/ep_mag;
+                ep_z = v_i.z/ep_mag;
+
+                v_i.x = v_i.x + ep_x*FRIC_COEF*(REST_COEF+1)*v_i.y;
+                v_i.z = v_i.z + ep_z*FRIC_COEF*(REST_COEF+1)*v_i.y;
+
+                v_i.y = -REST_COEF * v_i.y;
+
+                w_i.x = w_i.x - (5/(2*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
+                w_i.z = w_i.z + (5/(2*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
+                w_i.y = w_i.y;
+            }
+        }
+
+        //North y = NY -1
+        pos_mirror = 2 * (NY - 1) - pos_i.y;
+        dist_abs = abs(pos_i.y - pos_mirror);
+        if (dist_abs <= min_dist){
+            if ( (v_i.y / vel_mag) < -2 / (7*FRIC_COEF*(REST_COEF+1))){
+                v_i.x = (5/7)*(v_i.x - 2*r_i*w_i.z/5);
+                v_i.z = (5/7)*(v_i.z - 2*r_i*w_i.x/5);
+
+                v_i.y = -REST_COEF * v_i.y;
+
+                w_i.x = v_i.z/r_i;
+                w_i.y = w_i.y;
+                w_i.z = -v_i.x/r_i;
+            } else {
+                ep_mag = sqrt(v_i.x*v_i.x + v_i.z*v_i.z);
+                ep_x = v_i.x/ep_mag;
+                ep_z = v_i.z/ep_mag;
+
+                v_i.x = v_i.x + ep_x*FRIC_COEF*(REST_COEF+1)*v_i.y;
+                v_i.z = v_i.z + ep_z*FRIC_COEF*(REST_COEF+1)*v_i.y;
+
+                v_i.y = -REST_COEF * v_i.y;
+
+                w_i.x = w_i.x - (5/(2*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
+                w_i.z = w_i.z + (5/(2*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
+                w_i.y = w_i.y;
+            }
+        }
+        //Back z = 0
+        pos_mirror = -pos_i.z;
+        dist_abs = abs(pos_i.z - pos_mirror);
+        if (dist_abs <= min_dist){
+            if ( (v_i.z / vel_mag) < -2 / (7*FRIC_COEF*(REST_COEF+1))){
+                v_i.x = (5/7)*(v_i.x - 2*r_i*w_i.y/5);
+                v_i.y = (5/7)*(v_i.y - 2*r_i*w_i.x/5);
+
+                v_i.z = -REST_COEF * v_i.z;
+
+                w_i.x = v_i.y/r_i;
+                w_i.z = w_i.z;
+                w_i.y = -v_i.x/r_i;
+            } else {
+                ep_mag = sqrt(v_i.x*v_i.x + v_i.y*v_i.y);
+                ep_x = v_i.x/ep_mag;
+                ep_y = v_i.y/ep_mag;
+
+                v_i.x = v_i.x + ep_x*FRIC_COEF*(REST_COEF+1)*v_i.z;
+                v_i.y = v_i.y + ep_z*FRIC_COEF*(REST_COEF+1)*v_i.z;
+
+                v_i.z = -REST_COEF * v_i.z;
+
+                
+                w_i.x = w_i.x - (5/(2*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
+                w_i.y = w_i.y + (5/(2*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
+                w_i.z = w_i.z;
+            }
+
+        }
+        //Front z = NZ -1
+        pos_mirror = 2 * (NZ - 1) - pos_i.z;
+        dist_abs = abs(pos_i.z - pos_mirror);
+        if (dist_abs <= min_dist) {
+            if ( (v_i.z / vel_mag) < -2 / (7*FRIC_COEF*(REST_COEF+1))){
+                v_i.x = (5/7)*(v_i.x - 2*r_i*w_i.y/5);
+                v_i.y = (5/7)*(v_i.y - 2*r_i*w_i.x/5);
+
+                v_i.z = -REST_COEF * v_i.z;
+
+                w_i.x = v_i.y/r_i;
+                w_i.z = w_i.z;
+                w_i.y = -v_i.x/r_i;
+            } else {
+                ep_mag = sqrt(v_i.x*v_i.x + v_i.y*v_i.y);
+                ep_x = v_i.x/ep_mag;
+                ep_y = v_i.y/ep_mag;
+
+                v_i.x = v_i.x + ep_x*FRIC_COEF*(REST_COEF+1)*v_i.z;
+                v_i.y = v_i.y + ep_z*FRIC_COEF*(REST_COEF+1)*v_i.z;
+
+                v_i.z = -REST_COEF * v_i.z;
+
+                w_i.x = w_i.x - (5/(2*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
+                w_i.y = w_i.y + (5/(2*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
+                w_i.z = w_i.z;
+            }
+        }
+        //update node velocities
+        dfloat xIBM,yIBM,zIBM;
+        for(int i = 0; i < particlesNodes.numNodes; i++){
+            if ( particlesNodes.particleCenterIdx[i] == column){
+                xIBM = particlesNodes.pos.x[i];
+                yIBM = particlesNodes.pos.y[i];
+                zIBM = particlesNodes.pos.z[i];
+    
+                particlesNodes.vel.x[i] = v_i.x + (w_i.y * (zIBM - pos_i.z) - w_i.z * (yIBM - pos_i.y));
+                particlesNodes.vel.y[i] = v_i.y + (w_i.z * (xIBM - pos_i.x) - w_i.x * (zIBM - pos_i.z));
+                particlesNodes.vel.z[i] = v_i.z + (w_i.x * (yIBM - pos_i.y) - w_i.y * (xIBM - pos_i.x));
+            }
+        }
+
+    } // Collision against particles
+    else{
+        dfloat3 n, t, G_0, G_c_0, G_ct_0;
+        dfloat mag;
+
+        ParticleCenter* pc_j = &particleCenters[row];
+        
+        // Particle i info (column)
+        const dfloat  m_i = pc_i ->volume * PARTICLE_DENSITY;
+        const dfloat  r_i = pc_i->radius;
+        const dfloat3 pos_i = pc_i->pos;
+        dfloat3 v_i = pc_i->vel;
+        dfloat3 w_i = pc_i->w;
+
+        // Particle i info (column)
+        const dfloat  m_j = pc_j ->volume * PARTICLE_DENSITY;
+        const dfloat  r_j = pc_j->radius;
+        const dfloat3 pos_j = pc_j->pos;
+        dfloat3 v_j = pc_j->vel;
+        dfloat3 w_j = pc_j->w;
+
+        // determine normal vector
+        n.x = pos_i.x-pos_j.x;
+        n.y = pos_i.y-pos_j.y;
+        n.z = pos_i.z-pos_j.z;
+
+        mag = n.x*n.x+n.y*n.y+n.z*n.z;
+        mag = sqrt(mag);
+
+        if(mag <= r_i+r_j){
+            n.x = n.x/(mag);
+            n.y = n.y/(mag);
+            n.z = n.z/(mag);
+
+            // relative velocity vector
+            G_0.x = v_i.x-v_j.x;
+            G_0.y = v_i.y-v_j.y;
+            G_0.z = v_i.z-v_j.z;
+
+            G_c_0.x = G_0.x + r_i*(w_i.y*n.z-w_i.z*n.y)+r_j*(w_j.y*n.z-w_j.z*n.y);
+            G_c_0.y = G_0.y + r_i*(w_i.z*n.x-w_i.x*n.z)+r_j*(w_j.z*n.x-w_j.x*n.z);
+            G_c_0.z = G_0.z + r_i*(w_i.x*n.y-w_i.y*n.x)+r_j*(w_j.x*n.y-w_j.y*n.x);
+        
+            G_ct_0.x = G_0.x + r_i*(w_i.y*n.z-w_i.z*n.y)+r_j*(w_j.y*n.z-w_j.z*n.y) - (G_c_0.x*n.x+G_c_0.y*n.y+G_c_0.z*n.z)*n.x;
+            G_ct_0.y = G_0.y + r_i*(w_i.z*n.x-w_i.x*n.z)+r_j*(w_j.z*n.x-w_j.x*n.z) - (G_c_0.x*n.x+G_c_0.y*n.y+G_c_0.z*n.z)*n.y;
+            G_ct_0.z = G_0.z + r_i*(w_i.x*n.y-w_i.y*n.x)+r_j*(w_j.x*n.y-w_j.y*n.x) - (G_c_0.x*n.x+G_c_0.y*n.y+G_c_0.z*n.z)*n.z;
+        
+            mag = G_ct_0.x*G_ct_0.x+G_ct_0.y*G_ct_0.y+G_ct_0.z*G_ct_0.z;
+            mag=sqrt(mag);
+
+            //tangential vector
+            t.x = G_ct_0.x/mag;
+            t.y = G_ct_0.y/mag;
+            t.z = G_ct_0.z/mag;
+
+            dfloat nG_0;
+
+            nG_0 = (n.x*G_0.x+n.y*G_0.y+n.z*G_0.z);
+
+            // translational velocity change
+            const dfloat dvx_i = - (n.x+FRIC_COEF*t.x)*nG_0*(1+REST_COEF)*(m_j/(m_i+m_j));  
+            const dfloat dvy_i = - (n.y+FRIC_COEF*t.y)*nG_0*(1+REST_COEF)*(m_j/(m_i+m_j));
+            const dfloat dvz_i = - (n.z+FRIC_COEF*t.z)*nG_0*(1+REST_COEF)*(m_j/(m_i+m_j));
+
+            const dfloat dvx_j = + (n.x+FRIC_COEF*t.x)*nG_0*(1+REST_COEF)*(m_i/(m_i+m_j));
+            const dfloat dvy_j = + (n.y+FRIC_COEF*t.y)*nG_0*(1+REST_COEF)*(m_i/(m_i+m_j));
+            const dfloat dvz_j = + (n.z+FRIC_COEF*t.z)*nG_0*(1+REST_COEF)*(m_i/(m_i+m_j));
+
+            //rotational velocity change
+            const dfloat dwx_i =  - (2.5/r_i)*nG_0*(1+REST_COEF)*(m_j/(m_i+m_j))*FRIC_COEF*(n.y*t.z-n.z*t.y);
+            const dfloat dwy_i = - (2.5/r_i)*nG_0*(1+REST_COEF)*(m_j/(m_i+m_j))*FRIC_COEF*(n.z*t.x-n.x*t.z);
+            const dfloat dwz_i = - (2.5/r_i)*nG_0*(1+REST_COEF)*(m_j/(m_i+m_j))*FRIC_COEF*(n.x*t.y-n.y*t.x);
+        
+            const dfloat dwx_j = - (2.5/r_j)*nG_0*(1+REST_COEF)*(m_i/(m_i+m_j))*FRIC_COEF*(n.y*t.z-n.z*t.y);
+            const dfloat dwy_j = - (2.5/r_j)*nG_0*(1+REST_COEF)*(m_i/(m_i+m_j))*FRIC_COEF*(n.z*t.x-n.x*t.z);
+            const dfloat dwz_j = - (2.5/r_j)*nG_0*(1+REST_COEF)*(m_i/(m_i+m_j))*FRIC_COEF*(n.x*t.y-n.y*t.x);
+
+            // particle velocity update
+
+            v_i.x += dvx_i;
+            v_i.y += dvy_i;
+            v_i.z += dvz_i;
+
+            v_j.x += dvx_j;
+            v_j.y += dvy_j;
+            v_j.z += dvz_j;
+
+            w_i.x += dwx_i;
+            w_i.y += dwy_i;
+            w_i.z += dwz_i;
+
+            w_j.x += dwx_j;
+            w_j.y += dwy_j;
+            w_j.z += dwz_j;
+
+            //update node velocities
+            dfloat xIBM,yIBM,zIBM;
+            for(int i = 0; i < particlesNodes.numNodes; i++){
+                if ( particlesNodes.particleCenterIdx[i] == column){
+                    xIBM = particlesNodes.pos.x[i];
+                    yIBM = particlesNodes.pos.y[i];
+                    zIBM = particlesNodes.pos.z[i];
+        
+                    particlesNodes.vel.x[i] = v_i.x + (w_i.y * (zIBM - pos_i.z) - w_i.z * (yIBM - pos_i.y));
+                    particlesNodes.vel.y[i] = v_i.y + (w_i.z * (xIBM - pos_i.x) - w_i.x * (zIBM - pos_i.z));
+                    particlesNodes.vel.z[i] = v_i.z + (w_i.x * (yIBM - pos_i.y) - w_i.y * (xIBM - pos_i.x));
+                }
+                if ( particlesNodes.particleCenterIdx[i] == row){
+                    xIBM = particlesNodes.pos.x[i];
+                    yIBM = particlesNodes.pos.y[i];
+                    zIBM = particlesNodes.pos.z[i];
+        
+                    particlesNodes.vel.x[i] = v_j.x + (w_j.y * (zIBM - pos_j.z) - w_j.z * (yIBM - pos_j.y));
+                    particlesNodes.vel.y[i] = v_j.y + (w_j.z * (xIBM - pos_j.x) - w_j.x * (zIBM - pos_j.z));
+                    particlesNodes.vel.z[i] = v_j.z + (w_j.x * (yIBM - pos_j.y) - w_j.y * (xIBM - pos_j.x));
+                }
+            }
+
+        } //if mag dist < sum radius
+
+    } //colision between particles
+
+}
+#endif //HARD_SPHERE
 
 #endif // !IBM
