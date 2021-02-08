@@ -51,8 +51,11 @@ typedef struct particlesSoA{
 *   @param center : sphere center position
 *   @param coloumb: number of interations for coloumb optimization
 *   @param move: particle is movable or not
+*   @param vel: particle velocity
+*   @param w: particle rotation velocity
 */
-Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move);
+Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move,
+    dfloat3 vel=dfloat3(0, 0, 0), dfloat3 w=dfloat3(0, 0, 0));
 
 
 /*

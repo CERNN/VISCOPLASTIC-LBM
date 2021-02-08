@@ -55,7 +55,8 @@ void ParticlesSoA::freeNodesAndCenters(){
     this->pCenterArray = nullptr;
 }
 
-Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move)
+Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move,
+    dfloat3 vel, dfloat3 w)
 {
     // Particle to be returned
     Particle particleRet;
@@ -82,9 +83,15 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     particleRet.pCenter.S = 4.0 * M_PI * r * r;
 
     // Particle center position
-    particleRet.pCenter.pos.x = center.x;
-    particleRet.pCenter.pos.y = center.y;
-    particleRet.pCenter.pos.z = center.z;
+    particleRet.pCenter.pos = center;
+
+    // Particle velocity
+    particleRet.pCenter.vel = vel;
+    particleRet.pCenter.vel_old = vel;
+
+    // Particle rotation
+    particleRet.pCenter.w = w;
+    particleRet.pCenter.w_old = w;
 
     // Innertia momentum
     particleRet.pCenter.I.x = 2.0 * volume * PARTICLE_DENSITY * r * r / 5.0;
@@ -139,6 +146,10 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
     first_node->S = S[0];
 
+    // TODO: update using rotation
+    first_node->vel = vel;
+    first_node->vel_old = vel;
+
     int nodeIndex = 1;
     for (int i = 1; i < nLayer; i++) {
         if (i % 2 == 1) {
@@ -156,6 +167,10 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
             // in the layer, so all nodes have the same area in the layer
             particleRet.nodes[nodeIndex].S = S[i] / nNodesLayer[i];
 
+            // TODO: update using rotation
+            particleRet.nodes[nodeIndex].vel = vel;
+            particleRet.nodes[nodeIndex].vel_old = vel;
+
             // Add one node
             nodeIndex++;
         }
@@ -168,6 +183,9 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     last_node->pos.y = center.y;
     last_node->pos.z = center.z + r * sin(theta[nLayer]);
     last_node->S = S[nLayer];
+    // TODO: update using rotation
+    last_node->vel = vel;
+    last_node->vel_old = vel;
 
     unsigned int numNodes = particleRet.numNodes;
 
