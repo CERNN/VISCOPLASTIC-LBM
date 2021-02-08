@@ -133,9 +133,9 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     ParticleNode* first_node = &(particleRet.nodes[0]);
 
     // South node - define all properties
-    first_node->pos.x = center.x;
-    first_node->pos.y = center.y;
-    first_node->pos.z = center.z + r * sin(theta[0]);
+    first_node->pos.x = 0;
+    first_node->pos.y = 0;
+    first_node->pos.z = r * sin(theta[0]);
 
     first_node->S = S[0];
 
@@ -148,9 +148,9 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
         for (int j = 0; j < nNodesLayer[i]; j++) {
             // Determine the properties of each node in the mid layers
-            particleRet.nodes[nodeIndex].pos.x = center.x + r * cos(theta[i]) * cos((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
-            particleRet.nodes[nodeIndex].pos.y = center.y + r * cos(theta[i]) * sin((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
-            particleRet.nodes[nodeIndex].pos.z = center.z + r * sin(theta[i]);
+            particleRet.nodes[nodeIndex].pos.x = r * cos(theta[i]) * cos((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
+            particleRet.nodes[nodeIndex].pos.y = r * cos(theta[i]) * sin((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
+            particleRet.nodes[nodeIndex].pos.z = r * sin(theta[i]);
 
             // The area of sphere segment is divided by the number of node
             // in the layer, so all nodes have the same area in the layer
@@ -164,9 +164,9 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     // North pole -define all properties
     ParticleNode* last_node = &(particleRet.nodes[particleRet.numNodes-1]);
     
-    last_node->pos.x = center.x;
-    last_node->pos.y = center.y;
-    last_node->pos.z = center.z + r * sin(theta[nLayer]);
+    last_node->pos.x = 0;
+    last_node->pos.y = 0;
+    last_node->pos.z = r * sin(theta[nLayer]);
     last_node->S = S[nLayer];
 
     unsigned int numNodes = particleRet.numNodes;
@@ -241,10 +241,6 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
             ParticleNode* node_i = &(particleRet.nodes[i]);
 
             node_i->S = particleRet.pCenter.S / (numNodes);
-
-            node_i->pos.x += center.x;
-            node_i->pos.y += center.y;
-            node_i->pos.z += center.z;
         }
 
         // Free coulomb force
@@ -254,6 +250,12 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
         for(int i = 0; i < numNodes; i++){
             particleRet.nodes[i].S = dA;
         }
+    }
+
+    for (int i = 0; i < numNodes; i++) {
+        node_i->pos.x += center.x;
+        node_i->pos.y += center.y;
+        node_i->pos.z += center.z;
     }
 
     // Free allocated variables
