@@ -55,7 +55,8 @@ void ParticlesSoA::freeNodesAndCenters(){
     this->pCenterArray = nullptr;
 }
 
-Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move)
+Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move,
+    dfloat3 vel, dfloat3 w)
 {
     // Particle to be returned
     Particle particleRet;
@@ -82,9 +83,15 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     particleRet.pCenter.S = 4.0 * M_PI * r * r;
 
     // Particle center position
-    particleRet.pCenter.pos.x = center.x;
-    particleRet.pCenter.pos.y = center.y;
-    particleRet.pCenter.pos.z = center.z;
+    particleRet.pCenter.pos = center;
+
+    // Particle velocity
+    particleRet.pCenter.vel = vel;
+    particleRet.pCenter.vel_old = vel;
+
+    // Particle rotation
+    particleRet.pCenter.w = w;
+    particleRet.pCenter.w_old = w;
 
     // Innertia momentum
     particleRet.pCenter.I.x = 2.0 * volume * PARTICLE_DENSITY * r * r / 5.0;
@@ -111,7 +118,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
         zeta[i] = r * sin(theta[i]); // Height of each layer
     }
 
-    /*
+    
     for (int i = 0; i < nLayer; i++) {
         // Calculate the distance to the south pole to the mid distance of the layer and previous layer
         S[i] = (zeta[i] + zeta[i + 1]) / 2.0 - zeta[0]; 
@@ -126,18 +133,27 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
         S[i] = S[i] - S[i - 1];
     }
     S[0] = S[nLayer];
-    */
+    
 
     particleRet.nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * particleRet.numNodes);
 
     ParticleNode* first_node = &(particleRet.nodes[0]);
 
     // South node - define all properties
-    first_node->pos.x = center.x;
-    first_node->pos.y = center.y;
-    first_node->pos.z = center.z + r * sin(theta[0]);
+    first_node->pos.x = 0;
+    first_node->pos.y = 0;
+    first_node->pos.z = r * sin(theta[0]);
 
-    // first_node->S = S[0];
+    first_node->S = S[0];
+
+    // Define node velocity
+    first_node->vel.x = vel.x + w.y * first_node->pos.z - w.z * first_node->pos.y;
+    first_node->vel.y = vel.y + w.z * first_node->pos.x - w.x * first_node->pos.z;
+    first_node->vel.z = vel.z + w.x * first_node->pos.y - w.y * first_node->pos.x;
+
+    first_node->vel_old.x = vel.x + w.y * first_node->pos.z - w.z * first_node->pos.y;
+    first_node->vel_old.y = vel.y + w.z * first_node->pos.x - w.x * first_node->pos.z;
+    first_node->vel_old.z = vel.z + w.x * first_node->pos.y - w.y * first_node->pos.x;
 
     int nodeIndex = 1;
     for (int i = 1; i < nLayer; i++) {
@@ -148,13 +164,23 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
         for (int j = 0; j < nNodesLayer[i]; j++) {
             // Determine the properties of each node in the mid layers
-            particleRet.nodes[nodeIndex].pos.x = center.x + r * cos(theta[i]) * cos((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
-            particleRet.nodes[nodeIndex].pos.y = center.y + r * cos(theta[i]) * sin((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
-            particleRet.nodes[nodeIndex].pos.z = center.z + r * sin(theta[i]);
+            particleRet.nodes[nodeIndex].pos.x = r * cos(theta[i]) * cos((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
+            particleRet.nodes[nodeIndex].pos.y = r * cos(theta[i]) * sin((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
+            particleRet.nodes[nodeIndex].pos.z = r * sin(theta[i]);
 
             // The area of sphere segment is divided by the number of node
-            // in the layer, so all nodes have the same area
-            // particleRet.nodes[nodeIndex].S = particleRet.pCenter.S/particleRet.numNodes;
+            // in the layer, so all nodes have the same area in the layer
+            particleRet.nodes[nodeIndex].S = S[i] / nNodesLayer[i];
+
+            // Define node velocity
+            particleRet.nodes[nodeIndex].vel.x = vel.x + w.y * particleRet.nodes[nodeIndex].pos.z - w.z * particleRet.nodes[nodeIndex].pos.y;
+            particleRet.nodes[nodeIndex].vel.y = vel.y + w.z * particleRet.nodes[nodeIndex].pos.x - w.x * particleRet.nodes[nodeIndex].pos.z;
+            particleRet.nodes[nodeIndex].vel.z = vel.z + w.x * particleRet.nodes[nodeIndex].pos.y - w.y * particleRet.nodes[nodeIndex].pos.x;
+
+            particleRet.nodes[nodeIndex].vel_old.x = vel.x + w.y * particleRet.nodes[nodeIndex].pos.z - w.z * particleRet.nodes[nodeIndex].pos.y;
+            particleRet.nodes[nodeIndex].vel_old.y = vel.y + w.z * particleRet.nodes[nodeIndex].pos.x - w.x * particleRet.nodes[nodeIndex].pos.z;
+            particleRet.nodes[nodeIndex].vel_old.z = vel.z + w.x * particleRet.nodes[nodeIndex].pos.y - w.y * particleRet.nodes[nodeIndex].pos.x;
+            
 
             // Add one node
             nodeIndex++;
@@ -164,16 +190,20 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     // North pole -define all properties
     ParticleNode* last_node = &(particleRet.nodes[particleRet.numNodes-1]);
     
-    last_node->pos.x = center.x;
-    last_node->pos.y = center.y;
-    last_node->pos.z = center.z + r * sin(theta[nLayer]);
-    // last_node->S = S[nLayer];
+    last_node->pos.x = 0;
+    last_node->pos.y = 0;
+    last_node->pos.z = r * sin(theta[nLayer]);
+    last_node->S = S[nLayer];
+    // define last node velocity
+    last_node->vel.x = vel.x + w.y * last_node->pos.z - w.z * last_node->pos.y;
+    last_node->vel.y = vel.y + w.z * last_node->pos.x - w.x * last_node->pos.z;
+    last_node->vel.z = vel.z + w.x * last_node->pos.y - w.y * last_node->pos.x;
+
+    last_node->vel_old.x = vel.x + w.y * last_node->pos.z  - w.z * last_node->pos.y;
+    last_node->vel_old.y = vel.y + w.z * last_node->pos.x  - w.x * last_node->pos.z;
+    last_node->vel_old.z = vel.z + w.x * last_node->pos.y  - w.y * last_node->pos.x;
 
     unsigned int numNodes = particleRet.numNodes;
-    dfloat dA =  particleRet.pCenter.S/particleRet.numNodes;
-    for(int i = 0; i < numNodes; i++){
-        particleRet.nodes[i].S = dA;
-    }
 
     // Coulomb node positions distribution
     if (coulomb != 0) {
@@ -245,14 +275,22 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
             ParticleNode* node_i = &(particleRet.nodes[i]);
 
             node_i->S = particleRet.pCenter.S / (numNodes);
-
-            node_i->pos.x += center.x;
-            node_i->pos.y += center.y;
-            node_i->pos.z += center.z;
         }
 
         // Free coulomb force
         free(cForce);
+
+        dfloat dA =  particleRet.pCenter.S/particleRet.numNodes;
+        for(int i = 0; i < numNodes; i++){
+            particleRet.nodes[i].S = dA;
+        }
+    }
+    ParticleNode* node_i;
+    for (int i = 0; i < numNodes; i++) {
+        node_i = &(particleRet.nodes[i]);
+        node_i->pos.x += center.x;
+        node_i->pos.y += center.y;
+        node_i->pos.z += center.z;
     }
 
     // Free allocated variables
@@ -266,5 +304,131 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
     return particleRet;
 }
+
+
+Particle makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern)
+{
+    // Particle to be returned
+    Particle particleRet;
+
+    // Define the properties of the cylinder
+    dfloat r = diameter / 2.0;
+    dfloat x = baseTwoCenter.x - baseOneCenter.x;
+    dfloat y = baseTwoCenter.y - baseOneCenter.y;
+    dfloat z = baseTwoCenter.z - baseOneCenter.z;
+    dfloat length = sqrt (x*x +y*y+z*z);
+    dfloat volume = r*r*M_PI*length;
+
+    particleRet.pCenter.radius = r;
+    // Particle volume
+    particleRet.pCenter.volume = volume;
+    // Particle area
+    particleRet.pCenter.S = 2.0*M_PI*r*length;
+
+    // Particle center position
+    particleRet.pCenter.pos.x = (baseOneCenter.x + baseTwoCenter.x)/2;
+    particleRet.pCenter.pos.y = (baseOneCenter.y + baseTwoCenter.y)/2;
+    particleRet.pCenter.pos.z = (baseOneCenter.z + baseTwoCenter.z)/2;
+
+    particleRet.pCenter.movable = false;
+
+
+    int nLayer, nNodesLayer;
+
+    dfloat3* centerLayer;
+    
+
+    dfloat scale = MESH_SCALE;
+
+    dfloat layerDistance = scale;
+    if (pattern)
+        layerDistance = scale*scale*sqrt(3)/4;
+
+    //number of layers
+    nLayer = (int)(length/layerDistance);
+    //number of nodes per layer
+    nNodesLayer = (int)(M_PI * 2.0 *r / scale);
+
+    //total number of nodes
+    particleRet.numNodes = nLayer * nNodesLayer;
+
+    particleRet.nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * particleRet.numNodes);
+
+    //layer center position step
+    dfloat dx = x / nLayer;
+    dfloat dy = y / nLayer;
+    dfloat dz = z / nLayer;
+
+    centerLayer = (dfloat3*)malloc((nLayer) * sizeof(dfloat3));
+    for (int i = 0; i < nLayer ; i++) {
+        centerLayer[i].x = baseOneCenter.x + dx * ((dfloat)i+0.5*scale);
+        centerLayer[i].y = baseOneCenter.y + dy * ((dfloat)i+0.5*scale);
+        centerLayer[i].z = baseOneCenter.z + dz * ((dfloat)i+0.5*scale);
+    }
+
+    //adimensionalise direction vector
+    x = x / length;
+    y = y / length;
+    z = z / length;
+
+    dfloat3 a1;//randon vector for perpicular direction
+    a1.x = 0.9; 
+    a1.y = 0.8; 
+    a1.z = 0.7; 
+    //TODO: it will work as long the created cyclinder does not have the same direction
+    //      make it can work in any direction
+    dfloat a1l = sqrt(a1.x * a1.x + a1.y * a1.y + a1.z * a1.z);
+    a1.x = a1.x / a1l; 
+    a1.y = a1.y / a1l; 
+    a1.z = a1.z / a1l;
+
+    //product of x with a1, v1 is the first axis in the layer plane
+    dfloat3 v1;
+    v1.x = (y * a1.z - z * a1.y);
+    v1.y = (z * a1.x - x * a1.z);
+    v1.z = (x * a1.y - y * a1.x);
+
+    //product of x with v1, v2 is perpendicular to v1, creating the second axis in the layer plane
+    dfloat3 v2;
+    v2.x = (y * v1.z - z * v1.y);
+    v2.y = (z * v1.x - x * v1.z);
+    v2.z = (x * v1.y - y * v1.x);
+
+    //calculate length and make v1 and v2 unitary
+    dfloat v1l = sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
+    dfloat v2l = sqrt(v2.x * v2.x + v2.y * v2.y + v2.z * v2.z);
+
+    v1.x = v1.x / v1l; 
+    v1.y = v1.y / v1l; 
+    v1.z = v1.z / v1l;
+
+    v2.x = v2.x / v2l; 
+    v2.y = v2.y / v2l; 
+    v2.z = v2.z / v2l;
+
+    int nodeIndex = 0;
+    dfloat phase = 0;
+    dfloat angle;
+    for (int i = 0; i < nLayer; i++) {
+        if (pattern) {
+            phase = (i % 2) * M_PI / nNodesLayer;
+        }
+        for (int j = 0; j < nNodesLayer; j++) {
+            angle = (dfloat)j * 2.0 * M_PI / nNodesLayer + phase;
+            particleRet.nodes[nodeIndex].pos.x = centerLayer[i].x + r * cos(angle) * v1.x + r * sin(angle) * v2.x; 
+            particleRet.nodes[nodeIndex].pos.y = centerLayer[i].y + r * cos(angle) * v1.y + r * sin(angle) * v2.y;
+            particleRet.nodes[nodeIndex].pos.z = centerLayer[i].z + r * cos(angle) * v1.z + r * sin(angle) * v2.z;
+
+            particleRet.nodes[i].S = particleRet.pCenter.S/((dfloat)nNodesLayer * nLayer);
+
+            nodeIndex++;
+        }
+    }
+
+    return particleRet;
+
+}
+
+
 
 #endif // !IBM

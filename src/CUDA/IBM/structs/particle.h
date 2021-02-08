@@ -51,9 +51,22 @@ typedef struct particlesSoA{
 *   @param center : sphere center position
 *   @param coloumb: number of interations for coloumb optimization
 *   @param move: particle is movable or not
+*   @param vel: particle velocity
+*   @param w: particle rotation velocity
 */
-Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move);
+Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move,
+    dfloat3 vel=dfloat3(0, 0, 0), dfloat3 w=dfloat3(0, 0, 0));
 
-// Particle makeCylinder(dfloat diameter, dfloat3 begin, dfloat3 end, bool hexa);
+
+/*
+*   @brief Create a fixed open cylinder in the bases given the diameter and location of the base center
+*   @param diameter: cylinder diameter in dfloat
+*   @param baseOneCenter : coordinates of the first base center
+*   @param baseTwoCenter : coordinates of the second base center
+*   @param pattern: false : in-line pattern, true: staggered pattern
+*/
+Particle makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern);
+
+
 
 #endif
