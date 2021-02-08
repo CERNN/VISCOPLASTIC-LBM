@@ -146,9 +146,14 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
     first_node->S = S[0];
 
-    // TODO: update using rotation
-    first_node->vel = vel;
-    first_node->vel_old = vel;
+    // Define node velocity
+    first_node->vel.x = vel.x + w.y * first_node->pos.z - w.z * first_node->pos.y;
+    first_node->vel.y = vel.y + w.z * first_node->pos.x - w.x * first_node->pos.z;
+    first_node->vel.z = vel.z + w.x * first_node->pos.y - w.y * first_node->pos.x;
+
+    first_node->vel_old.x = vel.x + w.y * first_node->pos.z - w.z * first_node->pos.y;
+    first_node->vel_old.y = vel.y + w.z * first_node->pos.x - w.x * first_node->pos.z;
+    first_node->vel_old.z = vel.z + w.x * first_node->pos.y - w.y * first_node->pos.x;
 
     int nodeIndex = 1;
     for (int i = 1; i < nLayer; i++) {
@@ -167,9 +172,15 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
             // in the layer, so all nodes have the same area in the layer
             particleRet.nodes[nodeIndex].S = S[i] / nNodesLayer[i];
 
-            // TODO: update using rotation
-            particleRet.nodes[nodeIndex].vel = vel;
-            particleRet.nodes[nodeIndex].vel_old = vel;
+            // Define node velocity
+            particleRet.nodes[nodeIndex].vel.x = vel.x + w.y * particleRet.nodes[nodeIndex].pos.z - w.z * particleRet.nodes[nodeIndex].pos.y;
+            particleRet.nodes[nodeIndex].vel.y = vel.y + w.z * particleRet.nodes[nodeIndex].pos.x - w.x * particleRet.nodes[nodeIndex].pos.z;
+            particleRet.nodes[nodeIndex].vel.z = vel.z + w.x * particleRet.nodes[nodeIndex].pos.y - w.y * particleRet.nodes[nodeIndex].pos.x;
+
+            particleRet.nodes[nodeIndex].vel_old.x = vel.x + w.y * particleRet.nodes[nodeIndex].pos.z - w.z * particleRet.nodes[nodeIndex].pos.y;
+            particleRet.nodes[nodeIndex].vel_old.y = vel.y + w.z * particleRet.nodes[nodeIndex].pos.x - w.x * particleRet.nodes[nodeIndex].pos.z;
+            particleRet.nodes[nodeIndex].vel_old.z = vel.z + w.x * particleRet.nodes[nodeIndex].pos.y - w.y * particleRet.nodes[nodeIndex].pos.x;
+            
 
             // Add one node
             nodeIndex++;
@@ -183,9 +194,14 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     last_node->pos.y = center.y;
     last_node->pos.z = center.z + r * sin(theta[nLayer]);
     last_node->S = S[nLayer];
-    // TODO: update using rotation
-    last_node->vel = vel;
-    last_node->vel_old = vel;
+    // define last node velocity
+    last_node->vel.x = vel.x + w.y * last_node->pos.z - w.z * last_node->pos.y;
+    last_node->vel.y = vel.y + w.z * last_node->pos.x - w.x * last_node->pos.z;
+    last_node->vel.z = vel.z + w.x * last_node->pos.y - w.y * last_node->pos.x;
+
+    last_node->vel_old.x = vel.x + w.y * last_node->pos.z  - w.z * last_node->pos.y;
+    last_node->vel_old.y = vel.y + w.z * last_node->pos.x  - w.x * last_node->pos.z;
+    last_node->vel_old.z = vel.z + w.x * last_node->pos.y  - w.y * last_node->pos.x;
 
     unsigned int numNodes = particleRet.numNodes;
 
