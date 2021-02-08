@@ -251,8 +251,9 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
             particleRet.nodes[i].S = dA;
         }
     }
-
+    ParticleNode* node_i;
     for (int i = 0; i < numNodes; i++) {
+        node_i = &(particleRet.nodes[i]);
         node_i->pos.x += center.x;
         node_i->pos.y += center.y;
         node_i->pos.z += center.z;
