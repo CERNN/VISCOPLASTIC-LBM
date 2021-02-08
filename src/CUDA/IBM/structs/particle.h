@@ -54,6 +54,16 @@ typedef struct particlesSoA{
 */
 Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move);
 
-// Particle makeCylinder(dfloat diameter, dfloat3 begin, dfloat3 end, bool hexa);
+
+/*
+*   @brief Create a fixed open cylinder in the bases given the diameter and location of the base center
+*   @param diameter: cylinder diameter in dfloat
+*   @param baseOneCenter : coordinates of the first base center
+*   @param baseTwoCenter : coordinates of the second base center
+*   @param pattern: false : in-line pattern, true: staggered pattern
+*/
+Particle makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern);
+
+
 
 #endif
