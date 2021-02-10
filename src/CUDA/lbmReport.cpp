@@ -274,7 +274,7 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "Invalid" << "\n";
     #endif
 
-    strSimInfo << "      Particle density: " << PARTICLE_DENSITY << "\n";
+    strSimInfo << "  Particle density cte: " << PARTICLE_DENSITY << "\n";
     strSimInfo << "         Fluid density: " << FLUID_DENSITY << "\n";
     strSimInfo << "                    GX: " << GX << "\n";
     strSimInfo << "                    GY: " << GY << "\n";
