@@ -18,9 +18,9 @@
 // Total number of IB particles in the system
 #define NUM_PARTICLES 1
 // Number of IBM inner iterations
-#define IBM_MAX_ITERATION 3
+#define IBM_MAX_ITERATION 1
 // Particles diameters
-#define PARTICLE_DIAMETER (15*SCALE)
+#define PARTICLE_DIAMETER (15)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -67,8 +67,8 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (100*SCALE*SCALE)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (100*SCALE*SCALE)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (100)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (100)                   // Report IBM treated data every given steps (0 not report)
  
 #define IBM_DATA_STOP true                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE true                 // save reported IBM data to file
@@ -83,7 +83,7 @@ constexpr dfloat FLUID_DENSITY = 1;
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = -1.179430e-03/SCALE/SCALE/SCALE;
+constexpr dfloat GZ = -1.179430e-03;
 /* -------------------------------------------------------------------------- */
 
 /* -------------------------- COLLISION PARAMETERS -------------------------- */
@@ -97,7 +97,7 @@ constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 // Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
 #if defined HARD_SPHERE
 constexpr dfloat FRIC_COEF = 0.1; // friction coeficient
-constexpr dfloat REST_COEF = 0.9; // restitution coeficient   
+constexpr dfloat REST_COEF = 0.8; // restitution coeficient   
 #endif
 /* -------------------------------------------------------------------------- */
 

@@ -31,6 +31,7 @@ void treatDataIBM(IBMProc* procIBM, ParticlesSoA particles)
     // procIBM->clx = 2*pc->f.x/(RHO_0*pc->vel.z*pc->vel.z*tArea);
     // procIBM->cly = 2*pc->f.y/(RHO_0*pc->vel.z*pc->vel.z*tArea);
     procIBM->vel = pc->vel;
+    procIBM->w = pc->w;
     procIBM->pos = pc->pos;
 }
 
@@ -40,7 +41,7 @@ bool stopSimIBM(IBMProc* procIBM, ParticlesSoA particles)
 
     // Stop when the particle is near bottom wall
     if((pc->pos.z - pc->radius) < 2){
-        return true;
+        return false;
     }
     return false;
 }
@@ -48,14 +49,11 @@ bool stopSimIBM(IBMProc* procIBM, ParticlesSoA particles)
 void printTreatDataIBM(IBMProc* procIBM)
 {
     /* PRINT TREATED DATA EXAMPLE */
-    printf("\n------------------------------- IBM TREATED DATA -------------------------------\n");
+    //printf("\n------------------------------- IBM TREATED DATA -------------------------------\n");
     printf("               Step: %d\n", *(procIBM->step));
-    printf("           Reynolds: %.4e\n", procIBM->reynolds);
-    printf("                 Cd: %.4e\n", procIBM->cd);
-    printf("                Clx: %.4e\n", procIBM->clx);
-    printf("                Cly: %.4e\n", procIBM->cly);
-    printf("       pos(x, y, z): (%.4e, %.4e, %.4e)\n", procIBM->pos.x, procIBM->pos.y, procIBM->pos.z);
+    printf("       pos(x, y, z): (%.4f, %.4f, %.4f)\n", procIBM->pos.x, procIBM->pos.y, procIBM->pos.z);
     printf("       vel(x, y, z): (%.4e, %.4e, %.4e)\n", procIBM->vel.x, procIBM->vel.y, procIBM->vel.z);
+    printf("         w(x, y, z): (%.4e, %.4e, %.4e)\n", procIBM->w.x, procIBM->w.y, procIBM->w.z);
     printf("--------------------------------------------------------------------------------\n");
 }
 

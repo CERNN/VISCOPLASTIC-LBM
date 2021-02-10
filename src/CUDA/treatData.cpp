@@ -92,14 +92,14 @@ bool stopSim(MacrProc* processing)
 
 void printTreatData(MacrProc* processing)
 {
-    /* PRINT TREATED DATA EXAMPLE */
+    /* PRINT TREATED DATA EXAMPLE *//*
     printf("\n--------------------------------- TREATED DATA ---------------------------------\n");
     printf("                   Step: %d\n", *(processing->step));
     printf("               Residual: %.4e\n", processing->residual);
     printf("           Avg. density: %.4e\n", processing->avgRho);
     printf("       Avg. Uz (y=NY/2): %.4e\n", processing->avgUzPlanXZ[NY/2]);
     printf("ux(x=0.5, y=0.5, z=0.5): %.4e\n", processing->macrCurr->u.x[idxScalar(NX/2, NY/2, NZ/2)]);
-    printf("--------------------------------------------------------------------------------\n");
+    printf("--------------------------------------------------------------------------------\n");*/
 }
 
 
