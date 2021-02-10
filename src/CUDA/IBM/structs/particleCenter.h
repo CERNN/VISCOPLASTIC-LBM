@@ -34,6 +34,7 @@ typedef struct particleCenter {
     dfloat S;           // Total area of the particle
     dfloat radius;      // Sphere radius
     dfloat volume;      // Particle volume
+    dfloat density;     // Particle density
     bool movable;       // If the particle can move
 
     /* Constructor */
@@ -58,6 +59,7 @@ typedef struct particleCenter {
         S = 0;
         radius = 0;
         volume = 0;
+        density = 0;
         movable = false;
     }
 } ParticleCenter;

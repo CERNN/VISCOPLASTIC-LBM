@@ -56,7 +56,7 @@ void ParticlesSoA::freeNodesAndCenters(){
 }
 
 Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move,
-    dfloat3 vel, dfloat3 w)
+    dfloat density, dfloat3 vel, dfloat3 w)
 {
     // Particle to be returned
     Particle particleRet;
@@ -81,6 +81,8 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     particleRet.pCenter.volume = r*r*r*4*M_PI/3;
     // Particle area
     particleRet.pCenter.S = 4.0 * M_PI * r * r;
+    // Particle density
+    particleRet.pCenter.density = density;
 
     // Particle center position
     particleRet.pCenter.pos = center;
@@ -94,9 +96,9 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     particleRet.pCenter.w_old = w;
 
     // Innertia momentum
-    particleRet.pCenter.I.x = 2.0 * volume * PARTICLE_DENSITY * r * r / 5.0;
-    particleRet.pCenter.I.y = 2.0 * volume * PARTICLE_DENSITY * r * r / 5.0;
-    particleRet.pCenter.I.z = 2.0 * volume * PARTICLE_DENSITY * r * r / 5.0;
+    particleRet.pCenter.I.x = 2.0 * volume * particleRet.pCenter.density * r * r / 5.0;
+    particleRet.pCenter.I.y = 2.0 * volume * particleRet.pCenter.density * r * r / 5.0;
+    particleRet.pCenter.I.z = 2.0 * volume * particleRet.pCenter.density * r * r / 5.0;
 
     particleRet.pCenter.movable = move;
     // Number of layers in the sphere

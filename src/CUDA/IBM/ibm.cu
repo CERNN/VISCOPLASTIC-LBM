@@ -393,11 +393,11 @@ void gpuUpdateParticleCenterVelocityAndRotation(
 
     // Update particle center velocity using its surface forces and the body forces
     pc->vel.x = pc->vel_old.x + ((0.5 * (pc->f_old.x + pc->f.x) + pc->dP_internal.x) * inv_volume 
-        + (PARTICLE_DENSITY - FLUID_DENSITY) * GX) / (PARTICLE_DENSITY);
+        + (pc->density - FLUID_DENSITY) * GX) / (pc->density);
     pc->vel.y = pc->vel_old.y + ((0.5 * (pc->f_old.y + pc->f.y) + pc->dP_internal.y) * inv_volume 
-        + (PARTICLE_DENSITY - FLUID_DENSITY) * GY) / (PARTICLE_DENSITY);
+        + (pc->density - FLUID_DENSITY) * GY) / (pc->density);
     pc->vel.z = pc->vel_old.z + ((0.5 * (pc->f_old.z + pc->f.z) + pc->dP_internal.z) * inv_volume 
-        + (PARTICLE_DENSITY - FLUID_DENSITY) * GZ) / (PARTICLE_DENSITY);
+        + (pc->density - FLUID_DENSITY) * GZ) / (pc->density);
 
     // Auxiliary variables for angular velocity update
     dfloat error = 1;
@@ -621,7 +621,7 @@ void gpuParticlesCollision(
         const dfloat min_dist = 2 * radius_i + ZETA;
 
         // Buoyancy force
-        const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * pc_i->volume;
+        const dfloat b_force = grav * (pc_i->density - FLUID_DENSITY) * pc_i->volume;
 
         // West
         dfloat pos_mirror = -pos_i.x;
@@ -703,7 +703,7 @@ void gpuParticlesCollision(
         dfloat3 f_dirs = dfloat3();
 
         // Buoyancy force
-        const dfloat b_force = grav * (PARTICLE_DENSITY - FLUID_DENSITY) * pc_i->volume;
+        const dfloat b_force = grav * (pc_i->density - FLUID_DENSITY) * pc_i->volume;
 
         // Hard collision (one particle inside another)
         if(mag_dist < radius_i+radius_j){
