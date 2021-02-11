@@ -26,6 +26,8 @@ typedef struct ibmProc{
     dfloat3 pos;
     // Particle velocity
     dfloat3 vel;
+    // Particle rotation
+    dfloat3 w;
 
     /* Constructor */
     __host__
