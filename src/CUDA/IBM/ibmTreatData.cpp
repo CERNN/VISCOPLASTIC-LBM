@@ -54,8 +54,8 @@ void printTreatDataIBM(IBMProc* procIBM)
     printf("           Reynolds: %.4e\n", procIBM->reynolds);
     printf("                 Cd: %.4e\n", procIBM->cd);
     printf("                Clx: %.4e\n", procIBM->clx);
-    printf("                Cly: %.4e\n", procIBM->cly);
-    printf("       pos(x, y, z): (%.2f, %.2f, %.2f)\n", procIBM->pos.x, procIBM->pos.y, procIBM->pos.z);
+    printf("                Cly: %.4e\n", procIBM->cly);    
+    printf("       pos(x, y, z): (%.4f, %.4e, %.4f)\n", procIBM->pos.x, procIBM->pos.y, procIBM->pos.z);
     printf("       vel(x, y, z): (%.4e, %.4e, %.4e)\n", procIBM->vel.x, procIBM->vel.y, procIBM->vel.z);
     printf("         w(x, y, z): (%.4e, %.4e, %.4e)\n", procIBM->w.x, procIBM->w.y, procIBM->w.z);
     printf("--------------------------------------------------------------------------------\n");
