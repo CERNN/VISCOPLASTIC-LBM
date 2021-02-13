@@ -20,7 +20,7 @@
 // Number of IBM inner iterations
 #define IBM_MAX_ITERATION 3
 // Particles diameters
-#define PARTICLE_DIAMETER (15)
+#define PARTICLE_DIAMETER (15*SCALE)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
