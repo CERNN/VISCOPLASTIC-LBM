@@ -1172,9 +1172,9 @@ void gpuParticlesCollisionHard(
                 t.y = G_ct_0.y/mag;
                 t.z = G_ct_0.z/mag;
             }else{
-                t.x = 1.0;
-                t.y = 1.0;
-                t.z = 1.0;
+                t.x = 0.0;
+                t.y = 0.0;
+                t.z = 0.0;
             }
             dfloat nG_0;
 
