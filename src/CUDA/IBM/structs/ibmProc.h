@@ -26,17 +26,7 @@ typedef struct ibmProc{
     dfloat3 pos;
     // Particle velocity
     dfloat3 vel;
-    dfloat3 w;
-    // Particle position
-    dfloat3 pos1;
-    // Particle velocity
-    dfloat3 vel1;
-    dfloat3 w1;
-    // Particle position
-    dfloat3 pos2;
-    // Particle velocity
-    dfloat3 vel2;
-    dfloat3 w2;
+
     /* Constructor */
     __host__
     ibmProc(){

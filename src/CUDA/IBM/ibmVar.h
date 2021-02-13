@@ -16,11 +16,11 @@
 
 /* -------------------------- IBM GENERAL DEFINES --------------------------- */
 // Total number of IB particles in the system
-#define NUM_PARTICLES 3
+#define NUM_PARTICLES 1
 // Number of IBM inner iterations
-#define IBM_MAX_ITERATION 1
+#define IBM_MAX_ITERATION 3
 // Particles diameters
-#define PARTICLE_DIAMETER (20)
+#define PARTICLE_DIAMETER (15)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -32,8 +32,8 @@
 // Transfer and save forces along with macroscopics
 #define EXPORT_FORCES false
 //collision schemes
-//#define SOFT_SPHERE
-#define HARD_SPHERE //https://doi.org/10.1201/b11103  chapter 5
+#define SOFT_SPHERE
+//#define HARD_SPHERE //https://doi.org/10.1201/b11103  chapter 5
 /* ------------------------------------------------------------------------- */
 
 
@@ -131,7 +131,7 @@ constexpr unsigned int GRID_PARTICLES_IBM =
 
 // For IBM particles collision, the total of threads must be 
 // totalThreads = NUM_PARTICLES*(NUM_PARTICLES+1)/2
-constexpr unsigned int TOTAL_PCOLLISION_IBM_THREADS = (NUM_PARTICLES*NUM_PARTICLES+1)/2;
+constexpr unsigned int TOTAL_PCOLLISION_IBM_THREADS = (NUM_PARTICLES*(NUM_PARTICLES+1))/2;
 // Threads for IBM particles collision 
 constexpr unsigned int THREADS_PCOLLISION_IBM = (TOTAL_PCOLLISION_IBM_THREADS > 64) ? 
     64 : TOTAL_PCOLLISION_IBM_THREADS;
