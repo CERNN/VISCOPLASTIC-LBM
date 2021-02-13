@@ -86,6 +86,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
     // Particle center position
     particleRet.pCenter.pos = center;
+    particleRet.pCenter.pos_old = center;
 
     // Particle velocity
     particleRet.pCenter.vel = vel;
@@ -93,6 +94,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
     // Particle rotation
     particleRet.pCenter.w = w;
+    particleRet.pCenter.w_avg = w;
     particleRet.pCenter.w_old = w;
 
     // Innertia momentum
@@ -101,6 +103,13 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     particleRet.pCenter.I.z = 2.0 * volume * particleRet.pCenter.density * r * r / 5.0;
 
     particleRet.pCenter.movable = move;
+
+    // Not movable until MIN_MOVE_TIME_STEP
+    if(move && MIN_MOVE_TIME_STEPS > 0){
+        particleRet.pCenter.become_movable = true;
+        particleRet.pCenter.movable = false;
+    }
+
     // Number of layers in the sphere
     nLayer = (unsigned int)(2.0 * sqrt(2) * r / MESH_SCALE + 1.0); 
 
