@@ -15,6 +15,8 @@ void freeIBMProc(IBMProc* procIBM)
 void treatDataIBM(IBMProc* procIBM, ParticlesSoA particles)
 {
     ParticleCenter* pc = &(particles.pCenterArray[0]);
+    ParticleCenter* pc1 = &(particles.pCenterArray[1]);
+    ParticleCenter* pc2 = &(particles.pCenterArray[2]);
     // Kinematic viscosity
     dfloat nu = RHO_0*(TAU - 0.5)/3;
 
@@ -33,6 +35,14 @@ void treatDataIBM(IBMProc* procIBM, ParticlesSoA particles)
     procIBM->vel = pc->vel;
     procIBM->w = pc->w;
     procIBM->pos = pc->pos;
+
+    procIBM->vel1 = pc1->vel;
+    procIBM->w1 = pc1->w;
+    procIBM->pos1 = pc1->pos;
+
+    procIBM->vel2 = pc2->vel;
+    procIBM->w2 = pc2->w;
+    procIBM->pos2 = pc2->pos;
 }
 
 bool stopSimIBM(IBMProc* procIBM, ParticlesSoA particles)
@@ -49,11 +59,18 @@ bool stopSimIBM(IBMProc* procIBM, ParticlesSoA particles)
 void printTreatDataIBM(IBMProc* procIBM)
 {
     /* PRINT TREATED DATA EXAMPLE */
-    //printf("\n------------------------------- IBM TREATED DATA -------------------------------\n");
+    printf("\n------------------------------- IBM TREATED DATA -------------------------------\n");
     printf("               Step: %d\n", *(procIBM->step));
-    printf("       pos(x, y, z): (%.4f, %.4f, %.4f)\n", procIBM->pos.x, procIBM->pos.y, procIBM->pos.z);
+//    printf("           Reynolds: %.4e\n", procIBM->reynolds);
+//    printf("                 Cd: %.4e\n", procIBM->cd);
+//    printf("                Clx: %.4e\n", procIBM->clx);
+//    printf("                Cly: %.4e\n", procIBM->cly);
+    printf("       pos(x, y, z): (%.4f, %.4e, %.4f)\n", procIBM->pos.x, procIBM->pos.y, procIBM->pos.z);
     printf("       vel(x, y, z): (%.4e, %.4e, %.4e)\n", procIBM->vel.x, procIBM->vel.y, procIBM->vel.z);
-    printf("         w(x, y, z): (%.4e, %.4e, %.4e)\n", procIBM->w.x, procIBM->w.y, procIBM->w.z);
+    printf("      pos1(x, y, z): (%.4f, %.4e, %.4f)\n", procIBM->pos1.x, procIBM->pos1.y, procIBM->pos1.z);
+    printf("      vel1(x, y, z): (%.4e, %.4e, %.4e)\n", procIBM->vel1.x, procIBM->vel1.y, procIBM->vel1.z);
+    printf("      pos1(x, y, z): (%.4f, %.4e, %.4f)\n", procIBM->pos2.x, procIBM->pos2.y, procIBM->pos2.z);
+    printf("      vel1(x, y, z): (%.4e, %.4e, %.4e)\n", procIBM->vel2.x, procIBM->vel2.y, procIBM->vel2.z);
     printf("--------------------------------------------------------------------------------\n");
 }
 

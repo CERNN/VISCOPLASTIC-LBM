@@ -46,8 +46,16 @@ void immersedBoundaryMethod(
 
     // Reset forces in all IBM nodes
     gpuResetNodesForces<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(particles.nodesSoA);
-    // Calculate collision force between particles
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+    // Calculate collision force between particles
+    #if defined SOFT_SPHERE
+    gpuParticlesCollisionSoft<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+    #endif
+    #if defined HARD_SPHERE
+    gpuParticlesCollisionHard<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.nodesSoA,particles.pCenterArray);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+    #endif
 
     // First update particle velocity using body center force and constant forces
     gpuUpdateParticleCenterVelocityAndRotation <<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0] >>>(
@@ -78,14 +86,6 @@ void immersedBoundaryMethod(
         checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     }
-    #if defined SOFT_SPHERE
-    gpuParticlesCollisionSoft<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
-    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-    #endif
-    #if defined HARD_SPHERE
-    gpuParticlesCollisionHard<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.nodesSoA,particles.pCenterArray);
-    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-    #endif
     // Update particle center position and its old values
     gpuParticleMovement<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
         particles.pCenterArray);
@@ -473,15 +473,15 @@ void gpuUpdateParticleOldValues(
 
     // Internal linear momentum delta = rho*volume*delta(v)/delta(t)
     // https://doi.org/10.1016/j.compfluid.2011.05.011
-    pc->dP_internal.x = RHO_0 * pc->volume * (pc->vel.x - pc->vel_old.x);
-    pc->dP_internal.y = RHO_0 * pc->volume * (pc->vel.y - pc->vel_old.y);
-    pc->dP_internal.z = RHO_0 * pc->volume * (pc->vel.z - pc->vel_old.z);
+    pc->dP_internal.x = 0.0; //RHO_0 * pc->volume * (pc->vel.x - pc->vel_old.x);
+    pc->dP_internal.y = 0.0; //RHO_0 * pc->volume * (pc->vel.y - pc->vel_old.y);
+    pc->dP_internal.z = 0.0; //RHO_0 * pc->volume * (pc->vel.z - pc->vel_old.z);
 
     // Internal angular momentum delta = I*delta(omega)/delta(t)
     // https://doi.org/10.1016/j.compfluid.2011.05.011
-    pc->dL_internal.x = pc->I.x * (pc->w.x - pc->w_old.x);
-    pc->dL_internal.y = pc->I.y * (pc->w.y - pc->w_old.y);
-    pc->dL_internal.z = pc->I.z * (pc->w.z - pc->w_old.z);
+    pc->dL_internal.x = 0.0; //pc->I.x * (pc->w.x - pc->w_old.x);
+    pc->dL_internal.y = 0.0; //pc->I.y * (pc->w.y - pc->w_old.y);
+    pc->dL_internal.z = 0.0; //pc->I.z * (pc->w.z - pc->w_old.z);
 
     pc->pos_old.x = pc->pos.x;
     pc->pos_old.y = pc->pos.y;
@@ -627,7 +627,6 @@ void gpuParticlesCollisionSoft(
 
         // Buoyancy force
         const dfloat b_force = grav * (pc_i->density - FLUID_DENSITY) * pc_i->volume;
-
         // East
         dfloat pos_mirror = -pos_i.x;
         dfloat dist_abs = abs(pos_i.x - pos_mirror);
@@ -797,7 +796,7 @@ void gpuParticlesCollisionHard(
             return;
 
         // Particle i info (column)
-        const dfloat  m_i = pc_i ->volume * PARTICLE_DENSITY;
+        const dfloat  m_i = pc_i ->volume * pc_i ->density;
         const dfloat3  I_i = pc_i ->I;
         const dfloat r_i = pc_i->radius;
         const dfloat3 pos_i = pc_i->pos;
@@ -854,8 +853,8 @@ void gpuParticlesCollisionHard(
 
                 dvx_i -= v_i.x + REST_COEF * v_i.x;
 
-                dwy_i += - (5/(2*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
-                dwz_i += + (5/(2*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
+                dwy_i += - (5.0/(2.0*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
+                dwz_i += + (5.0/(2.0*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
                 dwx_i += 0;
             }
 
@@ -896,8 +895,8 @@ void gpuParticlesCollisionHard(
 
                 dvx_i -= v_i.x + REST_COEF * v_i.x;
 
-                dwy_i += - (5/(2*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
-                dwz_i += + (5/(2*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
+                dwy_i += - (5.0/(2.0*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
+                dwz_i += + (5.0/(2.0*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
                 dwx_i += 0;
             }
         }
@@ -939,8 +938,8 @@ void gpuParticlesCollisionHard(
 
                 dvy_i -= v_i.y + REST_COEF * v_i.y;
 
-                dwx_i += - (5/(2*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
-                dwz_i += + (5/(2*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
+                dwx_i += - (5.0/(2.0*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
+                dwz_i += + (5.0/(2.0*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
                 dwy_i += 0;
             }
         }
@@ -979,8 +978,8 @@ void gpuParticlesCollisionHard(
 
                 dvy_i -= v_i.y + REST_COEF * v_i.y;
 
-                dwx_i += - (5/(2*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
-                dwz_i += + (5/(2*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
+                dwx_i += - (5.0/(2.0*r_i))*ep_z*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
+                dwz_i += + (5.0/(2.0*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
                 dwy_i += 0;
             }
         }
@@ -1019,8 +1018,8 @@ void gpuParticlesCollisionHard(
                 dvz_i -= v_i.z + REST_COEF * v_i.z;
 
                 
-                dwx_i += - (5/(2*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
-                dwy_i += + (5/(2*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
+                dwx_i += - (5.0/(2.0*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
+                dwy_i += + (5.0/(2.0*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
                 dwz_i += 0;
             }
 
@@ -1061,12 +1060,12 @@ void gpuParticlesCollisionHard(
 
                 dvz_i -= v_i.z + REST_COEF * v_i.z;
 
-                dwx_i += - (5/(2*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
-                dwy_i += + (5/(2*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
+                dwx_i += - (5.0/(2.0*r_i))*ep_y*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
+                dwy_i += + (5.0/(2.0*r_i))*ep_x*FRIC_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
                 dwz_i += 0;
             }
         }
-        /*
+        
         // Force positive in particle i (column)
         atomicAdd(&(pc_i->f.x), dvx_i * m_i);
         atomicAdd(&(pc_i->f.y), dvy_i * m_i);
@@ -1074,28 +1073,10 @@ void gpuParticlesCollisionHard(
 
         atomicAdd(&(pc_i->M.x), dwx_i * I_i.x);
         atomicAdd(&(pc_i->M.y), dwy_i * I_i.y);
-        atomicAdd(&(pc_i->M.z), dwz_i * I_i.z);*/
+        atomicAdd(&(pc_i->M.z), dwz_i * I_i.z);
         //update node velocities
 
-        v_i.x += dvx_i;
-        v_i.y += dvy_i;
-        v_i.z += dvz_i;
-        pc_i->vel = v_i;
-
-        pc_i->vel_old.x += dvx_i;
-        pc_i->vel_old.y += dvy_i;
-        pc_i->vel_old.z += dvz_i;
-
-        w_i.x += dwx_i;
-        w_i.y += dwy_i;
-        w_i.z += dwz_i;
-        pc_i->w = w_i;
-
-        pc_i->w_old.x += dwx_i;
-        pc_i->w_old.y += dwy_i;
-        pc_i->w_old.z += dwz_i;
-    
-        dfloat add_dist = 1e-7;
+        const dfloat add_dist = 1e-6;
         pc_i->pos.x -= px*(1.0 + add_dist);
         pc_i->pos.y -= py*(1.0 + add_dist);
         pc_i->pos.z -= pz*(1.0 + add_dist);
@@ -1125,11 +1106,18 @@ void gpuParticlesCollisionHard(
     else{
         dfloat3 n, t, G_0, G_c_0, G_ct_0;
         dfloat mag;
+        dfloat px, py,pz; //penetration
+        px = 0;
+        py = 0;
+        pz = 0;
 
         ParticleCenter* pc_j = &particleCenters[row];
+
+        if(!pc_i->movable && !pc_j->movable)
+            return;
         
         // Particle i info (column)
-        const dfloat  m_i = pc_i ->volume * PARTICLE_DENSITY;
+        const dfloat  m_i = pc_i ->volume * pc_i ->density;
         const dfloat3  I_i = pc_i ->I;
         const dfloat  r_i = pc_i->radius;
         const dfloat3 pos_i = pc_i->pos;
@@ -1137,7 +1125,7 @@ void gpuParticlesCollisionHard(
         dfloat3 w_i = pc_i->w;
 
         // Particle i info (column)
-        const dfloat  m_j = pc_j ->volume * PARTICLE_DENSITY;
+        const dfloat  m_j = pc_j ->volume * pc_j ->density;
         const dfloat3  I_j = pc_j ->I;
         const dfloat  r_j = pc_j->radius;
         const dfloat3 pos_j = pc_j->pos;
@@ -1150,12 +1138,17 @@ void gpuParticlesCollisionHard(
         n.z = pos_i.z-pos_j.z;
 
         mag = n.x*n.x+n.y*n.y+n.z*n.z;
-        mag = sqrt(mag);
+        dfloat const dist_abs = sqrt(mag);
 
-        if(mag <= r_i+r_j){
-            n.x = n.x/(mag);
-            n.y = n.y/(mag);
-            n.z = n.z/(mag);
+        if(dist_abs <= r_i+r_j){
+
+            n.x = n.x/(dist_abs);
+            n.y = n.y/(dist_abs);
+            n.z = n.z/(dist_abs);
+
+            px = -n.x*(r_i+r_j-dist_abs);
+            py = -n.y*(r_i+r_j-dist_abs);
+            pz = -n.z*(r_i+r_j-dist_abs);
 
             // relative velocity vector
             G_0.x = v_i.x-v_j.x;
@@ -1173,11 +1166,16 @@ void gpuParticlesCollisionHard(
             mag = G_ct_0.x*G_ct_0.x+G_ct_0.y*G_ct_0.y+G_ct_0.z*G_ct_0.z;
             mag=sqrt(mag);
 
-            //tangential vector
-            t.x = G_ct_0.x/mag;
-            t.y = G_ct_0.y/mag;
-            t.z = G_ct_0.z/mag;
-
+            if (mag != 0){
+                //tangential vector
+                t.x = G_ct_0.x/mag;
+                t.y = G_ct_0.y/mag;
+                t.z = G_ct_0.z/mag;
+            }else{
+                t.x = 1.0;
+                t.y = 1.0;
+                t.z = 1.0;
+            }
             dfloat nG_0;
 
             nG_0 = (n.x*G_0.x+n.y*G_0.y+n.z*G_0.z);
@@ -1192,7 +1190,7 @@ void gpuParticlesCollisionHard(
             const dfloat dvz_j = + (n.z+FRIC_COEF*t.z)*nG_0*(1+REST_COEF)*(m_i/(m_i+m_j));
 
             //rotational velocity change
-            const dfloat dwx_i =  - (2.5/r_i)*nG_0*(1+REST_COEF)*(m_j/(m_i+m_j))*FRIC_COEF*(n.y*t.z-n.z*t.y);
+            const dfloat dwx_i = - (2.5/r_i)*nG_0*(1+REST_COEF)*(m_j/(m_i+m_j))*FRIC_COEF*(n.y*t.z-n.z*t.y);
             const dfloat dwy_i = - (2.5/r_i)*nG_0*(1+REST_COEF)*(m_j/(m_i+m_j))*FRIC_COEF*(n.z*t.x-n.x*t.z);
             const dfloat dwz_i = - (2.5/r_i)*nG_0*(1+REST_COEF)*(m_j/(m_i+m_j))*FRIC_COEF*(n.x*t.y-n.y*t.x);
         
@@ -1201,73 +1199,66 @@ void gpuParticlesCollisionHard(
             const dfloat dwz_j = - (2.5/r_j)*nG_0*(1+REST_COEF)*(m_i/(m_i+m_j))*FRIC_COEF*(n.x*t.y-n.y*t.x);
 
             // particle velocity update
-            /*
+            dfloat add_dist = 1e-3;
             if(pc_i->movable && pc_j->movable){
-                // Force positive in particle i (column)
-                atomicAdd(&(pc_i->f.x), dvx_i * m_i);
-                atomicAdd(&(pc_i->f.y), dvy_i * m_i);
-                atomicAdd(&(pc_i->f.z), dvz_i * m_i);
+    
+                atomicAdd(&(pc_i->f.x), (dvx_i*m_i));
+                atomicAdd(&(pc_i->f.y), (dvy_i*m_i));
+                atomicAdd(&(pc_i->f.z), (dvz_i*m_i));
 
-                atomicAdd(&(pc_i->M.x), dwx_i * I_i.x);
-                atomicAdd(&(pc_i->M.y), dwy_i * I_i.y);
-                atomicAdd(&(pc_i->M.z), dwz_i * I_i.z);
+                atomicAdd(&(pc_i->pos.x), -px*(0.5 + add_dist));
+                atomicAdd(&(pc_i->pos.y), -py*(0.5 + add_dist));
+                atomicAdd(&(pc_i->pos.z), -pz*(0.5 + add_dist));
+
+                atomicAdd(&(pc_i->M.x), (dwx_i*I_i.x));
+                atomicAdd(&(pc_i->M.y), (dwy_i*I_i.y));
+                atomicAdd(&(pc_i->M.z), (dwz_i*I_i.z));
+
+
                 // Force negative in particle j (row)
-                atomicAdd(&(pc_j->f.x), dvx_j * m_j);
-                atomicAdd(&(pc_j->f.y), dvy_j * m_j);
-                atomicAdd(&(pc_j->f.z), dvz_j * m_j);
+                atomicAdd(&(pc_j->f.x), dvx_j*m_j);
+                atomicAdd(&(pc_j->f.y), dvy_j*m_j);
+                atomicAdd(&(pc_j->f.z), dvz_j*m_j);
 
-                atomicAdd(&(pc_i->M.x), dwx_j * I_j.x);
-                atomicAdd(&(pc_i->M.y), dwy_j * I_j.y);
-                atomicAdd(&(pc_i->M.z), dwz_j * I_j.z);
-            }*/
-             // particle velocity update
+                atomicAdd(&(pc_j->pos.x), px*(0.5 + add_dist));
+                atomicAdd(&(pc_j->pos.y), py*(0.5 + add_dist));
+                atomicAdd(&(pc_j->pos.z), pz*(0.5 + add_dist));
 
-             v_i.x += dvx_i;
-             v_i.y += dvy_i;
-             v_i.z += dvz_i;
- 
-             v_j.x += dvx_j;
-             v_j.y += dvy_j;
-             v_j.z += dvz_j;
- 
-             w_i.x += dwx_i;
-             w_i.y += dwy_i;
-             w_i.z += dwz_i;
- 
-             w_j.x += dwx_j;
-             w_j.y += dwy_j;
-             w_j.z += dwz_j;
- 
-             //update node velocities
-             dfloat xIBM,yIBM,zIBM;
-             for(int i = 0; i < particlesNodes.numNodes; i++){
-                 if ( particlesNodes.particleCenterIdx[i] == column){
-                     xIBM = particlesNodes.pos.x[i];
-                     yIBM = particlesNodes.pos.y[i];
-                     zIBM = particlesNodes.pos.z[i];
- 
-                     particlesNodes.vel.x[i] = v_i.x + (w_i.y * (zIBM - pos_i.z) - w_i.z * (yIBM - pos_i.y));
-                     particlesNodes.vel.y[i] = v_i.y + (w_i.z * (xIBM - pos_i.x) - w_i.x * (zIBM - pos_i.z));
-                     particlesNodes.vel.z[i] = v_i.z + (w_i.x * (yIBM - pos_i.y) - w_i.y * (xIBM - pos_i.x));
+                atomicAdd(&(pc_i->M.x), dwx_j* I_j.x);
+                atomicAdd(&(pc_i->M.y), dwy_j* I_j.y);
+                atomicAdd(&(pc_i->M.z), dwz_j* I_j.z);
+            }                  
 
-                     particlesNodes.vel_old.x[i] = particlesNodes.vel_old.x[i] + (w_i.y * (zIBM - pos_i.z) - w_i.z * (yIBM - pos_i.y));
-                     particlesNodes.vel_old.y[i] = particlesNodes.vel_old.y[i] + (w_i.z * (xIBM - pos_i.x) - w_i.x * (zIBM - pos_i.z));
-                     particlesNodes.vel_old.z[i] = particlesNodes.vel_old.z[i] + (w_i.x * (yIBM - pos_i.y) - w_i.y * (xIBM - pos_i.x));
-                 }
-                 if ( particlesNodes.particleCenterIdx[i] == row){
-                     xIBM = particlesNodes.pos.x[i];
-                     yIBM = particlesNodes.pos.y[i];
-                     zIBM = particlesNodes.pos.z[i];
- 
-                     particlesNodes.vel.x[i] = v_j.x + (w_j.y * (zIBM - pos_j.z) - w_j.z * (yIBM - pos_j.y));
-                     particlesNodes.vel.y[i] = v_j.y + (w_j.z * (xIBM - pos_j.x) - w_j.x * (zIBM - pos_j.z));
-                     particlesNodes.vel.z[i] = v_j.z + (w_j.x * (yIBM - pos_j.y) - w_j.y * (xIBM - pos_j.x));
+            //update node velocities
+            dfloat xIBM,yIBM,zIBM;
+            for(int i = 0; i < particlesNodes.numNodes; i++){
+                if ( particlesNodes.particleCenterIdx[i] == column){
+                    xIBM = particlesNodes.pos.x[i];
+                    yIBM = particlesNodes.pos.y[i];
+                    zIBM = particlesNodes.pos.z[i];
 
-                     particlesNodes.vel_old.x[i] = particlesNodes.vel_old.x[i] + (w_j.y * (zIBM - pos_j.z) - w_j.z * (yIBM - pos_j.y));
-                     particlesNodes.vel_old.y[i] = particlesNodes.vel_old.y[i] + (w_j.z * (xIBM - pos_j.x) - w_j.x * (zIBM - pos_j.z));
-                     particlesNodes.vel_old.z[i] = particlesNodes.vel_old.z[i] + (w_j.x * (yIBM - pos_j.y) - w_j.y * (xIBM - pos_j.x));
-                 }
-             }
+                    particlesNodes.vel.x[i] = v_i.x + (w_i.y * (zIBM - pos_i.z) - w_i.z * (yIBM - pos_i.y));
+                    particlesNodes.vel.y[i] = v_i.y + (w_i.z * (xIBM - pos_i.x) - w_i.x * (zIBM - pos_i.z));
+                    particlesNodes.vel.z[i] = v_i.z + (w_i.x * (yIBM - pos_i.y) - w_i.y * (xIBM - pos_i.x));
+
+                    particlesNodes.vel_old.x[i] = particlesNodes.vel_old.x[i] + (w_i.y * (zIBM - pos_i.z) - w_i.z * (yIBM - pos_i.y));
+                    particlesNodes.vel_old.y[i] = particlesNodes.vel_old.y[i] + (w_i.z * (xIBM - pos_i.x) - w_i.x * (zIBM - pos_i.z));
+                    particlesNodes.vel_old.z[i] = particlesNodes.vel_old.z[i] + (w_i.x * (yIBM - pos_i.y) - w_i.y * (xIBM - pos_i.x));
+                }
+                if ( particlesNodes.particleCenterIdx[i] == row){
+                    xIBM = particlesNodes.pos.x[i];
+                    yIBM = particlesNodes.pos.y[i];
+                    zIBM = particlesNodes.pos.z[i];
+
+                    particlesNodes.vel.x[i] = v_j.x + (w_j.y * (zIBM - pos_j.z) - w_j.z * (yIBM - pos_j.y));
+                    particlesNodes.vel.y[i] = v_j.y + (w_j.z * (xIBM - pos_j.x) - w_j.x * (zIBM - pos_j.z));
+                    particlesNodes.vel.z[i] = v_j.z + (w_j.x * (yIBM - pos_j.y) - w_j.y * (xIBM - pos_j.x));
+
+                    particlesNodes.vel_old.x[i] = particlesNodes.vel_old.x[i] + (w_j.y * (zIBM - pos_j.z) - w_j.z * (yIBM - pos_j.y));
+                    particlesNodes.vel_old.y[i] = particlesNodes.vel_old.y[i] + (w_j.z * (xIBM - pos_j.x) - w_j.x * (zIBM - pos_j.z));
+                    particlesNodes.vel_old.z[i] = particlesNodes.vel_old.z[i] + (w_j.x * (yIBM - pos_j.y) - w_j.y * (xIBM - pos_j.x));
+                }
+            }
         } //if mag dist < sum radius
 
     } //colision between particles

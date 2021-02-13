@@ -16,11 +16,11 @@
 
 /* -------------------------- IBM GENERAL DEFINES --------------------------- */
 // Total number of IB particles in the system
-#define NUM_PARTICLES 1
+#define NUM_PARTICLES 3
 // Number of IBM inner iterations
 #define IBM_MAX_ITERATION 1
 // Particles diameters
-#define PARTICLE_DIAMETER (15)
+#define PARTICLE_DIAMETER (20)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -40,7 +40,7 @@
 /* ---------------------------- IBM OPTIMIZATION --------------------------- */
 // Optimize Euler nodes updates for IBM (only recommended to test false
 // with a ratio of more than 5% between lagrangian and eulerian nodes)
-#define IBM_EULER_OPTIMIZATION true
+#define IBM_EULER_OPTIMIZATION false
 // "Shell thickness" to consider. The Euler nodes are updated every time 
 // the particle moves more than IBM_EULER_UPDATE_DIST value and all nodes with 
 // less than IBM_EULER_SHELL_THICKNESS+P_DIST distant from the particle are updated.
@@ -68,7 +68,7 @@
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
 #define IBM_PARTICLES_SAVE (100)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (100)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_DATA_REPORT (10)                   // Report IBM treated data every given steps (0 not report)
  
 #define IBM_DATA_STOP true                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE true                 // save reported IBM data to file
@@ -83,7 +83,7 @@ constexpr dfloat FLUID_DENSITY = 1;
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = -1.179430e-03;
+constexpr dfloat GZ = 0.0;
 /* -------------------------------------------------------------------------- */
 
 /* -------------------------- COLLISION PARAMETERS -------------------------- */
@@ -96,8 +96,8 @@ constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 #endif
 // Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
 #if defined HARD_SPHERE
-constexpr dfloat FRIC_COEF = 0.1; // friction coeficient
-constexpr dfloat REST_COEF = 0.8; // restitution coeficient   
+constexpr dfloat FRIC_COEF = 0.001; // friction coeficient
+constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
 #endif
 /* -------------------------------------------------------------------------- */
 
