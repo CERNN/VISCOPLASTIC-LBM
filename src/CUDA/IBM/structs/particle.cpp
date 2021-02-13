@@ -104,12 +104,6 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
     particleRet.pCenter.movable = move;
 
-    // Not movable until MIN_MOVE_TIME_STEP
-    if(move && MIN_MOVE_TIME_STEPS > 0){
-        particleRet.pCenter.become_movable = true;
-        particleRet.pCenter.movable = false;
-    }
-
     // Number of layers in the sphere
     nLayer = (unsigned int)(2.0 * sqrt(2) * r / MESH_SCALE + 1.0); 
 
