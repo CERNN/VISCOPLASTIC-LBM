@@ -728,6 +728,7 @@ void gpuParticlesCollisionSoft(
             dfloat3 v_j = pc_j->vel;
             dfloat3 w_j = pc_j->w;
 
+            // there is chance it is divided by the particle diameter
             displacement = r_i + r_j - mag_dist;
 
             // relative velocity vector
@@ -751,10 +752,11 @@ void gpuParticlesCollisionSoft(
             
             
             //normal force
-            f_n =  (-STIFFNESS_NORMAL * sqrt(displacement*displacement*displacement) - DAMPING_NORMAL * G_mag);
-            f_normal.x = f_n * n.x;
-            f_normal.y = f_n * n.y;
-            f_normal.z = f_n * n.z;
+            dfloat f_kn = -STIFFNESS_NORMAL * sqrt(displacement*displacement*displacement);
+            f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x ;
+            f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y ;
+            f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z ;
+            f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
 
             //tangential force       
             G_ct.x = G.x + r_i*(w_i.y*n.z - w_i.z*n.y) + r_j*(w_j.y*n.z - w_j.z*n.y) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.x;
