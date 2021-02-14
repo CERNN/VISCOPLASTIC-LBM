@@ -604,9 +604,6 @@ void gpuParticlesCollisionSoft(
     const unsigned int row = ceil((-1.0+sqrt((float)1+8*(idx+1)))/2);
     const unsigned int column = idx - ((row-1)*row)/2;
 
-    // Auxiliary variables, for many things
-    dfloat aux;
-
     // Magnitude of gravity force
     const dfloat grav = sqrt(GX * GX + GY * GY + GZ * GZ);
 
@@ -619,60 +616,542 @@ void gpuParticlesCollisionSoft(
         if(!pc_i->movable)
             return;
 
+        dfloat3 f_normal = dfloat3();
+        dfloat3 f_tang = dfloat3();
+        dfloat3 t, G, G_ct,tang_disp;
+        dfloat f_n,f_kn,displacement,mag;
+
         // Particle position
+        const dfloat  m_i = pc_i ->volume * pc_i ->density;
         const dfloat3 pos_i = pc_i->pos;
-        const dfloat radius_i = pc_i->radius;
+        const dfloat r_i = pc_i->radius;
 
-        const dfloat min_dist = 2 * radius_i + ZETA;
+        dfloat3 v_i = pc_i->vel;
+        dfloat3 w_i = pc_i->w;
+        const dfloat min_dist = 2 * r_i;
 
-        // Buoyancy force
-        const dfloat b_force = grav * (pc_i->density - FLUID_DENSITY) * pc_i->volume;
+        dfloat effective_radius = r_i;
+        dfloat effective_mass = m_i;
+
+        dfloat STIFFNESS_NORMAL;
+        dfloat STIFFNESS_TANGENTIAL;
+        dfloat damping_const;
+        dfloat DAMPING_NORMAL;                                
+        dfloat DAMPING_TANGENTIAL;
+        dfloat3 n,f_dirs, m_dirs;
+
+        dfloat pos_mirror, dist_abs;
+
         // East
-        dfloat pos_mirror = -pos_i.x;
-        dfloat dist_abs = abs(pos_i.x - pos_mirror);
+        pos_mirror = -pos_i.x;
+        dist_abs = abs(pos_i.x - pos_mirror);
         if (dist_abs <= min_dist){
-            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(pc_i->f.x), (b_force / STIFF_WALL) * aux * aux);
+            displacement = (2.0 * r_i - dist_abs)/2.0;
+            //inverse normal surface vector
+            
+            n.x = -1.0;
+            n.y = 0.0;
+            n.z = 0.0;
+            
+            // relative velocity vector
+            G.x = v_i.x;
+            G.y = v_i.y;
+            G.z = v_i.z;
+
+            STIFFNESS_NORMAL = STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
+            STIFFNESS_TANGENTIAL = STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (displacement);
+            damping_const = (- 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+            DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
+            DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+
+            //normal force
+            f_kn = -STIFFNESS_NORMAL * sqrt(displacement*displacement*displacement);
+            f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x ;
+            f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y ;
+            f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z ;
+            f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
+
+            //tangential force       
+            G_ct.x = G.x + r_i*(w_i.y*n.z - w_i.z*n.y) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.x;
+            G_ct.y = G.y + r_i*(w_i.z*n.x - w_i.x*n.z) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.y;
+            G_ct.z = G.z + r_i*(w_i.x*n.y - w_i.y*n.x) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.z;
+        
+            mag = G_ct.x*G_ct.x+G_ct.y*G_ct.y+G_ct.z*G_ct.z;
+            mag=sqrt(mag);
+
+            if (mag != 0){
+                //tangential vector
+                t.x = G_ct.x/mag;
+                t.y = G_ct.y/mag;
+                t.z = G_ct.z/mag;
+            }else{
+                t.x = 0.0;
+                t.y = 0.0;
+                t.z = 0.0;
+            }
+
+            //TODO : this is not correct. it should take distance from impact point, not from previous time-step
+            tang_disp.x = G_ct.x;
+            tang_disp.y = G_ct.y;
+            tang_disp.z = G_ct.z;
+
+            f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x;
+            f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
+            f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z;
+
+            if(  mag > FRICTION_COEF * abs(f_n) ){
+                f_tang.x = - FRICTION_COEF * f_n * t.x;
+                f_tang.y = - FRICTION_COEF * f_n * t.y;
+                f_tang.z = - FRICTION_COEF * f_n * t.z;
+            }
+
+            // Force in each direction
+            f_dirs = dfloat3(
+                f_normal.x + f_tang.x,
+                f_normal.y + f_tang.y,
+                f_normal.z + f_tang.z
+            );
+            //Torque in each direction
+            m_dirs = dfloat3(
+                r_i * (n.y*f_tang.z - n.z*f_tang.y),
+                r_i * (n.z*f_tang.x - n.x*f_tang.z),
+                r_i * (n.x*f_tang.y - n.y*f_tang.x)
+            );
+
+            atomicAdd(&(pc_i->f.x), f_dirs.x);
+            atomicAdd(&(pc_i->f.y), f_dirs.y);
+            atomicAdd(&(pc_i->f.z), f_dirs.z);
+
+            atomicAdd(&(pc_i->M.x), m_dirs.x);
+            atomicAdd(&(pc_i->M.y), m_dirs.y);
+            atomicAdd(&(pc_i->M.z), m_dirs.z);
         }
 
         // Weast
         pos_mirror = 2 * (NX - 1) - pos_i.x;
         dist_abs = abs(pos_i.x - pos_mirror);
         if (dist_abs <= min_dist){
-            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(pc_i->f.x), -(b_force / STIFF_WALL) * aux * aux);
+            displacement = (2.0 * r_i - dist_abs)/2.0;
+            //inverse normal surface vector
+            
+            n.x = 1.0;
+            n.y = 0.0;
+            n.z = 0.0;
+            
+            // relative velocity vector
+            G.x = v_i.x;
+            G.y = v_i.y;
+            G.z = v_i.z;
+
+            STIFFNESS_NORMAL = STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
+            STIFFNESS_TANGENTIAL = STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (displacement);
+            damping_const = (- 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+            DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
+            DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+
+            //normal force
+            f_kn = -STIFFNESS_NORMAL * sqrt(displacement*displacement*displacement);
+            f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x ;
+            f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y ;
+            f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z ;
+            f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
+
+            //tangential force       
+            G_ct.x = G.x + r_i*(w_i.y*n.z - w_i.z*n.y) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.x;
+            G_ct.y = G.y + r_i*(w_i.z*n.x - w_i.x*n.z) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.y;
+            G_ct.z = G.z + r_i*(w_i.x*n.y - w_i.y*n.x) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.z;
+        
+            mag = G_ct.x*G_ct.x+G_ct.y*G_ct.y+G_ct.z*G_ct.z;
+            mag=sqrt(mag);
+
+            if (mag != 0){
+                //tangential vector
+                t.x = G_ct.x/mag;
+                t.y = G_ct.y/mag;
+                t.z = G_ct.z/mag;
+            }else{
+                t.x = 0.0;
+                t.y = 0.0;
+                t.z = 0.0;
+            }
+
+            //TODO : this is not correct. it should take distance from impact point, not from previous time-step
+            tang_disp.x = G_ct.x;
+            tang_disp.y = G_ct.y;
+            tang_disp.z = G_ct.z;
+
+            f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x;
+            f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
+            f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z;
+
+            if(  mag > FRICTION_COEF * abs(f_n) ){
+                f_tang.x = - FRICTION_COEF * f_n * t.x;
+                f_tang.y = - FRICTION_COEF * f_n * t.y;
+                f_tang.z = - FRICTION_COEF * f_n * t.z;
+            }
+
+            // Force in each direction
+            f_dirs = dfloat3(
+                f_normal.x + f_tang.x,
+                f_normal.y + f_tang.y,
+                f_normal.z + f_tang.z
+            );
+            //Torque in each direction
+            m_dirs = dfloat3(
+                r_i * (n.y*f_tang.z - n.z*f_tang.y),
+                r_i * (n.z*f_tang.x - n.x*f_tang.z),
+                r_i * (n.x*f_tang.y - n.y*f_tang.x)
+            );
+
+            atomicAdd(&(pc_i->f.x), f_dirs.x);
+            atomicAdd(&(pc_i->f.y), f_dirs.y);
+            atomicAdd(&(pc_i->f.z), f_dirs.z);
+
+            atomicAdd(&(pc_i->M.x), m_dirs.x);
+            atomicAdd(&(pc_i->M.y), m_dirs.y);
+            atomicAdd(&(pc_i->M.z), m_dirs.z);
         }
 
         // South
         pos_mirror = - pos_i.y;
         dist_abs = abs(pos_i.y - pos_mirror);
         if (dist_abs <= min_dist){
-            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(pc_i->f.y), (b_force / STIFF_WALL) * aux * aux);
+            displacement = (2.0 * r_i - dist_abs)/2.0;
+            //inverse normal surface vector
+            
+            n.x = 0.0;
+            n.y = -1.0;
+            n.z = 0.0;
+            
+            // relative velocity vector
+            G.x = v_i.x;
+            G.y = v_i.y;
+            G.z = v_i.z;
+
+            STIFFNESS_NORMAL = STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
+            STIFFNESS_TANGENTIAL = STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (displacement);
+            damping_const = (- 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+            DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
+            DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+
+            //normal force
+            f_kn = -STIFFNESS_NORMAL * sqrt(displacement*displacement*displacement);
+            f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x ;
+            f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y ;
+            f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z ;
+            f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
+
+            //tangential force       
+            G_ct.x = G.x + r_i*(w_i.y*n.z - w_i.z*n.y) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.x;
+            G_ct.y = G.y + r_i*(w_i.z*n.x - w_i.x*n.z) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.y;
+            G_ct.z = G.z + r_i*(w_i.x*n.y - w_i.y*n.x) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.z;
+        
+            mag = G_ct.x*G_ct.x+G_ct.y*G_ct.y+G_ct.z*G_ct.z;
+            mag=sqrt(mag);
+
+            if (mag != 0){
+                //tangential vector
+                t.x = G_ct.x/mag;
+                t.y = G_ct.y/mag;
+                t.z = G_ct.z/mag;
+            }else{
+                t.x = 0.0;
+                t.y = 0.0;
+                t.z = 0.0;
+            }
+
+            //TODO : this is not correct. it should take distance from impact point, not from previous time-step
+            tang_disp.x = G_ct.x;
+            tang_disp.y = G_ct.y;
+            tang_disp.z = G_ct.z;
+
+            f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x;
+            f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
+            f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z;
+
+            if(  mag > FRICTION_COEF * abs(f_n) ){
+                f_tang.x = - FRICTION_COEF * f_n * t.x;
+                f_tang.y = - FRICTION_COEF * f_n * t.y;
+                f_tang.z = - FRICTION_COEF * f_n * t.z;
+            }
+
+            // Force in each direction
+            f_dirs = dfloat3(
+                f_normal.x + f_tang.x,
+                f_normal.y + f_tang.y,
+                f_normal.z + f_tang.z
+            );
+            //Torque in each direction
+            m_dirs = dfloat3(
+                r_i * (n.y*f_tang.z - n.z*f_tang.y),
+                r_i * (n.z*f_tang.x - n.x*f_tang.z),
+                r_i * (n.x*f_tang.y - n.y*f_tang.x)
+            );
+
+            atomicAdd(&(pc_i->f.x), f_dirs.x);
+            atomicAdd(&(pc_i->f.y), f_dirs.y);
+            atomicAdd(&(pc_i->f.z), f_dirs.z);
+
+            atomicAdd(&(pc_i->M.x), m_dirs.x);
+            atomicAdd(&(pc_i->M.y), m_dirs.y);
+            atomicAdd(&(pc_i->M.z), m_dirs.z);
         }
 
         // North
         pos_mirror = 2 * (NY - 1) - pos_i.y;
         dist_abs = abs(pos_i.y - pos_mirror);
         if (dist_abs <= min_dist){
-            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(pc_i->f.y), -(b_force / STIFF_WALL) * aux * aux);
+            displacement = (2.0 * r_i - dist_abs)/2.0;
+            //inverse normal surface vector
+            
+            n.x = 0.0;
+            n.y = 1.0;
+            n.z = 0.0;
+            
+            // relative velocity vector
+            G.x = v_i.x;
+            G.y = v_i.y;
+            G.z = v_i.z;
+
+            STIFFNESS_NORMAL = STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
+            STIFFNESS_TANGENTIAL = STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (displacement);
+            damping_const = (- 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+            DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
+            DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+
+            //normal force
+            f_kn = -STIFFNESS_NORMAL * sqrt(displacement*displacement*displacement);
+            f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x ;
+            f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y ;
+            f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z ;
+            f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
+
+            //tangential force       
+            G_ct.x = G.x + r_i*(w_i.y*n.z - w_i.z*n.y) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.x;
+            G_ct.y = G.y + r_i*(w_i.z*n.x - w_i.x*n.z) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.y;
+            G_ct.z = G.z + r_i*(w_i.x*n.y - w_i.y*n.x) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.z;
+        
+            mag = G_ct.x*G_ct.x+G_ct.y*G_ct.y+G_ct.z*G_ct.z;
+            mag=sqrt(mag);
+
+            if (mag != 0){
+                //tangential vector
+                t.x = G_ct.x/mag;
+                t.y = G_ct.y/mag;
+                t.z = G_ct.z/mag;
+            }else{
+                t.x = 0.0;
+                t.y = 0.0;
+                t.z = 0.0;
+            }
+
+            //TODO : this is not correct. it should take distance from impact point, not from previous time-step
+            tang_disp.x = G_ct.x;
+            tang_disp.y = G_ct.y;
+            tang_disp.z = G_ct.z;
+
+            f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x;
+            f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
+            f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z;
+
+            if(  mag > FRICTION_COEF * abs(f_n) ){
+                f_tang.x = - FRICTION_COEF * f_n * t.x;
+                f_tang.y = - FRICTION_COEF * f_n * t.y;
+                f_tang.z = - FRICTION_COEF * f_n * t.z;
+            }
+
+            // Force in each direction
+            f_dirs = dfloat3(
+                f_normal.x + f_tang.x,
+                f_normal.y + f_tang.y,
+                f_normal.z + f_tang.z
+            );
+            //Torque in each direction
+            m_dirs = dfloat3(
+                r_i * (n.y*f_tang.z - n.z*f_tang.y),
+                r_i * (n.z*f_tang.x - n.x*f_tang.z),
+                r_i * (n.x*f_tang.y - n.y*f_tang.x)
+            );
+
+            atomicAdd(&(pc_i->f.x), f_dirs.x);
+            atomicAdd(&(pc_i->f.y), f_dirs.y);
+            atomicAdd(&(pc_i->f.z), f_dirs.z);
+
+            atomicAdd(&(pc_i->M.x), m_dirs.x);
+            atomicAdd(&(pc_i->M.y), m_dirs.y);
+            atomicAdd(&(pc_i->M.z), m_dirs.z);
         }
 
         // Back
         pos_mirror = -pos_i.z;
         dist_abs = abs(pos_i.z - pos_mirror);
         if (dist_abs <= min_dist){
-            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(pc_i->f.z), (b_force / STIFF_WALL) * aux * aux);
+            displacement = (2.0 * r_i - dist_abs)/2.0;
+            //inverse normal surface vector
+            
+            n.x = 0.0;
+            n.y = 0.0;
+            n.z = -1.0;
+            
+            // relative velocity vector
+            G.x = v_i.x;
+            G.y = v_i.y;
+            G.z = v_i.z;
+
+            STIFFNESS_NORMAL = STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
+            STIFFNESS_TANGENTIAL = STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (displacement);
+            damping_const = (- 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+            DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
+            DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+
+            //normal force
+            f_kn = -STIFFNESS_NORMAL * sqrt(displacement*displacement*displacement);
+            f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x ;
+            f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y ;
+            f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z ;
+            f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
+
+            //tangential force       
+            G_ct.x = G.x + r_i*(w_i.y*n.z - w_i.z*n.y) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.x;
+            G_ct.y = G.y + r_i*(w_i.z*n.x - w_i.x*n.z) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.y;
+            G_ct.z = G.z + r_i*(w_i.x*n.y - w_i.y*n.x) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.z;
+        
+            mag = G_ct.x*G_ct.x+G_ct.y*G_ct.y+G_ct.z*G_ct.z;
+            mag=sqrt(mag);
+
+            if (mag != 0){
+                //tangential vector
+                t.x = G_ct.x/mag;
+                t.y = G_ct.y/mag;
+                t.z = G_ct.z/mag;
+            }else{
+                t.x = 0.0;
+                t.y = 0.0;
+                t.z = 0.0;
+            }
+
+            //TODO : this is not correct. it should take distance from impact point, not from previous time-step
+            tang_disp.x = G_ct.x;
+            tang_disp.y = G_ct.y;
+            tang_disp.z = G_ct.z;
+
+            f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x;
+            f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
+            f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z;
+
+            if(  mag > FRICTION_COEF * abs(f_n) ){
+                f_tang.x = - FRICTION_COEF * f_n * t.x;
+                f_tang.y = - FRICTION_COEF * f_n * t.y;
+                f_tang.z = - FRICTION_COEF * f_n * t.z;
+            }
+
+            // Force in each direction
+            f_dirs = dfloat3(
+                f_normal.x + f_tang.x,
+                f_normal.y + f_tang.y,
+                f_normal.z + f_tang.z
+            );
+            //Torque in each direction
+            m_dirs = dfloat3(
+                r_i * (n.y*f_tang.z - n.z*f_tang.y),
+                r_i * (n.z*f_tang.x - n.x*f_tang.z),
+                r_i * (n.x*f_tang.y - n.y*f_tang.x)
+            );
+
+            atomicAdd(&(pc_i->f.x), f_dirs.x);
+            atomicAdd(&(pc_i->f.y), f_dirs.y);
+            atomicAdd(&(pc_i->f.z), f_dirs.z);
+
+            atomicAdd(&(pc_i->M.x), m_dirs.x);
+            atomicAdd(&(pc_i->M.y), m_dirs.y);
+            atomicAdd(&(pc_i->M.z), m_dirs.z);
+
         }
 
         // Front
         pos_mirror = 2 * (NZ - 1) - pos_i.z;
         dist_abs = abs(pos_i.z - pos_mirror);
         if (dist_abs <= min_dist) {
-            aux = (dist_abs - 2 * radius_i - ZETA) / ZETA;
-            atomicAdd(&(pc_i->f.z), -(b_force / STIFF_WALL) * aux * aux);
+            displacement = (2.0 * r_i - dist_abs)/2.0;
+            //inverse normal surface vector
+            
+            n.x = 0.0;
+            n.y = 0.0;
+            n.z = 1.0;
+            
+            // relative velocity vector
+            G.x = v_i.x;
+            G.y = v_i.y;
+            G.z = v_i.z;
+
+            STIFFNESS_NORMAL = STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
+            STIFFNESS_TANGENTIAL = STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (displacement);
+            damping_const = (- 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+            DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
+            DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+
+            //normal force
+            f_kn = -STIFFNESS_NORMAL * sqrt(displacement*displacement*displacement);
+            f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x ;
+            f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y ;
+            f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z ;
+            f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
+
+            //tangential force       
+            G_ct.x = G.x + r_i*(w_i.y*n.z - w_i.z*n.y) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.x;
+            G_ct.y = G.y + r_i*(w_i.z*n.x - w_i.x*n.z) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.y;
+            G_ct.z = G.z + r_i*(w_i.x*n.y - w_i.y*n.x) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.z;
+        
+            mag = G_ct.x*G_ct.x+G_ct.y*G_ct.y+G_ct.z*G_ct.z;
+            mag=sqrt(mag);
+
+            if (mag != 0){
+                //tangential vector
+                t.x = G_ct.x/mag;
+                t.y = G_ct.y/mag;
+                t.z = G_ct.z/mag;
+            }else{
+                t.x = 0.0;
+                t.y = 0.0;
+                t.z = 0.0;
+            }
+
+            //TODO : this is not correct. it should take distance from impact point, not from previous time-step
+            tang_disp.x = G_ct.x;
+            tang_disp.y = G_ct.y;
+            tang_disp.z = G_ct.z;
+
+            f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x;
+            f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
+            f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z;
+
+            if(  mag > FRICTION_COEF * abs(f_n) ){
+                f_tang.x = - FRICTION_COEF * f_n * t.x;
+                f_tang.y = - FRICTION_COEF * f_n * t.y;
+                f_tang.z = - FRICTION_COEF * f_n * t.z;
+            }
+
+            // Force in each direction
+            f_dirs = dfloat3(
+                f_normal.x + f_tang.x,
+                f_normal.y + f_tang.y,
+                f_normal.z + f_tang.z
+            );
+            //Torque in each direction
+            m_dirs = dfloat3(
+                r_i * (n.y*f_tang.z - n.z*f_tang.y),
+                r_i * (n.z*f_tang.x - n.x*f_tang.z),
+                r_i * (n.x*f_tang.y - n.y*f_tang.x)
+            );
+
+            atomicAdd(&(pc_i->f.x), f_dirs.x);
+            atomicAdd(&(pc_i->f.y), f_dirs.y);
+            atomicAdd(&(pc_i->f.z), f_dirs.z);
+
+            atomicAdd(&(pc_i->M.x), m_dirs.x);
+            atomicAdd(&(pc_i->M.y), m_dirs.y);
+            atomicAdd(&(pc_i->M.z), m_dirs.z);
+            
         }
     }
     // Collision against particles
@@ -716,15 +1195,13 @@ void gpuParticlesCollisionSoft(
             dfloat3 f_normal = dfloat3();
             dfloat3 f_tang = dfloat3();
             dfloat3 t, G, G_ct,tang_disp;
-            dfloat G_mag,f_n,displacement,mag;
+            dfloat f_n,displacement,mag;
 
             const dfloat  m_i = pc_i ->volume * pc_i ->density;
-            dfloat3 pos_old_i = pc_i->pos_old;
             dfloat3 v_i = pc_i->vel;
             dfloat3 w_i = pc_i->w;
             
             const dfloat  m_j = pc_j ->volume * pc_j ->density;
-            dfloat3 pos_old_j = pc_j->pos_old;
             dfloat3 v_j = pc_j->vel;
             dfloat3 w_j = pc_j->w;
 
@@ -735,7 +1212,6 @@ void gpuParticlesCollisionSoft(
             G.x = v_i.x-v_j.x;
             G.y = v_i.y-v_j.y;
             G.z = v_i.z-v_j.z;
-            G_mag = sqrt(G.x * G.x + G.y * G.y + G.z * G.z);
 
             //colision parameters
 
@@ -745,10 +1221,8 @@ void gpuParticlesCollisionSoft(
             const dfloat STIFFNESS_NORMAL = STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
             const dfloat STIFFNESS_TANGENTIAL = STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (displacement);
             dfloat damping_const = (- 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
-            const dfloat DAMPING_NORMAL = damping_const
-                                        * sqrt (effective_mass * STIFFNESS_NORMAL );
-            const dfloat DAMPING_TANGENTIAL = damping_const 
-                                            * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+            const dfloat DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
+            const dfloat DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
             
             
             //normal force
@@ -778,17 +1252,17 @@ void gpuParticlesCollisionSoft(
             }
             //tangential displacement = int_{t = t_0}^{t =t} G_ct dt, where t_0 is when occurred the contanct,
             //here it will be made a inteporlation based on the old position of the particles
-            const dfloat3 diff_pos_old = dfloat3(
-                pos_old_i.x - pos_old_j.x,
-                pos_old_i.y - pos_old_j.y,
-                pos_old_i.z - pos_old_j.z); 
-            const dfloat mag_dist_old = sqrt(
-                  diff_pos_old.x*diff_pos_old.x
-                + diff_pos_old.y*diff_pos_old.y
-                + diff_pos_old.z*diff_pos_old.z);
+            //const dfloat3 diff_pos_old = dfloat3(
+            //    pos_old_i.x - pos_old_j.x,
+            //    pos_old_i.y - pos_old_j.y,
+            //    pos_old_i.z - pos_old_j.z); 
+            //const dfloat mag_dist_old = sqrt(
+            //      diff_pos_old.x*diff_pos_old.x
+            //    + diff_pos_old.y*diff_pos_old.y
+            //    + diff_pos_old.z*diff_pos_old.z);
     
-            dfloat partial_collition_time = (mag_dist_old - (r_i+r_j))/(mag_dist_old - mag_dist);
-            partial_collition_time = 1.0;
+            //dfloat partial_collition_time = (mag_dist_old - (r_i+r_j))/(mag_dist_old - mag_dist);
+            dfloat partial_collition_time = 1.0;
             tang_disp.x = partial_collition_time * G_ct.x;
             tang_disp.y = partial_collition_time * G_ct.y;
             tang_disp.z = partial_collition_time * G_ct.z;
