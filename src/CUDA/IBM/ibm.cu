@@ -48,14 +48,9 @@ void immersedBoundaryMethod(
     gpuResetNodesForces<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(particles.nodesSoA);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     // Calculate collision force between particles
-    #if defined SOFT_SPHERE
-    gpuParticlesCollisionSoft<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
-    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-    #endif
-    #if defined HARD_SPHERE
-    gpuParticlesCollisionHard<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.nodesSoA,particles.pCenterArray);
-    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-    #endif
+
+    gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.nodesSoA,particles.pCenterArray);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));   
 
     // First update particle velocity using body center force and constant forces
     gpuUpdateParticleCenterVelocityAndRotation <<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0] >>>(

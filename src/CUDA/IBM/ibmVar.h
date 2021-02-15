@@ -17,7 +17,7 @@
 
 /* -------------------------- IBM GENERAL DEFINES --------------------------- */
 // Total number of IB particles in the system
-#define NUM_PARTICLES 2
+#define NUM_PARTICLES 1
 // Number of IBM inner iterations
 #define IBM_MAX_ITERATION 3
 // Particles diameters
@@ -115,7 +115,7 @@ constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 #endif
 // Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
 #if defined HARD_SPHERE
-constexpr dfloat FRIC_COEF = 0.001; // friction coeficient
+constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
 constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
 #endif
 /* -------------------------------------------------------------------------- */
