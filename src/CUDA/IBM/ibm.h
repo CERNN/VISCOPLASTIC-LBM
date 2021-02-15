@@ -22,7 +22,7 @@
 #include "structs/particle.h"
 #include "structs/particleEulerNodesUpdate.h"
 #include "ibmReport.h"
-
+#include "collision/ibmCollision.h"
 
 /**
 *   @brief Run immersed boundary method (IBM)
@@ -143,28 +143,6 @@ void gpuUpdateParticleOldValues(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
 
-
-/**
-*   @brief Perform particles collisions with each other and walls with soft sphere model
-*   
-*   @param particleCenters: particles centers to perform colision
-*/
-__global__ 
-void gpuParticlesCollisionSoft(
-    ParticleCenter particleCenters[NUM_PARTICLES]
-);
-
-/**
-*   @brief Perform particles collisions with each other and walls with hard sphere model
-*
-*   @param particlesNodes: particles nodes to update
-*   @param particleCenters: particles centers to perform colision
-*/
-__global__ 
-void gpuParticlesCollisionHard(
-    ParticleNodeSoA particlesNodes,
-    ParticleCenter particleCenters[NUM_PARTICLES]
-);
 
 
 #endif // !__IBM_H
