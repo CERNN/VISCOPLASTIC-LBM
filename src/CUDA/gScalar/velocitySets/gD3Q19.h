@@ -36,7 +36,7 @@ constexpr dfloat gW0 = 1.0 / 3.0;         // population 0 weight (0, 0, 0)
 constexpr dfloat gW1 = 1.0 / 18.0;        // adjacent populations (1, 0, 0)
 constexpr dfloat gW2 = 1.0 / 36.0;        // adjacent populations (1, 1, 0)
 
-constexpr dfloat c_s_2 = 1.0 / 3.0;
+constexpr dfloat 1_gc_s_2 = 3.0;
 
 
 // velocities weight vector
