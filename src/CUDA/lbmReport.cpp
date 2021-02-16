@@ -163,6 +163,12 @@ void saveAllMacrBin(
 
     saveVarBin(strFileOmega, macr->omega, TOTAL_MEM_SIZE_SCALAR, false);
     #endif
+
+    #ifdef SCALAR_TRANSPORT
+    std::string strFileG = getVarFilename("G", nSteps, ".bin");
+
+    saveVarBin(strFileG, macr->G, TOTAL_MEM_SIZE_SCALAR, false);
+    #endif
 }
 
 

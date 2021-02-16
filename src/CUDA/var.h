@@ -18,7 +18,7 @@
 #define SINGLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
 #define D3Q19               // velocity set to use (D3Q19 OR D3Q27)
 // Comment to disable IBM. Uncomment to enable IBM
-#define IBM
+// #define IBM
 // Comment to disable scalar transport. Uncomment to enable scalar transport
 #define SCALAR_TRANSPORT
 /* -------------------------------------------------------------------------- */
@@ -37,18 +37,18 @@
 #endif
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
-#define ID_SIM "011"            // prefix for simulation's files
-#define PATH_FILES "testeOptFallingSphere"  // path to save simulation's files
+#define ID_SIM "001"            // prefix for simulation's files
+#define PATH_FILES "TEST"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
 /* ------------------------------------------------------------------------- */
 
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
-constexpr unsigned int SCALE = 2;
-constexpr int N_STEPS = 500000;          // maximum number of time steps
-#define MACR_SAVE (0)                  // saves macroscopics every MACR_SAVE steps
-#define DATA_REPORT (500*SCALE*SCALE)                // report every DATA_REPORT steps
+constexpr unsigned int SCALE = 1;
+constexpr int N_STEPS = 1000;          // maximum number of time steps
+#define MACR_SAVE (250)                  // saves macroscopics every MACR_SAVE steps
+#define DATA_REPORT (250*SCALE*SCALE)                // report every DATA_REPORT steps
  
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
@@ -89,11 +89,11 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 /* --------------------------  SIMULATION DEFINES -------------------------- */
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 
-constexpr int N = 60*SCALE;
-constexpr int NX = 100*SCALE;        // size x of the grid 
+constexpr int N = 32*SCALE;
+constexpr int NX = N*SCALE;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr int NY = 100*SCALE;        // size y of the grid
-constexpr int NZ = 160*SCALE;        // size z of the grid in one GPU
+constexpr int NY = N*SCALE;        // size y of the grid
+constexpr int NZ = N*SCALE;        // size z of the grid in one GPU
 constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
 constexpr dfloat U_MAX = 0;           // max velocity
@@ -105,7 +105,7 @@ constexpr dfloat RHO_0 = 1;         // initial rho
 
 constexpr dfloat FX = 0;        // force in x
 constexpr dfloat FY = 0;        // force in y
-constexpr dfloat FZ = 0;        // force in z (flow direction in most cases)
+constexpr dfloat FZ = 0.0001;        // force in z (flow direction in most cases)
 
 // values options for boundary conditions
 __device__ const dfloat UX_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
