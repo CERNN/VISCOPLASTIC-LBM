@@ -8,6 +8,8 @@
 #define gD3Q19
 
 constexpr dfloat G_TAU = 0.8;              // relaxation time
+constexpr dfloat G_INIT = 0.5;
+
                          
 constexpr dfloat G_OMEGA = 1.0/G_TAU;        // (tau)^-1
 constexpr dfloat G_T_OMEGA = 1-G_OMEGA;      // 1-omega, for collision

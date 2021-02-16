@@ -35,6 +35,12 @@
 #include "IBM/ibmParticlesCreation.h"
 #include "IBM/ibmTreatData.h"
 
+#ifdef SCALAR_TRANSPORT
+    #include "gScalar/gLbm.h"
+    #include "gScalar/gInitialization.h"
+    #include "gScalar/gVar.h"
+#endif
+
 
 int main()
 {
@@ -59,6 +65,10 @@ int main()
     IBMProc ibmProcessData;
     allocateIBMProc(&ibmProcessData);
     #endif
+
+    #ifdef SCALAR_TRANSPORT
+    GPopulations* gPop;
+    #endif 
 
     // Setup saving folder
     folderSetup();
@@ -87,6 +97,10 @@ int main()
     pop = (Populations*) malloc(sizeof(Populations) * N_GPUS);
     macr = (Macroscopics*) malloc(sizeof(Macroscopics) * N_GPUS);
     randomNumbers = (float**)malloc(sizeof(float*) * N_GPUS);
+    #ifdef SCALAR_TRANSPORT
+    gPop = (GPopulations*) malloc(sizeof(GPopulations) * N_GPUS);
+    #endif
+
     /* ---------------------------------------------------------------------- */
 
     /* -------------- ALLOCATION AND CONFIGURATION FOR EACH GPU ------------- */
@@ -215,6 +229,9 @@ int main()
             FILE* fileFy = fopen(STR_FY, "rb");
             FILE* fileFz = fopen(STR_FZ, "rb");
             FILE* fileOmega = fopen(STR_OMEGA, "rb");
+            #ifdef SCALAR_TRANSPORT
+            FILE* fileG = fopen(STR_G, "rb");
+            #endif
 
             if(fileRho == nullptr || fileUz == nullptr 
                 || fileUy == nullptr || fileUx == nullptr
@@ -223,6 +240,9 @@ int main()
                 #endif
                 #ifdef NON_NEWTONIAN_FLUID
                 || fileOmega == nullptr
+                #endif
+                #ifdef SCALAR_TRANSPORT
+                || fileG == nullptr
                 #endif
             ){
                 printf("Error reading macroscopics files. (1 for not found):\n");
@@ -235,11 +255,14 @@ int main()
                 #ifdef NON_NEWTONIAN_FLUID
                 printf("FILE_OMEGA=%d\n", fileOmega==nullptr);
                 #endif
+                #ifdef SCALAR_TRANSPORT
+                printf("FILE_G=%d\n", fileG==nullptr);
+                #endif
                 return -1;
             }
             // Load macroscopics from files
             initializationMacr(&macrCPUCurrent, fileRho, fileUx, fileUy, fileUz, 
-                fileFx, fileFy, fileFz, fileOmega);
+                fileFx, fileFy, fileFz, fileOmega, fileG);
             fclose (fileRho);
             fclose (fileUx);
             fclose (fileUy);
@@ -251,6 +274,9 @@ int main()
             #endif
             #ifdef NON_NEWTONIAN_FLUID
             fclose (fileOmega);
+            #endif
+            #ifdef SCALAR_TRANSPORT
+            fclose (fileG);
             #endif
         }
         

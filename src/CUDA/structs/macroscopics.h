@@ -35,6 +35,10 @@ public:
     dfloat* omega;
     #endif
 
+    #ifdef SCALAR_TRANSPORT
+        dfloat* G;
+    #endif
+
     /* Constructor */
     __host__
     macroscopics()
@@ -43,6 +47,9 @@ public:
 
         #ifdef NON_NEWTONIAN_FLUID
         this->omega = nullptr;
+        #endif
+        #ifdef SCALAR_TRANSPORT
+        this->G = nullptr;
         #endif
     }
 
@@ -54,6 +61,9 @@ public:
 
         #ifdef NON_NEWTONIAN_FLUID
         this->omega = nullptr;
+        #endif
+        #ifdef SCALAR_TRANSPORT
+        this->G = nullptr;
         #endif
     }
 
@@ -80,6 +90,9 @@ public:
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaMallocHost((void**)&(this->omega), TOTAL_MEM_SIZE_SCALAR));
             #endif
+            #ifdef SCALAR_TRANSPORT
+            checkCudaErrors(cudaMallocHost((void**)&(this->G), TOTAL_MEM_SIZE_SCALAR));
+            #endif
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaMallocManaged((void**)&(this->rho), MEM_SIZE_SCALAR));
@@ -89,6 +102,9 @@ public:
             #endif
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaMallocManaged((void**)&(this->omega), TOTAL_MEM_SIZE_SCALAR));
+            #endif
+            #ifdef SCALAR_TRANSPORT
+            checkCudaErrors(cudaMallocManaged((void**)&(this->G), TOTAL_MEM_SIZE_SCALAR));
             #endif
             break;
         default:
@@ -111,6 +127,9 @@ public:
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaFreeHost(this->omega));
             #endif
+            #ifdef SCALAR_TRANSPORT
+            checkCudaErrors(cudaFreeHost(this->G));
+            #endif
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaFree(this->rho));
@@ -120,6 +139,9 @@ public:
             #endif
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaFree(this->omega));
+            #endif
+            #ifdef SCALAR_TRANSPORT
+            checkCudaErrors(cudaFree(this->G));
             #endif
             break;
         default:
@@ -143,6 +165,9 @@ public:
         #ifdef NON_NEWTONIAN_FLUID
         cudaStream_t streamOmega;
         #endif
+        #ifdef SCALAR_TRANSPORT
+        cudaStream_t streamG;
+        #endif
 
         checkCudaErrors(cudaStreamCreate(&(streamRho)));
         checkCudaErrors(cudaStreamCreate(&(streamUx)));
@@ -156,6 +181,10 @@ public:
 
         #ifdef NON_NEWTONIAN_FLUID
         checkCudaErrors(cudaStreamCreate(&(streamOmega)));
+        #endif
+
+        #ifdef SCALAR_TRANSPORT
+        checkCudaErrors(cudaStreamCreate(&(streamG)));
         #endif
 
         checkCudaErrors(cudaMemcpyAsync(this->rho+baseIdx, macrRef->rho+baseIdxRef, 
@@ -181,6 +210,11 @@ public:
             memSize, cudaMemcpyDefault, streamOmega));
         #endif
 
+        #ifdef SCALAR_TRANSPORT
+        checkCudaErrors(cudaMemcpyAsync(this->G+baseIdx, macrRef->G+baseIdxRef,
+            memSize, cudaMemcpyDefault, streamG));
+        #endif
+
         checkCudaErrors(cudaStreamSynchronize(streamRho));
         checkCudaErrors(cudaStreamSynchronize(streamUx));
         checkCudaErrors(cudaStreamSynchronize(streamUy));
@@ -198,6 +232,10 @@ public:
 
         #ifdef NON_NEWTONIAN_FLUID
         checkCudaErrors(cudaStreamDestroy(streamOmega));
+        #endif
+
+        #ifdef NON_NEWTONIAN_FLUID
+        checkCudaErrors(cudaStreamDestroy(streamG));
         #endif
 
     }

@@ -19,6 +19,8 @@
 #define D3Q19               // velocity set to use (D3Q19 OR D3Q27)
 // Comment to disable IBM. Uncomment to enable IBM
 #define IBM
+// Comment to disable scalar transport. Uncomment to enable scalar transport
+#define SCALAR_TRANSPORT
 /* -------------------------------------------------------------------------- */
 
 /* ------------------------ NON NEWTONIAN FLUID TYPE ------------------------ */
@@ -78,6 +80,9 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 #define STR_FZ "./fixedSphere/001/001_fz050000.bin"
 // Files for non newtonian
 #define STR_OMEGA "omega.bin"
+#ifdef SCALAR_TRANSPORT
+    #define STR_G "G.bin"
+#endif
 /* ------------------------------------------------------------------------- */
 
 

@@ -10,8 +10,9 @@
 #ifndef __G_LBM_H
 #define __G_LBM_H
 
+#include "..\var.h"
 #include "..\structs\macroscopics.h"
-#include "..\NNF\nnf.cuh"
+#include "..\NNF\nnf.h"
 //#include "..\structs\macrProc.h"
 #include "gVar.h"
 
@@ -39,8 +40,8 @@ __device__
 dfloat __forceinline__ gpu_g_eq(const dfloat G, const dfloat ux, const dfloat uy, const dfloat uz, const char i)
 {
     dfloat g_eq = 1.0;
-    dfloat a =  1_gc_s_2* (gcx[i]*ux + gcy[i]*uy + gcz[i]*uz);
-    dfloat b = - 0.5 * 1_gc_s_2 * (ux*ux + uy*uy + uz*uz);
+    dfloat a =  inv_gc_s_2* (gcx[i]*ux + gcy[i]*uy + gcz[i]*uz);
+    dfloat b = - 0.5 * inv_gc_s_2 * (ux*ux + uy*uy + uz*uz);
       
     //g_eq += a;
     g_eq += a + a*a/2.0 + b;
@@ -49,3 +50,5 @@ dfloat __forceinline__ gpu_g_eq(const dfloat G, const dfloat ux, const dfloat uy
 
     return g_eq;
 }
+
+#endif

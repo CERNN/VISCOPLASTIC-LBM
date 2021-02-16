@@ -57,7 +57,8 @@ void initializationMacr(
     FILE* fileFx,
     FILE* fileFy,
     FILE* fileFz,
-    FILE* fileOmega)
+    FILE* fileOmega,
+    FILE* fileG)
 {
     dfloat* tmp = (dfloat*)malloc(TOTAL_MEM_SIZE_SCALAR);
 
@@ -87,6 +88,11 @@ void initializationMacr(
     #ifdef NON_NEWTONIAN_FLUID
     fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileOmega);
     checkCudaErrors(cudaMemcpy(macr->omega, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
+    #endif
+
+    #ifdef SCALAR_TRANSPORT
+    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileG);
+    checkCudaErrors(cudaMemcpy(macr->G, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
     #endif
 
     free(tmp);
@@ -169,6 +175,9 @@ void gpuMacrInitValue(
     #endif
     #ifdef NON_NEWTONIAN_FLUID
     macr->omega[idxScalar(x, y, z)] = 0;
+    #endif
+    #ifdef SCALAR_TRANSPORT
+    macr->G[idxScalar(x, y, z)] = G_INIT;
     #endif
 
     // Example of usage of random numbers for turbulence in parallel plates flow in z

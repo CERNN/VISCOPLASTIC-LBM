@@ -19,9 +19,10 @@
 #include <device_launch_parameters.h>
 #include "../globalFunctions.h"
 #include "../structs/macroscopics.h"
-#include "../NNF/nnf.cuh"
+#include "../NNF/nnf.h"
 #include "gVar.h"
 #include "gPopulations.h"
+#include "gLBM.h"
 
 /*
 *   @brief Initializes device populations for scalar variable with macroscopics values

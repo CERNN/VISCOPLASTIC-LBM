@@ -19,7 +19,9 @@
 #include "structs/macroscopics.h"
 #include "structs/populations.h"
 #include "NNF/nnf.h"
-
+#ifdef SCALAR_TRANSPORT
+    #include "gScalar/gVar.h"
+#endif
 /*
 *   @brief Initializes device populations with values in binary file
 *   @param pop: populations to be initialized
@@ -52,7 +54,8 @@ void initializationMacr(
     FILE* fileFx,
     FILE* fileFy,
     FILE* fileFz,
-    FILE* fileOmega
+    FILE* fileOmega,
+    FILE* fileG
 );
 
 

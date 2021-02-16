@@ -17,7 +17,7 @@
 /*
 *   Struct for LBM secondary populations and the node's boundary conditions
 */
-typedef struct populations
+typedef struct gPopulations
 {
 public:    
     dfloat* gPop;            // Populations
@@ -68,7 +68,7 @@ public:
         gPop = gPopAux;
         gPopAux = tmp;
     }
-} Populations;
+} GPopulations;
 
 
 
