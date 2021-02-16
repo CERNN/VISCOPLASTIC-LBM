@@ -1,12 +1,12 @@
 #include "particleNode.h"
 #include "particle.h"
-
+__host__ __device__
 ParticleNodeSoA::particleNodeSoA()
 {
     this->S = nullptr;
     this->particleCenterIdx = nullptr;
 }
-
+__host__ __device__
 ParticleNodeSoA::~particleNodeSoA()
 {
     this->S = nullptr;

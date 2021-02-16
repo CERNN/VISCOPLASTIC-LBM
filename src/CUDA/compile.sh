@@ -16,6 +16,7 @@ then
     nvcc -gencode arch=compute_${CC},code=sm_${CC} -rdc=true --ptxas-options=-v -O3 --restrict \
         ./IBM/*.cu ./IBM/*.cpp \
         ./IBM/structs/*.cpp ./IBM/structs/*.cu \
+        ./IBM/collision/*.cu \
         *.cu *.cpp \
         ./boundaryConditionsSchemes/*.cu \
         -lcudadevrt -lcurand -o ./../../bin/$2sim_$1_sm${CC}

@@ -40,8 +40,10 @@ typedef struct particleNodeSoA {
     dfloat3SoA f;  // vectors with nodes forces
     dfloat3SoA deltaF;  // vectors with nodes forces variations
     dfloat* S; // vector node surface area
-
+    
+    __host__ __device__
     particleNodeSoA();
+    __host__ __device__
     ~particleNodeSoA();
 
     /**
