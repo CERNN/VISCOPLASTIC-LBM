@@ -358,7 +358,11 @@ int main()
             checkCudaErrors(cudaSetDevice(i));
             gpuMacrCollisionStream<<<grid, threads>>>
                 (pop[i].pop, pop[i].popAux, pop[i].mapBC, macr[i],
-                save_macr_to_array, step);
+                save_macr_to_array, 
+                #ifdef SCALAR_TRANSPORT
+                gPop[i].gPop, gPop[i].gPopAux,          
+                #endif
+                step);
             //checkCudaErrors(cudaDeviceSynchronize());
             getLastCudaError("LBM kernel error\n");
         }
@@ -403,6 +407,9 @@ int main()
             checkCudaErrors(cudaSetDevice(i));
             checkCudaErrors(cudaDeviceSynchronize());
             pop[i].swapPop();
+            #ifdef SCALAR_TRANSPORT
+            gpop[i].swapPop();
+            #endif
         }
 
         // IBM
@@ -572,6 +579,11 @@ int main()
     pEulerNodes.freeEulerNodes();
     #endif
     #endif
+
+    #ifdef SCALAR_TRANSPORT
+    free(gPop);
+    #endif
+    
     /* ---------------------------------------------------------------------- */
 
     fflush(stdout);

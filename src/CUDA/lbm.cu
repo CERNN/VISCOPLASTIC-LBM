@@ -7,6 +7,10 @@ void gpuMacrCollisionStream(
     NodeTypeMap* const mapBC,
     Macroscopics const macr,
     bool const save,
+#ifdef SCALAR_TRANSPORT
+    dfloat* const gPop,
+    dfloat* const gPopAux,
+#endif
     int const step)
 {
     const short unsigned int x = threadIdx.x + blockDim.x * blockIdx.x;
