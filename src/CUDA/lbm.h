@@ -17,6 +17,12 @@
 #include "boundaryConditionsHandler.h"
 #include "NNF/nnf.h"
 
+#ifdef SCALAR_TRANSPORT
+    #include "gScalar/gLbm.h"
+    #include "gScalar/gPopulations.h"
+    #include "gScalar/gVar.h"
+#endif
+
 
 /*
 *   @brief Updates macroscopics and then performs collision and streaming
@@ -50,6 +56,9 @@ void gpuMacrCollisionStream(
 __global__
 void gpuUpdateMacr(
     Populations pop,
+    #ifdef SCALAR_TRANSPORT
+    GPopulations const gPop,
+    #endif
     Macroscopics macr
 );
 

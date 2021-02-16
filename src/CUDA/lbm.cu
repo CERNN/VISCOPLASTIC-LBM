@@ -33,12 +33,23 @@ void gpuMacrCollisionStream(
 
     // Node populations
     dfloat fNode[Q];
+
+    #ifdef SCALAR_TRANSPORT
+        dfloat gNode[GQ];
+        dfloat geq[GQ];    
+    #endif 
     // Aux idx
 
     // Load populations
     #pragma unroll
     for (char i = 0; i < Q; i++)
         fNode[i] = pop[idxPop(x, y, z, i)];
+
+    #ifdef SCALAR_TRANSPORT
+        #pragma unroll
+        for (char i = 0; i < GQ; i++)
+            gNode[i] = gPop[idxPop(x, y, z, i)];
+    #endif
 
     #ifdef IBM
     const dfloat fxVar = macr.f.x[idx];
@@ -98,6 +109,20 @@ void gpuMacrCollisionStream(
         - (fNode[6] + fNode[10] + fNode[12] + fNode[15] + fNode[17] + fNode[20]
         + fNode[21] + fNode[24] + fNode[26]) + 0.5*fzVar) * invRho;
     #endif // !D3Q27
+
+    #ifdef SCALAR_TRANSPORT
+        dfloat q = g_gpu_source_term();
+        #ifdef gD3Q7
+            const dfloat gVar = gNode[0] + gNode[1] + gNode[2] + gNode[3] + gNode[4] 
+                + gNode[5] + gNode[6] + G_TT_OMEGA * 0.5 * q;
+        #endif
+        #ifdef gD3Q19
+            const dfloat gVar = gNode[0] + gNode[1] + gNode[2] + gNode[3] + gNode[4] 
+                + gNode[5] + gNode[6]+ gNode[7] + gNode[8] + gNode[9] + gNode[10] 
+                + gNode[11] + gNode[12] + gNode[13] + gNode[14] + gNode[15] + gNode[16]
+                + gNode[17] + gNode[18] + G_TT_OMEGA * 0.5 * q;
+        #endif
+    #endif
 
     // Calculate temporary variables
     const dfloat p1_muu15 = 1 - 1.5 * (uxVar * uxVar + 
@@ -227,6 +252,10 @@ void gpuMacrCollisionStream(
         // Only Bingham does not save local omega
         #if !defined(OMEGA_LAST_STEP) && defined(NON_NEWTONIAN_FLUID)
         macr.omega[idx] = omegaVar;
+        #endif
+
+        #ifdef SCALAR_TRANSPORT
+        macr.G[idx] = gVar;
         #endif
     }
 
@@ -470,12 +499,113 @@ void gpuMacrCollisionStream(
     popAux[idxPop(xm1, yp1, zp1, 25)] = fNode[25];
     popAux[idxPop(xp1, ym1, zm1, 26)] = fNode[26];
     #endif
+
+
+    #ifdef SCALAR_TRANSPORT
+        #ifdef gD3Q7
+        geq[0] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,0);
+        geq[1] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,1);
+        geq[2] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,2);
+        geq[3] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,3);
+        geq[4] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,4);
+        geq[5] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,5);
+        geq[6] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,6);
+        #endif
+        #ifdef D3G19
+        geq[0] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,0);
+        geq[1] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,1);
+        geq[2] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,2);
+        geq[3] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,3);
+        geq[4] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,4);
+        geq[5] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,5);
+        geq[6] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,6);
+        geq[7] =   gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,7);
+        geq[8] =   gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,8);
+        geq[9] =   gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,9);
+        geq[10] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,10);
+        geq[11] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,11);
+        geq[12] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,12);
+        geq[13] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,13);
+        geq[14] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,14);
+        geq[15] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,15);
+        geq[16] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,16);
+        geq[17] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,17);
+        geq[18] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,18);
+        #endif
+
+        #ifdef gD3Q7
+        gNode[0] =  G_T_OMEGA * gNode[0] +  G_OMEGA * geq[0] +  G_TT_OMEGA * gW0 * q;
+        gNode[1] =  G_T_OMEGA * gNode[1] +  G_OMEGA * geq[1] +  G_TT_OMEGA * gW1 * q;
+        gNode[2] =  G_T_OMEGA * gNode[2] +  G_OMEGA * geq[2] +  G_TT_OMEGA * gW1 * q;
+        gNode[3] =  G_T_OMEGA * gNode[3] +  G_OMEGA * geq[3] +  G_TT_OMEGA * gW1 * q;
+        gNode[4] =  G_T_OMEGA * gNode[4] +  G_OMEGA * geq[4] +  G_TT_OMEGA * gW1 * q;
+        gNode[5] =  G_T_OMEGA * gNode[5] +  G_OMEGA * geq[5] +  G_TT_OMEGA * gW1 * q;
+        gNode[6] =  G_T_OMEGA * gNode[6] +  G_OMEGA * geq[6] +  G_TT_OMEGA * gW1 * q;
+        #endif
+        #ifdef gD3Q19
+        gNode[0] =  G_T_OMEGA * gNode[0] +  G_OMEGA * geq[0] +  G_TT_OMEGA * gW0 * q;
+        gNode[1] =  G_T_OMEGA * gNode[1] +  G_OMEGA * geq[1] +  G_TT_OMEGA * gW1 * q;
+        gNode[2] =  G_T_OMEGA * gNode[2] +  G_OMEGA * geq[2] +  G_TT_OMEGA * gW1 * q;
+        gNode[3] =  G_T_OMEGA * gNode[3] +  G_OMEGA * geq[3] +  G_TT_OMEGA * gW1 * q;
+        gNode[4] =  G_T_OMEGA * gNode[4] +  G_OMEGA * geq[4] +  G_TT_OMEGA * gW1 * q;
+        gNode[5] =  G_T_OMEGA * gNode[5] +  G_OMEGA * geq[5] +  G_TT_OMEGA * gW1 * q;
+        gNode[6] =  G_T_OMEGA * gNode[6] +  G_OMEGA * geq[6] +  G_TT_OMEGA * gW1 * q;
+        gNode[7] =  G_T_OMEGA * gNode[7] +  G_OMEGA * geq[7] +  G_TT_OMEGA * gW2 * q;
+        gNode[8] =  G_T_OMEGA * gNode[8] +  G_OMEGA * geq[8] +  G_TT_OMEGA * gW2 * q;
+        gNode[9] =  G_T_OMEGA * gNode[9] +  G_OMEGA * geq[9] +  G_TT_OMEGA * gW2 * q;
+        gNode[10] = G_T_OMEGA * gNode[10] + G_OMEGA * geq[10] + G_TT_OMEGA * gW2 * q;
+        gNode[11] = G_T_OMEGA * gNode[11] + G_OMEGA * geq[11] + G_TT_OMEGA * gW2 * q;
+        gNode[12] = G_T_OMEGA * gNode[12] + G_OMEGA * geq[12] + G_TT_OMEGA * gW2 * q;
+        gNode[13] = G_T_OMEGA * gNode[13] + G_OMEGA * geq[13] + G_TT_OMEGA * gW2 * q;
+        gNode[14] = G_T_OMEGA * gNode[14] + G_OMEGA * geq[14] + G_TT_OMEGA * gW2 * q;
+        gNode[15] = G_T_OMEGA * gNode[15] + G_OMEGA * geq[15] + G_TT_OMEGA * gW2 * q;
+        gNode[16] = G_T_OMEGA * gNode[16] + G_OMEGA * geq[16] + G_TT_OMEGA * gW2 * q;
+        gNode[17] = G_T_OMEGA * gNode[17] + G_OMEGA * geq[17] + G_TT_OMEGA * gW2 * q;
+        gNode[18] = G_T_OMEGA * gNode[18] + G_OMEGA * geq[18] + G_TT_OMEGA * gW2 * q;
+        #endif
+        
+        //streaming
+        #ifdef gD3Q7
+        gPopAux[idxPop(x, y, z, 0)]   = gNode[0];
+        gPopAux[idxPop(xp1, y, z, 1)] = gNode[1];
+        gPopAux[idxPop(xm1, y, z, 2)] = gNode[2];
+        gPopAux[idxPop(x, yp1, z, 3)] = gNode[3];
+        gPopAux[idxPop(x, ym1, z, 4)] = gNode[4];
+        gPopAux[idxPop(x, y, zp1, 5)] = gNode[5];
+        gPopAux[idxPop(x, y, zm1, 6)] = gNode[6];
+        #endif
+        #ifdef D3G19
+        gPopAux[idxPop(x, y, z, 0)]   =    gNode[0];
+        gPopAux[idxPop(xp1, y, z, 1)] =    gNode[1];
+        gPopAux[idxPop(xm1, y, z, 2)] =    gNode[2];
+        gPopAux[idxPop(x, yp1, z, 3)] =    gNode[3];
+        gPopAux[idxPop(x, ym1, z, 4)] =    gNode[4];
+        gPopAux[idxPop(x, y, zp1, 5)] =    gNode[5];
+        gPopAux[idxPop(x, y, zm1, 6)] =    gNode[6];
+        gPopAux[idxPop(xp1, yp1, z, 7)]  = gNode[7];
+        gPopAux[idxPop(xm1, ym1, z, 8)]  = gNode[8];
+        gPopAux[idxPop(xp1, y, zp1, 9)]  = gNode[9];
+        gPopAux[idxPop(xm1, y, zm1, 10)] = gNode[10];
+        gPopAux[idxPop(x, yp1, zp1, 11)] = gNode[11];
+        gPopAux[idxPop(x, ym1, zm1, 12)] = gNode[12];
+        gPopAux[idxPop(xp1, ym1, z, 13)] = gNode[13];
+        gPopAux[idxPop(xm1, yp1, z, 14)] = gNode[14];
+        gPopAux[idxPop(xp1, y, zm1, 15)] = gNode[15];
+        gPopAux[idxPop(xm1, y, zp1, 16)] = gNode[16];
+        gPopAux[idxPop(x, yp1, zm1, 17)] = gNode[17];
+        gPopAux[idxPop(x, ym1, zp1, 18)] = gNode[18];
+        #endif
+
+    #endif //SCALAR_TRANSPORT
 }
 
 
 __global__
 void gpuUpdateMacr(
     Populations pop,
+    #ifdef SCALAR_TRANSPORT
+    GPopulations const gPop,
+    #endif
     Macroscopics macr)
 {
     const unsigned int z = threadIdx.z + blockDim.z * blockIdx.z;
@@ -489,6 +619,12 @@ void gpuUpdateMacr(
     dfloat fNode[Q];
     for (unsigned char i = 0; i < Q; i++)
         fNode[i] = pop.pop[idxPop(x, y, z, i)];
+
+    #ifdef SCALAR_TRANSPORT
+        dfloat gNode[GQ];
+        for (char i = 0; i < GQ; i++)
+            gNode[i] = gPop.gPop[idxPop(x, y, z, i)];
+    #endif
 
     #ifdef IBM
     const dfloat fxVar = macr.f.x[idx_s];
@@ -542,6 +678,21 @@ void gpuUpdateMacr(
     macr.u.x[idx_s] = uxVar;
     macr.u.y[idx_s] = uyVar;
     macr.u.z[idx_s] = uzVar;
+
+
+    #ifdef SCALAR_TRANSPORT
+        #ifdef gD3Q7
+            const dfloat gVar = gNode[0] + gNode[1] + gNode[2] + gNode[3] + gNode[4] 
+                + gNode[5] + gNode[6];
+        #endif
+        #ifdef gD3Q19
+            const dfloat gVar = gNode[0] + gNode[1] + gNode[2] + gNode[3] + gNode[4] 
+                + gNode[5] + gNode[6]+ gNode[7] + gNode[8] + gNode[9] + gNode[10] 
+                + gNode[11] + gNode[12] + gNode[13] + gNode[14] + gNode[15] + gNode[16]
+                + gNode[17] + gNode[18];
+        #endif
+        macr.G[idx_s] = gVar;
+    #endif
 }
 
 

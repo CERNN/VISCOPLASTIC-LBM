@@ -39,6 +39,7 @@
     #include "gScalar/gLbm.h"
     #include "gScalar/gInitialization.h"
     #include "gScalar/gVar.h"
+    #include "gScalar/gBoundaryConditions.h"
 #endif
 
 
@@ -68,6 +69,7 @@ int main()
 
     #ifdef SCALAR_TRANSPORT
     GPopulations* gPop;
+    //gBoundaryConditionsInfo* gBcInfos;
     #endif 
 
     // Setup saving folder
@@ -99,6 +101,8 @@ int main()
     randomNumbers = (float**)malloc(sizeof(float*) * N_GPUS);
     #ifdef SCALAR_TRANSPORT
     gPop = (GPopulations*) malloc(sizeof(GPopulations) * N_GPUS);
+    //gBcInfos = (gBoundaryConditionsInfo*) malloc(sizeof(gBoundaryConditionsInfo)*N_GPUS);
+    //gridsGBC = (dim3*) malloc(sizeof(dim3)*N_GPUS);
     #endif
 
     /* ---------------------------------------------------------------------- */
@@ -179,6 +183,11 @@ int main()
         checkCudaErrors(cudaSetDevice(i));
         gpuBuildBoundaryConditions<<<grid, threads>>>(pop[i].mapBC, i);
         getLastCudaError("Initialization error");
+        #ifdef SCALAR_TRANSPORT/*
+        checkCudaErrors(cudaSetDevice(i));
+        gGpuBuildBoundaryConditions<<<grid, threads>>>(gPop[i].mapBC, i);
+        getLastCudaError("Initialization error");*/
+        #endif
     }
     for (int i = 0; i < N_GPUS; i++) {
         checkCudaErrors(cudaSetDevice(i));
@@ -186,10 +195,17 @@ int main()
     }
 
     NodeTypeMap* hMapBC;
+    #ifdef SCALAR_TRANSPORT
+    //NodeTypeMap* hMapGBC;
+    #endif
     checkCudaErrors(cudaMallocHost((void**)(&hMapBC), MEM_SIZE_MAP_BC));
     for(int i = 0; i < N_GPUS; i++){
         checkCudaErrors(cudaMemcpy(hMapBC, pop[i].mapBC, MEM_SIZE_MAP_BC, cudaMemcpyDefault));
         bcInfos[i].setupBoundaryConditionsInfo(hMapBC);
+        #ifdef SCALAR_TRANSPORT
+        //checkCudaErrors(cudaMemcpy(hMapGBC, gPop[i].mapBC, MEM_SIZE_MAP_BC, cudaMemcpyDefault));
+        //bcInfos[i].setupBoundaryConditionsInfo(hMapGBC);
+        #endif
     }
     cudaFreeHost(hMapBC);
     /* ---------------------------------------------------------------------- */
@@ -211,7 +227,11 @@ int main()
 
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(i));
-            gpuUpdateMacr<<<grid, threads>>>(pop[i], macr[i]);
+            gpuUpdateMacr<<<grid, threads>>>(pop[i],
+                #ifdef SCALAR_TRANSPORT
+                gPop[i],
+                #endif
+                macr[i]);
             getLastCudaError("Update macroscopics error");
             checkCudaErrors(cudaDeviceSynchronize());
         }
@@ -306,10 +326,14 @@ int main()
     }
 
     // Grid and thread definition for boundary conditions
-    for(int i = 0; i < N_GPUS; i++)
+    for(int i = 0; i < N_GPUS; i++){
         gridsBC[i] = dim3(((bcInfos[i].totalBCNodes%32)? (bcInfos[i].totalBCNodes/32+1) : 
                 (bcInfos[i].totalBCNodes/32)), 1, 1); // TODO
-
+        #ifdef SCALAR_TRANSPORT
+        //gridsGBC[i] = dim3(((bcInfos[i].totalBCNodes%32)? (bcInfos[i].totalBCNodes/32+1) : 
+        //       (bcInfos[i].totalBCNodes/32)), 1, 1); // TODO
+        #endif
+    }
     dim3 threadsBC(32, 1, 1);
 
     // Free random numbers
@@ -398,6 +422,11 @@ int main()
                 gpuApplyBC<<<gridsBC[i], threadsBC>>>
                     (pop[i].mapBC, pop[i].popAux, pop[i].pop, 
                     bcInfos[i].idxBCNodes, bcInfos[i].totalBCNodes);
+                /*#ifdef SCALAR_TRANSPORT
+                    gGpuApplyBC<<<gridsBC[i], threadsBC>>>(
+                        gPop[i].mapBC, gPop[i].gPopAux, gPop[i].gPop, 
+                    bcInfos[i].idxBCNodes, bcInfos[i].totalBCNodes);
+                #endif*/
             }
             getLastCudaError("BC kernel error\n");
         }
@@ -408,7 +437,7 @@ int main()
             checkCudaErrors(cudaDeviceSynchronize());
             pop[i].swapPop();
             #ifdef SCALAR_TRANSPORT
-            gpop[i].swapPop();
+            gPop[i].swapPop();
             #endif
         }
 
@@ -583,7 +612,7 @@ int main()
     #ifdef SCALAR_TRANSPORT
     free(gPop);
     #endif
-    
+
     /* ---------------------------------------------------------------------- */
 
     fflush(stdout);
