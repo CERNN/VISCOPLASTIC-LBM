@@ -113,7 +113,7 @@ void gpuMacrCollisionStream(
     #ifdef SCALAR_TRANSPORT
         dfloat q = g_gpu_source_term();
         #ifdef gD3Q7
-            const dfloat gVar = gNode[0] + gNode[1] + gNode[2] + gNode[3] + gNode[4] 
+            const dfloat gVar = gNode[0] + gNode[1] + gNode[2] + gNode[3] + gNode[4]
                 + gNode[5] + gNode[6] + G_TT_OMEGA * 0.5 * q;
         #endif
         #ifdef gD3Q19
@@ -500,39 +500,39 @@ void gpuMacrCollisionStream(
     popAux[idxPop(xp1, ym1, zm1, 26)] = fNode[26];
     #endif
 
-
+    
     #ifdef SCALAR_TRANSPORT
         #ifdef gD3Q7
-        geq[0] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,0);
-        geq[1] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,1);
-        geq[2] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,2);
-        geq[3] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,3);
-        geq[4] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,4);
-        geq[5] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,5);
-        geq[6] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,6);
+        geq[0] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,0);
+        geq[1] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,1);
+        geq[2] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,2);
+        geq[3] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,3);
+        geq[4] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,4);
+        geq[5] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,5);
+        geq[6] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,6);
         #endif
-        #ifdef D3G19
-        geq[0] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,0);
-        geq[1] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,1);
-        geq[2] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,2);
-        geq[3] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,3);
-        geq[4] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,4);
-        geq[5] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,5);
-        geq[6] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,6);
-        geq[7] =   gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,7);
-        geq[8] =   gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,8);
-        geq[9] =   gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,9);
-        geq[10] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,10);
-        geq[11] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,11);
-        geq[12] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,12);
-        geq[13] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,13);
-        geq[14] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,14);
-        geq[15] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,15);
-        geq[16] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,16);
-        geq[17] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,17);
-        geq[18] =  gpu_g_eq(lambdaVar,uxVar,uyVar,uzVar,18);
+        #ifdef gD3Q19
+        geq[0] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,0);
+        geq[1] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,1);
+        geq[2] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,2);
+        geq[3] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,3);
+        geq[4] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,4);
+        geq[5] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,5);
+        geq[6] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,6);
+        geq[7] =   gpu_g_eq(gVar,uxVar,uyVar,uzVar,7);
+        geq[8] =   gpu_g_eq(gVar,uxVar,uyVar,uzVar,8);
+        geq[9] =   gpu_g_eq(gVar,uxVar,uyVar,uzVar,9);
+        geq[10] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,10);
+        geq[11] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,11);
+        geq[12] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,12);
+        geq[13] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,13);
+        geq[14] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,14);
+        geq[15] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,15);
+        geq[16] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,16);
+        geq[17] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,17);
+        geq[18] =  gpu_g_eq(gVar,uxVar,uyVar,uzVar,18);
         #endif
-
+        
         #ifdef gD3Q7
         gNode[0] =  G_T_OMEGA * gNode[0] +  G_OMEGA * geq[0] +  G_TT_OMEGA * gW0 * q;
         gNode[1] =  G_T_OMEGA * gNode[1] +  G_OMEGA * geq[1] +  G_TT_OMEGA * gW1 * q;
@@ -574,7 +574,7 @@ void gpuMacrCollisionStream(
         gPopAux[idxPop(x, y, zp1, 5)] = gNode[5];
         gPopAux[idxPop(x, y, zm1, 6)] = gNode[6];
         #endif
-        #ifdef D3G19
+        #ifdef gD3Q19
         gPopAux[idxPop(x, y, z, 0)]   =    gNode[0];
         gPopAux[idxPop(xp1, y, z, 1)] =    gNode[1];
         gPopAux[idxPop(xm1, y, z, 2)] =    gNode[2];
@@ -595,8 +595,9 @@ void gpuMacrCollisionStream(
         gPopAux[idxPop(x, yp1, zm1, 17)] = gNode[17];
         gPopAux[idxPop(x, ym1, zp1, 18)] = gNode[18];
         #endif
-
-    #endif //SCALAR_TRANSPORT
+    
+    #endif 
+    //SCALAR_TRANSPORT
 }
 
 
@@ -679,7 +680,7 @@ void gpuUpdateMacr(
     macr.u.y[idx_s] = uyVar;
     macr.u.z[idx_s] = uzVar;
 
-
+            
     #ifdef SCALAR_TRANSPORT
         #ifdef gD3Q7
             const dfloat gVar = gNode[0] + gNode[1] + gNode[2] + gNode[3] + gNode[4] 
@@ -784,7 +785,7 @@ void gpuPopulationsTransfer(
     popPostStreamBase[idxPop(x, y, 0, 25)] = popPostStreamNxt[idxPop(x, y, 0, 25)];
     popPostStreamNxt[idxPop(x, y, zMax, 26)] = popPostStreamBase[idxPop(x, y, zMax, 26)];
     #endif
-
+    
     #ifdef SCALAR_TRANSPORT
         #ifdef gD3Q7    
         // pop[6] -> cz = 1; pop[5] -> cz = -1;

@@ -127,6 +127,9 @@ int main()
         #endif
 
         pop[i].popAllocation();
+        #ifdef SCALAR_TRANSPORT
+        gPop[i].gPopAllocation();
+        #endif
         macr[i].macrAllocation(IN_VIRTUAL);
         if(RANDOM_NUMBERS)
         {
@@ -590,6 +593,9 @@ int main()
         pop[i].popFree();
         macr[i].macrFree();
         bcInfos[i].freeIdxBC();
+        #ifdef SCALAR_TRANSPORT
+        gPop[i].gPopFree();
+        #endif
     }
 
     // Free CPU variables
