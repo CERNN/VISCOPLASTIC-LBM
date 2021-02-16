@@ -721,7 +721,14 @@ void gpuPopulationsTransfer(
     dfloat* popPostStreamBase,
     dfloat* popPostCollBase,
     dfloat* popPostStreamNxt,
-    dfloat* popPostCollNxt)
+    dfloat* popPostCollNxt
+    #ifdef SCALAR_TRANSPORT
+        ,dfloat* gPopPostStreamBase,
+        dfloat* gPopPostCollBase,
+        dfloat* gPopPostStreamNxt,
+        dfloat* gPopPostCollNxt
+    #endif
+)
 {
     const unsigned short int x = threadIdx.x + blockDim.x * blockIdx.x;
     const unsigned short int y = threadIdx.y + blockDim.y * blockIdx.y;
@@ -776,5 +783,34 @@ void gpuPopulationsTransfer(
     // pop[25] -> cz = 1; pop[26] -> cz = -1;
     popPostStreamBase[idxPop(x, y, 0, 25)] = popPostStreamNxt[idxPop(x, y, 0, 25)];
     popPostStreamNxt[idxPop(x, y, zMax, 26)] = popPostStreamBase[idxPop(x, y, zMax, 26)];
+    #endif
+
+    #ifdef SCALAR_TRANSPORT
+        #ifdef gD3Q7    
+        // pop[6] -> cz = 1; pop[5] -> cz = -1;
+            gPopPostStreamBase[idxPop(x, y, 0, 5)] = gPopPostStreamNxt[idxPop(x, y, 0, 5)];
+            gPopPostStreamNxt[idxPop(x, y, zMax, 6)] = gPopPostStreamBase[idxPop(x, y, zMax, 6)];
+        #endif
+        #ifdef gD3Q19
+        // pop[6] -> cz = 1; pop[5] -> cz = -1;
+            gPopPostStreamBase[idxPop(x, y, 0, 5)] = gPopPostStreamNxt[idxPop(x, y, 0, 5)];
+            gPopPostStreamNxt[idxPop(x, y, zMax, 6)] = gPopPostStreamBase[idxPop(x, y, zMax, 6)];
+
+            // pop[9] -> cz = 1; pop[10] -> cz = -1;
+            gPopPostStreamBase[idxPop(x, y, 0, 9)] = gPopPostStreamNxt[idxPop(x, y, 0, 9)];
+            gPopPostStreamNxt[idxPop(x, y, zMax, 10)] = gPopPostStreamBase[idxPop(x, y, zMax, 10)];
+            
+            // pop[11] -> cz = 1; pop[12] -> cz = -1;
+            gPopPostStreamBase[idxPop(x, y, 0, 11)] = gPopPostStreamNxt[idxPop(x, y, 0, 11)];
+            gPopPostStreamNxt[idxPop(x, y, zMax, 12)] = gPopPostStreamBase[idxPop(x, y, zMax, 12)];
+            
+            // pop[15] -> cz = 1; pop[16] -> cz = -1;
+            gPopPostStreamBase[idxPop(x, y, 0, 16)] = gPopPostStreamNxt[idxPop(x, y, 0, 16)];
+            gPopPostStreamNxt[idxPop(x, y, zMax, 15)] = gPopPostStreamBase[idxPop(x, y, zMax, 15)];
+
+            // pop[18] -> cz = 1; pop[17] -> cz = -1;
+            gPopPostStreamBase[idxPop(x, y, 0, 18)] =   gPopPostStreamNxt[idxPop(x, y, 0, 18)];
+            gPopPostStreamNxt[idxPop(x, y, zMax, 17)] = gPopPostStreamBase[idxPop(x, y, zMax, 17)];
+        #endif
     #endif
 }

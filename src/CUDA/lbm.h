@@ -94,6 +94,13 @@ void gpuPopulationsTransfer(
     dfloat* popPostStreamBase,
     dfloat* popPostCollBase,
     dfloat* popPostStreamNxt,
-    dfloat* popPostCollNxt);
+    dfloat* popPostCollNxt
+    #ifdef SCALAR_TRANSPORT
+        , dfloat* gPopPostStreamBase,
+        dfloat* gPopPostCollBase,
+        dfloat* gPopPostStreamNxt,
+        dfloat* gPopPostCollNxt
+    #endif
+    );
 
 #endif // __LBM_H
