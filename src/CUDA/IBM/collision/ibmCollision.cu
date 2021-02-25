@@ -92,7 +92,7 @@ void gpuParticlesCollision(
             #endif
             #ifdef HARD_SPHERE
             penetration = dfloat3(-(min_dist - dist_abs)/2.0,0.0,0.0);
-            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i);
+            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i,particlesNodes);
             #endif
         }
         //West x = NX-1
@@ -112,7 +112,7 @@ void gpuParticlesCollision(
             #endif
             #ifdef HARD_SPHERE
             penetration = dfloat3((min_dist - dist_abs)/2,0.0,0.0);
-            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i);
+            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i,particlesNodes);
             #endif
         }
         //South y = 0
@@ -131,7 +131,7 @@ void gpuParticlesCollision(
             #endif
             #ifdef HARD_SPHERE
             penetration = dfloat3(0.0,-(min_dist - dist_abs)/2.0,0.0);
-            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i);
+            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i,particlesNodes);
             #endif          
         }
         //North y = NY - 1
@@ -151,7 +151,7 @@ void gpuParticlesCollision(
             #endif
             #ifdef HARD_SPHERE
             penetration = dfloat3(0.0,(min_dist - dist_abs)/2.0,0.0);
-            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i);
+            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i,particlesNodes);
             #endif   
         }
         //Back z = 0
@@ -171,7 +171,7 @@ void gpuParticlesCollision(
             #endif
             #ifdef HARD_SPHERE
             penetration = dfloat3(0.0,0.0,-(min_dist - dist_abs)/2.0);
-            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i);
+            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i,particlesNodes);
             #endif              
         }
         //Front z = NZ - 1
@@ -191,7 +191,7 @@ void gpuParticlesCollision(
             #endif
             #ifdef HARD_SPHERE
             penetration = dfloat3(0.0,0.0,(min_dist - dist_abs)/2.0);
-            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i);
+            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i,particlesNodes);
             #endif  
         }
     }
@@ -485,8 +485,8 @@ void gpuHardSphereWallCollision(
     dfloat column,
     dfloat3 penetration,
     dfloat3 n,
-    ParticleCenter* pc_i
-    //ParticleNodeSoA particlesNodes
+    ParticleCenter* pc_i,
+    ParticleNodeSoA particlesNodes
 ){
     // Particle i info (column)
     const dfloat  m_i = pc_i ->volume * pc_i ->density;
@@ -507,7 +507,7 @@ void gpuHardSphereWallCollision(
     //velocity mag
     const dfloat vel_mag = sqrt(v_i.x*v_i.x + v_i.y*v_i.y + v_i.z*v_i.z);
     //east
-    if(n.x != 0.0){
+    if(n.y == 0.0 && n.z == 0){
         if ( (v_i.x / vel_mag) < -n.x*2.0 / (7.0*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
             dvy_i -= v_i.y - (5.0/7.0)*(v_i.y - 2*r_i*w_i.z/5);
             dvz_i -= v_i.z - (5.0/7.0)*(v_i.z - 2*r_i*w_i.y/5);
@@ -583,7 +583,7 @@ void gpuHardSphereWallCollision(
         }
     }
     if(n.x == 0.0 && n.y == 0){
-        if ( (v_i.z / vel_mag) < 2 / (7*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
+        if ( (v_i.z / vel_mag) < -n.z*2 / (7*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
             dvx_i -= v_i.x - (5.0/7.0)*(v_i.x - 2*r_i*w_i.y/5);
             dvy_i -= v_i.y - (5.0/7.0)*(v_i.y - 2*r_i*w_i.x/5);
 
@@ -620,13 +620,21 @@ void gpuHardSphereWallCollision(
     }
 
     // Force positive in particle i (column)
-    atomicAdd(&(pc_i->f.x), dvx_i * m_i);
-    atomicAdd(&(pc_i->f.y), dvy_i * m_i);
-    atomicAdd(&(pc_i->f.z), dvz_i * m_i);
+    atomicAdd(&(pc_i->vel.x), dvx_i);
+    atomicAdd(&(pc_i->vel.y), dvy_i);
+    atomicAdd(&(pc_i->vel.z), dvz_i);
 
-    atomicAdd(&(pc_i->M.x), dwx_i * I_i.x);
-    atomicAdd(&(pc_i->M.y), dwy_i * I_i.y);
-    atomicAdd(&(pc_i->M.z), dwz_i * I_i.z);
+    atomicAdd(&(pc_i->vel_old.x), dvx_i);
+    atomicAdd(&(pc_i->vel_old.y), dvy_i);
+    atomicAdd(&(pc_i->vel_old.z), dvz_i);
+
+    atomicAdd(&(pc_i->w.x), dwx_i);
+    atomicAdd(&(pc_i->w.y), dwy_i);
+    atomicAdd(&(pc_i->w.z), dwz_i);
+
+    atomicAdd(&(pc_i->w_old.x), dwx_i);
+    atomicAdd(&(pc_i->w_old.y), dwy_i);
+    atomicAdd(&(pc_i->w_old.z), dwz_i);
 
     const dfloat add_dist = 1e-6;
     pc_i->pos.x -= penetration.x*(1.0 + add_dist);
@@ -752,31 +760,43 @@ void gpuHarSpheredParticleCollision(
     dfloat add_dist = 1e-3;
     if(pc_i->movable && pc_j->movable){
 
-        atomicAdd(&(pc_i->f.x), (dvx_i*m_i));
-        atomicAdd(&(pc_i->f.y), (dvy_i*m_i));
-        atomicAdd(&(pc_i->f.z), (dvz_i*m_i));
-
         atomicAdd(&(pc_i->pos.x), -px*(0.5 + add_dist));
         atomicAdd(&(pc_i->pos.y), -py*(0.5 + add_dist));
         atomicAdd(&(pc_i->pos.z), -pz*(0.5 + add_dist));
 
-        atomicAdd(&(pc_i->M.x), (dwx_i*I_i.x));
-        atomicAdd(&(pc_i->M.y), (dwy_i*I_i.y));
-        atomicAdd(&(pc_i->M.z), (dwz_i*I_i.z));
+        atomicAdd(&(pc_i->vel.x), (dvx_i));
+        atomicAdd(&(pc_i->vel.y), (dvy_i));
+        atomicAdd(&(pc_i->vel.z), (dvz_i));
+        atomicAdd(&(pc_i->vel_old.x), (dvx_i));
+        atomicAdd(&(pc_i->vel_old.y), (dvy_i));
+        atomicAdd(&(pc_i->vel_old.z), (dvz_i));
+        
+        atomicAdd(&(pc_i->w.x), (dwx_i));
+        atomicAdd(&(pc_i->w.y), (dwy_i));
+        atomicAdd(&(pc_i->w.z), (dwz_i));
+        atomicAdd(&(pc_i->w_old.x), (dwx_i));
+        atomicAdd(&(pc_i->w_old.y), (dwy_i));
+        atomicAdd(&(pc_i->w_old.z), (dwz_i));
 
 
         // Force negative in particle j (row)
-        atomicAdd(&(pc_j->f.x), dvx_j*m_j);
-        atomicAdd(&(pc_j->f.y), dvy_j*m_j);
-        atomicAdd(&(pc_j->f.z), dvz_j*m_j);
-
         atomicAdd(&(pc_j->pos.x), px*(0.5 + add_dist));
         atomicAdd(&(pc_j->pos.y), py*(0.5 + add_dist));
         atomicAdd(&(pc_j->pos.z), pz*(0.5 + add_dist));
 
-        atomicAdd(&(pc_i->M.x), dwx_j* I_j.x);
-        atomicAdd(&(pc_i->M.y), dwy_j* I_j.y);
-        atomicAdd(&(pc_i->M.z), dwz_j* I_j.z);
+        atomicAdd(&(pc_j->vel.x), (dvx_i));
+        atomicAdd(&(pc_j->vel.y), (dvy_i));
+        atomicAdd(&(pc_j->vel.z), (dvz_i));
+        atomicAdd(&(pc_j->vel_old.x), (dvx_i));
+        atomicAdd(&(pc_j->vel_old.y), (dvy_i));
+        atomicAdd(&(pc_j->vel_old.z), (dvz_i));
+
+        atomicAdd(&(pc_j->w.x), (dwx_i));
+        atomicAdd(&(pc_j->w.y), (dwy_i));
+        atomicAdd(&(pc_j->w.z), (dwz_i));
+        atomicAdd(&(pc_j->w_old.x), (dwx_i));
+        atomicAdd(&(pc_j->w_old.y), (dwy_i));
+        atomicAdd(&(pc_j->w_old.z), (dwz_i));
     }
     //update node velocities
     

@@ -34,11 +34,17 @@ void createParticles(Particle particles[NUM_PARTICLES])
 
     
     // Falling sphere
-     dfloat3 center;
-    center.x = (NX)/2.0;
-    center.y = (NY)/2.0;
-    center.z = 3*(NZ)/4.0+PARTICLE_DIAMETER/2.0;
-    particles[0] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true);
+     dfloat3 center,vel, w;
+    center.x = 100;
+    center.y = 100;
+    center.z = 14.995;
+    vel.x = 0.0;
+    vel.y = 0.0;
+    vel.z = -0.1;
+    w.x = 0.0;
+    w.y = 0.0;
+    w.z = 0.0;
+    particles[0] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true,PARTICLE_DENSITY,vel,w);
    
     /*
     // Fixed sphere

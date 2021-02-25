@@ -19,9 +19,9 @@
 // Total number of IB particles in the system
 #define NUM_PARTICLES 1
 // Number of IBM inner iterations
-#define IBM_MAX_ITERATION 3
+#define IBM_MAX_ITERATION 1
 // Particles diameters
-#define PARTICLE_DIAMETER (20*SCALE)
+#define PARTICLE_DIAMETER (20)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -33,8 +33,8 @@
 // Transfer and save forces along with macroscopics
 #define EXPORT_FORCES false
 //collision schemes
-#define SOFT_SPHERE
-//#define HARD_SPHERE //https://doi.org/10.1201/b11103  chapter 5
+//#define SOFT_SPHERE
+#define HARD_SPHERE //https://doi.org/10.1201/b11103  chapter 5
 /* ------------------------------------------------------------------------- */
 
 
@@ -68,13 +68,13 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (10*SCALE*SCALE)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (10*SCALE*SCALE)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (1)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (1)                   // Report IBM treated data every given steps (0 not report)
  
-#define IBM_DATA_STOP true                 // stop condition by IBM treated data
-#define IBM_DATA_SAVE true                 // save reported IBM data to file
+#define IBM_DATA_STOP false                 // stop condition by IBM treated data
+#define IBM_DATA_SAVE false                 // save reported IBM data to file
 
-#define IBM_PARTICLES_NODES_SAVE true      // Saves particles nodes data
+#define IBM_PARTICLES_NODES_SAVE false      // Saves particles nodes data
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
@@ -116,7 +116,7 @@ constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 // Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
 #if defined HARD_SPHERE
 constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
-constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
+constexpr dfloat REST_COEF = 0.8; // restitution coeficient   
 #endif
 /* -------------------------------------------------------------------------- */
 
