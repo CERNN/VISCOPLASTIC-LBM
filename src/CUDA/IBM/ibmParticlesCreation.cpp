@@ -9,43 +9,35 @@ void createParticles(Particle particles[NUM_PARTICLES])
 
     /*
     int id = 0;
+    dfloat a,b,c;
+    dfloat Lx = NX/(5.0+1.0);
+    dfloat Ly = NY/(5.0+1.0);
+    for (int k = 0; k<20; k++){
+        for (int j = 0; j<5; j++){
+            for (int i = 0; i<5; i++){
+                
+                a = Lx * 0.75 + (dfloat)i*Lx + Lx*0.5*(k%2)         + 0.5*(((dfloat) rand() / (RAND_MAX))-0.5);
+                b = Ly * 0.75 + (dfloat)j*Ly + Ly*0.5*((1+(k/2))%2) + 0.5*(((dfloat) rand() / (RAND_MAX))-0.5);
+                c = NZ - 20.0 - (dfloat)k*25.0                      + 1.0*(((dfloat) rand() / (RAND_MAX))-0.5);
 
-    for (int i = NZ-PARTICLE_DIAMETER/2-3 ; i > PARTICLE_DIAMETER/2+3 && id < NUM_PARTICLES; i-=PARTICLE_DIAMETER-3)
-    {
-        for (int j = PARTICLE_DIAMETER/2+3; j < (NY-PARTICLE_DIAMETER/2-3) && id < NUM_PARTICLES; j+=PARTICLE_DIAMETER+3)
-        {
-            for (int k = PARTICLE_DIAMETER/2+3; k < (NX-PARTICLE_DIAMETER/2-3) && id < NUM_PARTICLES; k+=PARTICLE_DIAMETER+3)
-            {
-                bCenter[id].x = k; // 10.0 + (dfloat)i * 25.0 + ((dfloat)rand() / (RAND_MAX));
-                bCenter[id].y = j; // 10.0 + (dfloat)j * 25.0 + ((dfloat)rand() / (RAND_MAX));
-                bCenter[id].z = i; // 10.0 + (dfloat)k * 25.0 + ((dfloat)rand() / (RAND_MAX));
-                particles[id] = makeSpherePolar(PARTICLE_DIAMETER, bCenter[id] , MESH_COULOMB, false);
+                bCenter[id].x = a;
+                bCenter[id].y = b;
+                bCenter[id].z = c;
                 id++;
-                if(id >= NUM_PARTICLES)
-                    break;
             }
-            if(id >= NUM_PARTICLES)
-                break;
         }
-        if(id >= NUM_PARTICLES)
-            break;
     }
     */
 
     
     // Falling sphere
-     dfloat3 center,vel, w;
-    center.x = 100;
-    center.y = 100;
-    center.z = 14.995;
-    vel.x = 0.0;
-    vel.y = 0.0;
-    vel.z = -0.1;
-    w.x = 0.0;
-    w.y = 0.0;
-    w.z = 0.0;
-    particles[0] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true,PARTICLE_DENSITY,vel,w);
-   
+     dfloat3 center;
+    center.x = (NX)*2.0;
+    center.y = (NY)*2.0;
+    center.z = 15;
+    for(int i = 0; i <NUM_PARTICLES ; i++){
+        particles[i] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true);
+    }
     /*
     // Fixed sphere
     particles[0] = makeSpherePolar(
