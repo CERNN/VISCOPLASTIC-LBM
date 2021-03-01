@@ -508,7 +508,7 @@ void gpuHardSphereWallCollision(
     const dfloat vel_mag = sqrt(v_i.x*v_i.x + v_i.y*v_i.y + v_i.z*v_i.z);
     //east
     if(n.y == 0.0 && n.z == 0){
-        if ( (v_i.x / vel_mag) < -n.x*2.0 / (7.0*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
+        if ( abs(v_i.x / vel_mag) < 2.0 / (7.0*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
             dvy_i -= v_i.y - (5.0/7.0)*(v_i.y - 2*r_i*w_i.z/5);
             dvz_i -= v_i.z - (5.0/7.0)*(v_i.z - 2*r_i*w_i.y/5);
     
@@ -545,7 +545,7 @@ void gpuHardSphereWallCollision(
 
     }
     if(n.x == 0.0 && n.z == 0){
-        if ( (v_i.y / vel_mag) < -n.y* 2.0 / (7*FRICTION_COEF*(REST_COEF+1))  && FRICTION_COEF != 0){
+        if ( abs(v_i.y / vel_mag) < 2.0 / (7*FRICTION_COEF*(REST_COEF+1))  && FRICTION_COEF != 0){
             dvx_i -= v_i.x - (5.0/7.0)*(v_i.x - 2*r_i*w_i.z/5);
             dvz_i -= v_i.z - (5.0/7.0)*(v_i.z - 2*r_i*w_i.x/5);
 
@@ -583,7 +583,7 @@ void gpuHardSphereWallCollision(
         }
     }
     if(n.x == 0.0 && n.y == 0){
-        if ( (v_i.z / vel_mag) < -n.z*2 / (7*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
+        if ( abs(v_i.z / vel_mag) < 2 / (7*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
             dvx_i -= v_i.x - (5.0/7.0)*(v_i.x - 2*r_i*w_i.y/5);
             dvy_i -= v_i.y - (5.0/7.0)*(v_i.y - 2*r_i*w_i.x/5);
 
