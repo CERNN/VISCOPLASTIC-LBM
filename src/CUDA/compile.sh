@@ -1,6 +1,6 @@
 # First argument is to define the velocity set to compile, must be the same
 # as in "var.h"
-# Second argument is used to define the prefix of the executable. It is usually 
+# Second argument is used to define the prefix of the executable. It is usually
 # defined equal to the "ID_SIM" of the "var.h" file
 
 # example of usage is:
@@ -9,7 +9,7 @@
 
 # Compute capbility, change it to the compute capability of your device
 # Example: 35 stands for compute capability 3.5, 70 for CC 7.0, etc.
-CC=50
+CC=75
 
 if [[ "$1" = "D3Q19" || "$1" = "D3Q27" ]]
 then
