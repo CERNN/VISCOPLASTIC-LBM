@@ -15,7 +15,7 @@
 
 
 /* ------------------------ GENERAL SIMULATION DEFINES ---------------------- */
-#define SINGLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
+#define DOUBLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
 #define D3Q19               // velocity set to use (D3Q19 OR D3Q27)
 // Comment to disable IBM. Uncomment to enable IBM
 #define IBM
@@ -47,7 +47,7 @@ constexpr unsigned int SCALE = 1;
 constexpr int N_STEPS = 100;          // maximum number of time steps
 #define MACR_SAVE (0)                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT (false)                // report every DATA_REPORT steps
- 
+
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
 
@@ -62,7 +62,7 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 #define LOAD_MACR false     // loads macroscopics from binary file (file names
                             // defined below; LOAD_POP must be false)
 
-#define RANDOM_NUMBERS false // to generate random numbers 
+#define RANDOM_NUMBERS false // to generate random numbers
                             // (useful for turbulence)
 
 // File names to load
@@ -85,7 +85,7 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 
 constexpr int N = 60*SCALE;
-constexpr int NX = 8*SCALE;        // size x of the grid 
+constexpr int NX = 8*SCALE;        // size x of the grid
                                       // (32 multiple for better performance)
 constexpr int NY = 8*SCALE;        // size y of the grid
 constexpr int NZ = 100*SCALE;        // size z of the grid in one GPU
@@ -113,10 +113,10 @@ constexpr dfloat RESID_MAX = 1e-5;      // maximal residual
 
 
 /* ------------------------------ GPU DEFINES ------------------------------ */
-const int N_THREADS = (NX%64?((NX%32||(NX<32))?NX:32):64); // NX or 32 or 64 
+const int N_THREADS = (NX%64?((NX%32||(NX<32))?NX:32):64); // NX or 32 or 64
                                     // multiple of 32 for better performance.
 const int CURAND_SEED = 0;          // seed for random numbers for CUDA
-constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers 
+constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
                                     // in normal distribution
 /* ------------------------------------------------------------------------- */
 
@@ -145,12 +145,12 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
 
 // Pow function to use
 #ifdef SINGLE_PRECISION
-    #define POW_FUNCTION powf 
+    #define POW_FUNCTION powf
 #else
     #define POW_FUNCTION pow
 #endif
 
-/* --------------------------- AUXILIARY DEFINES --------------------------- */ 
+/* --------------------------- AUXILIARY DEFINES --------------------------- */
 #define IN_HOST 1       // variable accessible only for host
 #define IN_VIRTUAL 2    // variable accessible for device and host
 
@@ -160,7 +160,7 @@ constexpr size_t BYTES_PER_MB = (1<<20);
 #define SQRT_2 (1.41421356237309504880168872420969807856967187537)
 /* ------------------------------------------------------------------------- */
 
-/* ------------------------------ MEMORY SIZE ------------------------------ */ 
+/* ------------------------------ MEMORY SIZE ------------------------------ */
 // Values for each GPU
 const size_t NUMBER_LBM_NODES = NX*NY*NZ;
 const size_t MEM_SIZE_POP = sizeof(dfloat) * NUMBER_LBM_NODES * Q;
