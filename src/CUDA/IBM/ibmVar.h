@@ -34,7 +34,7 @@
 #define EXPORT_FORCES false
 //collision schemes
 //#define SOFT_SPHERE
-#define HARD_SPHERE //https://doi.org/10.1201/b11103  chapter 5
+#define SOFT_SPHERE //https://doi.org/10.1201/b11103  chapter 5
 /* ------------------------------------------------------------------------- */
 
 
@@ -90,6 +90,8 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------- COLLISION PARAMETERS -------------------------- */
 // Soft sphere
 #if defined SOFT_SPHERE
+
+
 constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
 constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
 
@@ -112,11 +114,18 @@ constexpr dfloat ZETA = 1.0; // Distance threshold
 constexpr dfloat STIFF_WALL = 1.0;  // Stiffness parameter wall
 constexpr dfloat STIFF_SOFT = 1.0;  // Soft stiffness parameter particle
 constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
+
+#define LUBRICATION_FORCE
+#if defined LUBRICATION_FORCE
+    constexpr dfloat LUBRICATION_DISTANCE = 2;
+#endif
+
+
 #endif
 // Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
 #if defined HARD_SPHERE
-constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
-constexpr dfloat REST_COEF = 0.8; // restitution coeficient   
+constexpr dfloat FRICTION_COEF = 0.00923; // friction coeficient
+constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
 #endif
 /* -------------------------------------------------------------------------- */
 

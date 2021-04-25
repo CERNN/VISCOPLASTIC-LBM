@@ -177,23 +177,49 @@ void gpuParticlesCollision(
         //Front z = NZ - 1
         pos_mirror = 2 * (NZ - 1) - pos_i.z;
         dist_abs = abs(pos_i.z - pos_mirror);
-        if (dist_abs <= min_dist) {
-            
 
-            displacement = (2.0 * r_i - dist_abs)/2.0;
+        #if defined LUBRICATION_FORCE
+            if (dist_abs <= min_dist + LUBRICATION_DISTANCE) {
 
-            normalVector.x = 0.0;
-            normalVector.y = 0.0;
-            normalVector.z = -1.0;
+                gpuLubricationWall(displacement,normalVector,pc_i);
 
-            #ifdef SOFT_SPHERE
-            gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
-            #endif
-            #ifdef HARD_SPHERE
-            penetration = dfloat3(0.0,0.0,(min_dist - dist_abs)/2.0);
-            gpuHardSphereWallCollision(column,penetration,normalVector,pc_i,particlesNodes);
-            #endif  
-        }
+                if (dist_abs <= min_dist) {
+                
+
+                    displacement = (2.0 * r_i - dist_abs)/2.0;
+    
+                    normalVector.x = 0.0;
+                    normalVector.y = 0.0;
+                    normalVector.z = -1.0;
+    
+                    #ifdef SOFT_SPHERE
+                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                    #endif
+                    #ifdef HARD_SPHERE
+                    penetration = dfloat3(0.0,0.0,(min_dist - dist_abs)/2.0);
+                    gpuHardSphereWallCollision(column,penetration,normalVector,pc_i,particlesNodes);
+                    #endif  
+                }
+            }
+        #else
+            if (dist_abs <= min_dist) {
+                
+
+                displacement = (2.0 * r_i - dist_abs)/2.0;
+
+                normalVector.x = 0.0;
+                normalVector.y = 0.0;
+                normalVector.z = -1.0;
+
+                #ifdef SOFT_SPHERE
+                gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                #endif
+                #ifdef HARD_SPHERE
+                penetration = dfloat3(0.0,0.0,(min_dist - dist_abs)/2.0);
+                gpuHardSphereWallCollision(column,penetration,normalVector,pc_i,particlesNodes);
+                #endif  
+            }
+        #endif
     }
     //Collision against particles
     else{
@@ -220,16 +246,34 @@ void gpuParticlesCollision(
             diff_pos.x*diff_pos.x
             + diff_pos.y*diff_pos.y
             + diff_pos.z*diff_pos.z);
-           
-        //Check if collision will occur
-        if(mag_dist < r_i+r_j){
-            #ifdef SOFT_SPHERE
-            gpuSoftSphereParticleCollision(r_i + r_j - mag_dist, pc_i, pc_j);
-            #endif
-            #ifdef HARD_SPHERE
-            gpuHarSpheredParticleCollision(column,row,pc_i,pc_j,particlesNodes);
-            #endif
-        }
+        
+        #if defined LUBRICATION_FORCE
+            //check if lubrication will occur
+            if(mag_dist < r_i+r_j + LUBRICATION_DISTANCE){
+
+                gpuLubricationParticle(r_i + r_j - mag_dist, pc_i, pc_j);
+            
+                //Check if collision will occur
+                if(mag_dist < r_i+r_j){
+                    #ifdef SOFT_SPHERE
+                    gpuSoftSphereParticleCollision(r_i + r_j - mag_dist, pc_i, pc_j);
+                    #endif
+                    #ifdef HARD_SPHERE
+                    gpuHarSpheredParticleCollision(column,row,pc_i,pc_j,particlesNodes);
+                    #endif
+                }
+            }
+        #else
+            //Check if collision will occur
+            if(mag_dist < r_i+r_j){
+                #ifdef SOFT_SPHERE
+                gpuSoftSphereParticleCollision(r_i + r_j - mag_dist, pc_i, pc_j);
+                #endif
+                #ifdef HARD_SPHERE
+                gpuHarSpheredParticleCollision(column,row,pc_i,pc_j,particlesNodes);
+                #endif
+            }
+        #endif
     }
 }
 
@@ -389,6 +433,8 @@ void gpuSoftSphereParticleCollision(
     G.y = v_i.y-v_j.y;
     G.z = v_i.z-v_j.z;
 
+    //HERTZ CONTACT THEORY
+
     dfloat effective_radius = 1.0/((r_i +r_j)/(r_i*r_j));
     dfloat effective_mass = 1.0/((m_i +m_j)/(m_i*m_j));
 
@@ -441,6 +487,9 @@ void gpuSoftSphereParticleCollision(
         f_tang.z = - FRICTION_COEF * f_n * t.z;
     }
 
+    //FINAL FORCE RESULTS
+
+
     // Force in each direction
     f_dirs = dfloat3(
         f_normal.x + f_tang.x,
@@ -478,6 +527,26 @@ void gpuSoftSphereParticleCollision(
     atomicAdd(&(pc_j->M.z), m_dirs_j.z); 
 }
 #endif //SOFT_SPHERE
+
+
+#if defined LUBRICATION_FORCE
+void gpuLubricationWall(
+    dfloat displacement,
+    dfloat3 wallNormalVector,
+    ParticleCenter* pc_i
+){
+
+}
+
+__device__ 
+void gpuLubricationParticle(
+    dfloat displacement,
+    ParticleCenter* pc_i,
+    ParticleCenter* pc_j
+){
+
+}
+#endif //LUBRICATION_FORCE
 
 #ifdef HARD_SPHERE
 __device__

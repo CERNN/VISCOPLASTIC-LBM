@@ -59,6 +59,38 @@ void gpuSoftSphereParticleCollision(
 );
 
 
+#if defined LUBRICATION_FORCE
+/**
+*   @brief Perform lubrication force between wall and particle
+*
+*   @param displacement: total normal displacement
+*   @param wallNormalVector: wall normal vector  
+*   @param particleCenter: particles centers to perform colision index i
+*/
+__device__ 
+void gpuLubricationWall(
+    dfloat displacement,
+    dfloat3 wallNormalVector,
+    ParticleCenter* pc_i
+);
+
+/**
+*   @brief Perform  the lubrication force between particles
+*   @param displacement: total normal displacement
+*   @param particleCenter: particles centers to perform colision index i
+*   @param particleCenter: particles centers to perform colision index j
+*/
+__device__ 
+void gpuLubricationParticle(
+    dfloat displacement,
+    ParticleCenter* pc_i,
+    ParticleCenter* pc_j
+);
+
+#endif
+
+
+
 /**
 *   @brief Perform particles collisions with wall using soft sphere collision model
 *
