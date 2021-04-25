@@ -577,20 +577,20 @@ void gpuHardSphereWallCollision(
     const dfloat vel_mag = sqrt(v_i.x*v_i.x + v_i.y*v_i.y + v_i.z*v_i.z);
     //east
     if(n.y == 0.0 && n.z == 0){
-        if ( (v_i.x / vel_mag) < -n.x*2.0 / (7.0*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
+        if ( abs(v_i.x / vel_mag) < 2.0 / (7.0*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
             dvy_i -= v_i.y - (5.0/7.0)*(v_i.y - 2*r_i*w_i.z/5);
             dvz_i -= v_i.z - (5.0/7.0)*(v_i.z - 2*r_i*w_i.y/5);
     
             dvx_i -= v_i.x + REST_COEF * v_i.x;
     
-            dwy_i -= w_i.y - v_i.z/r_i;
+            dwy_i -= w_i.y + v_i.z/r_i;
             dwx_i += 0;
-            dwz_i -= w_i.z + v_i.y/r_i;
+            dwz_i -= w_i.z - v_i.y/r_i;
     
         } else {
-            if(v_i.y == 0 || v_i.z == 0){
+            if(v_i.y == 0 && v_i.z == 0){
                 ep_y = 0;
-                ep_z = 0;                    
+                ep_z = 0;
             }else if(v_i.y == 0){
                 ep_z = 1;
                 ep_y = 0;
@@ -607,28 +607,28 @@ void gpuHardSphereWallCollision(
     
             dvx_i -= v_i.x + REST_COEF * v_i.x;
     
-            dwy_i += - (5.0/(2.0*r_i))*ep_z*FRICTION_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
-            dwz_i += + (5.0/(2.0*r_i))*ep_y*FRICTION_COEF*(REST_COEF+1)*(-REST_COEF * v_i.x);
+            dwy_i += + (5.0/(2.0*r_i))*ep_z*FRICTION_COEF*(REST_COEF+1)*(v_i.x);
+            dwz_i += - (5.0/(2.0*r_i))*ep_y*FRICTION_COEF*(REST_COEF+1)*(v_i.x);
             dwx_i += 0;
         }
 
     }
     if(n.x == 0.0 && n.z == 0){
-        if ( (v_i.y / vel_mag) < -n.y* 2.0 / (7*FRICTION_COEF*(REST_COEF+1))  && FRICTION_COEF != 0){
+        if ( abs(v_i.y / vel_mag) < 2.0 / (7*FRICTION_COEF*(REST_COEF+1))  && FRICTION_COEF != 0){
             dvx_i -= v_i.x - (5.0/7.0)*(v_i.x - 2*r_i*w_i.z/5);
             dvz_i -= v_i.z - (5.0/7.0)*(v_i.z - 2*r_i*w_i.x/5);
 
             dvy_i -= v_i.y  + REST_COEF * v_i.y;
 
 
-            dwx_i -= w_i.x - v_i.z/r_i;
+            dwx_i -= w_i.x + v_i.z/r_i;
             dwy_i += 0;
-            dwz_i -= w_i.z + v_i.x/r_i;
+            dwz_i -= w_i.z - v_i.x/r_i;
 
         } else {
-            if(v_i.x == 0 || v_i.z == 0){
+            if(v_i.x == 0 && v_i.z == 0){
                 ep_x = 0;
-                ep_z = 0;                    
+                ep_z = 0;
             }else if(v_i.x == 0){
                 ep_z = 1;
                 ep_x = 0;
@@ -646,23 +646,24 @@ void gpuHardSphereWallCollision(
 
             dvy_i -= v_i.y + REST_COEF * v_i.y;
 
-            dwx_i += - (5.0/(2.0*r_i))*ep_z*FRICTION_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
-            dwz_i += + (5.0/(2.0*r_i))*ep_x*FRICTION_COEF*(REST_COEF+1)*(-REST_COEF * v_i.y);
+            dwx_i += + (5.0/(2.0*r_i))*ep_z*FRICTION_COEF*(REST_COEF+1)*(v_i.y);
+            dwz_i += - (5.0/(2.0*r_i))*ep_x*FRICTION_COEF*(REST_COEF+1)*(v_i.y);
             dwy_i += 0;
         }
     }
     if(n.x == 0.0 && n.y == 0){
-        if ( (v_i.z / vel_mag) < -n.z*2 / (7*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
+        if ( v_i.y != 0 && abs(v_i.z / v_i.y) > 2 / (5*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
+
             dvx_i -= v_i.x - (5.0/7.0)*(v_i.x - 2*r_i*w_i.y/5);
             dvy_i -= v_i.y - (5.0/7.0)*(v_i.y - 2*r_i*w_i.x/5);
 
             dvz_i -= v_i.z + REST_COEF * v_i.z;
 
-            dwx_i -= w_i.x - v_i.y/r_i;
+            dwx_i -= w_i.x + v_i.y/r_i;
             dwz_i += 0;
-            dwy_i -= w_i.y + v_i.x/r_i;
+            dwy_i -= w_i.y - v_i.x/r_i;
         } else {
-            if(v_i.x == 0 || v_i.y == 0){
+            if(v_i.x == 0 && v_i.y == 0){
                 ep_y = 0; 
                 ep_x = 0;
             }else if(v_i.x == 0){
@@ -682,8 +683,8 @@ void gpuHardSphereWallCollision(
 
             dvz_i -= v_i.z + REST_COEF * v_i.z;
 
-            dwx_i += - (5.0/(2.0*r_i))*ep_y*FRICTION_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
-            dwy_i += + (5.0/(2.0*r_i))*ep_x*FRICTION_COEF*(REST_COEF+1)*(-REST_COEF * v_i.z);
+            dwx_i += + (5.0/(2.0*r_i))*ep_y*FRICTION_COEF*(REST_COEF+1)*(v_i.z);
+            dwy_i += - (5.0/(2.0*r_i))*ep_x*FRICTION_COEF*(REST_COEF+1)*(v_i.z);
             dwz_i += 0;
         }
     }

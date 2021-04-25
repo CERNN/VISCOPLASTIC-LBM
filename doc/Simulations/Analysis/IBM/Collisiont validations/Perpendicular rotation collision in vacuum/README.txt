@@ -1,0 +1,15 @@
+source
+@article{Chung2011,
+abstract = {Over the past 30 years, the Discrete Element Method (DEM) has rapidly gained popularity as a tool for modelling the behaviour of granular assemblies and is being used extensively in both scientific and industrial applications. However, it is far from clear from reviewing the literature whether the large number of DEM codes have been verified and checked against fundamental benchmark problems. DEM simulates the dynamics of each particle in an assembly by calculating the acceleration resulting from all the contact forces and body forces. It is clearly necessary that such a model be validated or verified by comparing with experimental results, analytical solutions or other numerical results (e.g. Finite Element Analysis (FEA) results) at particle impact level. There appears to be no standard benchmark tests against which DEM codes can be verified. It is thus essential and useful to establish a set of standard benchmark tests to confirm that these DEM codes are modelling the particle dynamics as intended. This paper proposes a set of benchmark tests to verify DEM codes at particle impact level for spherical particles. The analytical solutions derived from elasticity theory for elastic normal collision of two spheres or a sphere with a rigid plane are first reviewed. These analytical solutions apply only to the elastic regime for normal impact. Secondly, the analytical solutions of frictional oblique impact between two spheres or a sphere with a rigid plane are scrutinized and derived. These analytical solutions originate from the dynamics principles and should be satisfied for any DEM contact force model with prescribed friction and restitution coefficients. A set of eight benchmark tests are designed and performed using commercial DEM codes. Test 1 and Test 2 consider the elastic normal impact of two spheres or a sphere with a rigid plane, whereas the other tests (Test 3-Test 8) investigate the energy dissipation due to the collision. These benchmark tests also involve different types of material. The DEM results were compared with the analytical solutions, experimental or FEA results found in the literature. All benchmark tests showed good to excellent match, providing a quantitative verification for the codes used in this study. These benchmark tests not only verify DEM codes but also enhance the understanding of fundamental impact phenomena for modelling a large number of particles. {\textcopyright} 2011 Springer-Verlag.},
+author = {Chung, Y. C. and Ooi, J. Y.},
+doi = {10.1007/s10035-011-0277-0},
+file = {:D$\backslash$:/Drive/Facul/IC/Artigos/2011 Chung - Benchmark tests for verifying discrete element modelling codes at particle impact level.pdf:pdf},
+issn = {14345021},
+journal = {Granular Matter},
+keywords = {Benchmark test,Calibration and verification,Discrete element method,Frictional oblique impact,Normal impact,Spherical system},
+number = {5},
+pages = {643--656},
+title = {{Benchmark tests for verifying discrete element modelling codes at particle impact level}},
+volume = {13},
+year = {2011}
+}
