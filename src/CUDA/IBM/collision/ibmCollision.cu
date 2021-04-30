@@ -80,11 +80,11 @@ void gpuParticlesCollision(
         pos_mirror = -pos_i.x;
         dist_abs = abs(pos_i.x - pos_mirror);
         #if defined LUBRICATION_FORCE
-            if (dist_abs <= min_dist + 2.0*LUBRICATION_DISTANCE) {
+            if (dist_abs <= min_dist + LUBRICATION_DISTANCE) {
                 normalVector.x = 1.0;
                 normalVector.y = 0.0;
                 normalVector.z = 0.0;
-                dfloat gap = min_dist + 2.0*LUBRICATION_DISTANCE - dist_abs;
+                dfloat gap = min_dist  - dist_abs;
                 gpuLubricationWall(gap,normalVector,pc_i);
                 if (dist_abs <= min_dist){
                 
@@ -122,11 +122,11 @@ void gpuParticlesCollision(
         pos_mirror = 2 * (NX - 1) - pos_i.x;
         dist_abs = abs(pos_i.x - pos_mirror);
         #if defined LUBRICATION_FORCE
-            if (dist_abs <= min_dist + 2.0*LUBRICATION_DISTANCE) {
+            if (dist_abs <= min_dist + LUBRICATION_DISTANCE) {
                 normalVector.x = -1.0;
                 normalVector.y = 0.0;
                 normalVector.z = 0.0;
-                dfloat gap = min_dist + 2.0*LUBRICATION_DISTANCE - dist_abs;
+                dfloat gap = min_dist - dist_abs;
                 gpuLubricationWall(gap,normalVector,pc_i);
                 if (dist_abs <= min_dist){
                 
@@ -164,11 +164,11 @@ void gpuParticlesCollision(
         pos_mirror = - pos_i.y;
         dist_abs = abs(pos_i.y - pos_mirror);
         #if defined LUBRICATION_FORCE
-            if (dist_abs <= min_dist + 2.0*LUBRICATION_DISTANCE) {
+            if (dist_abs <= min_dist + LUBRICATION_DISTANCE) {
                 normalVector.x = 0.0;
                 normalVector.y = 1.0;
                 normalVector.z = 0.0;
-                dfloat gap = min_dist + 2.0*LUBRICATION_DISTANCE - dist_abs;
+                dfloat gap = min_dist  - dist_abs;
                 gpuLubricationWall(gap,normalVector,pc_i);
                 if (dist_abs <= min_dist){            
                 
@@ -206,11 +206,11 @@ void gpuParticlesCollision(
         pos_mirror = 2 * (NY - 1) - pos_i.y;
         dist_abs = abs(pos_i.y - pos_mirror);
         #if defined LUBRICATION_FORCE
-            if (dist_abs <= min_dist + 2.0*LUBRICATION_DISTANCE) {
+            if (dist_abs <= min_dist + LUBRICATION_DISTANCE) {
                 normalVector.x = 0.0;
                 normalVector.y = -1.0;
                 normalVector.z = 0.0;
-                dfloat gap = min_dist + 2.0*LUBRICATION_DISTANCE - dist_abs;
+                dfloat gap = min_dist - dist_abs;
                 gpuLubricationWall(gap,normalVector,pc_i);
                 if (dist_abs <= min_dist){
                 
@@ -248,11 +248,11 @@ void gpuParticlesCollision(
         pos_mirror = -pos_i.z;
         dist_abs = abs(pos_i.z - pos_mirror);
         #if defined LUBRICATION_FORCE
-            if (dist_abs <= min_dist + 2.0*LUBRICATION_DISTANCE) {
+            if (dist_abs <= min_dist + LUBRICATION_DISTANCE) {
                 normalVector.x = 0.0;
                 normalVector.y = 0.0;
                 normalVector.z = 1.0;
-                dfloat gap = min_dist + 2.0*LUBRICATION_DISTANCE - dist_abs;
+                dfloat gap = min_dist - dist_abs;
                 gpuLubricationWall(gap,normalVector,pc_i);
                 if (dist_abs <= min_dist){
 
@@ -291,11 +291,11 @@ void gpuParticlesCollision(
         dist_abs = abs(pos_i.z - pos_mirror);
 
         #if defined LUBRICATION_FORCE
-            if (dist_abs <= min_dist + 2.0*LUBRICATION_DISTANCE) {
+            if (dist_abs <= min_dist + LUBRICATION_DISTANCE) {
                 normalVector.x = 0.0;
                 normalVector.y = 0.0;
                 normalVector.z = -1.0;
-                dfloat gap = min_dist + 2.0*LUBRICATION_DISTANCE - dist_abs;
+                dfloat gap = min_dist - dist_abs;
                 gpuLubricationWall(gap,normalVector,pc_i);
 
                 if (dist_abs <= min_dist) {
@@ -330,7 +330,7 @@ void gpuParticlesCollision(
             }
         #endif // LUBRICATION_FORCE
     }
-    //Collision against particles
+    //Collision between particles
     else{
         ParticleCenter* pc_j = &particleCenters[row];
 
