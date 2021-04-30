@@ -440,7 +440,11 @@ void gpuSoftSphereParticleCollision(
 
     const dfloat STIFFNESS_NORMAL = STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
     const dfloat STIFFNESS_TANGENTIAL = STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (displacement);
+    #if defined REST_COEF_CORRECTION
+    dfloat damping_const = (- 2.0 * log(FRICTION_COEF_CORRECTED)  / (sqrt(M_PI*M_PI + log(FRICTION_COEF_CORRECTED)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+    #else
     dfloat damping_const = (- 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+    #endif
     const dfloat DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
     const dfloat DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
     
@@ -576,8 +580,9 @@ void gpuHardSphereWallCollision(
     //velocity mag
     const dfloat vel_mag = sqrt(v_i.x*v_i.x + v_i.y*v_i.y + v_i.z*v_i.z);
     //east
-    if(n.y == 0.0 && n.z == 0){
-        if ( abs(v_i.x / vel_mag) < 2.0 / (7.0*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
+    if(n.y == 0.0 && n.z == 0.0){
+        // TODO: need investigate why 2/5 instead of 2/7
+        if ( v_i.y*v_i.y + v_i.z*v_i.z != 0 && abs(v_i.x / sqrt(v_i.z*v_i.z + v_i.y*v_i.y)) > 2.0 / (5.0*FRICTION_COEF*(REST_COEF+1.0)) && FRICTION_COEF != 0){
             dvy_i -= v_i.y - (5.0/7.0)*(v_i.y - 2*r_i*w_i.z/5);
             dvz_i -= v_i.z - (5.0/7.0)*(v_i.z - 2*r_i*w_i.y/5);
     
@@ -613,8 +618,9 @@ void gpuHardSphereWallCollision(
         }
 
     }
-    if(n.x == 0.0 && n.z == 0){
-        if ( abs(v_i.y / vel_mag) < 2.0 / (7*FRICTION_COEF*(REST_COEF+1))  && FRICTION_COEF != 0){
+    if(n.x == 0.0 && n.z == 0.0){
+        // TODO: need investigate why 2/5 instead of 2/7
+        if ( v_i.z*v_i.z + v_i.x*v_i.x != 0 && abs(v_i.y / sqrt(v_i.z*v_i.z + v_i.x*v_i.x)) > 2.0 / (5.0*FRICTION_COEF*(REST_COEF+1.0))  && FRICTION_COEF != 0){
             dvx_i -= v_i.x - (5.0/7.0)*(v_i.x - 2*r_i*w_i.z/5);
             dvz_i -= v_i.z - (5.0/7.0)*(v_i.z - 2*r_i*w_i.x/5);
 
@@ -651,8 +657,9 @@ void gpuHardSphereWallCollision(
             dwy_i += 0;
         }
     }
-    if(n.x == 0.0 && n.y == 0){
-        if ( v_i.y != 0 && abs(v_i.z / v_i.y) > 2 / (5*FRICTION_COEF*(REST_COEF+1)) && FRICTION_COEF != 0){
+    if(n.x == 0.0 && n.y == 0.0){
+        // TODO: need investigate why 2/5 instead of 2/7
+        if ( v_i.y*v_i.y + v_i.x*v_i.x != 0 && abs(v_i.z / sqrt(v_i.y*v_i.y + v_i.x*v_i.x)) > 2.0 / (5.0*FRICTION_COEF*(REST_COEF+1.0)) && FRICTION_COEF != 0){
 
             dvx_i -= v_i.x - (5.0/7.0)*(v_i.x - 2*r_i*w_i.y/5);
             dvy_i -= v_i.y - (5.0/7.0)*(v_i.y - 2*r_i*w_i.x/5);
