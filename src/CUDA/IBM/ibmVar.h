@@ -94,6 +94,8 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 
 constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
 constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
+#define REST_COEF_CORRECTION
+
 
 //material properties
 constexpr dfloat YOUNG_MODULUS = 1.0;
@@ -108,6 +110,10 @@ constexpr dfloat STIFFNESS_TANGENTIAL_CONST =  4.0 * (SHEAR_MODULUS / (1 - POISS
 // Tsuji 1979
 //constexpr dfloat DAMPING_NORMAL_CONST =       - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)));
 //constexpr dfloat DAMPING_TANGENTIAL_CONST =   - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF))); 
+
+#ifdef REST_COEF_CORRECTION
+constexpr dfloat FRICTION_COEF_CORRECTED = 1/((16.21*REST_COEF+15.58*REST_COEF*REST_COEF*REST_COEF)/((1-REST_COEF*REST_COEF)*(1-REST_COEF*REST_COEF)+(5.53*REST_COEF)*(5.53*REST_COEF)));
+#endif 
 
 
 constexpr dfloat ZETA = 1.0; // Distance threshold
