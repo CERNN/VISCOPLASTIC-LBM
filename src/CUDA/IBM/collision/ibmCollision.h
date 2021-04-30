@@ -69,7 +69,7 @@ void gpuSoftSphereParticleCollision(
 */
 __device__ 
 void gpuLubricationWall(
-    dfloat displacement,
+    dfloat gap,
     dfloat3 wallNormalVector,
     ParticleCenter* pc_i
 );
@@ -82,7 +82,7 @@ void gpuLubricationWall(
 */
 __device__ 
 void gpuLubricationParticle(
-    dfloat displacement,
+    dfloat gap,
     ParticleCenter* pc_i,
     ParticleCenter* pc_j
 );
