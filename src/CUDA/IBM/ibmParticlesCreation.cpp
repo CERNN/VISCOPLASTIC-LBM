@@ -31,12 +31,18 @@ void createParticles(Particle particles[NUM_PARTICLES])
 
     
     // Falling sphere
-     dfloat3 center;
-    center.x = (NX)*2.0;
-    center.y = (NY)*2.0;
-    center.z = 15;
+     dfloat3 center,vel, w;
+    center.x = 100;
+    center.y = 100;
+    center.z = 14.995;
+    vel.x = 0.0;
+    vel.y = 0.0;
+    vel.z = -0.1;
+    w.x = 0.0;
+    w.y = 0.0;
+    w.z = 0.0;
     for(int i = 0; i <NUM_PARTICLES ; i++){
-        particles[i] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true);
+        particles[i] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true,PARTICLE_DENSITY,vel,w);
     }
     /*
     // Fixed sphere
