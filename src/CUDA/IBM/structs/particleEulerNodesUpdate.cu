@@ -185,12 +185,14 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
     dfloat addTerm = radius+sphereShellThick;
 
     const int maxX = myMin(pos.x+addTerm+1, NX-1); // +1 for ceil
-    const int maxY = myMin(pos.y+addTerm+1, NY-1); 
-    const int maxZ = myMin(pos.z+addTerm+1, NZ-1); 
+    const int maxY = myMin(pos.y+addTerm+1, NY-1);
+    // +2 in z because of the ghost nodes 
+    const int maxZ = myMin(pos.z+addTerm+1, NZ-1+2); 
 
     const int minX = myMax(pos.x-addTerm, 0);
     const int minY = myMax(pos.y-addTerm, 0);
-    const int minZ = myMax(pos.z-addTerm, 0);
+    // -2 in z because of the ghost nodes
+    const int minZ = myMax(pos.z-addTerm, -2);
 
     const dfloat maxDistSq = (radius+sphereShellThick)*(radius+sphereShellThick);
     const dfloat minDistSq = (radius-sphereShellThick)*(radius-sphereShellThick);

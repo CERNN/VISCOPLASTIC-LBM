@@ -92,13 +92,21 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
 );
 
 /**
-*   @brief Resed forces from all IBM nodes
+*   @brief Reset forces from all IBM nodes
 *   
 *   @param particlesNodes: nodes to reset forces
 */
 __global__
 void gpuResetNodesForces(ParticleNodeSoA particlesNodes);
 
+/**
+*   @brief Copies macroscopics from one GPU border to another
+*
+*   @param macrBase: macroscopics in GPU with lower z
+*   @param macrNext: macroscopics in GPU with higher z
+*/
+__global__
+void copyBorderMacr(Macroscopics macrBase, Macroscopics macrNext);
 
 /**
 *   @brief Updated particles velocities and rotation

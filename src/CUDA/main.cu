@@ -336,7 +336,7 @@ int main()
             //checkCudaErrors(cudaDeviceSynchronize());
             getLastCudaError("LBM kernel error\n");
         }
-        
+
         /*
         // While running kernel code, organize IBM Euler nodes
         #if defined(IBM) && IBM_EULER_OPTIMIZATION
@@ -348,17 +348,15 @@ int main()
             checkCudaErrors(cudaSetDevice(i));
             checkCudaErrors(cudaDeviceSynchronize());
         }
-        
-        if(N_GPUS > 1) {
-            // Populations transfer
-            for(int i = 0; i < N_GPUS; i++){
-                checkCudaErrors(cudaSetDevice(i));
-                int nxt = (i+1)%N_GPUS;
-                gpuPopulationsTransfer<<<gridTransfer, threadsTransfer>>>
-                    (pop[i].pop, pop[i].popAux, pop[nxt].pop, pop[nxt].popAux);
-                checkCudaErrors(cudaDeviceSynchronize());
-                getLastCudaError("Mem transfer kernel error\n");
-            }
+
+        // Populations ghost nodes transfer
+        for(int i = 0; i < N_GPUS; i++){
+            checkCudaErrors(cudaSetDevice(i));
+            int nxt = (i+1)%N_GPUS;
+            gpuPopulationsTransfer<<<gridTransfer, threadsTransfer>>>
+                (pop[i].pop, pop[i].popAux, pop[nxt].pop, pop[nxt].popAux);
+            checkCudaErrors(cudaDeviceSynchronize());
+            getLastCudaError("Mem transfer kernel error\n");
         }
 
         // Boundary conditions

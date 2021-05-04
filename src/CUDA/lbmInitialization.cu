@@ -157,15 +157,16 @@ void gpuMacrInitValue(
     float* randomNumbers,
     int x, int y, int z)
 {
-    macr->rho[idxScalar(x, y, z)] = RHO_0;
-    macr->u.x[idxScalar(x, y, z)] = 0;
-    macr->u.y[idxScalar(x, y, z)] = 0;
-    macr->u.z[idxScalar(x, y, z)] = 0;
+    // +2 because of the ghost nodes
+    macr->rho[idxScalar(x, y, z+2)] = RHO_0;
+    macr->u.x[idxScalar(x, y, z+2)] = 0;
+    macr->u.y[idxScalar(x, y, z+2)] = 0;
+    macr->u.z[idxScalar(x, y, z+2)] = 0;
 
     #ifdef IBM
-    macr->f.x[idxScalar(x, y, z)] = FX;
-    macr->f.y[idxScalar(x, y, z)] = FY;
-    macr->f.z[idxScalar(x, y, z)] = FZ;
+    macr->f.x[idxScalar(x, y, z+2)] = FX;
+    macr->f.y[idxScalar(x, y, z+2)] = FY;
+    macr->f.z[idxScalar(x, y, z+2)] = FZ;
     #endif
     #ifdef NON_NEWTONIAN_FLUID
     macr->omega[idxScalar(x, y, z)] = 0;
