@@ -336,7 +336,100 @@ void gpuParticlesCollision(
                 #endif  
             }
         #endif // LUBRICATION_FORCE
+        
+        #ifdef EXTERNAL_DUCT_BC || INTERNAL_DUCT_BC
+            // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
+            dfloat xCenter = (NX/2.0);
+            dfloat yCenter = (NY/2.0); 
+
+
+            dfloat pos_r_i = sqrt((pos_i.x-xCenter)*(pos_i.x-xCenter) + (pos_i.y-yCenter)*(pos_i.y-yCenter));
+
+        #endif
+
+        #ifdef EXTERNAL_DUCT_BC
+            dfloat R = NY/2.0-0.5;
+            pos_mirror = 2 * R - pos_r_i;
+            dist_abs = abs(pos_r_i - pos_mirror);
+            
+
+            #if defined LUBRICATION_FORCE
+                if (dist_abs <= min_dist + 2.0*LUBRICATION_DISTANCE) {
+                    normalVector.x = - (pos_i.x-xCenter)/pos_r_i;
+                    normalVector.y = - (pos_i.y-yCenter)/pos_r_i;
+                    normalVector.z = 0.0;
+
+
+                    if (dist_abs <= min_dist) {
+                        displacement = (2.0 * r_i - dist_abs)/2.0;
+                        #ifdef SOFT_SPHERE
+                            gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                        #endif //SOFT_SPHERE
+                        #ifdef HARD_SPHERE
+                        #endif  //HARD_SPHERE
+                    }else{
+                        gpuLubricationWall(min_dist - dist_abs,normalVector,pc_i);
+                    }
+                }
+            #else // !LUBRICATION_FORCE
+                if (dist_abs <= min_dist) {
+                    displacement = (2.0 * r_i - dist_abs)/2.0;
+
+                    normalVector.x = (pos_i.x-xCenter)/pos_r_i;
+                    normalVector.y = (pos_i.y-yCenter)/pos_r_i;
+                    normalVector.z = 0.0;
+                    #ifdef SOFT_SPHERE
+                        gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                    #endif //SOFT_SPHERE
+                    #ifdef HARD_SPHERE
+                    #endif  //HARD_SPHERE
+                }
+            #endif // LUBRICATION_FORCE
+        #endif
+
+
+
+        #ifdef INTERNAL_DUCT_BC
+            dfloat r = R/4.0;
+            pos_mirror = 2 *r - pos_r_i;
+            dist_abs = abs(pos_r_i - pos_mirror);
+            #if defined LUBRICATION_FORCE
+                if (dist_abs <= min_dist + 2.0*LUBRICATION_DISTANCE) {
+                    normalVector.x = 0.0;
+                    normalVector.y = 0.0;
+                    normalVector.z = 0.0;
+
+
+                    if (dist_abs <= min_dist) {
+                        displacement = (2.0 * r_i - dist_abs)/2.0;
+                        #ifdef SOFT_SPHERE
+                            gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                        #endif //SOFT_SPHERE
+                        #ifdef HARD_SPHERE
+                        #endif  //HARD_SPHERE
+                    }else{
+                        gpuLubricationWall(min_dist - dist_abs,normalVector,pc_i);
+                    }
+                }
+            #else // !LUBRICATION_FORCE
+                if (dist_abs <= min_dist) {
+                    displacement = (2.0 * r_i - dist_abs)/2.0;
+
+                    normalVector.x = 0.0;
+                    normalVector.y = 0.0;
+                    normalVector.z = 0.0;
+                    #ifdef SOFT_SPHERE
+                        gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                    #endif //SOFT_SPHERE
+                    #ifdef HARD_SPHERE
+                    #endif  //HARD_SPHERE
+                }
+            #endif // LUBRICATION_FORCE
+        #endif
+
+        // end of wall collision if
     }
+
     //Collision between particles
     else{
         ParticleCenter* pc_j = &particleCenters[row];
