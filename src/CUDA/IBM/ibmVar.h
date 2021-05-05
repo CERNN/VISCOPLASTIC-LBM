@@ -33,8 +33,10 @@
 // Transfer and save forces along with macroscopics
 #define EXPORT_FORCES false
 //collision schemes
-//#define SOFT_SPHERE
+//#define HARD_SPHERE
 #define SOFT_SPHERE //https://doi.org/10.1201/b11103  chapter 5
+//#define EXTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack or annularDuctInterpBounceBack
+//#define INTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack
 /* ------------------------------------------------------------------------- */
 
 
