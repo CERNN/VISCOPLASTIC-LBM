@@ -259,7 +259,7 @@ std::string getSimInfoString(SimInfo* info)
     #endif // NON_NEWTONIAN_FLUID
 
     #ifdef IBM
-    strSimInfo << "\n------------------------------------- IBM ------------------------------------\n";
+    strSimInfo << "\n------------------------------------- IBM --------------------------------------\n";
     strSimInfo << std::scientific << std::setprecision(6);
 
     strSimInfo << "   Number of particles: " << NUM_PARTICLES << "\n";
