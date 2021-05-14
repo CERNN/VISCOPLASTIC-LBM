@@ -498,6 +498,10 @@ void gpuUpdateParticleOldValues(
     pc->f.x = 0;
     pc->f.y = 0;
     pc->f.z = 0;
+
+    pc->M.x = 0;
+    pc->M.y = 0;
+    pc->M.z = 0;
 }
 
 __global__
