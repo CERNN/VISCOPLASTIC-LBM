@@ -70,7 +70,7 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (1)               // Save particles info every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (500)               // Save particles info every given steps (0 not report)
 #define IBM_DATA_REPORT (1)                   // Report IBM treated data every given steps (0 not report)
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
@@ -80,7 +80,7 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 1.154639;
+constexpr dfloat PARTICLE_DENSITY = 3.97;
 constexpr dfloat FLUID_DENSITY = 1;
 
 // Gravity accelaration on particle (Lattice units)
@@ -94,14 +94,14 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 #if defined SOFT_SPHERE
 
 
-constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
-constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
+constexpr dfloat FRICTION_COEF = 0.0923; // friction coeficient
+constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
 #define REST_COEF_CORRECTION
 
 
 //material properties
-constexpr dfloat YOUNG_MODULUS = 1.0;
-constexpr dfloat POISSON_RATIO = 0.33;
+constexpr dfloat YOUNG_MODULUS = 385.0;
+constexpr dfloat POISSON_RATIO = 0.24;
 constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
 
 
@@ -123,7 +123,7 @@ constexpr dfloat STIFF_WALL = 1.0;  // Stiffness parameter wall
 constexpr dfloat STIFF_SOFT = 1.0;  // Soft stiffness parameter particle
 constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 
-#define LUBRICATION_FORCE
+//#define LUBRICATION_FORCE
 #if defined LUBRICATION_FORCE
     constexpr dfloat LUBRICATION_DISTANCE = 2;
 #endif
