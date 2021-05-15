@@ -6,7 +6,8 @@
 __global__
 void gpuParticlesCollision(
     ParticleNodeSoA particlesNodes,
-    ParticleCenter particleCenters[NUM_PARTICLES]
+    ParticleCenter particleCenters[NUM_PARTICLES],
+    unsigned int step
 ){
 
     /* Maps a 1D array to a Floyd triangle, where the last row is for checking
@@ -91,7 +92,7 @@ void gpuParticlesCollision(
                     displacement = (2.0 * r_i - dist_abs)/2.0;
 
                     #ifdef SOFT_SPHERE
-                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                     #endif
                     #ifdef HARD_SPHERE
                     penetration = dfloat3(-(min_dist - dist_abs)/2.0,0.0,0.0);
@@ -111,7 +112,7 @@ void gpuParticlesCollision(
                 normalVector.z = 0.0;
 
                 #ifdef SOFT_SPHERE
-                gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                 #endif
                 #ifdef HARD_SPHERE
                 penetration = dfloat3(-(min_dist - dist_abs)/2.0,0.0,0.0);
@@ -134,7 +135,7 @@ void gpuParticlesCollision(
                     displacement = (2.0 * r_i - dist_abs)/2.0;;
                                        
                     #ifdef SOFT_SPHERE
-                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                     #endif
                     #ifdef HARD_SPHERE
                     penetration = dfloat3((min_dist - dist_abs)/2,0.0,0.0);
@@ -154,7 +155,7 @@ void gpuParticlesCollision(
                 normalVector.z = 0.0;
                 
                 #ifdef SOFT_SPHERE
-                gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                 #endif
                 #ifdef HARD_SPHERE
                 penetration = dfloat3((min_dist - dist_abs)/2,0.0,0.0);
@@ -177,7 +178,7 @@ void gpuParticlesCollision(
                     displacement = (2.0 * r_i - dist_abs)/2.0;
             
                     #ifdef SOFT_SPHERE
-                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                     #endif
                     #ifdef HARD_SPHERE
                     penetration = dfloat3(0.0,-(min_dist - dist_abs)/2.0,0.0);
@@ -197,7 +198,7 @@ void gpuParticlesCollision(
                 normalVector.z = 0.0;
 
                 #ifdef SOFT_SPHERE
-                gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                 #endif
                 #ifdef HARD_SPHERE
                 penetration = dfloat3(0.0,-(min_dist - dist_abs)/2.0,0.0);
@@ -220,7 +221,7 @@ void gpuParticlesCollision(
                     displacement = (2.0 * r_i - dist_abs)/2.0;
 
                     #ifdef SOFT_SPHERE
-                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                     #endif
                     #ifdef HARD_SPHERE
                     penetration = dfloat3(0.0,(min_dist - dist_abs)/2.0,0.0);
@@ -240,7 +241,7 @@ void gpuParticlesCollision(
                 normalVector.z = 0.0;
 
                 #ifdef SOFT_SPHERE
-                gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                 #endif
                 #ifdef HARD_SPHERE
                 penetration = dfloat3(0.0,(min_dist - dist_abs)/2.0,0.0);
@@ -263,7 +264,7 @@ void gpuParticlesCollision(
                     displacement = (2.0 * r_i - dist_abs)/2.0;
                     
                     #ifdef SOFT_SPHERE
-                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                     #endif
                     #ifdef HARD_SPHERE
                     penetration = dfloat3(0.0,0.0,-(min_dist - dist_abs)/2.0);
@@ -283,7 +284,7 @@ void gpuParticlesCollision(
                 normalVector.z = 1.0;
 
                 #ifdef SOFT_SPHERE
-                gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                 #endif
                 #ifdef HARD_SPHERE
                 penetration = dfloat3(0.0,0.0,-(min_dist - dist_abs)/2.0);
@@ -308,7 +309,7 @@ void gpuParticlesCollision(
                     displacement = (2.0 * r_i - dist_abs)/2.0;
     
                     #ifdef SOFT_SPHERE
-                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                    gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                     #endif //SOFT_SPHERE
                     #ifdef HARD_SPHERE
                     penetration = dfloat3(0.0,0.0,(min_dist - dist_abs)/2.0);
@@ -328,7 +329,7 @@ void gpuParticlesCollision(
                 normalVector.z = -1.0;
 
                 #ifdef SOFT_SPHERE
-                gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                 #endif
                 #ifdef HARD_SPHERE
                 penetration = dfloat3(0.0,0.0,(min_dist - dist_abs)/2.0);
@@ -363,7 +364,7 @@ void gpuParticlesCollision(
                     if (dist_abs <= min_dist) {
                         displacement = (2.0 * r_i - dist_abs)/2.0;
                         #ifdef SOFT_SPHERE
-                            gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                            gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                         #endif //SOFT_SPHERE
                         #ifdef HARD_SPHERE
                         #endif  //HARD_SPHERE
@@ -379,7 +380,7 @@ void gpuParticlesCollision(
                     normalVector.y = (pos_i.y-yCenter)/pos_r_i;
                     normalVector.z = 0.0;
                     #ifdef SOFT_SPHERE
-                        gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                        gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                     #endif //SOFT_SPHERE
                     #ifdef HARD_SPHERE
                     #endif  //HARD_SPHERE
@@ -403,7 +404,7 @@ void gpuParticlesCollision(
                     if (dist_abs <= min_dist) {
                         displacement = (2.0 * r_i - dist_abs)/2.0;
                         #ifdef SOFT_SPHERE
-                            gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                            gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                         #endif //SOFT_SPHERE
                         #ifdef HARD_SPHERE
                         #endif  //HARD_SPHERE
@@ -419,7 +420,7 @@ void gpuParticlesCollision(
                     normalVector.y = 0.0;
                     normalVector.z = 0.0;
                     #ifdef SOFT_SPHERE
-                        gpuSoftSphereWallCollision(displacement,normalVector,pc_i);
+                        gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                     #endif //SOFT_SPHERE
                     #ifdef HARD_SPHERE
                     #endif  //HARD_SPHERE
@@ -491,9 +492,9 @@ __device__
 void gpuSoftSphereWallCollision(
     dfloat displacement,
     dfloat3 n,
-    ParticleCenter* pc_i
+    ParticleCenter* pc_i,
+    unsigned int step
 ){
-
 
     //Variable declaration
     dfloat3 f_normal = dfloat3();
@@ -510,6 +511,8 @@ void gpuSoftSphereWallCollision(
     const dfloat3 w_i = pc_i->w;
     const dfloat effective_radius = r_i;
     const dfloat effective_mass = m_i;
+
+    dfloat3 tangDisplacement = gpuTangentialDisplacementTracker(n,pc_i,step);
 
     //invert collision direction
     n.x = -n.x;
@@ -555,9 +558,9 @@ void gpuSoftSphereWallCollision(
     }
 
     //TODO : this is not correct. it should take distance from impact point, not from previous time-step
-    tang_disp.x = G_ct.x;
-    tang_disp.y = G_ct.y;
-    tang_disp.z = G_ct.z;
+    tang_disp.x = G_ct.x + tangDisplacement.x;
+    tang_disp.y = G_ct.y + tangDisplacement.y;
+    tang_disp.z = G_ct.z + tangDisplacement.z;
 
     f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x;
     f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
@@ -686,6 +689,7 @@ void gpuSoftSphereParticleCollision(
         t.z = 0.0;
     }
     
+    //TODO : this is not correct. it should take distance from impact point, not from previous time-step
     tang_disp.x = G_ct.x;
     tang_disp.y = G_ct.y;
     tang_disp.z = G_ct.z;
@@ -741,6 +745,78 @@ void gpuSoftSphereParticleCollision(
     atomicAdd(&(pc_j->M.y), m_dirs_j.y);
     atomicAdd(&(pc_j->M.z), m_dirs_j.z); 
 }
+
+
+__device__
+dfloat3 gpuTangentialDisplacementTracker(
+    dfloat3 n,
+    ParticleCenter* pc_i,
+    unsigned int step
+){
+
+    int wallIndex = (1-(int)n.x) - 2*(1-(int)n.y) - 3 *(1-(int)n.z);
+    int trackerId = 0;
+    dfloat3 tangDisplacement;
+
+    tangentialCollisionTracker trackInfo_i[trackerCollisionSize];
+    for(int i = 0; i < trackerCollisionSize; i++){
+        trackInfo_i[i] = pc_i->tCT[i];
+    }
+
+    bool breakAtNextInteraction = false;
+    
+
+    for(int i = 0; i < trackerCollisionSize && !breakAtNextInteraction ; i++){
+        if (trackInfo_i[i].collisionIndex == -8){
+            break;
+        }else{
+            if(step > trackInfo_i[i].lastCollisionStep + 1){
+                //not a valid tracker
+                // check if next is valid, if i
+                for (int j = i+1; j < trackerCollisionSize && !breakAtNextInteraction; j++){
+                    if(trackInfo_i[j].collisionIndex == -8 || j == trackerCollisionSize-1){
+                        trackInfo_i[j].collisionIndex = -8;
+
+                        trackerId = j;
+                        trackInfo_i[trackerId].collisionIndex = -wallIndex;
+                        trackInfo_i[trackerId].tang_length = dfloat3(0,0,0);
+                        trackInfo_i[trackerId].lastCollisionStep = step;
+                        tangDisplacement = trackInfo_i[trackerId].tang_length;
+
+                        breakAtNextInteraction = true;
+                    }else{
+                        trackInfo_i[j-1].collisionIndex =    trackInfo_i[j].collisionIndex;
+                        trackInfo_i[j-1].tang_length =       trackInfo_i[j].tang_length;
+                        trackInfo_i[j-1].lastCollisionStep = trackInfo_i[j].lastCollisionStep;
+                        
+                        trackInfo_i[j].collisionIndex = -8;
+
+                    }
+                }
+            }else{ // still valid tracker
+                if (trackInfo_i[i].collisionIndex == wallIndex) {
+                    trackerId = i;
+                    // update last collision step
+                    trackInfo_i[trackerId].lastCollisionStep = step;
+                    // get info about displacement
+                    tangDisplacement = trackInfo_i[trackerId].tang_length;
+
+                    breakAtNextInteraction = true;
+                } 
+            }
+        }
+    }
+    
+    // update tracker info
+    for(int i = 0; i < trackerCollisionSize; i++){
+        pc_i->tCT[i] = trackInfo_i[i];
+    }
+
+    return tangDisplacement;
+}
+
+
+
 #endif //SOFT_SPHERE
 
 

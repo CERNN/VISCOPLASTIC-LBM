@@ -49,7 +49,7 @@ void immersedBoundaryMethod(
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     // Calculate collision force between particles
 
-    gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.nodesSoA,particles.pCenterArray);
+    gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.nodesSoA,particles.pCenterArray,step);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));   
 
     // First update particle velocity using body center force and constant forces

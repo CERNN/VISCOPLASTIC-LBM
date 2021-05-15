@@ -35,6 +35,7 @@
 //collision schemes
 //#define HARD_SPHERE
 #define SOFT_SPHERE //https://doi.org/10.1201/b11103  chapter 5
+#define trackerCollisionSize 18
 //#define EXTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack or annularDuctInterpBounceBack
 //#define INTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack
 /* ------------------------------------------------------------------------- */
@@ -92,7 +93,6 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------- COLLISION PARAMETERS -------------------------- */
 // Soft sphere
 #if defined SOFT_SPHERE
-
 
 constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
 constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
