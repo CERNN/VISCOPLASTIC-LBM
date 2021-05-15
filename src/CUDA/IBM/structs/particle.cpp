@@ -72,7 +72,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     dfloat phase = 0.0;
 
     // particleRet.pCenter = ParticleCenter();
-
+ 
     // Define the properties of the particle
     dfloat r = diameter / 2.0;
     dfloat volume = r*r*r*4*M_PI/3;
@@ -306,7 +306,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
     // Update old position value
     particleRet.pCenter.pos_old = particleRet.pCenter.pos;
-
+    
     return particleRet;
 }
 

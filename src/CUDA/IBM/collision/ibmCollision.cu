@@ -512,7 +512,8 @@ void gpuSoftSphereWallCollision(
     const dfloat effective_radius = r_i;
     const dfloat effective_mass = m_i;
 
-    dfloat3 tangDisplacement = gpuTangentialDisplacementTracker(n,pc_i,step);
+    dfloat3 tangDisplacement;
+    tangDisplacement = gpuTangentialDisplacementTracker(n,pc_i,step);
 
     //invert collision direction
     n.x = -n.x;
@@ -757,6 +758,7 @@ dfloat3 gpuTangentialDisplacementTracker(
     int wallIndex = (1-(int)n.x) - 2*(1-(int)n.y) - 3 *(1-(int)n.z);
     int trackerId = 0;
     dfloat3 tangDisplacement;
+    
 
     tangentialCollisionTracker trackInfo_i[trackerCollisionSize];
     for(int i = 0; i < trackerCollisionSize; i++){

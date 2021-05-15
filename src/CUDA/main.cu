@@ -127,6 +127,7 @@ int main()
 
     printf("Creating particles...\t"); fflush(stdout);
     createParticles(particles);
+    printf("\n cccc %d",particles[0].pCenter.tCT[0].collisionIndex);fflush(stdout); 
     printf("Particles created!\n"); fflush(stdout);
 
     particlesSoA.updateParticlesAsSoA(particles);

@@ -27,8 +27,9 @@ typedef struct tangentialCollisionTracker {
     0 >= : particle ID
     */
     int collisionIndex;
-    unsigned int lastCollisionStep;
     dfloat3 tang_length;
+    unsigned int lastCollisionStep;
+    
 
     /* Constructor */
     __host__ __device__

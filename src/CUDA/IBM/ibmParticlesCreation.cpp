@@ -44,9 +44,12 @@ void createParticles(Particle particles[NUM_PARTICLES])
     w.x = 0.0;
     w.y = 0.0;
     w.z = 0.0;
+    
     for(int i = 0; i <NUM_PARTICLES ; i++){
         particles[i] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true,PARTICLE_DENSITY,vel,w);
+        printf("bbbb %d",particles[i].pCenter.tCT[0].collisionIndex);fflush(stdout); 
     }
+        
     /*
     // Fixed sphere
     particles[0] = makeSpherePolar(
