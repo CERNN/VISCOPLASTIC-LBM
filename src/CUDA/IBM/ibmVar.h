@@ -81,7 +81,7 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 1.154639;
+constexpr dfloat PARTICLE_DENSITY = 3.97;
 constexpr dfloat FLUID_DENSITY = 1;
 
 // Gravity accelaration on particle (Lattice units)
@@ -95,14 +95,14 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 #if defined SOFT_SPHERE
 
 
-constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
-constexpr dfloat REST_COEF = 0.5; // restitution coeficient   
+constexpr dfloat FRICTION_COEF = 0.0923; // friction coeficient
+constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
 #define REST_COEF_CORRECTION
 
 
 //material properties
-constexpr dfloat YOUNG_MODULUS = 100.0;
-constexpr dfloat POISSON_RATIO = 0.33;
+constexpr dfloat YOUNG_MODULUS = 2366.0;
+constexpr dfloat POISSON_RATIO = 0.24;
 constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
 
 
