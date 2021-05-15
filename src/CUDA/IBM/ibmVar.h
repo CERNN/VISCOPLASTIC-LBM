@@ -37,6 +37,7 @@
 #define SOFT_SPHERE //https://doi.org/10.1201/b11103  chapter 5
 //#define EXTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack or annularDuctInterpBounceBack
 //#define INTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack
+#define trackerCollisionSize 18
 /* ------------------------------------------------------------------------- */
 
 
@@ -95,12 +96,12 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 
 
 constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
-constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
+constexpr dfloat REST_COEF = 0.5; // restitution coeficient   
 #define REST_COEF_CORRECTION
 
 
 //material properties
-constexpr dfloat YOUNG_MODULUS = 1.0;
+constexpr dfloat YOUNG_MODULUS = 100.0;
 constexpr dfloat POISSON_RATIO = 0.33;
 constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
 

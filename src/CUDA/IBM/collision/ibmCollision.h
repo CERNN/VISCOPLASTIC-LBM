@@ -23,11 +23,13 @@
 *   
 *   @param particlesNodes: particles nodes to update
 *   @param particleCenters: particles centers to perform colision
+*   @param step: current time step
 */
 __global__ 
 void gpuParticlesCollision(
     ParticleNodeSoA particlesNodes,
-    ParticleCenter particleCenters[NUM_PARTICLES]
+    ParticleCenter particleCenters[NUM_PARTICLES],
+    unsigned int step
 );
 
 /**
@@ -36,12 +38,14 @@ void gpuParticlesCollision(
 *   @param displacement: total normal displacement
 *   @param wallNormalVector: wall normal vector  
 *   @param particleCenter: particles centers to perform colision index i
+*   @param step: current time step
 */
 __device__ 
 void gpuSoftSphereWallCollision(
     dfloat displacement,
     dfloat3 wallNormalVector,
-    ParticleCenter* pc_i
+    ParticleCenter* pc_i,
+    unsigned int step
 );
 
 /**
