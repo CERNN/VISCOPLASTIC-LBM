@@ -62,6 +62,20 @@ void gpuSoftSphereParticleCollision(
     ParticleCenter* pc_j
 );
 
+/**
+*   @brief Perform collision displacement tracker
+*   
+*   @param n: wall normal vector  
+*   @param pc_i: particles centers to perform colision
+*   @param step: current time step
+*/
+__device__
+dfloat3 gpuTangentialDisplacementTracker(
+    dfloat3 n,
+    ParticleCenter* pc_i,
+    unsigned int step
+);
+
 
 #if defined LUBRICATION_FORCE
 /**

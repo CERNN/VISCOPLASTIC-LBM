@@ -513,6 +513,9 @@ void gpuSoftSphereWallCollision(
     const dfloat effective_radius = r_i;
     const dfloat effective_mass = m_i;
 
+    dfloat3 tangDisplacement;
+    tangDisplacement = gpuTangentialDisplacementTracker(n,pc_i,step);
+
     //invert collision direction
     n.x = -n.x;
     n.y = -n.y;
@@ -557,9 +560,9 @@ void gpuSoftSphereWallCollision(
     }
 
     //TODO : this is not correct. it should take distance from impact point, not from previous time-step
-    tang_disp.x = G_ct.x;
-    tang_disp.y = G_ct.y;
-    tang_disp.z = G_ct.z;
+    tang_disp.x = G_ct.x + tangDisplacement.x;
+    tang_disp.y = G_ct.y + tangDisplacement.y;
+    tang_disp.z = G_ct.z + tangDisplacement.z;
 
     f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x;
     f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
@@ -744,6 +747,72 @@ void gpuSoftSphereParticleCollision(
     atomicAdd(&(pc_j->M.z), m_dirs_j.z); 
 }
 #endif //SOFT_SPHERE
+
+__device__
+dfloat3 gpuTangentialDisplacementTracker(
+    dfloat3 n,
+    ParticleCenter* pc_i,
+    unsigned int step
+){
+    int wallIndex = (1-(int)n.x) - 2*(1-(int)n.y) - 3 *(1-(int)n.z);
+    int trackerId = 0;
+    dfloat3 tangDisplacement;
+
+    tangentialCollisionTracker trackInfo_i[trackerCollisionSize];
+    for(int i = 0; i < trackerCollisionSize; i++){
+        trackInfo_i[i] = pc_i->tCT[i];
+    }
+
+    bool breakAtNextInteraction = false;
+
+    for(int i = 0; i < trackerCollisionSize && !breakAtNextInteraction ; i++){
+        if (trackInfo_i[i].collisionIndex == -8){
+            break;
+        }else{
+            if(step > trackInfo_i[i].lastCollisionStep + 1){
+                //not a valid tracker
+                // check if next is valid, if i
+                for (int j = i+1; j < trackerCollisionSize && !breakAtNextInteraction; j++){
+                    if(trackInfo_i[j].collisionIndex == -8 || j == trackerCollisionSize-1){
+                        trackInfo_i[j].collisionIndex = -8;
+
+                        trackerId = j;
+                        trackInfo_i[trackerId].collisionIndex = -wallIndex;
+                        trackInfo_i[trackerId].tang_length = dfloat3(0,0,0);
+                        trackInfo_i[trackerId].lastCollisionStep = step;
+                        tangDisplacement = trackInfo_i[trackerId].tang_length;
+
+                        breakAtNextInteraction = true;
+                    }else{
+                        trackInfo_i[j-1].collisionIndex =    trackInfo_i[j].collisionIndex;
+                        trackInfo_i[j-1].tang_length =       trackInfo_i[j].tang_length;
+                        trackInfo_i[j-1].lastCollisionStep = trackInfo_i[j].lastCollisionStep;
+                        
+                        trackInfo_i[j].collisionIndex = -8;
+
+                    }
+                }
+            }else{ // still valid tracker
+                if (trackInfo_i[i].collisionIndex == wallIndex) {
+                    trackerId = i;
+                    // update last collision step
+                    trackInfo_i[trackerId].lastCollisionStep = step;
+                    // get info about displacement
+                    tangDisplacement = trackInfo_i[trackerId].tang_length;
+
+                    breakAtNextInteraction = true;
+                } 
+            }
+        }
+    }
+
+    // update tracker info
+    for(int i = 0; i < trackerCollisionSize; i++){
+        pc_i->tCT[i] = trackInfo_i[i];
+    }
+
+    return tangDisplacement;
+}
 
 
 #if defined LUBRICATION_FORCE

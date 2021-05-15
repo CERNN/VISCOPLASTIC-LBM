@@ -35,7 +35,7 @@
 #endif
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
-#define ID_SIM "000"            // prefix for simulation's files
+#define ID_SIM "001"            // prefix for simulation's files
 #define PATH_FILES "TEST"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
