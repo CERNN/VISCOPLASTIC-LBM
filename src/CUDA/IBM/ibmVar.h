@@ -100,7 +100,7 @@ constexpr dfloat REST_COEF = 0.98; // restitution coeficient
 
 
 //material properties
-constexpr dfloat YOUNG_MODULUS = 385.0;
+constexpr dfloat YOUNG_MODULUS = 2366.0;
 constexpr dfloat POISSON_RATIO = 0.24;
 constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
 
@@ -132,7 +132,7 @@ constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 #endif
 // Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
 #if defined HARD_SPHERE
-constexpr dfloat FRICTION_COEF = 0.00923; // friction coeficient
+constexpr dfloat FRICTION_COEF = 0.0923; // friction coeficient
 constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
 #endif
 /* -------------------------------------------------------------------------- */

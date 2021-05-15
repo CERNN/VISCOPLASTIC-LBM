@@ -563,6 +563,8 @@ void gpuSoftSphereWallCollision(
     f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
     f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z;
 
+    mag = sqrt(f_tang.x*f_tang.x + f_tang.y*f_tang.y + f_tang.z*f_tang.z);
+
     if(  mag > FRICTION_COEF * abs(f_n) ){
         f_tang.x = - FRICTION_COEF * f_n * t.x;
         f_tang.y = - FRICTION_COEF * f_n * t.y;

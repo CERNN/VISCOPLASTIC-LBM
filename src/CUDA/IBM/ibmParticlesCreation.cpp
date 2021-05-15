@@ -32,7 +32,7 @@ void createParticles(Particle particles[NUM_PARTICLES])
     
     // Falling sphere
     dfloat3 center,vel, w;
-    dfloat angle = 32.0;
+    dfloat angle = 6.0;
     vel.x = 0.0;
     vel.y =  0.01*sin(angle*M_PI/180.0);
     vel.z = -0.01*cos(angle*M_PI/180.0);
