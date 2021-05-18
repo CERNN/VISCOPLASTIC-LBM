@@ -391,11 +391,11 @@ void gpuUpdateParticleCenterVelocityAndRotation(
     const dfloat inv_volume = 1 / pc->volume;
 
     // Update particle center velocity using its surface forces and the body forces
-    pc->vel.x = pc->vel_old.x + ((0.5 * (pc->f_old.x + pc->f.x) + pc->dP_internal.x) * inv_volume 
+    pc->vel.x = pc->vel_old.x + (( (pc->f_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION ) + pc->f.x * IBM_MOVEMENT_DISCRETIZATION) + pc->dP_internal.x) * inv_volume 
         + (pc->density - FLUID_DENSITY) * GX) / (pc->density);
-    pc->vel.y = pc->vel_old.y + ((0.5 * (pc->f_old.y + pc->f.y) + pc->dP_internal.y) * inv_volume 
+    pc->vel.y = pc->vel_old.y + (( (pc->f_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION )  + pc->f.y * IBM_MOVEMENT_DISCRETIZATION) + pc->dP_internal.y) * inv_volume 
         + (pc->density - FLUID_DENSITY) * GY) / (pc->density);
-    pc->vel.z = pc->vel_old.z + ((0.5 * (pc->f_old.z + pc->f.z) + pc->dP_internal.z) * inv_volume 
+    pc->vel.z = pc->vel_old.z + (( (pc->f_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION )  + pc->f.z * IBM_MOVEMENT_DISCRETIZATION) + pc->dP_internal.z) * inv_volume 
         + (pc->density - FLUID_DENSITY) * GZ) / (pc->density);
 
     // Auxiliary variables for angular velocity update
@@ -414,11 +414,17 @@ void gpuUpdateParticleCenterVelocityAndRotation(
     // (Crank-Nicolson implicit scheme)
     for (int i = 0; error > 1e-6; i++)
     {
-        wNew.x = pc->w_old.x + ((0.5*(M.x + M_old.x) + pc->dL_internal.x) - (I.z - I.y)*0.25*(w_old.y + wAux.y)*(w_old.z + wAux.z))/I.x;
-        wNew.y = pc->w_old.y + ((0.5*(M.y + M_old.y) + pc->dL_internal.y) - (I.x - I.z)*0.25*(w_old.x + wAux.x)*(w_old.z + wAux.z))/I.y;
-        wNew.z = pc->w_old.z + ((0.5*(M.z + M_old.z) + pc->dL_internal.z) - (I.y - I.x)*0.25*(w_old.x + wAux.x)*(w_old.y + wAux.y))/I.z;
+        wNew.x = pc->w_old.x + (((M.x * IBM_MOVEMENT_DISCRETIZATION + M_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION)) + pc->dL_internal.x) 
+                - (I.z - I.y)*(w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION ) 
+                * (w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION))/I.x;
+        wNew.y = pc->w_old.y + (((M.y * IBM_MOVEMENT_DISCRETIZATION + M_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION)) + pc->dL_internal.y) 
+                - (I.x - I.z)*(w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION ) 
+                * (w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION))/I.y;
+        wNew.z = pc->w_old.z + (((M.z * IBM_MOVEMENT_DISCRETIZATION + M_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION)) + pc->dL_internal.z) 
+                - (I.y - I.x)*(w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION ) 
+                * (w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION))/I.z;
 
-        error = (wNew.x - wAux.x)*(wNew.x - wAux.x)/(wNew.x*wNew.x);
+        error =  (wNew.x - wAux.x)*(wNew.x - wAux.x)/(wNew.x*wNew.x);
         error += (wNew.y - wAux.y)*(wNew.y - wAux.y)/(wNew.y*wNew.y);
         error += (wNew.z - wAux.z)*(wNew.z - wAux.z)/(wNew.z*wNew.z);
 
@@ -445,13 +451,13 @@ void gpuParticleMovement(
     if(!pc->movable)
         return;
 
-    pc->pos.x += 0.5 * (pc->vel.x + pc->vel_old.x);
-    pc->pos.y += 0.5 * (pc->vel.y + pc->vel_old.y);
-    pc->pos.z += 0.5 * (pc->vel.z + pc->vel_old.z);
+    pc->pos.x +=  (pc->vel.x * IBM_MOVEMENT_DISCRETIZATION + pc->vel_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
+    pc->pos.y +=  (pc->vel.y * IBM_MOVEMENT_DISCRETIZATION + pc->vel_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
+    pc->pos.z +=  (pc->vel.z * IBM_MOVEMENT_DISCRETIZATION + pc->vel_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
 
-    pc->w_avg.x = 0.5 * (pc->w.x + pc->w_old.x);
-    pc->w_avg.y = 0.5 * (pc->w.y + pc->w_old.y);
-    pc->w_avg.z = 0.5 * (pc->w.z + pc->w_old.z);
+    pc->w_avg.x = (pc->w.x   * IBM_MOVEMENT_DISCRETIZATION + pc->w_old.x   * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
+    pc->w_avg.y = (pc->w.y   * IBM_MOVEMENT_DISCRETIZATION + pc->w_old.y   * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
+    pc->w_avg.z = (pc->w.z   * IBM_MOVEMENT_DISCRETIZATION + pc->w_old.z   * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
 }
 
 

@@ -464,7 +464,7 @@ void gpuParticlesCollision(
                 //Check if collision will occur
                 if(mag_dist < r_i+r_j){
                     #ifdef SOFT_SPHERE
-                    gpuSoftSphereParticleCollision(r_i + r_j - mag_dist, pc_i, pc_j);
+                    gpuSoftSphereParticleCollision(r_i + r_j - mag_dist, column,row,pc_i, pc_j,step);
                     #endif
                     #ifdef HARD_SPHERE
                     gpuHarSpheredParticleCollision(column,row,pc_i,pc_j,particlesNodes);
@@ -477,7 +477,7 @@ void gpuParticlesCollision(
             //Check if collision will occur
             if(mag_dist < r_i+r_j){
                 #ifdef SOFT_SPHERE
-                gpuSoftSphereParticleCollision(r_i + r_j - mag_dist, pc_i, pc_j);
+                gpuSoftSphereParticleCollision(r_i + r_j - mag_dist,column,row, pc_i, pc_j,step);
                 #endif
                 #ifdef HARD_SPHERE
                 gpuHarSpheredParticleCollision(column,row,pc_i,pc_j,particlesNodes);
@@ -513,8 +513,10 @@ void gpuSoftSphereWallCollision(
     const dfloat effective_radius = r_i;
     const dfloat effective_mass = m_i;
 
+    int trackerId;
+    trackerId = gpuTangentialDisplacementTrackerWall(n,pc_i,step);
     dfloat3 tangDisplacement;
-    tangDisplacement = gpuTangentialDisplacementTracker(n,pc_i,step);
+    tangDisplacement = pc_i->tCT[trackerId].tang_length;
 
     //invert collision direction
     n.x = -n.x;
@@ -530,14 +532,14 @@ void gpuSoftSphereWallCollision(
     const dfloat STIFFNESS_TANGENTIAL = STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (displacement);
     const dfloat damping_const = (- 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
     const dfloat DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
-    const dfloat DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+    const dfloat DAMPING_TANGENTIAL = 2.0* damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
 
 
     //normal force
     f_kn = -STIFFNESS_NORMAL * sqrt(displacement*displacement*displacement);
-    f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x ;
-    f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y ;
-    f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z ;
+    f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x * POW_FUNCTION(displacement,0.25);
+    f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y * POW_FUNCTION(displacement,0.25) ;
+    f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z * POW_FUNCTION(displacement,0.25) ;
     f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
 
     //tangential force       
@@ -559,10 +561,12 @@ void gpuSoftSphereWallCollision(
         t.z = 0.0;
     }
 
-    //TODO : this is not correct. it should take distance from impact point, not from previous time-step
+    //TODO : Still need validation
     tang_disp.x = G_ct.x + tangDisplacement.x;
     tang_disp.y = G_ct.y + tangDisplacement.y;
     tang_disp.z = G_ct.z + tangDisplacement.z;
+
+    pc_i->tCT[trackerId].tang_length = tang_disp;
 
     f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x;
     f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
@@ -602,8 +606,11 @@ void gpuSoftSphereWallCollision(
 __device__
 void gpuSoftSphereParticleCollision(
     dfloat displacement,
+    unsigned int column,
+    unsigned int row,
     ParticleCenter* pc_i,
-    ParticleCenter* pc_j
+    ParticleCenter* pc_j, 
+    unsigned int step
 ){
 
     dfloat3 f_normal = dfloat3();
@@ -629,6 +636,12 @@ void gpuSoftSphereParticleCollision(
     const dfloat  m_j = pc_j ->volume * pc_j ->density;
     const dfloat3 v_j = pc_j->vel;
     const dfloat3 w_j = pc_j->w;
+
+    //tangential collision info
+    int trackerId;
+    trackerId = gpuTangentialDisplacementTrackerParticle(column,row,pc_i,pc_j,step);
+    dfloat3 tangDisplacement=dfloat3(0,0,0);
+    //tangDisplacement = pc_i->tCT[trackerId].tang_length;
     
     //TODO it was already calculated, it can be passed through the function
     const dfloat3 diff_pos = dfloat3(
@@ -691,9 +704,10 @@ void gpuSoftSphereParticleCollision(
         t.z = 0.0;
     }
     
-    tang_disp.x = G_ct.x;
-    tang_disp.y = G_ct.y;
-    tang_disp.z = G_ct.z;
+    //TODO : Still need validation
+    tang_disp.x = G_ct.x + tangDisplacement.x;
+    tang_disp.y = G_ct.y + tangDisplacement.y;
+    tang_disp.z = G_ct.z + tangDisplacement.z;
 
     f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x;
     f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
@@ -749,69 +763,204 @@ void gpuSoftSphereParticleCollision(
 #endif //SOFT_SPHERE
 
 __device__
-dfloat3 gpuTangentialDisplacementTracker(
+int gpuTangentialDisplacementTrackerWall(
     dfloat3 n,
     ParticleCenter* pc_i,
     unsigned int step
 ){
+
+   
+
     int wallIndex = (1-(int)n.x) - 2*(1-(int)n.y) - 3 *(1-(int)n.z);
     int trackerId = 0;
-    dfloat3 tangDisplacement;
 
     tangentialCollisionTracker trackInfo_i[trackerCollisionSize];
     for(int i = 0; i < trackerCollisionSize; i++){
         trackInfo_i[i] = pc_i->tCT[i];
     }
+    
 
-    bool breakAtNextInteraction = false;
-
-    for(int i = 0; i < trackerCollisionSize && !breakAtNextInteraction ; i++){
+    for(int i = 0; i < trackerCollisionSize; i++){
         if (trackInfo_i[i].collisionIndex == -8){
-            break;
+            trackerId = i;
+            trackInfo_i[trackerId].collisionIndex = wallIndex;
+            trackInfo_i[trackerId].tang_length = dfloat3(0,0,0);
+            trackInfo_i[trackerId].lastCollisionStep = step;
+
+            goto endloop;
+
         }else{
             if(step > trackInfo_i[i].lastCollisionStep + 1){
+
                 //not a valid tracker
                 // check if next is valid, if i
-                for (int j = i+1; j < trackerCollisionSize && !breakAtNextInteraction; j++){
+                for (int j = i+1; j < trackerCollisionSize; j++){
                     if(trackInfo_i[j].collisionIndex == -8 || j == trackerCollisionSize-1){
                         trackInfo_i[j].collisionIndex = -8;
 
                         trackerId = j;
-                        trackInfo_i[trackerId].collisionIndex = -wallIndex;
+                        trackInfo_i[trackerId].collisionIndex = wallIndex;
                         trackInfo_i[trackerId].tang_length = dfloat3(0,0,0);
                         trackInfo_i[trackerId].lastCollisionStep = step;
-                        tangDisplacement = trackInfo_i[trackerId].tang_length;
 
-                        breakAtNextInteraction = true;
+                        goto endloop;
+
                     }else{
                         trackInfo_i[j-1].collisionIndex =    trackInfo_i[j].collisionIndex;
                         trackInfo_i[j-1].tang_length =       trackInfo_i[j].tang_length;
                         trackInfo_i[j-1].lastCollisionStep = trackInfo_i[j].lastCollisionStep;
                         
                         trackInfo_i[j].collisionIndex = -8;
-
-                    }
+                    }                        
                 }
             }else{ // still valid tracker
                 if (trackInfo_i[i].collisionIndex == wallIndex) {
                     trackerId = i;
                     // update last collision step
                     trackInfo_i[trackerId].lastCollisionStep = step;
-                    // get info about displacement
-                    tangDisplacement = trackInfo_i[trackerId].tang_length;
 
-                    breakAtNextInteraction = true;
+                    goto endloop;
+
                 } 
             }
         }
     }
-
+    endloop:
     // update tracker info
     for(int i = 0; i < trackerCollisionSize; i++){
         pc_i->tCT[i] = trackInfo_i[i];
     }
 
-    return tangDisplacement;
+    return trackerId;
+}
+
+
+__device__
+int gpuTangentialDisplacementTrackerParticle(
+    unsigned int  column,
+    unsigned int  row,
+    ParticleCenter* pc_i,
+    ParticleCenter* pc_j,
+    unsigned int step
+){
+    
+
+    unsigned int pc_i_index = column;
+    unsigned int pc_j_index = row;
+    
+
+    int trackerId = 0;
+
+    
+
+    tangentialCollisionTracker trackInfo_i[trackerCollisionSize];
+    tangentialCollisionTracker trackInfo_j[trackerCollisionSize];
+
+    //retrive tracking info
+    for(int i = 0; i < trackerCollisionSize; i++){
+        trackInfo_i[i] = pc_i->tCT[i];
+        trackInfo_j[i] = pc_j->tCT[i];
+    }
+    
+    
+    //check tracking for particle i
+    for(int i = 0; i < trackerCollisionSize; i++){
+        if (trackInfo_i[i].collisionIndex == -8){
+            trackerId = i;
+            trackInfo_i[trackerId].collisionIndex = pc_j_index;
+            trackInfo_i[trackerId].tang_length = dfloat3(0,0,0);
+            trackInfo_i[trackerId].lastCollisionStep = step;
+
+            goto endloop_i;
+        }else{
+            if(step > trackInfo_i[i].lastCollisionStep + 1){
+
+                //not a valid tracker
+                // check if next is valid, if i
+                for (int j = i+1; j < trackerCollisionSize; j++){
+                    if(trackInfo_i[j].collisionIndex == -8 || j == trackerCollisionSize-1){
+                        trackInfo_i[j].collisionIndex = -8;
+
+                        trackerId = j;
+                        trackInfo_i[trackerId].collisionIndex = pc_j_index;
+                        trackInfo_i[trackerId].tang_length = dfloat3(0,0,0);
+                        trackInfo_i[trackerId].lastCollisionStep = step;
+
+                        goto endloop_i;
+                    }else{
+                        trackInfo_i[j-1].collisionIndex =    trackInfo_i[j].collisionIndex;
+                        trackInfo_i[j-1].tang_length =       trackInfo_i[j].tang_length;
+                        trackInfo_i[j-1].lastCollisionStep = trackInfo_i[j].lastCollisionStep;
+                        
+                        trackInfo_i[j].collisionIndex = -8;
+                    }    
+                }
+            }else{ // still valid tracker
+                if (trackInfo_i[i].collisionIndex == pc_j_index) {
+                    trackerId = i;
+                    // update last collision step
+                    trackInfo_i[trackerId].lastCollisionStep = step;
+                    goto endloop_i;
+                } 
+            }
+        }
+    }
+    endloop_i:
+
+    //TODO: Evaluate if is really necessary track information in both particles.
+    //check tracking for particle j
+    for(int i = 0; i < trackerCollisionSize; i++){
+        if (trackInfo_j[i].collisionIndex == -8){
+            trackerId = i;
+            trackInfo_j[trackerId].collisionIndex = pc_i_index;
+            trackInfo_j[trackerId].tang_length = dfloat3(0,0,0);
+            trackInfo_j[trackerId].lastCollisionStep = step;
+
+            goto endloop_j;
+        }else{
+            if(step > trackInfo_i[i].lastCollisionStep + 1){
+
+                //not a valid tracker
+                // check if next is valid, if i
+                for (int j = i+1; j < trackerCollisionSize; j++){
+                    if(trackInfo_j[j].collisionIndex == -8 || j == trackerCollisionSize-1){
+                        trackInfo_j[j].collisionIndex = -8;
+
+                        trackerId = j;
+                        trackInfo_j[trackerId].collisionIndex = pc_i_index;
+                        trackInfo_j[trackerId].tang_length = dfloat3(0,0,0);
+                        trackInfo_j[trackerId].lastCollisionStep = step;
+
+                        goto endloop_j;
+                    }else{
+                        trackInfo_j[j-1].collisionIndex =    trackInfo_j[j].collisionIndex;
+                        trackInfo_j[j-1].tang_length =       trackInfo_j[j].tang_length;
+                        trackInfo_j[j-1].lastCollisionStep = trackInfo_j[j].lastCollisionStep;
+                        
+                        trackInfo_j[j].collisionIndex = -8;
+                    }    
+                }
+            }else{ // still valid tracker
+                if (trackInfo_j[i].collisionIndex == pc_i_index) {
+                    trackerId = i;
+                    // update last collision step
+                    trackInfo_j[trackerId].lastCollisionStep = step;
+                    goto endloop_j;
+                } 
+            }
+        }
+    }
+    endloop_j:
+
+
+    // update tracker info
+    //TODO THIS NEEDS TO BE ATOMIC
+    for(int i = 0; i < trackerCollisionSize; i++){
+        pc_i->tCT[i] = trackInfo_i[i];
+        pc_j->tCT[i] = trackInfo_j[i];
+    }
+
+    return trackerId;
 }
 
 

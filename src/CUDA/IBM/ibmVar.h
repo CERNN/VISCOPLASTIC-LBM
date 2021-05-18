@@ -68,6 +68,11 @@
 // Leave as 1 if you're not interested in this optimization
 #define IBM_EULER_UPDATE_INTERVAL (10)
 
+
+//Define the discrization coefiecient for the particle movement: 1 = only current time step
+// 0.5 =  half current and half previous,  0 = only previous time step information
+#define IBM_MOVEMENT_DISCRETIZATION (1.0)  //TODO: its not the correct name, but for now i cant recall it.
+
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
@@ -96,12 +101,12 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 
 
 constexpr dfloat FRICTION_COEF = 0.0923; // friction coeficient
-constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
-#define REST_COEF_CORRECTION
+constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
+//#define REST_COEF_CORRECTION
 
 
 //material properties
-constexpr dfloat YOUNG_MODULUS = 2366.0;
+constexpr dfloat YOUNG_MODULUS = 10.0;
 constexpr dfloat POISSON_RATIO = 0.24;
 constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
 
@@ -119,12 +124,7 @@ constexpr dfloat FRICTION_COEF_CORRECTED = 1/((16.21*REST_COEF+15.58*REST_COEF*R
 #endif 
 
 
-constexpr dfloat ZETA = 1.0; // Distance threshold
-constexpr dfloat STIFF_WALL = 1.0;  // Stiffness parameter wall
-constexpr dfloat STIFF_SOFT = 1.0;  // Soft stiffness parameter particle
-constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
-
-#define LUBRICATION_FORCE
+//#define LUBRICATION_FORCE
 #if defined LUBRICATION_FORCE
     constexpr dfloat LUBRICATION_DISTANCE = 2;
 #endif
