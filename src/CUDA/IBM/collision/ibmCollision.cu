@@ -906,7 +906,7 @@ int gpuTangentialDisplacementTrackerParticle(
         }
     }
     endloop_i:
-
+    /* Its not necessary, removing also prevents race condition
     //TODO: Evaluate if is really necessary track information in both particles.
     //check tracking for particle j
     for(int i = 0; i < trackerCollisionSize; i++){
@@ -950,14 +950,14 @@ int gpuTangentialDisplacementTrackerParticle(
             }
         }
     }
-    endloop_j:
+    endloop_j:*/
 
 
     // update tracker info
     //TODO THIS NEEDS TO BE ATOMIC
     for(int i = 0; i < trackerCollisionSize; i++){
         pc_i->tCT[i] = trackInfo_i[i];
-        pc_j->tCT[i] = trackInfo_j[i];
+        //pc_j->tCT[i] = trackInfo_j[i];
     }
 
     return trackerId;

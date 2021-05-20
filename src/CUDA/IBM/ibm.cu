@@ -391,12 +391,15 @@ void gpuUpdateParticleCenterVelocityAndRotation(
     const dfloat inv_volume = 1 / pc->volume;
 
     // Update particle center velocity using its surface forces and the body forces
-    pc->vel.x = pc->vel_old.x + (( (pc->f_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION ) + pc->f.x * IBM_MOVEMENT_DISCRETIZATION) + pc->dP_internal.x) * inv_volume 
-        + (pc->density - FLUID_DENSITY) * GX) / (pc->density);
-    pc->vel.y = pc->vel_old.y + (( (pc->f_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION )  + pc->f.y * IBM_MOVEMENT_DISCRETIZATION) + pc->dP_internal.y) * inv_volume 
-        + (pc->density - FLUID_DENSITY) * GY) / (pc->density);
-    pc->vel.z = pc->vel_old.z + (( (pc->f_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION )  + pc->f.z * IBM_MOVEMENT_DISCRETIZATION) + pc->dP_internal.z) * inv_volume 
-        + (pc->density - FLUID_DENSITY) * GZ) / (pc->density);
+    pc->vel.x = pc->vel_old.x + (( (pc->f_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION ) 
+                + pc->f.x * IBM_MOVEMENT_DISCRETIZATION) + pc->dP_internal.x) * inv_volume 
+                + (pc->density - FLUID_DENSITY) * GX) / (pc->density);
+    pc->vel.y = pc->vel_old.y + (( (pc->f_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION )  
+                + pc->f.y * IBM_MOVEMENT_DISCRETIZATION) + pc->dP_internal.y) * inv_volume 
+                + (pc->density - FLUID_DENSITY) * GY) / (pc->density);
+    pc->vel.z = pc->vel_old.z + (( (pc->f_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION )  
+                + pc->f.z * IBM_MOVEMENT_DISCRETIZATION) + pc->dP_internal.z) * inv_volume 
+                + (pc->density - FLUID_DENSITY) * GZ) / (pc->density);
 
     // Auxiliary variables for angular velocity update
     dfloat error = 1;
