@@ -23,11 +23,13 @@
 *   
 *   @param particlesNodes: particles nodes to update
 *   @param particleCenters: particles centers to perform colision
+*   @param step: current time step
 */
 __global__ 
 void gpuParticlesCollision(
     ParticleNodeSoA particlesNodes,
-    ParticleCenter particleCenters[NUM_PARTICLES]
+    ParticleCenter particleCenters[NUM_PARTICLES],
+    unsigned int step
 );
 
 /**
@@ -36,27 +38,70 @@ void gpuParticlesCollision(
 *   @param displacement: total normal displacement
 *   @param wallNormalVector: wall normal vector  
 *   @param particleCenter: particles centers to perform colision index i
+*   @param step: current time step
 */
 __device__ 
 void gpuSoftSphereWallCollision(
     dfloat displacement,
     dfloat3 wallNormalVector,
-    ParticleCenter* pc_i
+    ParticleCenter* pc_i,
+    unsigned int step
 );
 
 /**
 *   @brief Perform particles collisions with other particles using soft sphere collision model
 *
 *   @param displacement: total normal displacement
+*   @param column: particle i index
+*   @param row: particle j index
 *   @param particleCenter: particles centers to perform colision index i
 *   @param particleCenter: particles centers to perform colision index j
+*   @param step: current time step
 */
 __device__ 
 void gpuSoftSphereParticleCollision(
     dfloat displacement,
+    unsigned int column,
+    unsigned int row,
     ParticleCenter* pc_i,
-    ParticleCenter* pc_j
+    ParticleCenter* pc_j,
+    unsigned int step
 );
+
+/**
+*   @brief Perform collision displacement tracker between particle and wall
+*   
+*   @param n: wall normal vector  
+*   @param pc_i: particles centers to perform colision
+*   @param step: current time step
+*/
+__device__
+int gpuTangentialDisplacementTrackerWall(
+    dfloat3 n,
+    ParticleCenter* pc_i,
+    unsigned int step
+);
+
+
+/**
+*   @brief Perform collision displacement tracker between particles
+*   
+*   @param column: particle i index
+*   @param row: particle j index
+*   @param pc_i: particles centers to perform colision
+*   @param pc_j: particles centers to perform colision
+*   @param step: current time step
+*/
+__device__
+int gpuTangentialDisplacementTrackerParticle(
+    unsigned int column,
+    unsigned int row,
+    ParticleCenter* pc_i,
+    ParticleCenter* pc_j,
+    unsigned int step
+);
+
+
 
 
 #if defined LUBRICATION_FORCE
@@ -102,7 +147,7 @@ void gpuLubricationParticle(
 */
 __device__ 
 void gpuHardSphereWallCollision(
-    dfloat column,
+    unsigned int column,
     dfloat3 penetration,
     dfloat3 n,
     ParticleCenter* pc_i,
@@ -120,8 +165,8 @@ void gpuHardSphereWallCollision(
 */
 __device__ 
 void gpuHarSpheredParticleCollision(
-    dfloat column,
-    dfloat row,
+    unsigned int column,
+    unsigned int row,
     ParticleCenter* pc_i,
     ParticleCenter* pc_j,
     ParticleNodeSoA particlesNodes

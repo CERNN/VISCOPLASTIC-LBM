@@ -31,16 +31,20 @@ void createParticles(Particle particles[NUM_PARTICLES])
 
     
     // Falling sphere
-     dfloat3 center,vel, w;
+    dfloat3 center,vel, w;
+    dfloat angle = 11.0;
+    vel.x = 0.0;
+    vel.y =  0.01*sin(angle*M_PI/180.0);
+    vel.z = -0.01*cos(angle*M_PI/180.0);
+
     center.x = 100;
     center.y = 100;
-    center.z = 14.995;
-    vel.x = 0.0;
-    vel.y = 0.0;
-    vel.z = -0.1;
+    center.z = 10.005 - 100.0*vel.z;
+
     w.x = 0.0;
     w.y = 0.0;
     w.z = 0.0;
+
     for(int i = 0; i <NUM_PARTICLES ; i++){
         particles[i] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true,PARTICLE_DENSITY,vel,w);
     }
@@ -51,7 +55,7 @@ void createParticles(Particle particles[NUM_PARTICLES])
         dfloat3((NX)/2.0, (NY)/2.0, (NZ)/4.0), 
         MESH_COULOMB, false);
     */
-    /*
+    /*  
     // Sphere in couette flow (Neutrally buoyant particle in a shear flow)
     particles[0] = makeSpherePolar(
         PARTICLE_DIAMETER, 

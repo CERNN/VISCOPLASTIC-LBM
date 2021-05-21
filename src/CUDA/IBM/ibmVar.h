@@ -37,6 +37,7 @@
 #define SOFT_SPHERE //https://doi.org/10.1201/b11103  chapter 5
 //#define EXTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack or annularDuctInterpBounceBack
 //#define INTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack
+#define trackerCollisionSize 18
 /* ------------------------------------------------------------------------- */
 
 
@@ -67,6 +68,11 @@
 // Leave as 1 if you're not interested in this optimization
 #define IBM_EULER_UPDATE_INTERVAL (10)
 
+
+//Define the discrization coefiecient for the particle movement: 1 = only current time step
+// 0.5 =  half current and half previous,  0 = only previous time step information
+#define IBM_MOVEMENT_DISCRETIZATION (1.0)  //TODO: its not the correct name, but for now i cant recall it.
+
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
@@ -80,7 +86,7 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 1.154639;
+constexpr dfloat PARTICLE_DENSITY = 3.97;
 constexpr dfloat FLUID_DENSITY = 1;
 
 // Gravity accelaration on particle (Lattice units)
@@ -94,21 +100,21 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 #if defined SOFT_SPHERE
 
 
-constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
-constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
-#define REST_COEF_CORRECTION
+constexpr dfloat FRICTION_COEF = 0.0923; // friction coeficient
+constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
+//#define REST_COEF_CORRECTION
 
 
 //material properties
-constexpr dfloat YOUNG_MODULUS = 1.0;
-constexpr dfloat POISSON_RATIO = 0.33;
+constexpr dfloat YOUNG_MODULUS = 385.0;
+constexpr dfloat POISSON_RATIO = 0.24;
 constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
 
 
 //Hertzian contact theory -  Johnson 1985
-constexpr dfloat STIFFNESS_NORMAL_CONST = (2.0/3.0) * (YOUNG_MODULUS / (1-POISSON_RATIO*POISSON_RATIO)); 
+constexpr dfloat STIFFNESS_NORMAL_CONST = (2.0/3.0) * (YOUNG_MODULUS / (1-POISSON_RATIO*POISSON_RATIO)); // its 2 instead of 4, because same shear modulus
 //Mindlin theory 1949
-constexpr dfloat STIFFNESS_TANGENTIAL_CONST =  4.0 * (SHEAR_MODULUS / (1 - POISSON_RATIO*POISSON_RATIO)); 
+constexpr dfloat STIFFNESS_TANGENTIAL_CONST =  4.0 * (SHEAR_MODULUS / (1 - POISSON_RATIO*POISSON_RATIO)); // its 4 instead of 8, because same shear modulus
 // Tsuji 1979
 //constexpr dfloat DAMPING_NORMAL_CONST =       - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)));
 //constexpr dfloat DAMPING_TANGENTIAL_CONST =   - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF))); 
@@ -118,12 +124,7 @@ constexpr dfloat FRICTION_COEF_CORRECTED = 1/((16.21*REST_COEF+15.58*REST_COEF*R
 #endif 
 
 
-constexpr dfloat ZETA = 1.0; // Distance threshold
-constexpr dfloat STIFF_WALL = 1.0;  // Stiffness parameter wall
-constexpr dfloat STIFF_SOFT = 1.0;  // Soft stiffness parameter particle
-constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
-
-#define LUBRICATION_FORCE
+//#define LUBRICATION_FORCE
 #if defined LUBRICATION_FORCE
     constexpr dfloat LUBRICATION_DISTANCE = 2;
 #endif
