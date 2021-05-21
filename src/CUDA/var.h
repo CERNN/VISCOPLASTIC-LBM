@@ -44,7 +44,7 @@
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
 constexpr unsigned int SCALE = 1;
-constexpr int N_STEPS = 100;          // maximum number of time steps
+constexpr int N_STEPS = 10000;          // maximum number of time steps
 #define MACR_SAVE (0)                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT (false)                // report every DATA_REPORT steps
  
@@ -85,10 +85,10 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 
 constexpr int N = 60*SCALE;
-constexpr int NX = 8*SCALE;        // size x of the grid 
+constexpr int NX = 64*SCALE;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr int NY = 8*SCALE;        // size y of the grid
-constexpr int NZ = 100*SCALE;        // size z of the grid in one GPU
+constexpr int NY = 64*SCALE;        // size y of the grid
+constexpr int NZ = 128*SCALE;        // size z of the grid in one GPU
 constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
 constexpr dfloat U_MAX = 0;           // max velocity
@@ -100,7 +100,7 @@ constexpr dfloat RHO_0 = 1;         // initial rho
 
 constexpr dfloat FX = 0;        // force in x
 constexpr dfloat FY = 0;        // force in y
-constexpr dfloat FZ = 0;        // force in z (flow direction in most cases)
+constexpr dfloat FZ = 1e-4;        // force in z (flow direction in most cases)
 
 // values options for boundary conditions
 __device__ const dfloat UX_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
@@ -163,14 +163,22 @@ constexpr size_t BYTES_PER_MB = (1<<20);
 /* ------------------------------ MEMORY SIZE ------------------------------ */ 
 // Values for each GPU
 const size_t NUMBER_LBM_NODES = NX*NY*NZ;
-const size_t MEM_SIZE_POP = sizeof(dfloat) * NUMBER_LBM_NODES * Q;
+// There are ghosts nodes in z for IBM macroscopics (velocity, density, force)
+#define NUMBER_LBM_IB_MACR_NODES (size_t)(NX*NY*(NZ+MACR_BORDER_NODES*2))
+// There is 1 ghost node in z for communication multi-gpu
+const size_t NUMBER_LBM_POP_NODES = NX*NY*(NZ+1);
+const size_t MEM_SIZE_POP = sizeof(dfloat) * NUMBER_LBM_POP_NODES * Q;
 const size_t MEM_SIZE_SCALAR = sizeof(dfloat) * NUMBER_LBM_NODES;
+#define MEM_SIZE_IBM_SCALAR (size_t)(sizeof(dfloat) * NUMBER_LBM_IB_MACR_NODES)
 const size_t MEM_SIZE_MAP_BC = sizeof(uint32_t) * NUMBER_LBM_NODES;
 // Values for all GPUs
 const size_t TOTAL_NUMBER_LBM_NODES = NX*NY*NZ_TOTAL;
-const size_t TOTAL_MEM_SIZE_POP = sizeof(dfloat) * TOTAL_NUMBER_LBM_NODES * Q;
-const size_t TOTAL_MEM_SIZE_SCALAR = sizeof(dfloat) * TOTAL_NUMBER_LBM_NODES;
-const size_t TOTAL_MEM_SIZE_MAP_BC = sizeof(uint32_t) * TOTAL_NUMBER_LBM_NODES;
+#define TOTAL_NUMBER_LBM_IB_MACR_NODES (size_t)(NUMBER_LBM_IB_MACR_NODES * N_GPUS)
+const size_t TOTAL_NUMBER_LBM_POP_NODES = NUMBER_LBM_POP_NODES * N_GPUS;
+const size_t TOTAL_MEM_SIZE_POP = MEM_SIZE_POP * N_GPUS;
+#define TOTAL_MEM_SIZE_IBM_SCALAR (size_t)(MEM_SIZE_IBM_SCALAR * N_GPUS)
+const size_t TOTAL_MEM_SIZE_SCALAR = MEM_SIZE_SCALAR * N_GPUS;
+const size_t TOTAL_MEM_SIZE_MAP_BC = MEM_SIZE_MAP_BC * N_GPUS;
 /* ------------------------------------------------------------------------- */
 
 

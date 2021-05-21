@@ -133,10 +133,7 @@ int main()
     #if IBM_EULER_OPTIMIZATION
     pEulerNodes.initializeEulerNodes(particlesSoA.pCenterArray);
     #endif
-    const unsigned int threadsIBM = 64;
-    const unsigned int pNumNodes = particlesSoA.nodesSoA.numNodes;
-    const unsigned int gridIBM = pNumNodes % threadsIBM ? pNumNodes / threadsIBM + 1 : pNumNodes / threadsIBM;
-    
+
     ibmProcessData.step = &step;
     ibmProcessData.macrCurr = &macrCPUCurrent;
     #endif
@@ -388,7 +385,7 @@ int main()
 
         immersedBoundaryMethod(
             particlesSoA, macr, velAuxIBM, pop, grid, threads,
-            gridIBM, threadsIBM, streamsLBM, streamsIBM, step, 
+            streamsLBM, streamsIBM, step, 
             &pEulerNodes);
 
         // Save particles informations

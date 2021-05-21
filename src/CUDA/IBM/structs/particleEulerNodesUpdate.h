@@ -10,16 +10,16 @@
 *   its velocity for IBM
 */
 typedef struct particleEulerNodesUpdate{
-    // Array as [NZ, NY, NZ] with mask of each node
-    uint32_t* eulerMaskArray;
-    // Array with indexes values to update
-    size_t* eulerIndexesUpdate;
+    // Array as [NZ, NY, NZ] with mask of each node for each GPU
+    uint32_t* eulerMaskArray[N_GPUS];
+    // Array with indexes values to update for each GPU
+    size_t* eulerIndexesUpdate[N_GPUS];
     // Maximum number of euler nodes to update
     unsigned int maxEulerNodes;
-    // Current number of euler nodes to update
-    unsigned int currEulerNodes;
-    // Number of euler nodes that are fixed
-    unsigned int eulerFixedNodes;
+    // Current number of euler nodes to update for each GPU
+    unsigned int currEulerNodes[N_GPUS];
+    // Number of euler nodes that are fixed for each GPU
+    unsigned int eulerFixedNodes[N_GPUS];
 
     // Movable particles centers pointers
     ParticleCenter** pCenterMovable;
@@ -58,18 +58,20 @@ typedef struct particleEulerNodesUpdate{
     *   @brief Remove euler nodes that don't need to be updated anymore
     *   
     *   @param maskRemove: mask with bits to remove with 1 and others as 0
+    *   @param n_gpu: gpu number to remove nodes
     */
     __host__
-    void removeUnneededEulerNodes(uint32_t maskRemove);
+    void removeUnneededEulerNodes(uint32_t maskRemove, int n_gpu);
 
     /**
     *   @brief Update Euler nodes that must be updated, adding nodes from particle
     *   
     *   @param p: particle to consider nodes
     *   @param mask: mask to use while updating nodes
+    *   @param n_gpu: gpu number to update
     */
     __host__
-    unsigned int updateEulerNodes(ParticleCenter* p, uint32_t mask);
+    unsigned int updateEulerNodes(ParticleCenter* p, uint32_t mask, int n_gpu);
 
 } ParticleEulerNodesUpdate;
 

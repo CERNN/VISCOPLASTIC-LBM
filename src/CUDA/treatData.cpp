@@ -37,8 +37,8 @@ void treatData(MacrProc* processing)
         {
             for(int x = 0; x < NX; x++)
             {
-                // +2 because of the ghost nodes
-                size_t idx = idxScalar(x, y, z+2);
+                // +MACR_BORDER_NODES because of the ghost nodes
+                size_t idx = idxScalar(x, y, z+MACR_BORDER_NODES);
                 
                 /* ------- Residual calculation ------- */
                 const dfloat diff_ux = macrCurr->u.x[idx] - macrOld->u.x[idx];
@@ -99,8 +99,8 @@ void printTreatData(MacrProc* processing)
     printf("               Residual: %.4e\n", processing->residual);
     printf("           Avg. density: %.4e\n", processing->avgRho);
     printf("       Avg. Uz (y=NY/2): %.4e\n", processing->avgUzPlanXZ[NY/2]);
-    // +2 because of the ghost nodes
-    printf("ux(x=0.5, y=0.5, z=0.5): %.4e\n", processing->macrCurr->u.x[idxScalar(NX/2, NY/2, NZ/2+2)]);
+    // +MACR_BORDER_NODES because of the ghost nodes
+    printf("ux(x=0.5, y=0.5, z=0.5): %.4e\n", processing->macrCurr->u.x[idxScalar(NX/2, NY/2, NZ/2+MACR_BORDER_NODES)]);
     printf("--------------------------------------------------------------------------------\n");
 }
 

@@ -37,10 +37,12 @@ typedef struct particle {
 *   Particles representation as Struct of arrays (SoA) for better GPU performance
 */
 typedef struct particlesSoA{
-    ParticleNodeSoA nodesSoA;
+    ParticleNodeSoA nodesSoA[N_GPUS];
     ParticleCenter* pCenterArray;
+    dfloat3* pCenterLastPos;
 
     void updateParticlesAsSoA(Particle* particles);
+    void updatedNodesGPUs();
     void freeNodesAndCenters();
 } ParticlesSoA;
 
@@ -67,7 +69,6 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 *   @param pattern: false: in-line pattern, true: staggered pattern
 */
 Particle makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern);
-
 
 
 #endif

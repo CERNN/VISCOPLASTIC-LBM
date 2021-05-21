@@ -11,8 +11,6 @@ void immersedBoundaryMethod(
     Populations* const __restrict__ pop,
     dim3 gridLBM,
     dim3 threadsLBM,
-    unsigned int gridNodesIBM,
-    unsigned int threadsNodesIBM,
     cudaStream_t streamLBM[N_GPUS],
     cudaStream_t streamIBM[N_GPUS],
     unsigned int step,
@@ -30,17 +28,31 @@ void immersedBoundaryMethod(
     dim3 copyMacrGrid = gridLBM;
     // Only 1 in z
     copyMacrGrid.z = 1;
+    
+    unsigned int gridNodesIBM[N_GPUS];
+    unsigned int threadsNodesIBM[N_GPUS];
+    for(int i = 0; i < N_GPUS; i++){
+        threadsNodesIBM[i] = 64;
+        checkCudaErrors(cudaSetDevice(i));
+        unsigned int pNumNodes = particles.nodesSoA[i].numNodes;
+        gridNodesIBM[i] = pNumNodes % threadsNodesIBM[i] ? pNumNodes / threadsNodesIBM[i] + 1 : pNumNodes / threadsNodesIBM[i];
+    }
+    checkCudaErrors(cudaSetDevice(0));
 
     // Size of shared memory to use for optimization in interpolation/spread
     // const unsigned int sharedMemInterpSpread = threadsNodesIBM * sizeof(dfloat3) * 2;
     #if IBM_EULER_OPTIMIZATION
     // Grid size for euler nodes update
-    dim3 currGrid(pEulerNodes->currEulerNodes/64+(pEulerNodes->currEulerNodes%64? 1 : 0), 1, 1);
-    if(pEulerNodes->currEulerNodes > 0){
-        // Update macroscopics post boundary conditions and reset forces
-        gpuUpdateMacrIBM<<<currGrid, 64, 0, streamLBM[0]>>>(pop[0], macr[0], velsAuxIBM[0], 
-            pEulerNodes->eulerIndexesUpdate, pEulerNodes->currEulerNodes);
-        checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
+    
+    for(int i = 0; i < N_GPUS; i++){
+        if(pEulerNodes->currEulerNodes[i] > 0){
+            dim3 currGrid(pEulerNodes->currEulerNodes[i]/64+(pEulerNodes->currEulerNodes[i]%64? 1 : 0), 1, 1);
+            checkCudaErrors(cudaSetDevice(i));
+            // Update macroscopics post boundary conditions and reset forces
+            gpuUpdateMacrIBM<<<currGrid, 64, 0, streamLBM[0]>>>(pop[i], macr[i], velsAuxIBM[i], 
+                pEulerNodes->eulerIndexesUpdate[i], pEulerNodes->currEulerNodes[i]);
+            checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
+        }
     }
     #else
     
@@ -52,23 +64,25 @@ void immersedBoundaryMethod(
     }
     #endif
 
-    // Copy macroscopics
     for(int i = 0; i < N_GPUS; i++){
         checkCudaErrors(cudaSetDevice(i));
         int nxt = (i+1) % N_GPUS;
+        // Copy macroscopics
         copyBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[i]>>>(macr[i], macr[nxt]);
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
+        // Reset forces in all IBM nodes;
+        gpuResetNodesForces<<<gridNodesIBM[i], threadsNodesIBM[i], 0, streamIBM[0]>>>(particles.nodesSoA[i]);
+        checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     }
 
-    // Reset forces in all IBM nodes
-    gpuResetNodesForces<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(particles.nodesSoA);
-    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-
     // Calculate collision force between particles
-    gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.nodesSoA,particles.pCenterArray);
-    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));   
+    checkCudaErrors(cudaSetDevice(0));
+    // TODO: correct it for multiGPU
+    // gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.nodesSoA,particles.pCenterArray);
+    // checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));   
 
     // First update particle velocity using body center force and constant forces
+    checkCudaErrors(cudaSetDevice(0));
     gpuUpdateParticleCenterVelocityAndRotation <<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0] >>>(
         particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
@@ -78,9 +92,9 @@ void immersedBoundaryMethod(
         for(int j = 0; j < N_GPUS; j++){
             checkCudaErrors(cudaSetDevice(j));
             // Make the interpolation of LBM and spreading of IBM forces
-            gpuForceInterpolationSpread<<<gridNodesIBM, threadsNodesIBM, 
+            gpuForceInterpolationSpread<<<gridNodesIBM[j], threadsNodesIBM[j], 
                 0, streamIBM[j]>>>(
-                particles.nodesSoA, particles.pCenterArray, macr[j], velsAuxIBM[j]);
+                particles.nodesSoA[j], particles.pCenterArray, macr[j], velsAuxIBM[j]);
             checkCudaErrors(cudaStreamSynchronize(streamIBM[j]));
         }
 
@@ -90,9 +104,13 @@ void immersedBoundaryMethod(
             particles.pCenterArray);
 
         #if IBM_EULER_OPTIMIZATION
-        if(pEulerNodes->currEulerNodes > 0){
-            ibmEulerCopyVelocities<<<currGrid, 64, 0, streamLBM[0]>>>(macr[0].u, velsAuxIBM[0], 
-                pEulerNodes->eulerIndexesUpdate, pEulerNodes->currEulerNodes);
+        for(int j = 0; j < N_GPUS; j++){
+            if(pEulerNodes->currEulerNodes[j] > 0){
+                checkCudaErrors(cudaSetDevice(j));
+                dim3 currGrid(pEulerNodes->currEulerNodes[j]/64+(pEulerNodes->currEulerNodes[j]%64? 1 : 0), 1, 1);
+                ibmEulerCopyVelocities<<<currGrid, 64, 0, streamLBM[0]>>>(macr[j].u, velsAuxIBM[j], 
+                    pEulerNodes->eulerIndexesUpdate[j], pEulerNodes->currEulerNodes[j]);
+            }
         }
         #else
         for(int j = 0; j < N_GPUS; j++){
@@ -119,9 +137,14 @@ void immersedBoundaryMethod(
     gpuParticleMovement<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
         particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-    // Update particle nodes positions
-    gpuParticleNodeMovement<<<gridNodesIBM, threadsNodesIBM, 0, streamIBM[0]>>>(
-        particles.nodesSoA, particles.pCenterArray);
+    
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaSetDevice(i));
+        // Update particle nodes positions
+        gpuParticleNodeMovement<<<gridNodesIBM[i], threadsNodesIBM[i], 0, streamIBM[0]>>>(
+            particles.nodesSoA[i], particles.pCenterArray);
+        checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+    }
 
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     checkCudaErrors(cudaDeviceSynchronize());
@@ -195,8 +218,8 @@ void gpuForceInterpolationSpread(
                 // Dirac delta (kernel)
                 aux = aux1 * stencilVal[0][xi];
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
-                // +2 in z because of the ghost nodes
-                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk+2);
+                // +MACR_BORDER_NODES in z because of the ghost nodes
+                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk+MACR_BORDER_NODES);
 
                 rhoVar += macr.rho[idx] * aux;
                 uxVar += macr.u.x[idx] * aux;
@@ -262,8 +285,8 @@ void gpuForceInterpolationSpread(
                 aux = aux1 * stencilVal[0][xi];
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
 
-                // +2 in z because of the ghost nodes
-                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk+2);
+                // +MACR_BORDER_NODES in z because of the ghost nodes
+                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk+MACR_BORDER_NODES);
 
                 atomicAdd(&(macr.f.x[idx]), -deltaF.x * aux);
                 atomicAdd(&(macr.f.y[idx]), -deltaF.y * aux);
@@ -319,6 +342,10 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
         return;
     size_t idx = eulerIdxsUpdate[j];
 
+    int x = idx % NX;
+    int y = (idx / NX) % NY;
+    int z = (idx / NX) / NY;
+
     #else
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
@@ -326,8 +353,8 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
     if (x >= NX || y >= NY || z >= NZ)
        return;
 
-    // +2 because of the ghost nodes in z
-    size_t idx = idxScalar(x, y, z+2);
+    // +MACR_BORDER_NODES because of the ghost nodes in z
+    size_t idx = idxScalar(x, y, z+MACR_BORDER_NODES);
     #endif
     
     // load populations
@@ -426,35 +453,35 @@ void copyBorderMacr(Macroscopics macrBase, Macroscopics macrNext)
     // FIXME: wrong, it needs to consider the added values in ghost nodes. 
     // This may be used from the auxiliary velocities vectors 
     // write to next
-    macrNext.u.x[idxScalar(x, y, zm2_w+2)] = macrBase.u.x[idxScalar(x, y, zm2_r+2)];
-    macrNext.u.y[idxScalar(x, y, zm2_w+2)] = macrBase.u.y[idxScalar(x, y, zm2_r+2)];
-    macrNext.u.z[idxScalar(x, y, zm2_w+2)] = macrBase.u.z[idxScalar(x, y, zm2_r+2)];
-    macrNext.f.x[idxScalar(x, y, zm2_w+2)] = macrBase.f.x[idxScalar(x, y, zm2_r+2)];
-    macrNext.f.y[idxScalar(x, y, zm2_w+2)] = macrBase.f.y[idxScalar(x, y, zm2_r+2)];
-    macrNext.f.z[idxScalar(x, y, zm2_w+2)] = macrBase.f.z[idxScalar(x, y, zm2_r+2)];
+    macrNext.u.x[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.u.x[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
+    macrNext.u.y[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.u.y[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
+    macrNext.u.z[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.u.z[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
+    macrNext.f.x[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.f.x[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
+    macrNext.f.y[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.f.y[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
+    macrNext.f.z[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.f.z[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
 
-    macrNext.u.x[idxScalar(x, y, zm1_w+2)] = macrBase.u.x[idxScalar(x, y, zm1_r+2)];
-    macrNext.u.y[idxScalar(x, y, zm1_w+2)] = macrBase.u.y[idxScalar(x, y, zm1_r+2)];
-    macrNext.u.z[idxScalar(x, y, zm1_w+2)] = macrBase.u.z[idxScalar(x, y, zm1_r+2)];
-    macrNext.f.x[idxScalar(x, y, zm1_w+2)] = macrBase.f.x[idxScalar(x, y, zm1_r+2)];
-    macrNext.f.y[idxScalar(x, y, zm1_w+2)] = macrBase.f.y[idxScalar(x, y, zm1_r+2)];
-    macrNext.f.z[idxScalar(x, y, zm1_w+2)] = macrBase.f.z[idxScalar(x, y, zm1_r+2)];
+    macrNext.u.x[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.u.x[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
+    macrNext.u.y[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.u.y[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
+    macrNext.u.z[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.u.z[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
+    macrNext.f.x[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.f.x[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
+    macrNext.f.y[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.f.y[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
+    macrNext.f.z[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.f.z[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
  
     // write to base
-    macrBase.u.x[idxScalar(x, y, zp1_w+2)] = macrNext.u.x[idxScalar(x, y, zp1_r+2)];
-    macrBase.u.y[idxScalar(x, y, zp1_w+2)] = macrNext.u.y[idxScalar(x, y, zp1_r+2)];
-    macrBase.u.z[idxScalar(x, y, zp1_w+2)] = macrNext.u.z[idxScalar(x, y, zp1_r+2)];
-    macrBase.f.x[idxScalar(x, y, zp1_w+2)] = macrNext.f.x[idxScalar(x, y, zp1_r+2)];
-    macrBase.f.y[idxScalar(x, y, zp1_w+2)] = macrNext.f.y[idxScalar(x, y, zp1_r+2)];
-    macrBase.f.z[idxScalar(x, y, zp1_w+2)] = macrNext.f.z[idxScalar(x, y, zp1_r+2)];
+    macrBase.u.x[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.u.x[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
+    macrBase.u.y[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.u.y[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
+    macrBase.u.z[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.u.z[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
+    macrBase.f.x[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.f.x[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
+    macrBase.f.y[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.f.y[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
+    macrBase.f.z[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.f.z[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
     
     
-    macrBase.u.x[idxScalar(x, y, zp2_w+2)] = macrNext.u.x[idxScalar(x, y, zp2_r+2)];
-    macrBase.u.y[idxScalar(x, y, zp2_w+2)] = macrNext.u.y[idxScalar(x, y, zp2_r+2)];
-    macrBase.u.z[idxScalar(x, y, zp2_w+2)] = macrNext.u.z[idxScalar(x, y, zp2_r+2)];
-    macrBase.f.x[idxScalar(x, y, zp2_w+2)] = macrNext.f.x[idxScalar(x, y, zp2_r+2)];
-    macrBase.f.y[idxScalar(x, y, zp2_w+2)] = macrNext.f.y[idxScalar(x, y, zp2_r+2)];
-    macrBase.f.z[idxScalar(x, y, zp2_w+2)] = macrNext.f.z[idxScalar(x, y, zp2_r+2)];
+    macrBase.u.x[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.u.x[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
+    macrBase.u.y[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.u.y[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
+    macrBase.u.z[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.u.z[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
+    macrBase.f.x[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.f.x[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
+    macrBase.f.y[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.f.y[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
+    macrBase.f.z[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.f.z[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
 }
 
 __global__ 

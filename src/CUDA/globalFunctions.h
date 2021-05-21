@@ -35,6 +35,7 @@
 #include <curand.h>
 
 #include "var.h"
+#include "IBM/ibmVar.h"
 #include "structs/globalStructs.h"
 
 /*

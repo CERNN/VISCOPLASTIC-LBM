@@ -33,8 +33,6 @@
 *   @param pop: populations
 *   @param gridLBM: LBM CUDA grid size
 *   @param threadsLBM: LBM CUDA block size
-*   @param gridIBM: IBM CUDA grid size
-*   @param threadsIBM: IBM CUDA block size
 *   @param streamLBM: LBM CUDA streams for GPUs
 *   @param streamIBM: IBM CUDA streams for GPUs
 *   @param step: current time step
@@ -48,8 +46,6 @@ void immersedBoundaryMethod(
     Populations* const __restrict__ pop,
     dim3 gridLBM,
     dim3 threadsLBM,
-    unsigned int gridIBM,
-    unsigned int threadsIBM,
     cudaStream_t streamLBM[N_GPUS],
     cudaStream_t streamIBM[N_GPUS],
     unsigned int step,

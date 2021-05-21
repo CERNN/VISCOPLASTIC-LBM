@@ -41,7 +41,7 @@
 /* ---------------------------- IBM OPTIMIZATION --------------------------- */
 // Optimize Euler nodes updates for IBM (only recommended to test false
 // with a ratio of more than 5% between lagrangian and eulerian nodes)
-#define IBM_EULER_OPTIMIZATION false
+#define IBM_EULER_OPTIMIZATION true
 // "Shell thickness" to consider. The Euler nodes are updated every time 
 // the particle moves more than IBM_EULER_UPDATE_DIST value and all nodes with 
 // less than IBM_EULER_SHELL_THICKNESS+P_DIST distant from the particle are updated.
@@ -138,6 +138,14 @@ constexpr dfloat REST_COEF = 0.8; // restitution coeficient
 
 // Some prints to test IBM
 #define IBM_DEBUG false
+
+#ifdef IBM
+// Border size is the number of ghost nodes in one size of z for each GPU. 
+// These nodes are used for IBM force/macroscopics update/sync
+#define MACR_BORDER_NODES (2+(int)(IBM_EULER_SHELL_THICKNESS+0.99999999))
+#else
+#define MACR_BORDER_NODES (0)
+#endif
 
 /* ------------------------ THREADS AND GRIDS FOR IBM ----------------------- */
 // Threads for IBM particles

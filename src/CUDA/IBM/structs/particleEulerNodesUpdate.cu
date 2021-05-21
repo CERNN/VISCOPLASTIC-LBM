@@ -2,11 +2,13 @@
 
 
 ParticleEulerNodesUpdate::particleEulerNodesUpdate(){
-    eulerMaskArray = nullptr;
-    eulerIndexesUpdate = nullptr;
+    for(int i = 0; i < N_GPUS; i++){
+        eulerMaskArray[i] = nullptr;
+        eulerIndexesUpdate[i] = nullptr;
+        currEulerNodes[i] = 0;
+        eulerFixedNodes[i] = 0;
+    }
     maxEulerNodes = 0;
-    currEulerNodes = 0;
-    eulerFixedNodes = 0;
     pCenterMovable = nullptr;
     particlesLastPos = nullptr;
     hasFixed = false;
@@ -50,19 +52,23 @@ void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICL
     }
 
     // Allocate variables
-    // Allocate indexes of Euler nodes to update
-    checkCudaErrors(cudaMallocManaged((void**)&(this->eulerIndexesUpdate), 
-        this->maxEulerNodes*sizeof(size_t)));
-    // Allocate mask array
-    this->eulerMaskArray = (uint32_t*) malloc((size_t)NX*NY*NZ*sizeof(uint32_t));
+    for(int i = 0; i < N_GPUS; i++){
+        // Allocate indexes of Euler nodes to update
+        checkCudaErrors(cudaMalloc((void**)&(this->eulerIndexesUpdate[i]), 
+            this->maxEulerNodes*sizeof(size_t)));
+        // Allocate mask array
+        this->eulerMaskArray[i] = (uint32_t*) malloc((size_t)NX*NY*NZ*sizeof(uint32_t));
+    }
     // Allocate array of pointers to particleCenters, for moving particles
     this->pCenterMovable = (ParticleCenter**)malloc(this->nParticlesMovable*sizeof(ParticleCenter*));
     // Allocate particles last position array, for moving particles
     this->particlesLastPos = (dfloat3*)malloc(this->nParticlesMovable*sizeof(dfloat3));
 
     for(int i=0; i < nParticlesFixed; i++){
-        // Mask for fixes particles is always 0b1
-        eulerFixedNodes += this->updateEulerNodes(&p[idxFixed[i]], 0b1);
+        for(int j=0; j< N_GPUS; j++){
+            // Mask for fixes particles is always 0b1
+            this->eulerFixedNodes[j] += this->updateEulerNodes(&p[idxFixed[i]], 0b1, j);
+        }
     }
 
     const char shift = this->hasFixed? 1 : 0;
@@ -71,16 +77,21 @@ void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICL
         ParticleCenter* mp = &(p[idxMoving[i]]);
         this->pCenterMovable[i] = mp;
         this->particlesLastPos[i] = mp->pos;
-        // Mask for fixes particles is 0b1 shifted its index +shift to the left
-        this->updateEulerNodes(mp, 0b1<<(shift+i));
+        for(int j = 0; j < N_GPUS; j++){
+            // Mask for fixes particles is 0b1 shifted its index +shift to the left
+            this->updateEulerNodes(mp, 0b1<<(shift+i), j);
+        }
     }
 }
 
 __host__
 void ParticleEulerNodesUpdate::freeEulerNodes(){
     // Free variables
-    checkCudaErrors(cudaFree(this->eulerIndexesUpdate));
-    free(this->eulerMaskArray);
+    for(int i = 0; i < N_GPUS; i++)
+    {
+        checkCudaErrors(cudaFree(this->eulerIndexesUpdate[i]));
+        free(this->eulerMaskArray[i]);
+    }
     free(this->pCenterMovable);
     free(this->particlesLastPos);
 }
@@ -113,14 +124,23 @@ void ParticleEulerNodesUpdate::checkParticlesMovement(){
     }
     // If there is any mask to remove/update (particles that moved)
     if(maskRemove > 0){
-        removeUnneededEulerNodes(maskRemove);
+        for(int i = 0; i < N_GPUS; i++){
+            checkCudaErrors(cudaSetDevice(i));
+            removeUnneededEulerNodes(maskRemove, i);
+        }
+        checkCudaErrors(cudaSetDevice(0));
         int count = 0;
         // Remove bit from fixed particle
         maskRemove >>= shift;
         // While there are still bits from mask (particles that moved) to process
+        // Update particles nodes that were removed from mask
         while(maskRemove > 0){
             if(maskRemove & 0b1){
-                this->updateEulerNodes(this->pCenterMovable[count], 0b1 << (count+shift));
+                for(int i = 0; i < N_GPUS; i++){
+                    checkCudaErrors(cudaSetDevice(i));
+                    this->updateEulerNodes(this->pCenterMovable[count], 0b1 << (count+shift), i);
+                }
+                checkCudaErrors(cudaSetDevice(0));
                 this->particlesLastPos[count] = this->pCenterMovable[count]->pos;
             }
             maskRemove >>= 1;
@@ -130,7 +150,7 @@ void ParticleEulerNodesUpdate::checkParticlesMovement(){
 }
 
 __host__
-void ParticleEulerNodesUpdate::removeUnneededEulerNodes(uint32_t maskRemove){
+void ParticleEulerNodesUpdate::removeUnneededEulerNodes(uint32_t maskRemove, int n_gpu){
     // Indexes to write to the left (keep coalesced array)
     // When a node that isn't used anymore is found, this is incremented by one
     // After its first increment, all other indexes that are read are written to
@@ -138,14 +158,14 @@ void ParticleEulerNodesUpdate::removeUnneededEulerNodes(uint32_t maskRemove){
     // Obs.: "left" means closer to start of the array
 
     unsigned int idxLeft = 0;
-    unsigned int newCurrEulerNodes = (int)this->currEulerNodes;
+    unsigned int newCurrEulerNodes = (int)this->currEulerNodes[n_gpu];
     #if IBM_DEBUG
     int idxsUpdated = 0;
     #endif
     // Start after fixed nodes
-    for(int i = this->eulerFixedNodes; i < this->currEulerNodes; i++){
-        const size_t idx = eulerIndexesUpdate[i];
-        const uint32_t val = this->eulerMaskArray[idx];
+    for(int i = this->eulerFixedNodes[n_gpu]; i < this->currEulerNodes[n_gpu]; i++){
+        const size_t idx = this->eulerIndexesUpdate[n_gpu][i];
+        const uint32_t val = this->eulerMaskArray[n_gpu][idx];
         // Val with mask (~maskRemove) passed
         const uint32_t valWithMask = val & ~maskRemove;
         // If maskVal with bits removed is 0, it means that the node 
@@ -162,7 +182,7 @@ void ParticleEulerNodesUpdate::removeUnneededEulerNodes(uint32_t maskRemove){
                 #if IBM_DEBUG
                 idxsUpdated += 1;
                 #endif
-                this->eulerIndexesUpdate[i-idxLeft] = valWithMask;
+                this->eulerIndexesUpdate[n_gpu][i-idxLeft] = valWithMask;
             }
         }
     }
@@ -171,12 +191,15 @@ void ParticleEulerNodesUpdate::removeUnneededEulerNodes(uint32_t maskRemove){
     printf("For mask %x, Idx removed: %d; Updated: %d\n", maskRemove, 
         this->currEulerNodes - newCurrEulerNodes, idxsUpdated);
     #endif
-    this->currEulerNodes = (unsigned int)newCurrEulerNodes;
+    this->currEulerNodes[n_gpu] = (unsigned int)newCurrEulerNodes;
 }
 
 __host__
-unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint32_t mask){
+unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint32_t mask, int n_gpu){
     dfloat3 pos = pc->pos;
+    // "pull" sphere to the left
+    pos.z -= n_gpu*NZ;
+
     dfloat radius = pc->radius;
     // TODO: update this for other geometries than sphere
     dfloat sphereShellThick = P_DIST;
@@ -186,17 +209,17 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
 
     const int maxX = myMin(pos.x+addTerm+1, NX-1); // +1 for ceil
     const int maxY = myMin(pos.y+addTerm+1, NY-1);
-    // +2 in z because of the ghost nodes 
-    const int maxZ = myMin(pos.z+addTerm+1, NZ-1+2); 
+    // +MACR_BORDER_NODES in z because of the ghost nodes 
+    const int maxZ = myMin(pos.z+addTerm+1, NZ-1+(n_gpu == (N_GPUS-1)? 0 : MACR_BORDER_NODES)); 
 
     const int minX = myMax(pos.x-addTerm, 0);
     const int minY = myMax(pos.y-addTerm, 0);
     // -2 in z because of the ghost nodes
-    const int minZ = myMax(pos.z-addTerm, -2);
+    const int minZ = myMax(pos.z-addTerm, 0 - (n_gpu == 0? 0 : MACR_BORDER_NODES));
 
     const dfloat maxDistSq = (radius+sphereShellThick)*(radius+sphereShellThick);
     const dfloat minDistSq = (radius-sphereShellThick)*(radius-sphereShellThick);
-    unsigned int oldCurrNodes = this->currEulerNodes;
+    unsigned int oldCurrNodes = this->currEulerNodes[n_gpu];
 
     #if IBM_DEBUG
     unsigned int hit = 0;
@@ -216,11 +239,11 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
                     size_t idx = idxScalar(i, j, k);
                     // printf("%d=%d, %d=%d, %d=%d\n", i, idx%NX, j, (idx/NX)%NY, k, (idx/NX)/NY);
                     // Add Euler indexes to update
-                    this->eulerIndexesUpdate[this->currEulerNodes] = idx;
+                    this->eulerIndexesUpdate[n_gpu][this->currEulerNodes[n_gpu]] = idx;
                     // Update mask array
-                    this->eulerMaskArray[idx] |= mask;
+                    this->eulerMaskArray[n_gpu][idx] |= mask;
                     // Add one to current number of nodes
-                    this->currEulerNodes += 1;
+                    this->currEulerNodes[n_gpu] += 1;
                     #if IBM_DEBUG
                     hit += 1;
                     #endif
@@ -234,7 +257,7 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
     #endif
 
     // Return number of added nodes
-    return this->currEulerNodes - oldCurrNodes;
+    return this->currEulerNodes[n_gpu] - oldCurrNodes;
 }
 
 __global__

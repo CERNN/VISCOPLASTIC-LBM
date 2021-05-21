@@ -65,8 +65,9 @@ typedef struct particleNodeSoA {
     *   @param pCenterIdx: index of particle center for given particle nodes
     *   @param baseIdx: base index to use while copying
     */
-    void copyNodesFromParticle(struct particle p, unsigned int pCenterIdx, unsigned int baseIdx);
+    void copyNodesFromParticle(struct particle p, unsigned int pCenterIdx, unsigned int n_gpu);
 
+    void leftShiftNodesSoA(int idx, int left_shit);
 } ParticleNodeSoA;
 
 #endif // !__PARTICLE_NODE_H

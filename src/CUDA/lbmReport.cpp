@@ -184,8 +184,8 @@ void saveAllMacrCsv(
             for(int y = 0; y < NY; y++)
                 for(int x = 0; x < NX; x++)
                 {
-                    // +2 because of the ghost nodes
-                    size_t idx = idxScalar(x, y, z+2);
+                    // +MACR_BORDER_NODES because of the ghost nodes
+                    size_t idx = idxScalar(x, y, z+MACR_BORDER_NODES);
                     fprintf(outFile, "%d\t%d\t%d\t%.6e\t%.6e\t%.6e\t%.6e\n", 
                         x, y, z, macr->rho[idx], macr->u.x[idx], macr->u.y[idx], 
                         macr->u.z[idx]);

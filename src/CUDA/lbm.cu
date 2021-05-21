@@ -40,9 +40,9 @@ void gpuMacrCollisionStream(
         fNode[i] = pop[idxPop(x, y, z, i)];
 
     #ifdef IBM
-    // +2 in z because there are four ghost nodes in z for macroscopics,
+    // +MACR_BORDER_NODES in z because there are four ghost nodes in z for macroscopics,
     // 2 to the left (back) and 2 to the right (front). This is because of IBM
-    idx = idxScalar(x, y, z+2);
+    idx = idxScalar(x, y, z+MACR_BORDER_NODES);
     const dfloat fxVar = macr.f.x[idx];
     const dfloat fyVar = macr.f.y[idx];
     const dfloat fzVar = macr.f.z[idx];
@@ -222,9 +222,9 @@ void gpuMacrCollisionStream(
 
     if (save)
     {
-        // +2 in z because there are four ghost nodes in z for macroscopics,
+        // +MACR_BORDER_NODES in z because there are four ghost nodes in z for macroscopics,
         // 2 to the left (back) and 2 to the right (front). This is because of IBM
-        idx = idxScalar(x, y, z+2);
+        idx = idxScalar(x, y, z+MACR_BORDER_NODES);
         macr.rho[idx] = rhoVar;
         macr.u.x[idx] = uxVar;
         macr.u.y[idx] = uyVar;
@@ -491,7 +491,7 @@ void gpuUpdateMacr(
     if (x >= NX || y >= NY || z >= NZ)
         return;
 
-    size_t idx_s = idxScalar(x, y, z+2);
+    size_t idx_s = idxScalar(x, y, z+MACR_BORDER_NODES);
     // load populations
     dfloat fNode[Q];
     for (unsigned char i = 0; i < Q; i++)
