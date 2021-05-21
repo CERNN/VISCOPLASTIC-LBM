@@ -101,20 +101,20 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 
 
 constexpr dfloat FRICTION_COEF = 0.0923; // friction coeficient
-constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
+constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
 //#define REST_COEF_CORRECTION
 
 
 //material properties
-constexpr dfloat YOUNG_MODULUS = 10.0;
+constexpr dfloat YOUNG_MODULUS = 385.0;
 constexpr dfloat POISSON_RATIO = 0.24;
 constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
 
 
 //Hertzian contact theory -  Johnson 1985
-constexpr dfloat STIFFNESS_NORMAL_CONST = (2.0/3.0) * (YOUNG_MODULUS / (1-POISSON_RATIO*POISSON_RATIO)); 
+constexpr dfloat STIFFNESS_NORMAL_CONST = (2.0/3.0) * (YOUNG_MODULUS / (1-POISSON_RATIO*POISSON_RATIO)); // its 2 instead of 4, because same shear modulus
 //Mindlin theory 1949
-constexpr dfloat STIFFNESS_TANGENTIAL_CONST =  4.0 * (SHEAR_MODULUS / (1 - POISSON_RATIO*POISSON_RATIO)); 
+constexpr dfloat STIFFNESS_TANGENTIAL_CONST =  4.0 * (SHEAR_MODULUS / (1 - POISSON_RATIO*POISSON_RATIO)); // its 4 instead of 8, because same shear modulus
 // Tsuji 1979
 //constexpr dfloat DAMPING_NORMAL_CONST =       - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)));
 //constexpr dfloat DAMPING_TANGENTIAL_CONST =   - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF))); 

@@ -44,7 +44,7 @@
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
 constexpr unsigned int SCALE = 1;
-constexpr int N_STEPS = 2200;          // maximum number of time steps
+constexpr int N_STEPS = 500;          // maximum number of time steps
 #define MACR_SAVE (0)                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT (false)                // report every DATA_REPORT steps
  
