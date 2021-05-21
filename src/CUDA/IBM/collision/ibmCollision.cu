@@ -532,7 +532,7 @@ void gpuSoftSphereWallCollision(
     const dfloat STIFFNESS_TANGENTIAL = STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (displacement);
     const dfloat damping_const = (- 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
     const dfloat DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
-    const dfloat DAMPING_TANGENTIAL = 2.0* damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+    const dfloat DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
 
 
     //normal force
@@ -561,6 +561,8 @@ void gpuSoftSphereWallCollision(
         t.z = 0.0;
     }
 
+    //printf("\n -- G_ct.x : %f -- G_ct.y : %f -- G_ct.z : %f", G_ct.x, G_ct.y, G_ct.z);
+
     //TODO : Still need validation
     tang_disp.x = G_ct.x + tangDisplacement.x;
     tang_disp.y = G_ct.y + tangDisplacement.y;
@@ -572,9 +574,12 @@ void gpuSoftSphereWallCollision(
     f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y;
     f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z;
 
+    //printf("\n -- f_ct.x : %f -- f_ct.y : %f -- f_ct.z : %f", f_tang.x, f_tang.y, f_tang.z);
+
     mag = sqrt(f_tang.x*f_tang.x + f_tang.y*f_tang.y + f_tang.z*f_tang.z);
 
     if(  mag > FRICTION_COEF * abs(f_n) ){
+        //printf("\n entered if, mag: %f > %f", mag,FRICTION_COEF * abs(f_n));
         f_tang.x = - FRICTION_COEF * f_n * t.x;
         f_tang.y = - FRICTION_COEF * f_n * t.y;
         f_tang.z = - FRICTION_COEF * f_n * t.z;
@@ -680,9 +685,9 @@ void gpuSoftSphereParticleCollision(
     
     //normal force
     dfloat f_kn = -STIFFNESS_NORMAL * sqrt(displacement*displacement*displacement);
-    f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x ;
-    f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y ;
-    f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z ;
+    f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x * POW_FUNCTION(displacement,0.25); ;
+    f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y * POW_FUNCTION(displacement,0.25); ;
+    f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z * POW_FUNCTION(displacement,0.25);;
     f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
 
     //tangential force       
