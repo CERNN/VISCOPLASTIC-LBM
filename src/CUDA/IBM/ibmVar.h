@@ -76,8 +76,8 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (1)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (1)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (250)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (250)                  // Report IBM treated data every given steps (0 not report)
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE false                 // save reported IBM data to file
@@ -86,13 +86,13 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 3.97;
-constexpr dfloat FLUID_DENSITY = 1;
+constexpr dfloat PARTICLE_DENSITY = 7.8;
+constexpr dfloat FLUID_DENSITY = 1.0;
 
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
+constexpr dfloat GZ = -1.0e-7; //-1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------------------------------------------------------- */
 
 /* -------------------------- COLLISION PARAMETERS -------------------------- */
@@ -100,14 +100,14 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 #if defined SOFT_SPHERE
 
 
-constexpr dfloat FRICTION_COEF = 0.0923; // friction coeficient
-constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
+constexpr dfloat FRICTION_COEF = 0.0; // friction coeficient
+constexpr dfloat REST_COEF = 0.97; // restitution coeficient   
 //#define REST_COEF_CORRECTION
 
 
 //material properties
-constexpr dfloat YOUNG_MODULUS = 385.0;
-constexpr dfloat POISSON_RATIO = 0.24;
+constexpr dfloat YOUNG_MODULUS = 17444.0;
+constexpr dfloat POISSON_RATIO = 30;
 constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
 
 

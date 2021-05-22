@@ -44,7 +44,7 @@
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
 constexpr unsigned int SCALE = 1;
-constexpr int N_STEPS = 500;          // maximum number of time steps
+constexpr int N_STEPS = 200000;          // maximum number of time steps
 #define MACR_SAVE (0)                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT (false)                // report every DATA_REPORT steps
  
@@ -84,16 +84,16 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 /* --------------------------  SIMULATION DEFINES -------------------------- */
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 
-constexpr int N = 60*SCALE;
-constexpr int NX = 8*SCALE;        // size x of the grid 
+constexpr int N = 180*SCALE;
+constexpr int NX = 180*SCALE;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr int NY = 8*SCALE;        // size y of the grid
-constexpr int NZ = 100*SCALE;        // size z of the grid in one GPU
+constexpr int NY = 180*SCALE;        // size y of the grid
+constexpr int NZ = 700*SCALE;        // size z of the grid in one GPU
 constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
 constexpr dfloat U_MAX = 0;           // max velocity
 
-constexpr dfloat TAU = 0.9;     // relaxation time
+constexpr dfloat TAU = 0.500032;     // relaxation time
 constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
 
 constexpr dfloat RHO_0 = 1;         // initial rho
