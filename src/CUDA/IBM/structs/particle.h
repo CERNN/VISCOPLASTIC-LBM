@@ -14,6 +14,7 @@
 #include "particleCenter.h"
 #include "particleNode.h"
 #include "../ibmVar.h"
+#include "ibmMacrsAux.h"
 
 // After use_math_defines in "var.h"
 #include <math.h>

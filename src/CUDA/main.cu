@@ -46,6 +46,7 @@ int main()
     MacrProc processData;
     BoundaryConditionsInfo* bcInfos;
     SimInfo info;
+
     float** randomNumbers = nullptr; // useful for turbulence
     int step = INI_STEP;
     dim3* gridsBC;
@@ -53,10 +54,10 @@ int main()
     #ifdef IBM
     Particle particles[NUM_PARTICLES];
     ParticlesSoA particlesSoA;
-    dfloat3SoA velAuxIBM[N_GPUS];
     ParticleEulerNodesUpdate pEulerNodes;
 
     IBMProc ibmProcessData;
+    IBMMacrsAux ibmMacrsAux;
     allocateIBMProc(&ibmProcessData);
     #endif
 
@@ -104,8 +105,6 @@ int main()
         checkCudaErrors(cudaStreamCreate(&streamsLBM[i]));
         #ifdef IBM
         checkCudaErrors(cudaStreamCreate(&streamsIBM[i]));
-        
-        velAuxIBM[i].allocateMemory(NUMBER_LBM_NODES*sizeof(dfloat));
         #endif
 
         pop[i].popAllocation();
@@ -130,6 +129,7 @@ int main()
     printf("Particles created!\n"); fflush(stdout);
 
     particlesSoA.updateParticlesAsSoA(particles);
+    ibmMacrsAux.ibmMacrsAuxAllocation();
     #if IBM_EULER_OPTIMIZATION
     pEulerNodes.initializeEulerNodes(particlesSoA.pCenterArray);
     #endif
@@ -377,14 +377,17 @@ int main()
         // IBM
         #ifdef IBM
 
-        #if IBM_EULER_OPTIMIZATION
-        // printf("step %d\n", step);
         if((step % IBM_EULER_UPDATE_INTERVAL) == 0)
+        {
+            particlesSoA.updatedNodesGPUs();
+            #if IBM_EULER_OPTIMIZATION
+            // printf("step %d\n", step);
             pEulerNodes.checkParticlesMovement();
-        #endif
+            #endif
+        }
 
         immersedBoundaryMethod(
-            particlesSoA, macr, velAuxIBM, pop, grid, threads,
+            particlesSoA, macr, ibmMacrsAux, pop, grid, threads,
             streamsLBM, streamsIBM, step, 
             &pEulerNodes);
 
@@ -514,7 +517,6 @@ int main()
         checkCudaErrors(cudaStreamDestroy(streamsLBM[i]));
         #ifdef IBM
         checkCudaErrors(cudaStreamDestroy(streamsIBM[i]));
-        velAuxIBM[i].freeMemory();
         #endif
         pop[i].popFree();
         macr[i].macrFree();
@@ -537,6 +539,7 @@ int main()
     }
     free(particles);
     particlesSoA.freeNodesAndCenters();
+    ibmMacrsAux.ibmMacrsAuxFree();
     #if IBM_EULER_OPTIMIZATION
     pEulerNodes.freeEulerNodes();
     #endif

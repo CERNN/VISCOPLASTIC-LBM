@@ -29,7 +29,7 @@
 *   
 *   @param particles: IBM particles
 *   @param macr: macroscopics
-*   @param vels_aux: auxiliary vector for velocities
+*   @param ibmMacrsAux: auxiliary vector for velocities and forces
 *   @param pop: populations
 *   @param gridLBM: LBM CUDA grid size
 *   @param threadsLBM: LBM CUDA block size
@@ -42,7 +42,7 @@ __host__
 void immersedBoundaryMethod(
     ParticlesSoA particles,
     Macroscopics* __restrict__ macr,
-    dfloat3SoA* __restrict__ vels_aux,
+    IBMMacrsAux ibmMacrsAux,
     Populations* const __restrict__ pop,
     dim3 gridLBM,
     dim3 threadsLBM,
@@ -59,13 +59,15 @@ void immersedBoundaryMethod(
 *   @param particleCenters: IBM particles centers
 *   @param macr: macroscopics
 *   @param velAuxIBM: auxiliary velocity vector
+*   @param n_gpu: current gpu processing
 */
 __global__
 void gpuForceInterpolationSpread(
     ParticleNodeSoA particlesNodes,
     ParticleCenter particleCenters[NUM_PARTICLES],
     Macroscopics const macr,
-    dfloat3SoA velAuxIBM
+    IBMMacrsAux ibmMacrsAux,
+    const int n_gpu
 );
 
 
@@ -75,13 +77,14 @@ void gpuForceInterpolationSpread(
 *   @param pop: populations
 *   @param macr: macroscopics to update
 *   @param velAuxIBM: auxiliary velocity vector
+*   @param n_gpu: current gpu number
 *   @param eulerIdxsUpdate: array with euler nodes (from LBM) that must be updated
                 (only if IBM_EULER_OPTIMIZATION is true)
 *   @param currEulerNodes: number of nodes that must be updated 
                 (only if IBM_EULER_OPTIMIZATION is true)
 */
 __global__
-void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
+void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu
     #if IBM_EULER_OPTIMIZATION
     , size_t* eulerIdxsUpdate, unsigned int currEulerNodes
     #endif

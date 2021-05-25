@@ -60,8 +60,8 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
 
 
 void ParticlesSoA::updatedNodesGPUs(){
-    checkCudaErrors(cudaSetDevice(0));
     for(int i = 0; i < NUM_PARTICLES; i++){
+        checkCudaErrors(cudaSetDevice(0));
         if(!this->pCenterArray[i].movable)
             continue;
 

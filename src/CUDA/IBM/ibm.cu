@@ -7,7 +7,7 @@ __host__
 void immersedBoundaryMethod(
     ParticlesSoA particles,
     Macroscopics* __restrict__ macr,
-    dfloat3SoA* __restrict__ velsAuxIBM,
+    IBMMacrsAux ibmMacrsAux,
     Populations* const __restrict__ pop,
     dim3 gridLBM,
     dim3 threadsLBM,
@@ -49,7 +49,7 @@ void immersedBoundaryMethod(
             dim3 currGrid(pEulerNodes->currEulerNodes[i]/64+(pEulerNodes->currEulerNodes[i]%64? 1 : 0), 1, 1);
             checkCudaErrors(cudaSetDevice(i));
             // Update macroscopics post boundary conditions and reset forces
-            gpuUpdateMacrIBM<<<currGrid, 64, 0, streamLBM[0]>>>(pop[i], macr[i], velsAuxIBM[i], 
+            gpuUpdateMacrIBM<<<currGrid, 64, 0, streamLBM[0]>>>(pop[i], macr[i], ibmMacrsAux, i,
                 pEulerNodes->eulerIndexesUpdate[i], pEulerNodes->currEulerNodes[i]);
             checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
         }
@@ -59,7 +59,7 @@ void immersedBoundaryMethod(
     for(int i = 0; i < N_GPUS; i++){
         checkCudaErrors(cudaSetDevice(i));
         // Update macroscopics post boundary conditions and reset forces
-        gpuUpdateMacrIBM<<<gridLBM, threadsLBM, 0, streamLBM[i]>>>(pop[i], macr[i], velsAuxIBM[i]);
+        gpuUpdateMacrIBM<<<gridLBM, threadsLBM, 0, streamLBM[i]>>>(pop[i], macr[i], ibmMacrsAux, i);
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
     }
     #endif
@@ -94,7 +94,7 @@ void immersedBoundaryMethod(
             // Make the interpolation of LBM and spreading of IBM forces
             gpuForceInterpolationSpread<<<gridNodesIBM[j], threadsNodesIBM[j], 
                 0, streamIBM[j]>>>(
-                particles.nodesSoA[j], particles.pCenterArray, macr[j], velsAuxIBM[j]);
+                particles.nodesSoA[j], particles.pCenterArray, macr[j], ibmMacrsAux, j);
             checkCudaErrors(cudaStreamSynchronize(streamIBM[j]));
         }
 
@@ -108,14 +108,14 @@ void immersedBoundaryMethod(
             if(pEulerNodes->currEulerNodes[j] > 0){
                 checkCudaErrors(cudaSetDevice(j));
                 dim3 currGrid(pEulerNodes->currEulerNodes[j]/64+(pEulerNodes->currEulerNodes[j]%64? 1 : 0), 1, 1);
-                ibmEulerCopyVelocities<<<currGrid, 64, 0, streamLBM[0]>>>(macr[j].u, velsAuxIBM[j], 
+                ibmEulerCopyVelocities<<<currGrid, 64, 0, streamLBM[0]>>>(macr[j].u, ibmMacrsAux.velAux[j], 
                     pEulerNodes->eulerIndexesUpdate[j], pEulerNodes->currEulerNodes[j]);
             }
         }
         #else
         for(int j = 0; j < N_GPUS; j++){
             checkCudaErrors(cudaSetDevice(j));
-            copyFromArray<<<gridLBM, threadsLBM, 0, streamLBM[j]>>>(macr[j].u, velsAuxIBM[j]);
+            copyFromArray<<<gridLBM, threadsLBM, 0, streamLBM[j]>>>(macr[j].u, ibmMacrsAux.velAux[j]);
             checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
         }
         #endif
@@ -155,7 +155,8 @@ void gpuForceInterpolationSpread(
     ParticleNodeSoA particlesNodes,
     ParticleCenter particleCenters[NUM_PARTICLES],
     Macroscopics const macr,
-    dfloat3SoA velAuxIBM)
+    IBMMacrsAux ibmMacrsAux,
+    const int n_gpu)
 {
     // TODO: update atomic double add to use only if is double
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
@@ -177,17 +178,18 @@ void gpuForceInterpolationSpread(
     // Calculate stencils to use and the valid interval [xyz][idx]
     dfloat stencilVal[3][P_DIST*2];
     // Base position for every index (leftest in x)
-    const int posBase[3] = {int(xIBM-P_DIST+1), int(yIBM-P_DIST+1), int(zIBM-P_DIST+1)};
+    // Base position is memory, so it discount the nodes in Z in others gpus
+    const int posBase[3] = {int(xIBM-P_DIST+1), int(yIBM-P_DIST+1), int(zIBM-P_DIST+1-n_gpu*NZ)};
     // Maximum stencil index for each direction xyz ("index" to stop)
     const int maxIdx[3] = {
-        (posBase[0]+P_DIST*2-1) < (int)NX? P_DIST*2-1 : ((int)NX-1-posBase[0]), 
-        (posBase[1]+P_DIST*2-1) < (int)NY? P_DIST*2-1 : ((int)NY-1-posBase[1]), 
-        (posBase[2]+P_DIST*2-1) < (int)NZ? P_DIST*2-1 : ((int)NZ-1-posBase[2])};
+        ((posBase[0]+P_DIST*2-1) < (int)NX)? P_DIST*2-1 : ((int)NX-1-posBase[0]), 
+        ((posBase[1]+P_DIST*2-1) < (int)NY)? P_DIST*2-1 : ((int)NY-1-posBase[1]), 
+        (n_gpu != N_GPUS-1 || (posBase[2]+P_DIST*2-1) < (int)NZ)? P_DIST*2-1 : ((int)NZ-1-posBase[2])};
     // Minimum stencil index for each direction xyz ("index" to start)
     const int minIdx[3] = {
-        posBase[0] >= 0? 0 : -posBase[0], 
-        posBase[1] >= 0? 0 : -posBase[1], 
-        posBase[2] >= 0? 0 : -posBase[2]};
+        (posBase[0] >= 0)? 0 : -posBase[0], 
+        (posBase[1] >= 0)? 0 : -posBase[1], 
+        (n_gpu != 0 || posBase[2] >= 0)? 0 : -posBase[2]};
 
     // Particle stencil out of the domain
     if(maxIdx[0] <= 0 || maxIdx[1] <= 0 || maxIdx[2] <= 0)
@@ -219,7 +221,7 @@ void gpuForceInterpolationSpread(
                 aux = aux1 * stencilVal[0][xi];
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
                 // +MACR_BORDER_NODES in z because of the ghost nodes
-                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk+MACR_BORDER_NODES);
+                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk);
 
                 rhoVar += macr.rho[idx] * aux;
                 uxVar += macr.u.x[idx] * aux;
@@ -286,17 +288,17 @@ void gpuForceInterpolationSpread(
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
 
                 // +MACR_BORDER_NODES in z because of the ghost nodes
-                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk+MACR_BORDER_NODES);
+                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk);
 
-                atomicAdd(&(macr.f.x[idx]), -deltaF.x * aux);
-                atomicAdd(&(macr.f.y[idx]), -deltaF.y * aux);
-                atomicAdd(&(macr.f.z[idx]), -deltaF.z * aux);
+                atomicAdd(&(ibmMacrsAux.fAux[n_gpu].x[idx]), -deltaF.x * aux);
+                atomicAdd(&(ibmMacrsAux.fAux[n_gpu].y[idx]), -deltaF.y * aux);
+                atomicAdd(&(ibmMacrsAux.fAux[n_gpu].z[idx]), -deltaF.z * aux);
 
                 // Update velocities field
                 const dfloat inv_rho = 1 / macr.rho[idx];
-                atomicAdd(&(velAuxIBM.x[idx]), 0.5 * -deltaF.x * aux * inv_rho);
-                atomicAdd(&(velAuxIBM.y[idx]), 0.5 * -deltaF.y * aux * inv_rho);
-                atomicAdd(&(velAuxIBM.z[idx]), 0.5 * -deltaF.z * aux * inv_rho);
+                atomicAdd(&(ibmMacrsAux.velAux[n_gpu].x[idx]), 0.5 * -deltaF.x * aux * inv_rho);
+                atomicAdd(&(ibmMacrsAux.velAux[n_gpu].y[idx]), 0.5 * -deltaF.y * aux * inv_rho);
+                atomicAdd(&(ibmMacrsAux.velAux[n_gpu].z[idx]), 0.5 * -deltaF.z * aux * inv_rho);
             }
         }
     }
@@ -330,7 +332,7 @@ void gpuForceInterpolationSpread(
 }
 
 __global__
-void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
+void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu
     #if IBM_EULER_OPTIMIZATION
     , size_t* eulerIdxsUpdate, unsigned int currEulerNodes
     #endif
@@ -344,7 +346,8 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
 
     int x = idx % NX;
     int y = (idx / NX) % NY;
-    int z = (idx / NX) / NY;
+    // remove border nodes in z
+    int z = (idx / NX) / NY - MACR_BORDER_NODES;
 
     #else
     int x = threadIdx.x + blockDim.x * blockIdx.x;
@@ -412,9 +415,12 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, dfloat3SoA velAuxIBM
     macr.u.x[idx] = uxVar;
     macr.u.y[idx] = uyVar;
     macr.u.z[idx] = uzVar;
-    velAuxIBM.x[idx] = uxVar;
-    velAuxIBM.y[idx] = uyVar;
-    velAuxIBM.z[idx] = uzVar;
+    ibmMacrsAux.velAux[n_gpu].x[idx] = uxVar;
+    ibmMacrsAux.velAux[n_gpu].y[idx] = uyVar;
+    ibmMacrsAux.velAux[n_gpu].z[idx] = uzVar;
+    ibmMacrsAux.fAux[n_gpu].x[idx] = 0;
+    ibmMacrsAux.fAux[n_gpu].y[idx] = 0;
+    ibmMacrsAux.fAux[n_gpu].z[idx] = 0;
 }
 
 __global__ 
