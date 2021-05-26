@@ -227,7 +227,7 @@ void gpuParticlesCollision(
                     penetration = dfloat3(0.0,(min_dist - dist_abs)/2.0,0.0);
                     gpuHardSphereWallCollision(column,penetration,normalVector,pc_i,particlesNodes);
                     #endif   
-                }else{
+                }else if(dist_abs >= min_dist+0.2){
                     gpuLubricationWall(min_dist - dist_abs,normalVector,pc_i);
                 }
             }
@@ -980,12 +980,12 @@ void gpuLubricationWall(
     const dfloat r_i = pc_i->radius;
 
     const dfloat r_squared = 2*r_i + (LUBRICATION_DISTANCE-gap)*(LUBRICATION_DISTANCE-gap);
-    const dfloat inv_gap = (1.0/gap - 1.0/(gap +r_squared/r_i ));
+    const dfloat inv_gap = 1.0/gap; //(1.0/gap - 1.0/(gap +r_squared/r_i ));
     const dfloat MU = (TAU-0.5)/3.0;
 
     atomicAdd(&(pc_i->f.x), -1.5*M_PI*r_i*r_i*inv_gap * MU * vel_i.x*wallNormalVector.x);
-    atomicAdd(&(pc_i->f.y), -1.5*M_PI*r_i*r_i*inv_gap * MU * vel_i.x*wallNormalVector.y);
-    atomicAdd(&(pc_i->f.z), -1.5*M_PI*r_i*r_i*inv_gap * MU * vel_i.x*wallNormalVector.z);
+    atomicAdd(&(pc_i->f.y), -1.5*M_PI*r_i*r_i*inv_gap * MU * vel_i.y*wallNormalVector.y);
+    atomicAdd(&(pc_i->f.z), -1.5*M_PI*r_i*r_i*inv_gap * MU * vel_i.z*wallNormalVector.z);
 
 }
 
