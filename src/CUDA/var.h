@@ -35,6 +35,7 @@
 #endif
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
+
 #define ID_SIM "009"            // prefix for simulation's files
 #define PATH_FILES "TEST"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
@@ -44,6 +45,7 @@
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
 constexpr unsigned int SCALE = 1;
+
 constexpr int N_STEPS = 300000;          // maximum number of time steps
 #define MACR_SAVE (0)                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT (false)                // report every DATA_REPORT steps

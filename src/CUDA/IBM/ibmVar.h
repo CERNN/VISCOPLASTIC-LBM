@@ -86,6 +86,7 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
+
 constexpr dfloat PARTICLE_DENSITY = 8.342246;
 constexpr dfloat FLUID_DENSITY = 1.0;
 
@@ -106,6 +107,7 @@ constexpr dfloat REST_COEF = 0.97; // restitution coeficient
 
 
 //material properties
+
 constexpr dfloat YOUNG_MODULUS = 17444.0;
 constexpr dfloat POISSON_RATIO = 0.3;
 constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
@@ -124,7 +126,7 @@ constexpr dfloat FRICTION_COEF_CORRECTED = 1/((16.21*REST_COEF+15.58*REST_COEF*R
 #endif 
 
 
-//#define LUBRICATION_FORCE
+#define LUBRICATION_FORCE
 #if defined LUBRICATION_FORCE
     constexpr dfloat LUBRICATION_DISTANCE = 2;
 #endif
