@@ -39,7 +39,7 @@ void createParticles(Particle particles[NUM_PARTICLES])
 
     center.x = (NX-1.0)/2.0;
     center.y = (NY-1.0)/2.0;
-    center.z = 650.0;
+    center.z = 850.0;
 
     w.x = 0.0;
     w.y = 0.0;

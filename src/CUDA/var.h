@@ -35,7 +35,7 @@
 #endif
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
-#define ID_SIM "001"            // prefix for simulation's files
+#define ID_SIM "009"            // prefix for simulation's files
 #define PATH_FILES "TEST"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
@@ -44,7 +44,7 @@
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
 constexpr unsigned int SCALE = 1;
-constexpr int N_STEPS = 200000;          // maximum number of time steps
+constexpr int N_STEPS = 300000;          // maximum number of time steps
 #define MACR_SAVE (0)                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT (false)                // report every DATA_REPORT steps
  
@@ -88,12 +88,12 @@ constexpr int N = 180*SCALE;
 constexpr int NX = 180*SCALE;        // size x of the grid 
                                       // (32 multiple for better performance)
 constexpr int NY = 180*SCALE;        // size y of the grid
-constexpr int NZ = 700*SCALE;        // size z of the grid in one GPU
+constexpr int NZ = 900*SCALE;        // size z of the grid in one GPU
 constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
 constexpr dfloat U_MAX = 0;           // max velocity
 
-constexpr dfloat TAU = 0.500032;     // relaxation time
+constexpr dfloat TAU = 0.501763;     // relaxation time
 constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
 
 constexpr dfloat RHO_0 = 1;         // initial rho

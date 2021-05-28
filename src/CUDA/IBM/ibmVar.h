@@ -86,7 +86,7 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 7.8;
+constexpr dfloat PARTICLE_DENSITY = 8.342246;
 constexpr dfloat FLUID_DENSITY = 1.0;
 
 // Gravity accelaration on particle (Lattice units)
@@ -107,7 +107,7 @@ constexpr dfloat REST_COEF = 0.97; // restitution coeficient
 
 //material properties
 constexpr dfloat YOUNG_MODULUS = 17444.0;
-constexpr dfloat POISSON_RATIO = 30;
+constexpr dfloat POISSON_RATIO = 0.3;
 constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
 
 
