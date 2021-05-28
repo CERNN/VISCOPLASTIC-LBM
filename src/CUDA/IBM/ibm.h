@@ -58,7 +58,7 @@ void immersedBoundaryMethod(
 *   @param particlesNodes: IBM particles nodes
 *   @param particleCenters: IBM particles centers
 *   @param macr: macroscopics
-*   @param velAuxIBM: auxiliary velocity vector
+*   @param ibmMacrsAux: auxiliary vector for velocities and forces
 *   @param n_gpu: current gpu processing
 */
 __global__
@@ -76,7 +76,7 @@ void gpuForceInterpolationSpread(
 *   
 *   @param pop: populations
 *   @param macr: macroscopics to update
-*   @param velAuxIBM: auxiliary velocity vector
+*   @param ibmMacrsAux: auxiliary vector for velocities and forces
 *   @param n_gpu: current gpu number
 *   @param eulerIdxsUpdate: array with euler nodes (from LBM) that must be updated
                 (only if IBM_EULER_OPTIMIZATION is true)
@@ -105,7 +105,20 @@ void gpuResetNodesForces(ParticleNodeSoA particlesNodes);
 *   @param macrNext: macroscopics in GPU with higher z
 */
 __global__
-void copyBorderMacr(Macroscopics macrBase, Macroscopics macrNext);
+void gpuCopyBorderMacr(Macroscopics macrBase, Macroscopics macrNext);
+
+/**
+*   @brief Sums auxiliary macroscopics from one GPU border to another
+*
+*   @param macr: macroscopics to sum to
+*   @param ibmMacrsAux: auxiliary vector for velocities and forces
+*   @param n_gpu: GPU number where the aux IBM macrs resides (ibmMacrsAux.velAux[n_gpu])
+*   @param side:
+            1 to sum only in left border (as if macr is to the right of ibmMacrsAux)
+            -1 to sum only in right border (as if macr is to the left of ibmMacrsAux)
+*/
+__global__
+void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int borders);
 
 /**
 *   @brief Updated particles velocities and rotation

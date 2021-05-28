@@ -261,7 +261,8 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
 }
 
 __global__
-void ibmEulerCopyVelocities(dfloat3SoA dst, dfloat3SoA src, size_t* eulerIdxsUpdate, unsigned int currEulerNodes){
+void ibmEulerSumIBMAuxsReset(Macroscopics macr, IBMMacrsAux ibmMacrsAux, 
+    size_t* eulerIdxsUpdate, unsigned int currEulerNodes, int n_gpu){
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
 
     if (i >= currEulerNodes)
@@ -269,9 +270,21 @@ void ibmEulerCopyVelocities(dfloat3SoA dst, dfloat3SoA src, size_t* eulerIdxsUpd
 
     const size_t idx = eulerIdxsUpdate[i];
 
-    dst.x[idx] = src.x[idx];
-    dst.y[idx] = src.y[idx];
-    dst.z[idx] = src.z[idx];
+    macr.u.x[idx] += ibmMacrsAux.velAux[n_gpu].x[idx];
+    macr.u.y[idx] += ibmMacrsAux.velAux[n_gpu].y[idx];
+    macr.u.z[idx] += ibmMacrsAux.velAux[n_gpu].z[idx];
+
+    ibmMacrsAux.velAux[n_gpu].x[idx] = 0;
+    ibmMacrsAux.velAux[n_gpu].y[idx] = 0;
+    ibmMacrsAux.velAux[n_gpu].z[idx] = 0;
+
+    macr.f.x[idx] += ibmMacrsAux.fAux[n_gpu].x[idx];
+    macr.f.y[idx] += ibmMacrsAux.fAux[n_gpu].y[idx];
+    macr.f.z[idx] += ibmMacrsAux.fAux[n_gpu].z[idx];
+
+    ibmMacrsAux.fAux[n_gpu].x[idx] = 0;
+    ibmMacrsAux.fAux[n_gpu].y[idx] = 0;
+    ibmMacrsAux.fAux[n_gpu].z[idx] = 0;
 }
 
 

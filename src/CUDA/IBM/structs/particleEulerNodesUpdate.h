@@ -3,6 +3,7 @@
 
 #include "../ibmVar.h"
 #include "particle.h"
+#include "../../structs/macroscopics.h"
 #include "../../globalFunctions.h"
 
 /*
@@ -76,15 +77,16 @@ typedef struct particleEulerNodesUpdate{
 } ParticleEulerNodesUpdate;
 
 /**
-*   @brief Copy values from src to dst, given array of indexes to copy
+*   @brief Sum values from auxiliary IBM macroscopics to "main" macroscopics, 
+*       given array of indexes to copy, then reset aux values
 *   
 *   @param dst: destiny dfloat3 array (as SoA) with shape [NZ, NY, NX]
-*   @param src: source dfloat3 array (as SoA) with shape [NZ, NY, NX]
+*   @param ibmMacrsAux: Auxiliary macroscopics to sum and reset
 *   @param eulerIdxsUpdate: array with indexes to update
 *   @param currEulerNodes: array with indexes size
 */
 __global__
-void ibmEulerCopyVelocities(dfloat3SoA dst, dfloat3SoA src, size_t*
-    eulerIdxsUpdate, unsigned int currEulerNodes);
+void ibmEulerSumIBMAuxsReset(Macroscopics macr, IBMMacrsAux ibmMacrsAux, 
+    size_t* eulerIdxsUpdate, unsigned int currEulerNodes, int n_gpu);
 
 #endif // !__PARTICLE_EULER_NODES_UPDATE_H

@@ -118,6 +118,7 @@ int main()
             getLastCudaError("random numbers transfer error");
         }
     }
+    getLastCudaError("LBM setup error");
     /* ---------------------------------------------------------------------- */
 
     /* ------------------ IBM ALLOCATION AND CONFIGURATION ------------------ */
@@ -133,6 +134,7 @@ int main()
     #if IBM_EULER_OPTIMIZATION
     pEulerNodes.initializeEulerNodes(particlesSoA.pCenterArray);
     #endif
+    getLastCudaError("IBM setup error");
 
     ibmProcessData.step = &step;
     ibmProcessData.macrCurr = &macrCPUCurrent;

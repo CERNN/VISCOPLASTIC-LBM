@@ -27,7 +27,7 @@ void immersedBoundaryMethod(
 
     dim3 copyMacrGrid = gridLBM;
     // Only 1 in z
-    copyMacrGrid.z = 1;
+    copyMacrGrid.z = MACR_BORDER_NODES;
     
     unsigned int gridNodesIBM[N_GPUS];
     unsigned int threadsNodesIBM[N_GPUS];
@@ -68,7 +68,7 @@ void immersedBoundaryMethod(
         checkCudaErrors(cudaSetDevice(i));
         int nxt = (i+1) % N_GPUS;
         // Copy macroscopics
-        copyBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[i]>>>(macr[i], macr[nxt]);
+        gpuCopyBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[i]>>>(macr[i], macr[nxt]);
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
         // Reset forces in all IBM nodes;
         gpuResetNodesForces<<<gridNodesIBM[i], threadsNodesIBM[i], 0, streamIBM[0]>>>(particles.nodesSoA[i]);
@@ -103,30 +103,36 @@ void immersedBoundaryMethod(
         gpuUpdateParticleCenterVelocityAndRotation<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
             particles.pCenterArray);
 
+        // Sum border macroscopics
+        for(int j = 0; j < N_GPUS; j++){
+            checkCudaErrors(cudaSetDevice(j));
+            int nxt = j+1;
+            int prv = j-1;
+            if(nxt < N_GPUS)
+                gpuSumBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[nxt], ibmMacrsAux, j, 1);
+            if(prv >= 0)
+                gpuSumBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[prv], ibmMacrsAux, j, -1);
+            checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
+        }
+
         #if IBM_EULER_OPTIMIZATION
         for(int j = 0; j < N_GPUS; j++){
             if(pEulerNodes->currEulerNodes[j] > 0){
                 checkCudaErrors(cudaSetDevice(j));
                 dim3 currGrid(pEulerNodes->currEulerNodes[j]/64+(pEulerNodes->currEulerNodes[j]%64? 1 : 0), 1, 1);
-                ibmEulerCopyVelocities<<<currGrid, 64, 0, streamLBM[0]>>>(macr[j].u, ibmMacrsAux.velAux[j], 
-                    pEulerNodes->eulerIndexesUpdate[j], pEulerNodes->currEulerNodes[j]);
+                ibmEulerSumIBMAuxsReset<<<currGrid, 64, 0, streamLBM[0]>>>(macr[j], ibmMacrsAux,
+                    pEulerNodes->eulerIndexesUpdate[j], pEulerNodes->currEulerNodes[j], j);
             }
         }
         #else
         for(int j = 0; j < N_GPUS; j++){
             checkCudaErrors(cudaSetDevice(j));
-            copyFromArray<<<gridLBM, threadsLBM, 0, streamLBM[j]>>>(macr[j].u, ibmMacrsAux.velAux[j]);
+            // FIXME
+            exit(-1);
+            // copyFromArray<<<gridLBM, threadsLBM, 0, streamLBM[j]>>>(macr[j].u, ibmMacrsAux.velAux[j]);
             checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
         }
         #endif
-
-        // Copy macroscopics
-        for(int j = 0; j < N_GPUS; j++){
-            checkCudaErrors(cudaSetDevice(j));
-            int nxt = (j+1) % N_GPUS;
-            copyBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[j], macr[nxt]);
-            checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
-        }
 
         checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
         checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
@@ -349,6 +355,18 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
     // remove border nodes in z
     int z = (idx / NX) / NY - MACR_BORDER_NODES;
 
+    // Reset values from auxiliary vectors
+    ibmMacrsAux.velAux[n_gpu].x[idx] = 0;
+    ibmMacrsAux.velAux[n_gpu].y[idx] = 0;
+    ibmMacrsAux.velAux[n_gpu].z[idx] = 0;
+    ibmMacrsAux.fAux[n_gpu].x[idx] = 0;
+    ibmMacrsAux.fAux[n_gpu].y[idx] = 0;
+    ibmMacrsAux.fAux[n_gpu].z[idx] = 0;
+
+    // check if it is some kind of border, if so, just not update
+    if(z < 0 || z >= NZ)
+        return;
+
     #else
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
@@ -415,12 +433,6 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
     macr.u.x[idx] = uxVar;
     macr.u.y[idx] = uyVar;
     macr.u.z[idx] = uzVar;
-    ibmMacrsAux.velAux[n_gpu].x[idx] = uxVar;
-    ibmMacrsAux.velAux[n_gpu].y[idx] = uyVar;
-    ibmMacrsAux.velAux[n_gpu].z[idx] = uzVar;
-    ibmMacrsAux.fAux[n_gpu].x[idx] = 0;
-    ibmMacrsAux.fAux[n_gpu].y[idx] = 0;
-    ibmMacrsAux.fAux[n_gpu].z[idx] = 0;
 }
 
 __global__ 
@@ -444,50 +456,79 @@ void gpuResetNodesForces(ParticleNodeSoA particlesNodes)
 
 
 __global__
-void copyBorderMacr(Macroscopics macrBase, Macroscopics macrNext)
+void gpuCopyBorderMacr(Macroscopics macrBase, Macroscopics macrNext)
 {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
-    if (x >= NX || y >= NY)
+    int z = threadIdx.z + blockDim.z * blockIdx.z;
+    if (x >= NX || y >= NY || z >= MACR_BORDER_NODES)
        return;
 
-    const int zm2_w = -2, zm2_r = NZ-2;
-    const int zm1_w = -1, zm1_r = NZ-1;
-    const int zp1_w = NZ, zp1_r = 0;
-    const int zp2_w = NZ+1, zp2_r = 1;
+    // values to read from base and write to next
+    const int zm_w = -z-1, zm_r = NZ-1-z;
+    // values to read from next and write to base
+    const int zp_w = NZ+z, zp_r = z;
 
     // FIXME: wrong, it needs to consider the added values in ghost nodes. 
     // This may be used from the auxiliary velocities vectors 
     // write to next
-    macrNext.u.x[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.u.x[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
-    macrNext.u.y[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.u.y[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
-    macrNext.u.z[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.u.z[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
-    macrNext.f.x[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.f.x[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
-    macrNext.f.y[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.f.y[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
-    macrNext.f.z[idxScalar(x, y, zm2_w+MACR_BORDER_NODES)] = macrBase.f.z[idxScalar(x, y, zm2_r+MACR_BORDER_NODES)];
+    size_t idx_m_w = idxScalar(x, y, zm_w+MACR_BORDER_NODES);
+    size_t idx_m_r = idxScalar(x, y, zm_r+MACR_BORDER_NODES);
+    macrNext.u.x[idx_m_w] = macrBase.u.x[idx_m_r];
+    macrNext.u.y[idx_m_w] = macrBase.u.y[idx_m_r];
+    macrNext.u.z[idx_m_w] = macrBase.u.z[idx_m_r];
+    macrNext.f.x[idx_m_w] = macrBase.f.x[idx_m_r];
+    macrNext.f.y[idx_m_w] = macrBase.f.y[idx_m_r];
+    macrNext.f.z[idx_m_w] = macrBase.f.z[idx_m_r];
 
-    macrNext.u.x[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.u.x[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
-    macrNext.u.y[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.u.y[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
-    macrNext.u.z[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.u.z[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
-    macrNext.f.x[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.f.x[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
-    macrNext.f.y[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.f.y[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
-    macrNext.f.z[idxScalar(x, y, zm1_w+MACR_BORDER_NODES)] = macrBase.f.z[idxScalar(x, y, zm1_r+MACR_BORDER_NODES)];
- 
     // write to base
-    macrBase.u.x[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.u.x[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
-    macrBase.u.y[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.u.y[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
-    macrBase.u.z[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.u.z[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
-    macrBase.f.x[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.f.x[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
-    macrBase.f.y[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.f.y[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
-    macrBase.f.z[idxScalar(x, y, zp1_w+MACR_BORDER_NODES)] = macrNext.f.z[idxScalar(x, y, zp1_r+MACR_BORDER_NODES)];
+    size_t idx_p_w = idxScalar(x, y, zp_w+MACR_BORDER_NODES);
+    size_t idx_p_r = idxScalar(x, y, zp_r+MACR_BORDER_NODES);
+    macrBase.u.x[idx_p_w] = macrNext.u.x[idx_p_r];
+    macrBase.u.y[idx_p_w] = macrNext.u.y[idx_p_r];
+    macrBase.u.z[idx_p_w] = macrNext.u.z[idx_p_r];
+    macrBase.f.x[idx_p_w] = macrNext.f.x[idx_p_r];
+    macrBase.f.y[idx_p_w] = macrNext.f.y[idx_p_r];
+    macrBase.f.z[idx_p_w] = macrNext.f.z[idx_p_r];
+}
+
+
+__global__
+void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int borders){
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    int y = threadIdx.y + blockDim.y * blockIdx.y;
+    int z = threadIdx.z + blockDim.z * blockIdx.z;
+    if (x >= NX || y >= NY || z >= MACR_BORDER_NODES)
+       return;
     
-    
-    macrBase.u.x[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.u.x[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
-    macrBase.u.y[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.u.y[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
-    macrBase.u.z[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.u.z[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
-    macrBase.f.x[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.f.x[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
-    macrBase.f.y[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.f.y[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
-    macrBase.f.z[idxScalar(x, y, zp2_w+MACR_BORDER_NODES)] = macrNext.f.z[idxScalar(x, y, zp2_r+MACR_BORDER_NODES)];
+    size_t read, write;
+    // macr to the right of ibmMacrsAux
+    if(borders == 1){
+        // read from right ghost nodes of ibmMacrsAux
+        read = idxScalar(x, y, NZ+z+MACR_BORDER_NODES);
+        // write to left ghost nodes of macr
+        write = idxScalar(x, y, MACR_BORDER_NODES-z);
+    }
+    // macr to the left of ibmMacrsAux
+    else if(borders == -1){
+        // read from left ghost nodes of ibmMacrsAux
+        read = idxScalar(x, y, MACR_BORDER_NODES-z);
+        // write to right ghost nodes of macr
+        write = idxScalar(x, y, NZ+z+MACR_BORDER_NODES);
+    }
+    // invalid
+    else{
+        return;
+    }
+
+    // Sum velocities
+    macr.u.x[write] += ibmMacrsAux.velAux[n_gpu].x[read];
+    macr.u.y[write] += ibmMacrsAux.velAux[n_gpu].y[read];
+    macr.u.z[write] += ibmMacrsAux.velAux[n_gpu].z[read];
+    // Sum forces
+    macr.f.x[write] += ibmMacrsAux.fAux[n_gpu].x[read];
+    macr.f.y[write] += ibmMacrsAux.fAux[n_gpu].y[read];
+    macr.f.z[write] += ibmMacrsAux.fAux[n_gpu].z[read];
 }
 
 __global__ 
