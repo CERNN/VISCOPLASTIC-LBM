@@ -319,7 +319,7 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "\n------------------------------- CUDA INFORMATION -------------------------------\n";
     for(int i = 0; i < info->numDevices; i++)
     {
-        strSimInfo << "\t      device number: "<< i <<"\n";
+        strSimInfo << "\t      device number: " << GPUS_TO_USE[i] << "\n";
         strSimInfo << "\t               name: " << info->devices[i].name << "\n";
         strSimInfo << "\t    multiprocessors: " << info->devices[i].multiProcessorCount << "\n";
         strSimInfo << "\t compute capability: " << info->devices[i].major << "." << info->devices[i].minor << "\n";
