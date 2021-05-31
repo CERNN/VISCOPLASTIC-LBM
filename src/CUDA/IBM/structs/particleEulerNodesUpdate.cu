@@ -125,10 +125,10 @@ void ParticleEulerNodesUpdate::checkParticlesMovement(){
     // If there is any mask to remove/update (particles that moved)
     if(maskRemove > 0){
         for(int i = 0; i < N_GPUS; i++){
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             removeUnneededEulerNodes(maskRemove, i);
         }
-        checkCudaErrors(cudaSetDevice(0));
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
         int count = 0;
         // Remove bit from fixed particle
         maskRemove >>= shift;
@@ -137,10 +137,10 @@ void ParticleEulerNodesUpdate::checkParticlesMovement(){
         while(maskRemove > 0){
             if(maskRemove & 0b1){
                 for(int i = 0; i < N_GPUS; i++){
-                    checkCudaErrors(cudaSetDevice(i));
+                    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
                     this->updateEulerNodes(this->pCenterMovable[count], 0b1 << (count+shift), i);
                 }
-                checkCudaErrors(cudaSetDevice(0));
+                checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
                 this->particlesLastPos[count] = this->pCenterMovable[count]->pos;
             }
             maskRemove >>= 1;

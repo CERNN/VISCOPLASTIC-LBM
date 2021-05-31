@@ -19,12 +19,12 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
     printf("Allocating particles in GPU... \t"); fflush(stdout);
 
     for(int i = 0; i < N_GPUS; i++){
-        checkCudaErrors(cudaSetDevice(i));
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         this->nodesSoA[i].allocateMemory(totalIbmNodes);
     }
 
     // Allocate particle center array
-    checkCudaErrors(cudaSetDevice(0));
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
     checkCudaErrors(
         cudaMallocManaged((void**)&(this->pCenterArray), sizeof(ParticleCenter) * NUM_PARTICLES));
     // Allocate array of last positions for Particles
@@ -35,11 +35,11 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
 
     for (int p = 0; p < NUM_PARTICLES; p++)
     {
-        checkCudaErrors(cudaSetDevice(0));
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
         this->pCenterArray[p] = particles[p].pCenter;
         this->pCenterLastPos[p] = particles[p].pCenter.pos;
         for(int i = 0; i < N_GPUS; i++){
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             this->nodesSoA[i].copyNodesFromParticle(particles[p], p, i);
         }
     }
@@ -61,7 +61,7 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
 
 void ParticlesSoA::updatedNodesGPUs(){
     for(int i = 0; i < NUM_PARTICLES; i++){
-        checkCudaErrors(cudaSetDevice(0));
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
         if(!this->pCenterArray[i].movable)
             continue;
 
@@ -154,10 +154,10 @@ void ParticlesSoA::updatedNodesGPUs(){
 void ParticlesSoA::freeNodesAndCenters(){
     
     for(int i = 0; i < N_GPUS; i++){
-        checkCudaErrors(cudaSetDevice(i));
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         this->nodesSoA[i].freeMemory();
     }
-    checkCudaErrors(cudaSetDevice(0));
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
     cudaFree(this->pCenterArray);
     free(this->pCenterLastPos);
     this->pCenterArray = nullptr;

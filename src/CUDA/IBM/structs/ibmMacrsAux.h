@@ -31,7 +31,7 @@ public:
     {
         for(int i = 0; i < N_GPUS; i++)
         {
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             this->velAux[i].allocateMemory(NUMBER_LBM_IB_MACR_NODES, IN_VIRTUAL);
             this->fAux[i].allocateMemory(NUMBER_LBM_IB_MACR_NODES, IN_VIRTUAL);
         }
@@ -43,7 +43,7 @@ public:
     {
         for(int i = 0; i < N_GPUS; i++)
         {
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             this->velAux[i].freeMemory();
             this->fAux[i].freeMemory();
         }

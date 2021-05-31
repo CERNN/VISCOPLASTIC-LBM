@@ -99,7 +99,7 @@ int main()
 
     for(int i = 0; i < N_GPUS; i++)
     {
-        checkCudaErrors(cudaSetDevice(i));
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         checkCudaErrors(cudaGetDeviceProperties(&(info.devices[i]), i));
 
         checkCudaErrors(cudaStreamCreate(&streamsLBM[i]));
@@ -161,12 +161,12 @@ int main()
     // Divide in two fors to allow kernels of "gpuBuilBoundaryConditions"
     // to run in parallel. Otherwise they would run sequentially
     for(int i = 0; i < N_GPUS; i++){
-        checkCudaErrors(cudaSetDevice(i));
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         gpuBuildBoundaryConditions<<<grid, threads>>>(pop[i].mapBC, i);
         getLastCudaError("Initialization error");
     }
     for (int i = 0; i < N_GPUS; i++) {
-        checkCudaErrors(cudaSetDevice(i));
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         cudaDeviceSynchronize();
     }
 
@@ -195,7 +195,7 @@ int main()
         fclose (filePopAux);
 
         for(int i = 0; i < N_GPUS; i++){
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             gpuUpdateMacr<<<grid, threads>>>(pop[i], macr[i]);
             getLastCudaError("Update macroscopics error");
             checkCudaErrors(cudaDeviceSynchronize());
@@ -254,7 +254,7 @@ int main()
         }
         
         for(int i = 0; i < N_GPUS; i++){
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             // Copy macroscopics to GPU if required
             if(LOAD_MACR){
                 size_t baseIdx = i*NUMBER_LBM_NODES;
@@ -288,7 +288,7 @@ int main()
     // Free random numbers
     if (RANDOM_NUMBERS) {
         for (int i = 0; i < N_GPUS; i++) {
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             cudaFree(randomNumbers[i]);
         }
         free(randomNumbers);
@@ -328,7 +328,7 @@ int main()
 
         // LBM solver
         for(int i = 0; i < N_GPUS; i++){
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             gpuMacrCollisionStream<<<grid, threads>>>
                 (pop[i].pop, pop[i].popAux, pop[i].mapBC, macr[i],
                 save_macr_to_array, step);
@@ -344,13 +344,13 @@ int main()
         */
 
         for(int i = 0; i < N_GPUS; i++) {
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             checkCudaErrors(cudaDeviceSynchronize());
         }
 
         // Populations ghost nodes transfer
         for(int i = 0; i < N_GPUS; i++){
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             int nxt = (i+1)%N_GPUS;
             gpuPopulationsTransfer<<<gridTransfer, threadsTransfer>>>
                 (pop[i].pop, pop[i].popAux, pop[nxt].pop, pop[nxt].popAux);
@@ -360,7 +360,7 @@ int main()
 
         // Boundary conditions
         for(int i = 0; i < N_GPUS; i++){
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             if(bcInfos[i].totalBCNodes > 0){
                 gpuApplyBC<<<gridsBC[i], threadsBC>>>
                     (pop[i].mapBC, pop[i].popAux, pop[i].pop, 
@@ -371,7 +371,7 @@ int main()
 
         // Synchronize and swap populations
         for (int i = 0; i < N_GPUS; i++) {
-            checkCudaErrors(cudaSetDevice(i));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             checkCudaErrors(cudaDeviceSynchronize());
             pop[i].swapPop();
         }
@@ -408,7 +408,7 @@ int main()
             if(rep)
                 macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
             for(int i = 0; i < N_GPUS; i++){
-                checkCudaErrors(cudaSetDevice(i));
+                checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
                 macrCPUCurrent.copyMacr(&macr[i], NUMBER_LBM_NODES*i);
                 checkCudaErrors(cudaDeviceSynchronize());
             }
@@ -515,7 +515,7 @@ int main()
     // Free memory for each GPU
     for(int i = 0; i < N_GPUS; i++)
     {
-        checkCudaErrors(cudaSetDevice(i));
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         checkCudaErrors(cudaStreamDestroy(streamsLBM[i]));
         #ifdef IBM
         checkCudaErrors(cudaStreamDestroy(streamsIBM[i]));

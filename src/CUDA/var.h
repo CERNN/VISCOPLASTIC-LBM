@@ -83,6 +83,8 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
+constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0};    // Which GPUs to use
+
 
 constexpr int N = 60*SCALE;
 constexpr int NX = 64*SCALE;        // size x of the grid 
