@@ -261,7 +261,7 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
 }
 
 __global__
-void ibmEulerSumIBMAuxsReset(Macroscopics macr, IBMMacrsAux ibmMacrsAux, 
+void gpuEulerSumIBMAuxsReset(Macroscopics macr, IBMMacrsAux ibmMacrsAux, 
     size_t* eulerIdxsUpdate, unsigned int currEulerNodes, int n_gpu){
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
 

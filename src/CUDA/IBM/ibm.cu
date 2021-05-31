@@ -52,6 +52,7 @@ void immersedBoundaryMethod(
             gpuUpdateMacrIBM<<<currGrid, 64, 0, streamLBM[0]>>>(pop[i], macr[i], ibmMacrsAux, i,
                 pEulerNodes->eulerIndexesUpdate[i], pEulerNodes->currEulerNodes[i]);
             checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
+            getLastCudaError("IBM update macr euler error\n");
         }
     }
     #else
@@ -61,6 +62,7 @@ void immersedBoundaryMethod(
         // Update macroscopics post boundary conditions and reset forces
         gpuUpdateMacrIBM<<<gridLBM, threadsLBM, 0, streamLBM[i]>>>(pop[i], macr[i], ibmMacrsAux, i);
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
+        getLastCudaError("IBM update macr error\n");
     }
     #endif
 
@@ -70,9 +72,14 @@ void immersedBoundaryMethod(
         // Copy macroscopics
         gpuCopyBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[i]>>>(macr[i], macr[nxt]);
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
-        // Reset forces in all IBM nodes;
-        gpuResetNodesForces<<<gridNodesIBM[i], threadsNodesIBM[i], 0, streamIBM[0]>>>(particles.nodesSoA[i]);
-        checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+        getLastCudaError("Copy macroscopics border error\n");
+        // If GPU has nodes in it
+        if(particles.nodesSoA[i].numNodes > 0){
+            // Reset forces in all IBM nodes;
+            gpuResetNodesForces<<<gridNodesIBM[i], threadsNodesIBM[i], 0, streamIBM[0]>>>(particles.nodesSoA[i]);
+            checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+            getLastCudaError("Reset IBM nodes forces error\n");
+        }
     }
 
     // Calculate collision force between particles
@@ -85,23 +92,30 @@ void immersedBoundaryMethod(
     checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
     gpuUpdateParticleCenterVelocityAndRotation <<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0] >>>(
         particles.pCenterArray);
+    getLastCudaError("IBM update particle center velocity error\n");
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
         for(int j = 0; j < N_GPUS; j++){
-            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
-            // Make the interpolation of LBM and spreading of IBM forces
-            gpuForceInterpolationSpread<<<gridNodesIBM[j], threadsNodesIBM[j], 
-                0, streamIBM[j]>>>(
-                particles.nodesSoA[j], particles.pCenterArray, macr[j], ibmMacrsAux, j);
-            checkCudaErrors(cudaStreamSynchronize(streamIBM[j]));
+            // If GPU has nodes in it
+            if(particles.nodesSoA[j].numNodes > 0){
+                checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
+                // Make the interpolation of LBM and spreading of IBM forces
+                gpuForceInterpolationSpread<<<gridNodesIBM[j], threadsNodesIBM[j], 
+                    0, streamIBM[j]>>>(
+                    particles.nodesSoA[j], particles.pCenterArray, macr[j], ibmMacrsAux, j);
+                checkCudaErrors(cudaStreamSynchronize(streamIBM[j]));
+                getLastCudaError("IBM interpolation spread error\n");
+            }
         }
 
         checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
         // Update particle velocity using body center force and constant forces
         gpuUpdateParticleCenterVelocityAndRotation<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
             particles.pCenterArray);
+        checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+        getLastCudaError("IBM update particle center velocity error\n");
 
         // Sum border macroscopics
         for(int j = 0; j < N_GPUS; j++){
@@ -113,6 +127,7 @@ void immersedBoundaryMethod(
             if(prv >= 0)
                 gpuSumBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[prv], ibmMacrsAux, j, -1);
             checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
+            getLastCudaError("Sum border macroscopics error\n");
         }
 
         #if IBM_EULER_OPTIMIZATION
@@ -120,8 +135,10 @@ void immersedBoundaryMethod(
             if(pEulerNodes->currEulerNodes[j] > 0){
                 checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
                 dim3 currGrid(pEulerNodes->currEulerNodes[j]/64+(pEulerNodes->currEulerNodes[j]%64? 1 : 0), 1, 1);
-                ibmEulerSumIBMAuxsReset<<<currGrid, 64, 0, streamLBM[0]>>>(macr[j], ibmMacrsAux,
+                gpuEulerSumIBMAuxsReset<<<currGrid, 64, 0, streamLBM[j]>>>(macr[j], ibmMacrsAux,
                     pEulerNodes->eulerIndexesUpdate[j], pEulerNodes->currEulerNodes[j], j);
+                checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
+                getLastCudaError("IBM sum auxiliary values error\n");
             }
         }
         #else
@@ -143,16 +160,20 @@ void immersedBoundaryMethod(
     gpuParticleMovement<<<GRID_PARTICLES_IBM, THREADS_PARTICLES_IBM, 0, streamIBM[0]>>>(
         particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
-    
+    getLastCudaError("IBM particle movement error\n");
+
     for(int i = 0; i < N_GPUS; i++){
-        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
-        // Update particle nodes positions
-        gpuParticleNodeMovement<<<gridNodesIBM[i], threadsNodesIBM[i], 0, streamIBM[0]>>>(
-            particles.nodesSoA[i], particles.pCenterArray);
-        checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+        // If GPU has nodes in it
+        if(particles.nodesSoA[i].numNodes > 0){
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+            // Update particle nodes positions
+            gpuParticleNodeMovement<<<gridNodesIBM[i], threadsNodesIBM[i], 0, streamIBM[0]>>>(
+                particles.nodesSoA[i], particles.pCenterArray);
+            checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+            getLastCudaError("IBM particle movement error\n");
+        }
     }
 
-    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     checkCudaErrors(cudaDeviceSynchronize());
 }
 
