@@ -295,6 +295,7 @@ int main()
     }
 
     // Timing
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
     cudaEvent_t start, stop;
     checkCudaErrors(cudaEventCreate(&start));
     checkCudaErrors(cudaEventCreate(&stop));
@@ -466,6 +467,7 @@ int main()
     /* ---------------------------------------------------------------------- */
 
     // Timing
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
     checkCudaErrors(cudaEventRecord(stop, 0));
     checkCudaErrors(cudaEventSynchronize(stop));
     checkCudaErrors(cudaEventElapsedTime(&(info.timeElapsed), start, stop));
