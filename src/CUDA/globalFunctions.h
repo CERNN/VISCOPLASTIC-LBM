@@ -101,7 +101,7 @@ dfloat __forceinline__ randGauss(const unsigned long long int seed, const unsign
 
 
 /*
-*   @brief Evaluate the position of the element of a 3D matrix ([NX][NY][NZ+4]) 
+*   @brief Evaluate the position of the element of a 3D matrix ([NX][NY][NZ]) 
 *         in a 1D array
 *   @param x: x axis value
 *   @param y: y axis value
@@ -117,7 +117,7 @@ size_t __forceinline__ idxScalar(unsigned int x, unsigned int y, unsigned int z)
 
 /*
 *   @brief Evaluate the element of the population of a 4D matrix 
-*          ([NX][NY][NZ][Q]) in a 1D array
+*          ([NX][NY][NZ+1][Q]) in a 1D array
 *   @param x: x axis value
 *   @param y: y axis value
 *   @param z: z axis value
