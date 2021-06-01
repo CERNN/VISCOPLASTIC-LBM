@@ -129,7 +129,7 @@ void gpuInitialization(
     if (x >= NX || y >= NY || z >= NZ)
         return;
 
-    size_t index = idxScalar(x, y, z);
+    size_t index = idxScalar(x, y, z+MACR_BORDER_NODES);
 
     if (!isMacrInit)
     {

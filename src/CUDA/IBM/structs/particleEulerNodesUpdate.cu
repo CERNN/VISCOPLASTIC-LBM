@@ -54,7 +54,7 @@ void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICL
     // Allocate variables
     for(int i = 0; i < N_GPUS; i++){
         // Allocate indexes of Euler nodes to update
-        checkCudaErrors(cudaMalloc((void**)&(this->eulerIndexesUpdate[i]), 
+        checkCudaErrors(cudaMallocManaged((void**)&(this->eulerIndexesUpdate[i]), 
             this->maxEulerNodes*sizeof(size_t)));
         // Allocate mask array
         this->eulerMaskArray[i] = (uint32_t*) malloc((size_t)NX*NY*NZ*sizeof(uint32_t));

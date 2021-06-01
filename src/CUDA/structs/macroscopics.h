@@ -130,21 +130,21 @@ public:
     {
         size_t memSize = (all_domain ? TOTAL_MEM_SIZE_SCALAR : MEM_SIZE_SCALAR);
 
-        // Constants base index, to use for macroscopics that do not have ghost nodes (omega)
-        size_t cteBaseIdx = baseIdx, cteBaseIdxRef = baseIdxRef;
-
         cudaStream_t streamRho, streamUx, streamUy, streamUz;
         #if defined(IBM) && EXPORT_FORCES
         cudaStream_t streamFx, streamFy, streamFz;
         #endif
         #ifdef NON_NEWTONIAN_FLUID
         cudaStream_t streamOmega;
+        // Constants base index, to use for macroscopics that do not have ghost nodes (omega)
+        size_t cteBaseIdx = baseIdx, cteBaseIdxRef = baseIdxRef;
         #endif
+
         // Sum ghost index of ghost nodes, to not consider it
         if(this->varLocation == IN_VIRTUAL)
-            baseIdx += idxScalar(0, 0, 2);
+            baseIdx += idxScalar(0, 0, MACR_BORDER_NODES);
         if(macrRef->varLocation == IN_VIRTUAL)
-            baseIdxRef += idxScalar(0, 0, 2);
+            baseIdxRef += idxScalar(0, 0, MACR_BORDER_NODES);
 
         checkCudaErrors(cudaStreamCreate(&(streamRho)));
         checkCudaErrors(cudaStreamCreate(&(streamUx)));
