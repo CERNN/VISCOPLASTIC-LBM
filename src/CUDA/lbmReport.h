@@ -86,20 +86,6 @@ void saveAllMacrBin(
     unsigned int nSteps
 );
 
-
-/*
-*   Save all macroscopics in csv format (x y z macroscopics)
-*   @param macr: macroscopics to save
-*   @param nSteps: number of steps of the simulation
-*   @obs Check CPU endianess
-*   @obs The initial position of the array is x=0 and y=0 and z=0, 
-*        so the variables starts on SWF and ends in NEB
-*/
-void saveAllMacrCsv(
-    Macroscopics* macr, 
-    unsigned int nSteps
-);
-
 /*
 *   Get string with simulation information
 *   @param info: simulation's informations

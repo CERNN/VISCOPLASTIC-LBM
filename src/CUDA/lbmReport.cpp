@@ -165,39 +165,6 @@ void saveAllMacrBin(
     #endif
 }
 
-
-void saveAllMacrCsv(
-    Macroscopics* macr, 
-    unsigned int nSteps)
-{
-    std::string strOutFile;
-    FILE *outFile = nullptr;
-    
-    strOutFile = getVarFilename("macr", nSteps, ".csv");
-
-    outFile = fopen(strOutFile.c_str(), "w");
-    if(outFile != nullptr)
-    {
-        std::string header = "x\ty\tz\trho\tux\tux\tuy\tuz\n";
-        fprintf(outFile, "%s", header.c_str());
-        for(int z = 0; z < NZ; z++)
-            for(int y = 0; y < NY; y++)
-                for(int x = 0; x < NX; x++)
-                {
-                    // +MACR_BORDER_NODES because of the ghost nodes
-                    size_t idx = idxScalar(x, y, z+MACR_BORDER_NODES);
-                    fprintf(outFile, "%d\t%d\t%d\t%.6e\t%.6e\t%.6e\t%.6e\n", 
-                        x, y, z, macr->rho[idx], macr->u.x[idx], macr->u.y[idx], 
-                        macr->u.z[idx]);
-                }
-        fclose(outFile);
-    }
-    else
-    {
-        printf("Error saving \"%s\" \nProbably wrong path!\n", strOutFile.c_str());
-    }
-}
-
 std::string getSimInfoString(SimInfo* info)
 {
     std::ostringstream strSimInfo("");
