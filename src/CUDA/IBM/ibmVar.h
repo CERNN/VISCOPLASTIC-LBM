@@ -22,6 +22,8 @@
 #define IBM_MAX_ITERATION 1
 // Particles diameters
 #define PARTICLE_DIAMETER (20)
+// Change to location of nodes http://dx.doi.org/10.1016/j.jcp.2012.02.026
+#define BREUGEM_PARAMETER (0.3)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -100,33 +102,37 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 #if defined SOFT_SPHERE
 
 
-constexpr dfloat FRICTION_COEF = 0.0923; // friction coeficient
-constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
+constexpr dfloat PP_FRICTION_COEF = 0.0923; // friction coeficient particle particle
+constexpr dfloat PW_FRICTION_COEF = 0.0923; // friction coeficient particle wall
+constexpr dfloat PP_REST_COEF = 0.98; // restitution coeficient particle particle
+constexpr dfloat PW_REST_COEF = 0.98; // restitution coeficient particle wall
 //#define REST_COEF_CORRECTION
 
 
 //material properties
-constexpr dfloat YOUNG_MODULUS = 385.0;
-constexpr dfloat POISSON_RATIO = 0.24;
-constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
+constexpr dfloat PARTICLE_YOUNG_MODULUS = 385.0;
+constexpr dfloat PARTICLE_POISSON_RATIO = 0.24;
+constexpr dfloat PARTICLE_SHEAR_MODULUS = PARTICLE_YOUNG_MODULUS / (2.0+2.0*PARTICLE_POISSON_RATIO);
+
+constexpr dfloat WALL_YOUNG_MODULUS = 385.0;
+constexpr dfloat WALL_POISSON_RATIO = 0.24;
+constexpr dfloat WALL_SHEAR_MODULUS = WALL_YOUNG_MODULUS / (2.0+2.0*WALL_POISSON_RATIO);
 
 
 //Hertzian contact theory -  Johnson 1985
-constexpr dfloat STIFFNESS_NORMAL_CONST = (2.0/3.0) * (YOUNG_MODULUS / (1-POISSON_RATIO*POISSON_RATIO)); // its 2 instead of 4, because same shear modulus
+constexpr dfloat PP_STIFFNESS_NORMAL_CONST = (2.0/3.0) * (PARTICLE_YOUNG_MODULUS / (1-PARTICLE_POISSON_RATIO*PARTICLE_POISSON_RATIO)); // its 2 instead of 4, because same shear modulus
+constexpr dfloat PW_STIFFNESS_NORMAL_CONST = (4.0/3.0) / ((1-WALL_POISSON_RATIO*WALL_POISSON_RATIO)/WALL_YOUNG_MODULUS+(1-PARTICLE_POISSON_RATIO*PARTICLE_POISSON_RATIO)/PARTICLE_YOUNG_MODULUS);
 //Mindlin theory 1949
-constexpr dfloat STIFFNESS_TANGENTIAL_CONST =  4.0 * (SHEAR_MODULUS / (1 - POISSON_RATIO*POISSON_RATIO)); // its 4 instead of 8, because same shear modulus
+constexpr dfloat PP_STIFFNESS_TANGENTIAL_CONST =  4.0 * (PARTICLE_SHEAR_MODULUS / (1 - PARTICLE_POISSON_RATIO*PARTICLE_POISSON_RATIO)); // its 4 instead of 8, because same shear modulus
+constexpr dfloat PW_STIFFNESS_TANGENTIAL_CONST =  8.0 / ((1-WALL_POISSON_RATIO*WALL_POISSON_RATIO)/WALL_SHEAR_MODULUS+(1-PARTICLE_POISSON_RATIO*PARTICLE_POISSON_RATIO)/PARTICLE_SHEAR_MODULUS);
 // Tsuji 1979
 //constexpr dfloat DAMPING_NORMAL_CONST =       - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)));
 //constexpr dfloat DAMPING_TANGENTIAL_CONST =   - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF))); 
 
-#ifdef REST_COEF_CORRECTION
-constexpr dfloat FRICTION_COEF_CORRECTED = 1/((16.21*REST_COEF+15.58*REST_COEF*REST_COEF*REST_COEF)/((1-REST_COEF*REST_COEF)*(1-REST_COEF*REST_COEF)+(5.53*REST_COEF)*(5.53*REST_COEF)));
-#endif 
-
-
 //#define LUBRICATION_FORCE
 #if defined LUBRICATION_FORCE
-    constexpr dfloat LUBRICATION_DISTANCE = 2;
+    constexpr dfloat MAX_LUBRICATION_DISTANCE = 2;
+    constexpr dfloat MIN_LUBRICATION_DISTANCE = 0.001;
 #endif
 
 
