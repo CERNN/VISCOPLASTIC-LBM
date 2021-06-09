@@ -530,7 +530,7 @@ void gpuSoftSphereWallCollision(
 
     const dfloat STIFFNESS_NORMAL = PW_STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
     const dfloat STIFFNESS_TANGENTIAL = PW_STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (displacement);
-    const dfloat damping_const = (- 2.0 * log(PW_FRICTION_COEF)  / (sqrt(M_PI*M_PI + log(PW_FRICTION_COEF)*log(PW_FRICTION_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+    const dfloat damping_const = (- 2.0 * log(PW_REST_COEF)  / (sqrt(M_PI*M_PI + log(PW_REST_COEF)*log(PW_REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
     const dfloat DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
     const dfloat DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
 
