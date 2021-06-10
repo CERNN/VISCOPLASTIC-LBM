@@ -417,6 +417,7 @@ void gpuUpdateParticleCenterVelocityAndRotation(
     // (Crank-Nicolson implicit scheme)
     for (int i = 0; error > 1e-6; i++)
     {
+        //TODO the last term should be present in dL equation, but since it does not affect spheres, it will stay for now.
         wNew.x = pc->w_old.x + (((M.x * IBM_MOVEMENT_DISCRETIZATION + M_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION)) + pc->dL_internal.x) 
                 - (I.z - I.y)*(w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION ) 
                 * (w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION))/I.x;
@@ -481,11 +482,11 @@ void gpuUpdateParticleOldValues(
     pc->dP_internal.y = 0.0; //RHO_0 * pc->volume * (pc->vel.y - pc->vel_old.y);
     pc->dP_internal.z = 0.0; //RHO_0 * pc->volume * (pc->vel.z - pc->vel_old.z);
 
-    // Internal angular momentum delta = I*delta(omega)/delta(t)
+    // Internal angular momentum delta = (rho_f/rho_p)*I*delta(omega)/delta(t)
     // https://doi.org/10.1016/j.compfluid.2011.05.011
-    pc->dL_internal.x = 0.0; //pc->I.x * (pc->w.x - pc->w_old.x);
-    pc->dL_internal.y = 0.0; //pc->I.y * (pc->w.y - pc->w_old.y);
-    pc->dL_internal.z = 0.0; //pc->I.z * (pc->w.z - pc->w_old.z);
+    pc->dL_internal.x = 0.0; //(RHO_0 / pc->density) * pc->I.x * (pc->w.x - pc->w_old.x);
+    pc->dL_internal.y = 0.0; //(RHO_0 / pc->density) * pc->I.y * (pc->w.y - pc->w_old.y);
+    pc->dL_internal.z = 0.0; //(RHO_0 / pc->density) * pc->I.z * (pc->w.z - pc->w_old.z);
 
     pc->pos_old.x = pc->pos.x;
     pc->pos_old.y = pc->pos.y;
