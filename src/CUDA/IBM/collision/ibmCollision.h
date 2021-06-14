@@ -11,6 +11,7 @@
 #define __IBM_COLLISION_H
 
 #include "../ibmVar.h"
+#include "../ibmBoundaryCondition.h"
 
 #include "../ibmGlobalFunctions.h"
 #include "../../structs/globalStructs.h"
