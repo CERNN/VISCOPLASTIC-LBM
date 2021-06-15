@@ -7,7 +7,7 @@ void createParticles(Particle particles[NUM_PARTICLES])
     dfloat3 bCenter[NUM_PARTICLES];
     unsigned int totalIbmNodes = 0;
 
-    /*
+    /* STAGGERED POSITION
     int id = 0;
     dfloat a,b,c;
     dfloat Lx = NX/(5.0+1.0);
@@ -28,6 +28,54 @@ void createParticles(Particle particles[NUM_PARTICLES])
         }
     }
     */
+
+   /* RANDOM PLACEMENT SPHERES
+
+    std::random_device                  rand_dev;
+    std::minstd_rand        generator(rand_dev());
+    std::uniform_int_distribution<int>  distr(0, RAND_MAX);
+
+    dfloat x_limit_B = PARTICLE_DIAMETER / 2.0;
+    dfloat x_limit_E = NX - PARTICLE_DIAMETER / 2.0;
+    dfloat y_limit_B = PARTICLE_DIAMETER / 2.0;
+    dfloat y_limit_E = NY - PARTICLE_DIAMETER / 2.0;
+    dfloat z_limit_B = PARTICLE_DIAMETER / 2.0;
+    dfloat z_limit_E = NZ - PARTICLE_DIAMETER / 2.0;
+
+    dfloat px = x_limit_B + (x_limit_E - x_limit_B) * distr(generator) / RAND_MAX;
+    dfloat py = y_limit_B + (y_limit_E - y_limit_B) * distr(generator) / RAND_MAX;
+    dfloat pz = z_limit_B + (z_limit_E - z_limit_B) * distr(generator) / RAND_MAX;
+
+    dfloat3 center[NUM_PARTICLES];
+    center[0].x = px;
+    center[0].y = py;
+    center[0].z = pz;
+
+    bool next_index;
+    dfloat dist;
+
+    int i, j;
+    for ( i = 1; i < NUM_PARTICLES; i++) {
+        px = x_limit_B + (x_limit_E - x_limit_B) * distr(generator) / RAND_MAX;
+        py = y_limit_B + (y_limit_E - y_limit_B) * distr(generator) / RAND_MAX;
+        pz = z_limit_B + (z_limit_E - z_limit_B) * distr(generator) / RAND_MAX;
+
+        next_index = false;
+        for (j = 0; j < i; j++) {
+            dist = sqrt((px - center[j].x) * (px - center[j].x) + (py - center[j].y) * (py - center[j].y) + (pz - center[j].z) * (pz - center[j].z));
+            if (dist < PARTICLE_DIAMETER) {
+                j = -1;
+                px = x_limit_B + (x_limit_E - x_limit_B) * distr(generator) / RAND_MAX;
+                py = y_limit_B + (y_limit_E - y_limit_B) * distr(generator) / RAND_MAX;
+                pz = z_limit_B + (z_limit_E - z_limit_B) * distr(generator) / RAND_MAX;
+            }
+        }
+        center[i].x = px;
+        center[i].y = py;
+        center[i].z = pz;
+    }
+   
+   */
 
     
     // Falling sphere
