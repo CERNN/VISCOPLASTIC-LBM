@@ -31,8 +31,8 @@ void createParticles(Particle particles[NUM_PARTICLES])
 
    /* RANDOM PLACEMENT SPHERES
 
-    std::random_device                  rand_dev;
-    std::minstd_rand        generator(rand_dev());
+    std::random_device rand_dev;
+    std::minstd_rand generator(rand_dev());
     std::uniform_int_distribution<int>  distr(0, RAND_MAX);
 
     dfloat x_limit_B = PARTICLE_DIAMETER / 2.0;
