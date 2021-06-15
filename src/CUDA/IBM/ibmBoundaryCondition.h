@@ -14,15 +14,82 @@
 #include <stdio.h>
 #include <math.h>
 
-//collision schemes
-//#define HARD_SPHERE
-#define SOFT_SPHERE //https://doi.org/10.1201/b11103  chapter 5
+/* -------------------------- BOUNDARY CONDITIONS -------------------------- */
+
+// --- X direction ---
+#define IBM_BC_X_WALL
+//#define IBM_BC_X_PERIODIC
+
+#ifdef IBM_BC_X_WALL
+    // TODO: not implemented yet
+    #define IBM_BC_X_WALL_UY 0.0
+    #define IBM_BC_X_WALL_UZ 0.0
+#endif //IBM_BC_X_WALL
+
+#ifdef IBM_BC_X_PERIODIC
+    #define IBM_BC_X_0 0.0
+    #define IBM_BC_X_E NX
+#endif //IBM_BC_X_PERIODIC
+
+
+
+// --- Y direction ---
+#define IBM_BC_Y_WALL
+//#define IBM_BC_Y_PERIODIC
+
+#ifdef IBM_BC_Y_WALL
+    // TODO: not implemented yet
+    #define IBM_BC_Y_WALL_UX 0.0
+    #define IBM_BC_Y_WALL_UZ 0.0
+#endif //IBM_BC_Y_WALL
+
+#ifdef IBM_BC_Y_PERIODIC
+    #define IBM_BC_Y_0 0.0
+    #define IBM_BC_Y_E NY
+#endif //IBM_BC_Y_PERIODIC
+
+
+
+// --- Z direction ---
+#define IBM_BC_Z_WALL
+//#define IBM_BC_Z_PERIODIC
+
+#ifdef IBM_BC_Z_WALL
+    // TODO: not implemented yet
+    #define IBM_BC_Z_WALL_UX 0.0
+    #define IBM_BC_Z_WALL_UY 0.0
+#endif //IBM_BC_Z_WALL
+
+#ifdef IBM_BC_Z_PERIODIC
+    #define IBM_BC_Z_0 0.0
+    #define IBM_BC_Z_E NZ
+#endif //IBM_BC_Z_PERIODIC
+
+
+// ----------- DUCT BOUNDARY CONDITION ----------- 
+
 //#define EXTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack or annularDuctInterpBounceBack
 //#define INTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack
-#define trackerCollisionSize 18
+
+#ifdef EXTERNAL_DUCT_BC // same as in circularDuctInterpBounceBack
+    #define EXTERNAL_DUCT_BC_RADIUS (NY/2.0-0.5)
+#endif //EXTERNAL_DUCT_BC
+
+#ifdef INTERNAL_DUCT_BC // same as in annularDuctInterpBounceBack
+    #define INTERNAL_DUCT_BC_RADIUS (R/4.0)
+#endif //INTERNAL_DUCT_BC
+
+/* -------------------------------------------------------------------------- */
 
 
 /* -------------------------- COLLISION PARAMETERS -------------------------- */
+
+//collision schemes
+//#define HARD_SPHERE
+#define SOFT_SPHERE //https://doi.org/10.1201/b11103  chapter 5
+#define trackerCollisionSize 18
+
+
 // Soft sphere
 #if defined SOFT_SPHERE
 
