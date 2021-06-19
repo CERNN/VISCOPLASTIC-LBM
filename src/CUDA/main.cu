@@ -413,6 +413,19 @@ int main()
                 macrCPUCurrent.copyMacr(&macr[i], NUMBER_LBM_NODES*i);
                 checkCudaErrors(cudaDeviceSynchronize());
             }
+
+            // for(int z = 0; z < NZ_TOTAL; z++)
+            // {
+            //     for(int y = 0; y < NY; y++)
+            //     {
+            //         for(int x = 0; x < NX; x++)
+            //         {
+            //             size_t idx = idxScalar(x, y, z);
+            //             size_t idxGPU = idxScalar(x, y, z+MACR_BORDER_NODES);
+            //             printf("(z, y, x) %d %d %d (rho cpu, gpu) %.2f, %.2f\n", z, y, x, macrCPUCurrent.rho[idx], macr[0].rho[idxGPU]);
+            //         }
+            //     }
+            // }
         }
 
         // Save macroscopics

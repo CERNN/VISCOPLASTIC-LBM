@@ -38,7 +38,6 @@ void treatData(MacrProc* processing)
             for(int x = 0; x < NX; x++)
             {
                 size_t idx = idxScalar(x, y, z);
-
                 /* ------- Residual calculation ------- */
                 const dfloat diff_ux = macrCurr->u.x[idx] - macrOld->u.x[idx];
                 const dfloat diff_uy = macrCurr->u.y[idx] - macrOld->u.y[idx];

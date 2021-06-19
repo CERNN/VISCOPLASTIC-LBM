@@ -68,8 +68,8 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (100)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (100)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (1000)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (0)                   // Report IBM treated data every given steps (0 not report)
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE false                 // save reported IBM data to file
@@ -116,7 +116,7 @@ constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 // Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
 #if defined HARD_SPHERE
 constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
-constexpr dfloat REST_COEF = 0.8; // restitution coeficient   
+constexpr dfloat REST_COEF = 0.8; // restitution coeficient
 #endif
 /* -------------------------------------------------------------------------- */
 

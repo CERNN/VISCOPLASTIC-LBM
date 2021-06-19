@@ -36,17 +36,16 @@
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
 #define ID_SIM "000"            // prefix for simulation's files
-#define PATH_FILES "TEST"  // path to save simulation's files
+#define PATH_FILES "teste_pra_valer"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
 /* ------------------------------------------------------------------------- */
 
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
-constexpr unsigned int SCALE = 1;
-constexpr int N_STEPS = 10000;          // maximum number of time steps
+constexpr int N_STEPS = 100000;          // maximum number of time steps
 #define MACR_SAVE (0)                  // saves macroscopics every MACR_SAVE steps
-#define DATA_REPORT (0)                // report every DATA_REPORT steps
+#define DATA_REPORT (1000)                // report every DATA_REPORT steps
  
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
@@ -86,12 +85,12 @@ constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0};    // Which GPUs to use
 
 
-constexpr int N = 60*SCALE;
-constexpr int NX = 64*SCALE;        // size x of the grid 
+constexpr int N = 64;
+constexpr int NX = 64;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr int NY = 64*SCALE;        // size y of the grid
-constexpr int NZ = 128*SCALE;        // size z of the grid in one GPU
-constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
+constexpr int NY = 64;        // size y of the grid
+constexpr int NZ = 64/N_GPUS;        // size z of the grid in one GPU
+constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid (DO NOT ALTER)
 
 constexpr dfloat U_MAX = 0;           // max velocity
 
