@@ -28,6 +28,7 @@
 #include "lbmReport.h"
 #include "lbm.h"
 #include "lbmInitialization.h"
+#include "simCheckpoint.h"
 #include "boundaryConditionsBuilder.h"
 #include "structs/boundaryConditionsInfo.h"
 
@@ -131,9 +132,6 @@ int main()
 
     particlesSoA.updateParticlesAsSoA(particles);
     ibmMacrsAux.ibmMacrsAuxAllocation();
-    #if IBM_EULER_OPTIMIZATION
-    pEulerNodes.initializeEulerNodes(particlesSoA.pCenterArray);
-    #endif
     getLastCudaError("IBM setup error");
 
     ibmProcessData.step = &step;
@@ -170,6 +168,7 @@ int main()
         cudaDeviceSynchronize();
     }
 
+    // Build auxiliary informations of boundary conditions for each GPU
     NodeTypeMap* hMapBC;
     checkCudaErrors(cudaMallocHost((void**)(&hMapBC), MEM_SIZE_MAP_BC));
     for(int i = 0; i < N_GPUS; i++){
@@ -181,102 +180,34 @@ int main()
 
     /* ------------------------- LBM INITIALIZATION ------------------------- */
     // Load populations from files
-    if(LOAD_POP)
+    if(LOAD_CHECKPOINT)
     {
-        FILE* filePop = fopen(STR_POP, "rb");
-        FILE* filePopAux = fopen(STR_POP_AUX, "rb");
-        if(filePop == nullptr || filePopAux == nullptr)
-        {
-            printf("Error reading population file\n");
-            return -1;
-        }
-        initializationPop(pop, filePop, filePopAux);
-        fclose (filePop);
-        fclose (filePopAux);
-
-        for(int i = 0; i < N_GPUS; i++){
-            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
-            gpuUpdateMacr<<<grid, threads>>>(pop[i], macr[i]);
-            getLastCudaError("Update macroscopics error");
-            checkCudaErrors(cudaDeviceSynchronize());
-        }
+        loadSimCheckpoint(pop, macr, particlesSoA, &step);
     }
-    else 
+    else
     {
-        // Load macroscopics from files
-        if(LOAD_MACR)
-        {
-            FILE* fileRho = fopen(STR_RHO, "rb");
-            FILE* fileUx = fopen(STR_UX, "rb");
-            FILE* fileUy = fopen(STR_UY, "rb");
-            FILE* fileUz = fopen(STR_UZ, "rb");
-            FILE* fileFx = fopen(STR_FX, "rb");
-            FILE* fileFy = fopen(STR_FY, "rb");
-            FILE* fileFz = fopen(STR_FZ, "rb");
-            FILE* fileOmega = fopen(STR_OMEGA, "rb");
-
-            if(fileRho == nullptr || fileUz == nullptr 
-                || fileUy == nullptr || fileUx == nullptr
-                #ifdef IBM
-                || fileFx == nullptr || fileFy == nullptr || fileFz == nullptr
-                #endif
-                #ifdef NON_NEWTONIAN_FLUID
-                || fileOmega == nullptr
-                #endif
-            ){
-                printf("Error reading macroscopics files. (1 for not found):\n");
-                printf("FILE_RHO=%d; FILE_UX=%d; FILE_UY=%d; FILE_UZ=%d;\n", 
-                    fileRho==nullptr, fileUx==nullptr, fileUy==nullptr, fileUz==nullptr);
-                #ifdef IBM
-                printf("FILE_FX=%d; FILE_FY=%d; FILE_FZ=%d;\n", 
-                    fileFx==nullptr, fileFy==nullptr, fileFz==nullptr);
-                #endif
-                #ifdef NON_NEWTONIAN_FLUID
-                printf("FILE_OMEGA=%d\n", fileOmega==nullptr);
-                #endif
-                return -1;
-            }
-            // Load macroscopics from files
-            initializationMacr(&macrCPUCurrent, fileRho, fileUx, fileUy, fileUz, 
-                fileFx, fileFy, fileFz, fileOmega);
-            fclose (fileRho);
-            fclose (fileUx);
-            fclose (fileUy);
-            fclose (fileUz);
-            #ifdef IBM
-            fclose (fileFx);
-            fclose (fileFy);
-            fclose (fileFz);
-            #endif
-            #ifdef NON_NEWTONIAN_FLUID
-            fclose (fileOmega);
-            #endif
-        }
-        
+        step = INI_STEP;
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
-            // Copy macroscopics to GPU if required
-            if(LOAD_MACR){
-                size_t baseIdx = i*NUMBER_LBM_NODES;
-                macr[i].copyMacr(&macrCPUCurrent, 0, baseIdx, false);
-                checkCudaErrors(cudaDeviceSynchronize());
-            }
             // Initialize populations
-            gpuInitialization<<<grid, threads>>>(pop[i], macr[i], LOAD_MACR, randomNumbers[i]);
-            // checkCudaErrors(cudaDeviceSynchronize());
+            gpuInitialization<<<grid, threads>>>(pop[i], macr[i], randomNumbers[i]);
+            checkCudaErrors(cudaDeviceSynchronize());
         }
         getLastCudaError("Initialization error");
     }
     /* ---------------------------------------------------------------------- */
 
-    if(!LOAD_MACR){
-        for(int i = 0; i < N_GPUS; i++){
-            size_t baseIdx = i*NUMBER_LBM_NODES;
-            macrCPUCurrent.copyMacr(&macr[i], baseIdx, 0, false);
-            checkCudaErrors(cudaDeviceSynchronize());
-        }
-        macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
+    // Initialize Euler nodes for optimization
+    #if IBM_EULER_OPTIMIZATION
+    pEulerNodes.initializeEulerNodes(particlesSoA.pCenterArray);
+    #endif
+
+    for(int i = 0; i < N_GPUS; i++){
+        size_t baseIdx = i*NUMBER_LBM_NODES;
+        macrCPUCurrent.copyMacr(&macr[i], baseIdx, 0, false);
+        checkCudaErrors(cudaDeviceSynchronize());
     }
+    macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
 
     // Grid and thread definition for boundary conditions
     for(int i = 0; i < N_GPUS; i++)
@@ -303,17 +234,19 @@ int main()
     checkCudaErrors(cudaEventRecord(start, 0));
 
     /* ------------------------------ LBM LOOP ------------------------------ */
-    for(step = INI_STEP; step < N_STEPS; step++)
+    for(step = step; step < N_STEPS; step++)
     {
         int aux = step-INI_STEP;
         // WHAT NEEDS TO BE DONE IN THIS TIME STEP
-        bool save = false, rep = false, repIBM = false;
+        bool save = false, rep = false, repIBM = false, checkpoint = false;
         if(aux != 0)
         {
             if(MACR_SAVE != 0)
                 save = !(aux % MACR_SAVE);
             if(DATA_REPORT != 0)
                 rep = !(aux % DATA_REPORT);
+            if(CHECKPOINT_SAVE != 0)
+                checkpoint = !(aux % CHECKPOINT_SAVE);
             #ifdef IBM
             if(IBM_DATA_REPORT != 0)
                 repIBM = !(aux % IBM_DATA_REPORT);
@@ -428,6 +361,13 @@ int main()
             // }
         }
 
+        if(checkpoint){
+            printf("\n--------------------------- Saving checkpoint %06d ---------------------------\n", step);
+            fflush(stdout);
+            saveSimCheckpoint(pop, macr, particlesSoA, &step);
+            // Save info as well (to know when it stopped, conf, etc.)
+            saveSimInfo(&info);
+        }
         // Save macroscopics
         if(save)
         {
@@ -502,10 +442,6 @@ int main()
     }
     #endif
 
-    // Save final populations (if required)
-    if(POP_SAVE)
-        savePopBin(pop, step);
-
     // Evaluate performance
     info.totalSteps = step - INI_STEP;
     size_t nodesUpdated = info.totalSteps * NUMBER_LBM_NODES * N_GPUS;
@@ -514,6 +450,9 @@ int main()
     info.bandwidth = MEM_SIZE_POP*2.0*N_GPUS / (info.timeElapsed*BYTES_PER_GB) 
         * info.totalSteps;
 
+    // Save last checkpoint, if required
+    if(CHECKPOINT_SAVE != 0)
+            saveSimCheckpoint(pop, macr, particlesSoA, &step);
     // Save simulation info
     saveSimInfo(&info);
 

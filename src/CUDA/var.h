@@ -36,48 +36,38 @@
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
 #define ID_SIM "000"            // prefix for simulation's files
-#define PATH_FILES "teste_pra_valer"  // path to save simulation's files
+#define PATH_FILES "teste"  // path to save simulation's files
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
 /* ------------------------------------------------------------------------- */
 
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
-constexpr int N_STEPS = 100000;          // maximum number of time steps
+constexpr int N_STEPS = 10000;          // maximum number of time steps
 #define MACR_SAVE (0)                  // saves macroscopics every MACR_SAVE steps
-#define DATA_REPORT (1000)                // report every DATA_REPORT steps
+#define DATA_REPORT (100)                // report every DATA_REPORT steps
  
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
 
-#define POP_SAVE false                  // saves last step's population
+// Interval to make checkpoint to save all simulation data and restart from it.
+// It must not be very frequent (10000 or more), because it takes a long time
+#define CHECKPOINT_SAVE 20000
 /* ------------------------------------------------------------------------- */
 
 
 /* --------------------- INITIALIZATION LOADING DEFINES -------------------- */
 constexpr int INI_STEP = 0; // initial simulation step (0 default)
-#define LOAD_POP false      // loads population from binary file (file names
-                            // defined below; LOAD_MACR must be false)
-#define LOAD_MACR false     // loads macroscopics from binary file (file names
-                            // defined below; LOAD_POP must be false)
+#define LOAD_CHECKPOINT false   // loads simulation checkpoint from folder 
+                                // (folder name defined below)
+#define RANDOM_NUMBERS false    // to generate random numbers 
+                                // (useful for turbulence)
 
-#define RANDOM_NUMBERS false // to generate random numbers 
-                            // (useful for turbulence)
-
-// File names to load
-#define STR_POP "pop.bin"
-#define STR_POP_AUX "pop_aux.bin"
-#define STR_RHO "./fixedSphere/001/001_rho050000.bin"
-#define STR_UX "./fixedSphere/001/001_ux050000.bin"
-#define STR_UY "./fixedSphere/001/001_uy050000.bin"
-#define STR_UZ "./fixedSphere/001/001_uz050000.bin"
-// Files for IBM
-#define STR_FX "./fixedSphere/001/001_fx050000.bin"
-#define STR_FY "./fixedSphere/001/001_fy050000.bin"
-#define STR_FZ "./fixedSphere/001/001_fz050000.bin"
-// Files for non newtonian
-#define STR_OMEGA "omega.bin"
+// Folder with simulation to load data from last checkpoint. 
+// WITHOUT ID_SIM (change it in ID_SIM) AND "/" AT THE END
+#define SIMULATION_FOLDER_LOAD_CHECKPOINT "teste"
 /* ------------------------------------------------------------------------- */
+
 
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
