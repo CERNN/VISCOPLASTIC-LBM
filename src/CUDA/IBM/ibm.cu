@@ -206,13 +206,14 @@ void gpuForceInterpolationSpread(
     dfloat stencilVal[3][P_DIST*2];
     // Base position for every index (leftest in x)
     // Base position is memory, so it discount the nodes in Z in others gpus
+    // TODO: use round instead of +1
     const int posBase[3] = {int(xIBM-P_DIST+1), int(yIBM-P_DIST+1), int(zIBM-P_DIST+1-n_gpu*NZ)};
-    // Maximum stencil index for each direction xyz ("index" to stop)
+    // Maximum stencil index for each direction xyz ("index" to stop) (range from 0 to 4)
     const int maxIdx[3] = {
         ((posBase[0]+P_DIST*2-1) < (int)NX)? P_DIST*2-1 : ((int)NX-1-posBase[0]), 
         ((posBase[1]+P_DIST*2-1) < (int)NY)? P_DIST*2-1 : ((int)NY-1-posBase[1]), 
         (n_gpu != N_GPUS-1 || (posBase[2]+P_DIST*2-1) < (int)NZ)? P_DIST*2-1 : ((int)NZ-1-posBase[2])};
-    // Minimum stencil index for each direction xyz ("index" to start)
+    // Minimum stencil index for each direction xyz ("index" to start) (range from 0 to 4)
     const int minIdx[3] = {
         (posBase[0] >= 0)? 0 : -posBase[0], 
         (posBase[1] >= 0)? 0 : -posBase[1], 
@@ -705,10 +706,6 @@ void gpuParticleNodeMovement(
         particlesNodes.pos.z[i] += pc.pos.z - pc.pos_old.z;
         return;
     }
-
-    // particlesNodes.pos.x[i] += (pc.pos.x - pc.pos_old.x);
-    // particlesNodes.pos.y[i] += (pc.pos.y - pc.pos_old.y);
-    // particlesNodes.pos.z[i] += (pc.pos.z - pc.pos_old.z);
 
     // TODO: these variables are the same for every particle center, optimize it
     const dfloat q0 = cos(0.5*w_norm);
