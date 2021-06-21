@@ -19,7 +19,7 @@ ParticleEulerNodesUpdate::~particleEulerNodesUpdate(){
 
 }
 
-#if IBM_EULER_OPTIMIZATION
+#if IBM_EULER_OPTIMIZATION && defined(IBM)
 __host__
 void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICLES]){
     int nParticlesFixed = 0;
