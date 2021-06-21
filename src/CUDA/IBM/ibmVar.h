@@ -68,7 +68,7 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (1000)               // Save particles info every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (10)               // Save particles info every given steps (0 not report)
 #define IBM_DATA_REPORT (0)                   // Report IBM treated data every given steps (0 not report)
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data

@@ -31,20 +31,19 @@ void createParticles(Particle particles[NUM_PARTICLES])
 
     
     // Falling sphere
-    /*dfloat3 center;
-    center.x = (NX)*2.0;
-    center.y = (NY)*2.0;
-    center.z = 15;
-    for(int i = 0; i <NUM_PARTICLES ; i++){
-        particles[i] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true);
-    }
-    */
+    dfloat3 center;
+    center.x = (NX)/2.0;
+    center.y = (NY)/2.0;
+    center.z = NZ_TOTAL/2.0;
+    particles[0] = makeSpherePolar(PARTICLE_DIAMETER, center, MESH_COULOMB, true);
 
+   /*
     // Fixed sphere
     particles[0] = makeSpherePolar(
         PARTICLE_DIAMETER, 
         dfloat3((NX)/2.0, (NY)/2.0, (NZ_TOTAL)/4.0), 
         MESH_COULOMB, false);
+    */
     /*
     // Sphere in couette flow (Neutrally buoyant particle in a shear flow)
     particles[0] = makeSpherePolar(

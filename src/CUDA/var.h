@@ -71,15 +71,15 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
-constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
-constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0};    // Which GPUs to use
+constexpr unsigned int N_GPUS = 2;    // Number of GPUS to use
+constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0, 1};    // Which GPUs to use
 
 
 constexpr int N = 64;
 constexpr int NX = 64;        // size x of the grid 
                                       // (32 multiple for better performance)
 constexpr int NY = 64;        // size y of the grid
-constexpr int NZ = 64/N_GPUS;        // size z of the grid in one GPU
+constexpr int NZ = 128/N_GPUS;        // size z of the grid in one GPU
 constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid (DO NOT ALTER)
 
 constexpr dfloat U_MAX = 0;           // max velocity
@@ -114,10 +114,10 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
 /* -------------------- BOUNDARY CONDITIONS TO COMPILE --------------------- */
 #define COMP_ALL_BC false                // Compile all boundary conditions
 #define COMP_BOUNCE_BACK true          // Compile bounce back
-#define COMP_FREE_SLIP true            // Compile free slip
+#define COMP_FREE_SLIP false            // Compile free slip
 #define COMP_PRES_ZOU_HE false          // Compile pressure zou-he
 #define COMP_VEL_ZOU_HE false           // Compile velocity zou he
-#define COMP_VEL_BOUNCE_BACK true      // Compile velocityr bounce back
+#define COMP_VEL_BOUNCE_BACK false      // Compile velocityr bounce back
 #define COMP_INTERP_BOUNCE_BACK false   // Compile interpolated bounce back
 /* ------------------------------------------------------------------------- */
 
