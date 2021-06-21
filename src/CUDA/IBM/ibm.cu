@@ -98,6 +98,7 @@ void immersedBoundaryMethod(
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
         for(int j = 0; j < N_GPUS; j++){
+            printf("gpu %d\n", j); fflush(stdout);
             // If GPU has nodes in it
             if(particles.nodesSoA[j].numNodes > 0){
                 checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
@@ -164,9 +165,9 @@ void immersedBoundaryMethod(
         if(particles.nodesSoA[i].numNodes > 0){
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             // Update particle nodes positions
-            gpuParticleNodeMovement<<<gridNodesIBM[i], threadsNodesIBM[i], 0, streamIBM[0]>>>(
+            gpuParticleNodeMovement<<<gridNodesIBM[i], threadsNodesIBM[i], 0, streamIBM[i]>>>(
                 particles.nodesSoA[i], particles.pCenterArray);
-            checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+            checkCudaErrors(cudaStreamSynchronize(streamIBM[i]));
             getLastCudaError("IBM particle movement error\n");
         }
     }
@@ -204,17 +205,17 @@ void gpuForceInterpolationSpread(
     // Base position for every index (leftest in x)
     // Base position is memory, so it discount the nodes in Z in others gpus
     // TODO: use round instead of +1
-    const int posBase[3] = {int(xIBM-P_DIST+1), int(yIBM-P_DIST+1), int(zIBM-P_DIST+1-n_gpu*NZ)};
+    const int posBase[3] = {(int)(xIBM+0.5)-P_DIST+1, (int)(yIBM+0.5)-P_DIST+1, (int)(zIBM+0.5)-P_DIST+1-n_gpu*NZ};
     // Maximum stencil index for each direction xyz ("index" to stop) (range from 0 to 4)
     const int maxIdx[3] = {
         ((posBase[0]+P_DIST*2-1) < (int)NX)? P_DIST*2-1 : ((int)NX-1-posBase[0]), 
         ((posBase[1]+P_DIST*2-1) < (int)NY)? P_DIST*2-1 : ((int)NY-1-posBase[1]), 
-        (n_gpu != N_GPUS-1 || (posBase[2]+P_DIST*2-1) < (int)NZ)? P_DIST*2-1 : ((int)NZ-1-posBase[2])};
+        ((posBase[2]+P_DIST*2-1) < (int)(n_gpu != N_GPUS-1? NZ : NZ+P_DIST))? P_DIST*2-1 : ((int)NZ-1-posBase[2])};
     // Minimum stencil index for each direction xyz ("index" to start) (range from 0 to 4)
     const int minIdx[3] = {
         (posBase[0] >= 0)? 0 : -posBase[0], 
         (posBase[1] >= 0)? 0 : -posBase[1], 
-        (n_gpu != 0 || posBase[2] >= 0)? 0 : -posBase[2]};
+        (posBase[2] >= (int)(n_gpu != 0? 0 : -P_DIST))? 0 : -posBase[2]};
 
     // Particle stencil out of the domain
     if(maxIdx[0] <= 0 || maxIdx[1] <= 0 || maxIdx[2] <= 0)
@@ -222,6 +223,12 @@ void gpuForceInterpolationSpread(
     // Particle stencil out of the domain
     if(minIdx[0] >= P_DIST*2 || minIdx[1] >= P_DIST*2 || minIdx[2] >= P_DIST*2)
         return;
+
+    // printf("posN %.2f %.2f %.2f posBase %d %d %d minIdx %d %d %d maxIdx %d %d %d pNodes %d i %d\n", 
+    //     pos[0], pos[1], pos[2], posBase[0], posBase[1], posBase[2], 
+    //     minIdx[0], minIdx[1], minIdx[2], maxIdx[0], maxIdx[1], maxIdx[2],
+    //     particlesNodes.numNodes, i);
+
 
     for(int i = 0; i < 3; i++){
         for(int j=minIdx[i]; j <= maxIdx[i]; j++){
@@ -246,7 +253,7 @@ void gpuForceInterpolationSpread(
                 aux = aux1 * stencilVal[0][xi];
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
                 // +MACR_BORDER_NODES in z because of the ghost nodes
-                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk);
+                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk+MACR_BORDER_NODES);
 
                 rhoVar += macr.rho[idx] * aux;
                 uxVar += macr.u.x[idx] * aux;
@@ -313,7 +320,7 @@ void gpuForceInterpolationSpread(
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
 
                 // +MACR_BORDER_NODES in z because of the ghost nodes
-                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk);
+                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk+MACR_BORDER_NODES);
 
                 atomicAdd(&(ibmMacrsAux.fAux[n_gpu].x[idx]), -deltaF.x * aux);
                 atomicAdd(&(ibmMacrsAux.fAux[n_gpu].y[idx]), -deltaF.y * aux);

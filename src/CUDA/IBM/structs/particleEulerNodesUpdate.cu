@@ -247,9 +247,7 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
                     +(j-pos.y)*(j-pos.y)
                     +(i-pos.x)*(i-pos.x));
                 if(distSq <= maxDistSq && distSq >= minDistSq){
-                    printf("hit %d %d %d\n", i, j, k); fflush(stdout);
                     size_t idx = idxScalar(i, j, k+MACR_BORDER_NODES);
-                    // printf("%d=%d, %d=%d, %d=%d\n", i, idx%NX, j, (idx/NX)%NY, k, (idx/NX)/NY);
                     // Add Euler indexes to update
                     this->eulerIndexesUpdate[n_gpu][this->currEulerNodes[n_gpu]] = idx;
                     // Update mask array
