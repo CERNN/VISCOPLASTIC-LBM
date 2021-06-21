@@ -90,7 +90,7 @@ void ParticlesSoA::updatedNodesGPUs(){
 
         for(int n = min_gpu; n < N_GPUS; n++){
             // Set current device
-            checkCudaErrors(cudaSetDevice(n));
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[n]));
             int left_shift = 0;
             for(int p = 0; p < this->nodesSoA[n].numNodes; p++){
                 // Shift left nodes, if a node was already removed
@@ -128,7 +128,7 @@ void ParticlesSoA::updatedNodesGPUs(){
                 dfloat3 copy_deltaF = nSoA.deltaF.getValuesFromIdx(p);
 
                 // Set device to move to
-                checkCudaErrors(cudaSetDevice(node_gpu));
+                checkCudaErrors(cudaSetDevice(GPUS_TO_USE[node_gpu]));
                 nSoA = this->nodesSoA[node_gpu];
                 // Copy values to last position in nodesSoA
                 size_t idxMove = nSoA.numNodes;

@@ -49,9 +49,9 @@ void immersedBoundaryMethod(
             dim3 currGrid(pEulerNodes->currEulerNodes[i]/64+(pEulerNodes->currEulerNodes[i]%64? 1 : 0), 1, 1);
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             // Update macroscopics post boundary conditions and reset forces
-            gpuUpdateMacrIBM<<<currGrid, 64, 0, streamLBM[0]>>>(pop[i], macr[i], ibmMacrsAux, i,
+            gpuUpdateMacrIBM<<<currGrid, 64, 0, streamIBM[i]>>>(pop[i], macr[i], ibmMacrsAux, i,
                 pEulerNodes->eulerIndexesUpdate[i], pEulerNodes->currEulerNodes[i]);
-            checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
+            checkCudaErrors(cudaStreamSynchronize(streamIBM[i]));
             getLastCudaError("IBM update macr euler error\n");
         }
     }
@@ -76,8 +76,8 @@ void immersedBoundaryMethod(
         // If GPU has nodes in it
         if(particles.nodesSoA[i].numNodes > 0){
             // Reset forces in all IBM nodes;
-            gpuResetNodesForces<<<gridNodesIBM[i], threadsNodesIBM[i], 0, streamIBM[0]>>>(particles.nodesSoA[i]);
-            checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
+            gpuResetNodesForces<<<gridNodesIBM[i], threadsNodesIBM[i], 0, streamIBM[i]>>>(particles.nodesSoA[i]);
+            checkCudaErrors(cudaStreamSynchronize(streamIBM[i]));
             getLastCudaError("Reset IBM nodes forces error\n");
         }
     }
@@ -150,9 +150,6 @@ void immersedBoundaryMethod(
             checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
         }
         #endif
-
-        checkCudaErrors(cudaStreamSynchronize(streamLBM[0]));
-        checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
     }
 
     checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));

@@ -161,12 +161,12 @@ int main()
     for(int i = 0; i < N_GPUS; i++){
         checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         gpuBuildBoundaryConditions<<<grid, threads>>>(pop[i].mapBC, i);
-        getLastCudaError("Initialization error");
     }
     for (int i = 0; i < N_GPUS; i++) {
         checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         cudaDeviceSynchronize();
     }
+    getLastCudaError("Initialization error");
 
     // Build auxiliary informations of boundary conditions for each GPU
     NodeTypeMap* hMapBC;
@@ -203,6 +203,7 @@ int main()
     #endif
 
     for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         size_t baseIdx = i*NUMBER_LBM_NODES;
         macrCPUCurrent.copyMacr(&macr[i], baseIdx, 0, false);
         checkCudaErrors(cudaDeviceSynchronize());
@@ -236,6 +237,7 @@ int main()
     /* ------------------------------ LBM LOOP ------------------------------ */
     for(step = step; step < N_STEPS; step++)
     {
+        printf("step %d\n", step); fflush(stdout);
         int aux = step-INI_STEP;
         // WHAT NEEDS TO BE DONE IN THIS TIME STEP
         bool save = false, rep = false, repIBM = false, checkpoint = false;
@@ -315,10 +317,12 @@ int main()
 
         if((step % IBM_EULER_UPDATE_INTERVAL) == 0)
         {
+            printf("updating %d\n", step); fflush(stdout);
             particlesSoA.updatedNodesGPUs();
             #if IBM_EULER_OPTIMIZATION
-            // printf("step %d\n", step);
+            printf("step %d\n", step); fflush(stdout);
             pEulerNodes.checkParticlesMovement();
+            printf("checked %d\n", step); fflush(stdout);
             #endif
         }
 

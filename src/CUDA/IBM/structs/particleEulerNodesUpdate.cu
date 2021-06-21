@@ -50,15 +50,19 @@ void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICL
         // Volume of shell (ceil)
         this->maxEulerNodes += (int)volumeShell + 1;
     }
+    printf("first alloc\n"); fflush(stdout);
 
     // Allocate variables
     for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         // Allocate indexes of Euler nodes to update
         checkCudaErrors(cudaMallocManaged((void**)&(this->eulerIndexesUpdate[i]), 
             this->maxEulerNodes*sizeof(size_t)));
         // Allocate mask array
-        this->eulerMaskArray[i] = (uint32_t*) malloc((size_t)NX*NY*NZ*sizeof(uint32_t));
+        this->eulerMaskArray[i] = (uint32_t*) malloc((size_t)NUMBER_LBM_IB_MACR_NODES*sizeof(uint32_t));
+        checkCudaErrors(cudaDeviceSynchronize());
     }
+    printf("GPU alloc\n"); fflush(stdout);
     // Allocate array of pointers to particleCenters, for moving particles
     this->pCenterMovable = (ParticleCenter**)malloc(this->nParticlesMovable*sizeof(ParticleCenter*));
     // Allocate particles last position array, for moving particles
@@ -74,12 +78,16 @@ void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICL
     const char shift = this->hasFixed? 1 : 0;
 
     for(int i=0; i < this->nParticlesMovable; i++){
+        printf("alloc part\n"); fflush(stdout);
         ParticleCenter* mp = &(p[idxMoving[i]]);
         this->pCenterMovable[i] = mp;
         this->particlesLastPos[i] = mp->pos;
         for(int j = 0; j < N_GPUS; j++){
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
             // Mask for fixes particles is 0b1 shifted its index +shift to the left
             this->updateEulerNodes(mp, 0b1<<(shift+i), j);
+            checkCudaErrors(cudaDeviceSynchronize());
+            printf("updated j\n"); fflush(stdout);
         }
     }
 }
@@ -196,6 +204,9 @@ void ParticleEulerNodesUpdate::removeUnneededEulerNodes(uint32_t maskRemove, int
 
 __host__
 unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint32_t mask, int n_gpu){
+    // Set to use given GPU
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[n_gpu]));
+    
     dfloat3 pos = pc->pos;
     // "pull" sphere to the left
     pos.z -= n_gpu*NZ;
@@ -215,7 +226,7 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
     const int minX = myMax(pos.x-addTerm, 0);
     const int minY = myMax(pos.y-addTerm, 0);
     // -2 in z because of the ghost nodes
-    const int minZ = myMax(pos.z-addTerm, 0 - (n_gpu == 0? 0 : MACR_BORDER_NODES));
+    const int minZ = myMax(pos.z-addTerm, -(n_gpu == 0? 0 : MACR_BORDER_NODES));
 
     const dfloat maxDistSq = (radius+sphereShellThick)*(radius+sphereShellThick);
     const dfloat minDistSq = (radius-sphereShellThick)*(radius-sphereShellThick);
@@ -236,7 +247,8 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
                     +(j-pos.y)*(j-pos.y)
                     +(i-pos.x)*(i-pos.x));
                 if(distSq <= maxDistSq && distSq >= minDistSq){
-                    size_t idx = idxScalar(i, j, k);
+                    printf("hit %d %d %d\n", i, j, k); fflush(stdout);
+                    size_t idx = idxScalar(i, j, k+MACR_BORDER_NODES);
                     // printf("%d=%d, %d=%d, %d=%d\n", i, idx%NX, j, (idx/NX)%NY, k, (idx/NX)/NY);
                     // Add Euler indexes to update
                     this->eulerIndexesUpdate[n_gpu][this->currEulerNodes[n_gpu]] = idx;
