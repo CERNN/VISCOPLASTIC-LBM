@@ -33,7 +33,6 @@ void createFolder(std::string foldername){
     #ifdef _WIN32
     std::string cmd = "md ";
     cmd += foldername;
-    std::cout << cmd << std::endl;
     system(cmd.c_str());
     #else
     if(std::mkdir(foldername, 0777) == -1)
