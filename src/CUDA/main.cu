@@ -195,6 +195,7 @@ int main()
         }
         getLastCudaError("Initialization error");
     }
+    int first_step = step;
     /* ---------------------------------------------------------------------- */
 
     // Initialize Euler nodes for optimization
@@ -228,11 +229,15 @@ int main()
 
     // Timing
     checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
-    cudaEvent_t start, stop;
+    cudaEvent_t start, stop, start_step, stop_step;
+    int last_step_sync = step;
     checkCudaErrors(cudaEventCreate(&start));
     checkCudaErrors(cudaEventCreate(&stop));
+    checkCudaErrors(cudaEventCreate(&start_step));
+    checkCudaErrors(cudaEventCreate(&stop_step));
 
     checkCudaErrors(cudaEventRecord(start, 0));
+    checkCudaErrors(cudaEventRecord(start_step, 0));
 
     /* ------------------------------ LBM LOOP ------------------------------ */
     for(step = step; step < N_STEPS; step++)
@@ -339,6 +344,33 @@ int main()
             printf("\n------------------------- Synchronizing in step %06d -------------------------\n", step);
             fflush(stdout);
 
+            // Timing between syncs
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
+            checkCudaErrors(cudaEventRecord(stop_step, 0));
+            checkCudaErrors(cudaEventSynchronize(stop_step));
+            dfloat elapsedTime;
+            checkCudaErrors(cudaEventElapsedTime(&(elapsedTime), start_step, stop_step));
+            elapsedTime *= 0.001;
+            // Calculate MLUPS
+            size_t nodesUpdatedSync = (step-last_step_sync) * NUMBER_LBM_NODES * N_GPUS;
+            info.MLUPS = (nodesUpdatedSync / 1e6) / elapsedTime;
+            info.timeElapsed += elapsedTime;
+            last_step_sync = step;
+            // Save simulation info
+            saveSimInfo(&info);
+            
+            printf("                  MLUPS: %f\n", info.MLUPS);
+            printf("       Elapsed time (s): %f\n", info.timeElapsed);
+            fflush(stdout);
+
+            // Restart start and stop event
+            checkCudaErrors(cudaEventDestroy(start_step));
+            checkCudaErrors(cudaEventCreate(&start_step));
+            checkCudaErrors(cudaEventDestroy(stop_step));
+            checkCudaErrors(cudaEventCreate(&stop_step));
+
+            checkCudaErrors(cudaEventRecord(start_step, 0));
+
             if(rep)
                 macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
             for(int i = 0; i < N_GPUS; i++){
@@ -443,7 +475,7 @@ int main()
     #endif
 
     // Evaluate performance
-    info.totalSteps = step - INI_STEP;
+    info.totalSteps = step - first_step;
     size_t nodesUpdated = info.totalSteps * NUMBER_LBM_NODES * N_GPUS;
     info.MLUPS = (nodesUpdated / 1e6) / info.timeElapsed;
     // bandwidth for AB scheme and does not consider macroscopics transfers
