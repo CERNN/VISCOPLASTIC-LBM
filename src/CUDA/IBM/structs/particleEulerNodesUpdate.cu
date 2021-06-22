@@ -19,7 +19,9 @@ ParticleEulerNodesUpdate::~particleEulerNodesUpdate(){
 
 }
 
-#if IBM_EULER_OPTIMIZATION && defined(IBM)
+#ifdef IBM
+#if IBM_EULER_OPTIMIZATION
+
 __host__
 void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICLES]){
     int nParticlesFixed = 0;
@@ -266,15 +268,34 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
     return this->currEulerNodes[n_gpu] - oldCurrNodes;
 }
 
+#endif //!IBM_EULER_OPTIMIZATION
+
+
 __global__
 void gpuEulerSumIBMAuxsReset(Macroscopics macr, IBMMacrsAux ibmMacrsAux, 
-    size_t* eulerIdxsUpdate, unsigned int currEulerNodes, int n_gpu){
+    #if IBM_EULER_OPTIMIZATION
+    size_t* eulerIdxsUpdate, unsigned int currEulerNodes, 
+    #endif
+    int n_gpu){
+    
+    #if IBM_EULER_OPTIMIZATION
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
 
     if (i >= currEulerNodes)
         return;
 
     const size_t idx = eulerIdxsUpdate[i];
+    #else
+
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    int y = threadIdx.y + blockDim.y * blockIdx.y;
+    int z = threadIdx.z + blockDim.z * blockIdx.z;
+    // The borders are also added here
+    if(x >= NX || y >= NY || z >= (NZ+MACR_BORDER_NODES*2))
+        return;
+    // TODO: check z
+    const size_t idx = idxScalar(x, y, z);
+    #endif 
 
     macr.u.x[idx] += ibmMacrsAux.velAux[n_gpu].x[idx];
     macr.u.y[idx] += ibmMacrsAux.velAux[n_gpu].y[idx];
@@ -293,5 +314,4 @@ void gpuEulerSumIBMAuxsReset(Macroscopics macr, IBMMacrsAux ibmMacrsAux,
     ibmMacrsAux.fAux[n_gpu].z[idx] = 0;
 }
 
-
-#endif
+#endif // !IBM

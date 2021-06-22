@@ -84,9 +84,13 @@ typedef struct particleEulerNodesUpdate{
 *   @param ibmMacrsAux: Auxiliary macroscopics to sum and reset
 *   @param eulerIdxsUpdate: array with indexes to update
 *   @param currEulerNodes: array with indexes size
+*   @param n_gpu: current GPU number
 */
 __global__
 void gpuEulerSumIBMAuxsReset(Macroscopics macr, IBMMacrsAux ibmMacrsAux, 
-    size_t* eulerIdxsUpdate, unsigned int currEulerNodes, int n_gpu);
+    #if IBM_EULER_OPTIMIZATION
+    size_t* eulerIdxsUpdate, unsigned int currEulerNodes, 
+    #endif
+    int n_gpu);
 
 #endif // !__PARTICLE_EULER_NODES_UPDATE_H

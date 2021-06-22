@@ -52,6 +52,7 @@ void immersedBoundaryMethod(
     ParticleEulerNodesUpdate* pEulerNodes
 );
 
+
 /**
 *   @brief Performs IBM interpolation and spread of force
 *   
@@ -79,9 +80,9 @@ void gpuForceInterpolationSpread(
 *   @param ibmMacrsAux: auxiliary vector for velocities and forces
 *   @param n_gpu: current gpu number
 *   @param eulerIdxsUpdate: array with euler nodes (from LBM) that must be updated
-                (only if IBM_EULER_OPTIMIZATION is true)
+*                (only if IBM_EULER_OPTIMIZATION is true)
 *   @param currEulerNodes: number of nodes that must be updated 
-                (only if IBM_EULER_OPTIMIZATION is true)
+*                (only if IBM_EULER_OPTIMIZATION is true)
 */
 __global__
 void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu
@@ -89,6 +90,17 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
     , size_t* eulerIdxsUpdate, unsigned int currEulerNodes
     #endif
 );
+
+
+/**
+*   @brief Reset border auxiliary macroscopics to zero
+*
+*   @param ibmMacrsAux Auxiliary macroscopics to reset
+*   @param n_gpu current GPU number
+*/
+__global__
+void gpuResetBorderMacrAuxIBM(IBMMacrsAux ibmMacrsAux, int n_gpu);
+
 
 /**
 *   @brief Reset forces from all IBM nodes
@@ -98,6 +110,7 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
 __global__
 void gpuResetNodesForces(ParticleNodeSoA particlesNodes);
 
+
 /**
 *   @brief Copies macroscopics from one GPU border to another
 *
@@ -106,6 +119,7 @@ void gpuResetNodesForces(ParticleNodeSoA particlesNodes);
 */
 __global__
 void gpuCopyBorderMacr(Macroscopics macrBase, Macroscopics macrNext);
+
 
 /**
 *   @brief Sums auxiliary macroscopics from one GPU border to another
@@ -120,6 +134,7 @@ void gpuCopyBorderMacr(Macroscopics macrBase, Macroscopics macrNext);
 __global__
 void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int borders);
 
+
 /**
 *   @brief Updated particles velocities and rotation
 *   
@@ -130,6 +145,7 @@ void gpuUpdateParticleCenterVelocityAndRotation(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
 
+
 /**
 *   @brief Update particles positions
 *   
@@ -139,6 +155,7 @@ __global__
 void gpuParticleMovement(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
+
 
 /**
 *   @brief Update particles nodes positions
@@ -162,7 +179,6 @@ __global__
 void gpuUpdateParticleOldValues(
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
-
 
 
 #endif // !__IBM_H

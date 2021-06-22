@@ -25,10 +25,14 @@ void immersedBoundaryMethod(
         particles.pCenterArray);
     checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
+    // Grid for only  z-borders
     dim3 copyMacrGrid = gridLBM;
+    // Grid for full domain, including z-borders
+    dim3 borderMacrGrid = gridLBM; 
     // Only 1 in z
     copyMacrGrid.z = MACR_BORDER_NODES;
-    
+    borderMacrGrid.z += MACR_BORDER_NODES*2;
+
     unsigned int gridNodesIBM[N_GPUS];
     unsigned int threadsNodesIBM[N_GPUS];
     for(int i = 0; i < N_GPUS; i++){
@@ -56,11 +60,12 @@ void immersedBoundaryMethod(
         }
     }
     #else
-    
     for(int i = 0; i < N_GPUS; i++){
         checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         // Update macroscopics post boundary conditions and reset forces
         gpuUpdateMacrIBM<<<gridLBM, threadsLBM, 0, streamLBM[i]>>>(pop[i], macr[i], ibmMacrsAux, i);
+        checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
+        gpuResetBorderMacrAuxIBM<<<copyMacrGrid, threadsLBM, 0, streamLBM[i]>>>(ibmMacrsAux, i);
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
         getLastCudaError("IBM update macr error\n");
     }
@@ -84,9 +89,8 @@ void immersedBoundaryMethod(
 
     // Calculate collision force between particles
     checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
-    // TODO: correct it for multiGPU
-    // gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.nodesSoA,particles.pCenterArray);
-    // checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));   
+    gpuParticlesCollision<<<GRID_PCOLLISION_IBM, THREADS_PCOLLISION_IBM, 0, streamIBM[0]>>>(particles.pCenterArray);
+    checkCudaErrors(cudaStreamSynchronize(streamIBM[0]));
 
     // First update particle velocity using body center force and constant forces
     checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
@@ -144,9 +148,7 @@ void immersedBoundaryMethod(
         #else
         for(int j = 0; j < N_GPUS; j++){
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
-            // FIXME
-            exit(-1);
-            // copyFromArray<<<gridLBM, threadsLBM, 0, streamLBM[j]>>>(macr[j].u, ibmMacrsAux.velAux[j]);
+            gpuEulerSumIBMAuxsReset<<<borderMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[j], ibmMacrsAux, j);
             checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
         }
         #endif
@@ -379,19 +381,8 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
     // remove border nodes in z
     int z = (idx / NX) / NY - MACR_BORDER_NODES;
 
-    // Reset values from auxiliary vectors
-    ibmMacrsAux.velAux[n_gpu].x[idx] = 0;
-    ibmMacrsAux.velAux[n_gpu].y[idx] = 0;
-    ibmMacrsAux.velAux[n_gpu].z[idx] = 0;
-    ibmMacrsAux.fAux[n_gpu].x[idx] = 0;
-    ibmMacrsAux.fAux[n_gpu].y[idx] = 0;
-    ibmMacrsAux.fAux[n_gpu].z[idx] = 0;
-
-    // check if it is some kind of border, if so, just not update
-    if(z < 0 || z >= NZ)
-        return;
-
     #else
+
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
     int z = threadIdx.z + blockDim.z * blockIdx.z;
@@ -401,7 +392,19 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
     // +MACR_BORDER_NODES because of the ghost nodes in z
     size_t idx = idxScalar(x, y, z+MACR_BORDER_NODES);
     #endif
+
+    // Reset values from auxiliary vectors
+    ibmMacrsAux.velAux[n_gpu].x[idx] = 0;
+    ibmMacrsAux.velAux[n_gpu].y[idx] = 0;
+    ibmMacrsAux.velAux[n_gpu].z[idx] = 0;
+    ibmMacrsAux.fAux[n_gpu].x[idx] = 0;
+    ibmMacrsAux.fAux[n_gpu].y[idx] = 0;
+    ibmMacrsAux.fAux[n_gpu].z[idx] = 0;
     
+    // check if it is some kind of border, if so, just not update
+    if(z < 0 || z >= NZ)
+        return;
+
     // load populations
     dfloat fNode[Q];
     for (unsigned char i = 0; i < Q; i++)
@@ -457,6 +460,29 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
     macr.u.x[idx] = uxVar;
     macr.u.y[idx] = uyVar;
     macr.u.z[idx] = uzVar;
+}
+
+__global__
+void gpuResetBorderMacrAuxIBM(IBMMacrsAux ibmMacrsAux, int n_gpu){
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    int y = threadIdx.y + blockDim.y * blockIdx.y;
+    int z = threadIdx.z + blockDim.z * blockIdx.z;
+    if (x >= NX || y >= NY || z >= MACR_BORDER_NODES)
+       return;
+
+    const size_t idx_left = idxScalar(x, y, z);
+    const size_t idx_right = idxScalar(x, y, z+MACR_BORDER_NODES+NZ);
+
+    dfloat3SoA vel = ibmMacrsAux.velAux[n_gpu];
+    dfloat3SoA f = ibmMacrsAux.fAux[n_gpu];
+
+    vel.x[idx_left] = 0; vel.x[idx_right] = 0;
+    vel.y[idx_left] = 0; vel.y[idx_right] = 0;
+    vel.z[idx_left] = 0; vel.z[idx_right] = 0;
+
+    f.x[idx_left] = 0; f.x[idx_right] = 0;
+    f.y[idx_left] = 0; f.y[idx_right] = 0;
+    f.z[idx_left] = 0; f.z[idx_right] = 0;
 }
 
 __global__ 
