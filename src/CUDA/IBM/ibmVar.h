@@ -33,17 +33,15 @@
 // Transfer and save forces along with macroscopics
 #define EXPORT_FORCES false
 //collision schemes
-//#define SOFT_SPHERE
-#define HARD_SPHERE //https://doi.org/10.1201/b11103  chapter 5
 /* ------------------------------------------------------------------------- */
 
 
 /* ---------------------------- IBM OPTIMIZATION --------------------------- */
 // Optimize Euler nodes updates for IBM (only recommended to test false
 // with a ratio of more than 5% between lagrangian and eulerian nodes)
-#define IBM_EULER_OPTIMIZATION true
+#define IBM_EULER_OPTIMIZATION false
 // "Shell thickness" to consider. The Euler nodes are updated every time 
-// the particle moves more than IBM_EULER_UPDATE_DIST value and all nodes with 
+// the particle moves more than IBM_EULER_UPDATE_DIST and all nodes with 
 // less than IBM_EULER_SHELL_THICKNESS+P_DIST distant from the particle are updated.
 // For fixed particles these values does not influence.
 // The higher the value, more Euler nodes will be updated every step and
@@ -61,7 +59,7 @@
 // (equal if IBM_EULER_UPDATE_INTERVAL=1)
 #define IBM_EULER_UPDATE_DIST (1.0)
 // Every interval to check for update of particles. Note that if particle moves
-// more than plannes in this interval it may lead to simulations errors. 
+// more than planned in this interval it may lead to simulations errors. 
 // Leave as 1 if you're not interested in this optimization
 #define IBM_EULER_UPDATE_INTERVAL (10)
 
@@ -89,7 +87,6 @@ constexpr dfloat GZ = -1e-5; //-1.179430e-03/SCALE/SCALE/SCALE;
 
 /* -------------------------- COLLISION PARAMETERS -------------------------- */
 // Soft sphere
-#if defined SOFT_SPHERE
 constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
 constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
 
@@ -112,12 +109,6 @@ constexpr dfloat ZETA = 1.0; // Distance threshold
 constexpr dfloat STIFF_WALL = 1.0;  // Stiffness parameter wall
 constexpr dfloat STIFF_SOFT = 1.0;  // Soft stiffness parameter particle
 constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
-#endif
-// Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
-#if defined HARD_SPHERE
-constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
-constexpr dfloat REST_COEF = 0.8; // restitution coeficient
-#endif
 /* -------------------------------------------------------------------------- */
 
 

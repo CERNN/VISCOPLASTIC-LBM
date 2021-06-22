@@ -20,13 +20,11 @@
 
 /**
 *   @brief Perform particles collisions combination, and with the walls.
-*   
-*   @param particlesNodes: particles nodes to update
+*
 *   @param particleCenters: particles centers to perform colision
 */
 __global__ 
 void gpuParticlesCollision(
-    ParticleNodeSoA particlesNodes,
     ParticleCenter particleCenters[NUM_PARTICLES]
 );
 
@@ -57,43 +55,5 @@ void gpuSoftSphereParticleCollision(
     ParticleCenter* pc_i,
     ParticleCenter* pc_j
 );
-
-
-/**
-*   @brief Perform particles collisions with wall using soft sphere collision model
-*
-*   @param column: particle i index
-*   @param penetration: total penetration
-*   @param n: wall normal vector  
-*   @param particleCenter: particles centers to perform colision
-*   @param particlesNodes: particles nodes to update
-*/
-__device__ 
-void gpuHardSphereWallCollision(
-    dfloat column,
-    dfloat3 penetration,
-    dfloat3 n,
-    ParticleCenter* pc_i,
-    ParticleNodeSoA particlesNodes
-);
-
-/**
-*   @brief Perform particles collisions with other particles using soft sphere collision model
-*   
-*   @param column: particle i index
-*   @param row: particle j index
-*   @param particleCenter: particles centers to perform colision index i
-*   @param particleCenter: particles centers to perform colision index j
-*   @param particlesNodes: particles nodes to update
-*/
-__device__ 
-void gpuHarSpheredParticleCollision(
-    dfloat column,
-    dfloat row,
-    ParticleCenter* pc_i,
-    ParticleCenter* pc_j,
-    ParticleNodeSoA particlesNodes
-);
-
 
 #endif // !__IBM_COLLISION_H
