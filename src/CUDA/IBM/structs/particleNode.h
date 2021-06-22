@@ -47,11 +47,11 @@ typedef struct particleNodeSoA {
     ~particleNodeSoA();
 
     /**
-    *   @brief Allocate memory for given number of nodes
+    *   @brief Allocate memory for given maximum number of nodes
     *   
-    *   @param numNodes: number of nodes that must be allocated
+    *   @param numMaxNodes: maximum number of nodes
     */
-    void allocateMemory(unsigned int numNodes);
+    void allocateMemory(unsigned int numMaxNodes);
 
     /**
     *   @brief Free allocated memory
