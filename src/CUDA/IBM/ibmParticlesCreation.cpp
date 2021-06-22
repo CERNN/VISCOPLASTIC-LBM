@@ -82,12 +82,12 @@ void createParticles(Particle particles[NUM_PARTICLES])
     dfloat3 center,vel, w;
     dfloat angle = 11.0;
     vel.x = 0.0;
-    vel.y =  0.01*sin(angle*M_PI/180.0);
-    vel.z = -0.01*cos(angle*M_PI/180.0);
+    vel.y = 0.0; //0.01*sin(angle*M_PI/180.0);
+    vel.z = 0.0; //-0.01*cos(angle*M_PI/180.0);
 
-    center.x = 100;
-    center.y = 100;
-    center.z = 10.005 - 100.0*vel.z;
+    center.x = 32;
+    center.y = 32;
+    center.z = 32;//10.005 - 100.0*vel.z;
 
     w.x = 0.0;
     w.y = 0.0;

@@ -120,28 +120,28 @@ void gpuForceInterpolationSpread(
     dfloat stencilVal[3][P_DIST*2];
     // Base position for every index (leftest in x)
     int posBase[3] = { 
-        int(xIBM - P_DIST + 1 -(xIBM < 1.0)), 
+        int(xIBM - P_DIST + 1 - (xIBM < 1.0)), 
         int(yIBM - P_DIST + 1 - (yIBM < 1.0)), 
         int(zIBM - P_DIST + 1 - (zIBM < 1.0)) 
     };
     // Maximum stencil index for each direction xyz ("index" to stop)
     const int maxIdx[3] = {
         #ifdef IBM_BC_X_WALL
-            (posBase[0]+P_DIST*2-1) < (int)NX? P_DIST*2-1 : ((int)NX-1-posBase[0])
+            (posBase[0]+P_DIST*2-1) < (int)NX ? P_DIST*2-1 : ((int)NX-1-posBase[0])
         #endif //IBM_BC_X_WALL
         #ifdef IBM_BC_X_PERIODIC
             3
         #endif //IBM_BC_X_PERIODIC
         ,
         #ifdef IBM_BC_Y_WALL 
-            (posBase[1]+P_DIST*2-1) < (int)NY? P_DIST*2-1 : ((int)NY-1-posBase[1])
+            (posBase[1]+P_DIST*2-1) < (int)NY ? P_DIST*2-1 : ((int)NY-1-posBase[1])
         #endif //IBM_BC_Y_WALL
         #ifdef IBM_BC_Y_PERIODIC
             3
         #endif //IBM_BC_Y_PERIODIC
         , 
         #ifdef IBM_BC_Z_WALL 
-            (posBase[2]+P_DIST*2-1) < (int)NZ? P_DIST*2-1 : ((int)NZ-1-posBase[2])
+            (posBase[2]+P_DIST*2-1) < (int)NZ ? P_DIST*2-1 : ((int)NZ-1-posBase[2])
         #endif //IBM_BC_Z_WALL
         #ifdef IBM_BC_Z_PERIODIC
             3

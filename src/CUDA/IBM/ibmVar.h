@@ -24,7 +24,7 @@
 // Particles diameters
 #define PARTICLE_DIAMETER (20)
 // Change to location of nodes http://dx.doi.org/10.1016/j.jcp.2012.02.026
-#define BREUGEM_PARAMETER (0.3)
+#define BREUGEM_PARAMETER (0.0)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -34,7 +34,7 @@
 // Assumed boundary thickness for IBM
 #define IBM_THICKNESS (1)
 // Transfer and save forces along with macroscopics
-#define EXPORT_FORCES false
+#define EXPORT_FORCES true
 
 /* ------------------------------------------------------------------------- */
 
@@ -74,8 +74,8 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (1)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (1)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (5)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (5)                   // Report IBM treated data every given steps (0 not report)
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE false                 // save reported IBM data to file

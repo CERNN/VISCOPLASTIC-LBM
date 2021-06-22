@@ -44,8 +44,8 @@
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
 constexpr unsigned int SCALE = 1;
-constexpr int N_STEPS = 500;          // maximum number of time steps
-#define MACR_SAVE (0)                  // saves macroscopics every MACR_SAVE steps
+constexpr int N_STEPS = 1000;          // maximum number of time steps
+#define MACR_SAVE (5)                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT (false)                // report every DATA_REPORT steps
  
 #define DATA_STOP false                 // stop condition by treated data
@@ -84,11 +84,11 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 /* --------------------------  SIMULATION DEFINES -------------------------- */
 constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
 
-constexpr int N = 60*SCALE;
-constexpr int NX = 8*SCALE;        // size x of the grid 
+constexpr int N = 64*SCALE;
+constexpr int NX = 64*SCALE;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr int NY = 8*SCALE;        // size y of the grid
-constexpr int NZ = 100*SCALE;        // size z of the grid in one GPU
+constexpr int NY = 64*SCALE;        // size y of the grid
+constexpr int NZ = 64*SCALE;        // size z of the grid in one GPU
 constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
 constexpr dfloat U_MAX = 0;           // max velocity
@@ -98,7 +98,7 @@ constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
 
 constexpr dfloat RHO_0 = 1;         // initial rho
 
-constexpr dfloat FX = 0;        // force in x
+constexpr dfloat FX = 1e-4;        // force in x
 constexpr dfloat FY = 0;        // force in y
 constexpr dfloat FZ = 0;        // force in z (flow direction in most cases)
 

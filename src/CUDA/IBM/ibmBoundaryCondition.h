@@ -17,8 +17,8 @@
 /* -------------------------- BOUNDARY CONDITIONS -------------------------- */
 
 // --- X direction ---
-#define IBM_BC_X_WALL
-//#define IBM_BC_X_PERIODIC
+//#define IBM_BC_X_WALL
+#define IBM_BC_X_PERIODIC
 
 #ifdef IBM_BC_X_WALL
     // TODO: not implemented yet
