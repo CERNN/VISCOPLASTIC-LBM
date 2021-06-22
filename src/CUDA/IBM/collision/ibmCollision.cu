@@ -457,9 +457,9 @@ void gpuParticlesCollision(
 
         // Particles position difference
         const dfloat3 diff_pos = dfloat3(
-            pos_i.x - pos_j.x,
-            pos_i.y - pos_j.y,
-            pos_i.z - pos_j.z);
+            pos_i.x > pos_j.x ? std::fmod((dfloat)(pos_i.x - pos_j.x + NX),(dfloat)NX) : std::fmod((dfloat)(NX - (pos_i.x - pos_j.x)),(dfloat)NX),
+            pos_i.y > pos_j.y ? std::fmod((dfloat)(pos_i.y - pos_j.y + NY),(dfloat)NY) : std::fmod((dfloat)(NY - (pos_i.y - pos_j.y)),(dfloat)NY),
+            pos_i.z > pos_j.z ? std::fmod((dfloat)(pos_i.z - pos_j.z + NZ),(dfloat)NZ) : std::fmod((dfloat)(NZ - (pos_i.z - pos_j.z)),(dfloat)NZ));
 
         const dfloat mag_dist = sqrt(
             diff_pos.x*diff_pos.x
