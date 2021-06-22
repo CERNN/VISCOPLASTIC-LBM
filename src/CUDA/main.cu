@@ -350,6 +350,7 @@ int main()
             checkCudaErrors(cudaEventSynchronize(stop_step));
             dfloat elapsedTime;
             checkCudaErrors(cudaEventElapsedTime(&(elapsedTime), start_step, stop_step));
+            
             elapsedTime *= 0.001;
             // Calculate MLUPS
             size_t nodesUpdatedSync = (step-last_step_sync) * NUMBER_LBM_NODES * N_GPUS;
@@ -456,6 +457,11 @@ int main()
     checkCudaErrors(cudaEventRecord(stop, 0));
     checkCudaErrors(cudaEventSynchronize(stop));
     checkCudaErrors(cudaEventElapsedTime(&(info.timeElapsed), start, stop));
+
+    checkCudaErrors(cudaEventDestroy(start_step));
+    checkCudaErrors(cudaEventDestroy(stop_step));
+    checkCudaErrors(cudaEventDestroy(start));
+    checkCudaErrors(cudaEventDestroy(stop));
 
     info.timeElapsed *= 0.001;
 
