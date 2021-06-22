@@ -68,7 +68,7 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (10)               // Save particles info every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (100)               // Save particles info every given steps (0 not report)
 #define IBM_DATA_REPORT (0)                   // Report IBM treated data every given steps (0 not report)
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
@@ -84,7 +84,7 @@ constexpr dfloat FLUID_DENSITY = 1;
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
+constexpr dfloat GZ = -1e-5; //-1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------------------------------------------------------- */
 
 /* -------------------------- COLLISION PARAMETERS -------------------------- */

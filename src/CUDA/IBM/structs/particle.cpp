@@ -43,6 +43,7 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
             this->nodesSoA[i].copyNodesFromParticle(particles[p], p, i);
         }
     }
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
 
     printf("Optimized memory layout for GPU!\n"); fflush(stdout);
 

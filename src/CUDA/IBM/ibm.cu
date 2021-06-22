@@ -98,7 +98,6 @@ void immersedBoundaryMethod(
     for (int i = 0; i < IBM_MAX_ITERATION; i++)
     {
         for(int j = 0; j < N_GPUS; j++){
-            printf("gpu %d\n", j); fflush(stdout);
             // If GPU has nodes in it
             if(particles.nodesSoA[j].numNodes > 0){
                 checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
@@ -204,7 +203,6 @@ void gpuForceInterpolationSpread(
     dfloat stencilVal[3][P_DIST*2];
     // Base position for every index (leftest in x)
     // Base position is memory, so it discount the nodes in Z in others gpus
-    // TODO: use round instead of +1
     const int posBase[3] = {(int)(xIBM+0.5)-P_DIST+1, (int)(yIBM+0.5)-P_DIST+1, (int)(zIBM+0.5)-P_DIST+1-n_gpu*NZ};
     // Maximum stencil index for each direction xyz ("index" to stop) (range from 0 to 4)
     const int maxIdx[3] = {

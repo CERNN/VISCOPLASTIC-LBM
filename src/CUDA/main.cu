@@ -237,7 +237,6 @@ int main()
     /* ------------------------------ LBM LOOP ------------------------------ */
     for(step = step; step < N_STEPS; step++)
     {
-        printf("step %d\n", step); fflush(stdout);
         int aux = step-INI_STEP;
         // WHAT NEEDS TO BE DONE IN THIS TIME STEP
         bool save = false, rep = false, repIBM = false, checkpoint = false;
@@ -317,12 +316,9 @@ int main()
 
         if((step % IBM_EULER_UPDATE_INTERVAL) == 0)
         {
-            printf("updating %d\n", step); fflush(stdout);
             particlesSoA.updatedNodesGPUs();
             #if IBM_EULER_OPTIMIZATION
-            printf("step %d\n", step); fflush(stdout);
             pEulerNodes.checkParticlesMovement();
-            printf("checked %d\n", step); fflush(stdout);
             #endif
         }
 
@@ -340,7 +336,7 @@ int main()
         // Synchronizing data (macroscopics) between GPU and CPU
         if(save || rep || repIBM)
         {
-            printf("\n------------------------- Synchronizing in step %06d -------------------------\n", step); 
+            printf("\n------------------------- Synchronizing in step %06d -------------------------\n", step);
             fflush(stdout);
 
             if(rep)
