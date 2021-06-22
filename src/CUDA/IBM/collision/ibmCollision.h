@@ -27,10 +27,8 @@
 */
 __global__ 
 void gpuParticlesCollision(
-
-    ParticleCenter particleCenters[NUM_PARTICLES]
+    ParticleCenter particleCenters[NUM_PARTICLES],
     unsigned int step
-
 );
 
 /**
@@ -132,6 +130,6 @@ void gpuLubricationParticle(
     ParticleCenter* pc_i,
     ParticleCenter* pc_j
 );
-
+#endif //LUBRICATION_FORCE
 
 #endif // !__IBM_COLLISION_H

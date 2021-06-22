@@ -233,7 +233,7 @@ void gpuForceInterpolationSpread(
         #endif //IBM_BC_Y_PERIODIC
         , 
         #ifdef IBM_BC_Z_WALL 
-            (posBase[2]+P_DIST*2-1) < (int)(n_gpu != N_GPUS-1? NZ : NZ+P_DIST))? P_DIST*2-1 : ((int)NZ-1-posBase[2])
+            ((posBase[2]+P_DIST*2-1) < (int)(n_gpu != N_GPUS-1? NZ : NZ+P_DIST))? P_DIST*2-1 : ((int)NZ-1-posBase[2])
         #endif //IBM_BC_Z_WALL
         #ifdef IBM_BC_Z_PERIODIC
             3

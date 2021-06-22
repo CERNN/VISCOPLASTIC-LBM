@@ -3,7 +3,7 @@ import glob
 import numpy as np
 
 # ALL FILES IN THE FOLDER MUST BE FROM THE SAME SIMULATION
-PATH = "../../bin/teste_pra_valer/000/"
+PATH = "../../bin/TEST/001/"
 
 __macr_names__ = ['ux', 'uy', 'uz', 'rho']
 # Uncomment below for IBM
