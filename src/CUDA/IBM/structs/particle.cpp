@@ -213,6 +213,9 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
     particleRet.pCenter.movable = move;
 
+    //breugem correction
+    r -= BREUGEM_PARAMETER;
+
     // Number of layers in the sphere
     nLayer = (unsigned int)(2.0 * sqrt(2) * r / MESH_SCALE + 1.0); 
 

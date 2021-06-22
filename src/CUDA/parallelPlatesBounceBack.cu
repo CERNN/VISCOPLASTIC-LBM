@@ -40,6 +40,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
     const unsigned int z = threadIdx.z + blockDim.z * blockIdx.z;
     const unsigned int zDomain = z + NZ*gpuNumber;
 
+
     if(x >= NX || y >= NY || z >= NZ)
         return;
 

@@ -7,7 +7,7 @@ void createParticles(Particle particles[NUM_PARTICLES])
     dfloat3 bCenter[NUM_PARTICLES];
     unsigned int totalIbmNodes = 0;
 
-    /*
+    /* STAGGERED POSITION
     int id = 0;
     dfloat a,b,c;
     dfloat Lx = NX/(5.0+1.0);
@@ -29,22 +29,81 @@ void createParticles(Particle particles[NUM_PARTICLES])
     }
     */
 
-    
-    // Falling sphere
-    dfloat3 center;
-    center.x = (NX)/2.0;
-    center.y = (NY)/2.0;
-    center.z = NZ_TOTAL/2.0;
-    particles[0] = makeSpherePolar(PARTICLE_DIAMETER, center, MESH_COULOMB, true);
+   /* RANDOM PLACEMENT SPHERES
 
-   /*
+    std::random_device rand_dev;
+    std::minstd_rand generator(rand_dev());
+    std::uniform_int_distribution<int>  distr(0, RAND_MAX);
+
+    dfloat x_limit_B = PARTICLE_DIAMETER / 2.0;
+    dfloat x_limit_E = NX - PARTICLE_DIAMETER / 2.0;
+    dfloat y_limit_B = PARTICLE_DIAMETER / 2.0;
+    dfloat y_limit_E = NY - PARTICLE_DIAMETER / 2.0;
+    dfloat z_limit_B = PARTICLE_DIAMETER / 2.0;
+    dfloat z_limit_E = NZ - PARTICLE_DIAMETER / 2.0;
+
+    dfloat px = x_limit_B + (x_limit_E - x_limit_B) * distr(generator) / RAND_MAX;
+    dfloat py = y_limit_B + (y_limit_E - y_limit_B) * distr(generator) / RAND_MAX;
+    dfloat pz = z_limit_B + (z_limit_E - z_limit_B) * distr(generator) / RAND_MAX;
+
+    dfloat3 center[NUM_PARTICLES];
+    center[0].x = px;
+    center[0].y = py;
+    center[0].z = pz;
+
+    bool next_index;
+    dfloat dist;
+
+    int i, j;
+    for ( i = 1; i < NUM_PARTICLES; i++) {
+        px = x_limit_B + (x_limit_E - x_limit_B) * distr(generator) / RAND_MAX;
+        py = y_limit_B + (y_limit_E - y_limit_B) * distr(generator) / RAND_MAX;
+        pz = z_limit_B + (z_limit_E - z_limit_B) * distr(generator) / RAND_MAX;
+
+        next_index = false;
+        for (j = 0; j < i; j++) {
+            dist = sqrt((px - center[j].x) * (px - center[j].x) + (py - center[j].y) * (py - center[j].y) + (pz - center[j].z) * (pz - center[j].z));
+            if (dist < PARTICLE_DIAMETER) {
+                j = -1;
+                px = x_limit_B + (x_limit_E - x_limit_B) * distr(generator) / RAND_MAX;
+                py = y_limit_B + (y_limit_E - y_limit_B) * distr(generator) / RAND_MAX;
+                pz = z_limit_B + (z_limit_E - z_limit_B) * distr(generator) / RAND_MAX;
+            }
+        }
+        center[i].x = px;
+        center[i].y = py;
+        center[i].z = pz;
+    }
+   
+   */
+
+    
+
+    dfloat3 center,vel, w;
+    dfloat angle = 11.0;
+    vel.x = 0.0;
+    vel.y = 0.0; //0.01*sin(angle*M_PI/180.0);
+    vel.z = 0.0; //-0.01*cos(angle*M_PI/180.0);
+
+    center.x = 32;
+    center.y = 32;
+    center.z = 32;//10.005 - 100.0*vel.z;
+
+    w.x = 0.0;
+    w.y = 0.0;
+    w.z = 0.0;
+
+    for(int i = 0; i <NUM_PARTICLES ; i++){
+        particles[i] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true,PARTICLE_DENSITY,vel,w);
+    }
+    /*
     // Fixed sphere
     particles[0] = makeSpherePolar(
         PARTICLE_DIAMETER, 
         dfloat3((NX)/2.0, (NY)/2.0, (NZ_TOTAL)/4.0), 
         MESH_COULOMB, false);
     */
-    /*
+    /*  
     // Sphere in couette flow (Neutrally buoyant particle in a shear flow)
     particles[0] = makeSpherePolar(
         PARTICLE_DIAMETER, 

@@ -227,7 +227,7 @@ std::string getSimInfoString(SimInfo* info)
     #endif // NON_NEWTONIAN_FLUID
 
     #ifdef IBM
-    strSimInfo << "\n------------------------------------- IBM ------------------------------------\n";
+    strSimInfo << "\n------------------------------------- IBM --------------------------------------\n";
     strSimInfo << std::scientific << std::setprecision(6);
 
     strSimInfo << "   Number of particles: " << NUM_PARTICLES << "\n";
@@ -257,19 +257,26 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "         IBM data stop: " << IBM_DATA_STOP << "\n";
     strSimInfo << "         IBM data save: " << IBM_DATA_SAVE << "\n";
     strSimInfo << "IBM Euler optimization: " << IBM_EULER_OPTIMIZATION << "\n";
+    strSimInfo << " IBM Breugem parameter: " << BREUGEM_PARAMETER << "\n";
+    strSimInfo << " IBM Movement Disctre.: " << IBM_MOVEMENT_DISCRETIZATION << "\n";
     #if IBM_EULER_OPTIMIZATION
     strSimInfo << "       Shell thickness: " << IBM_EULER_SHELL_THICKNESS << "\n";
     #endif
     strSimInfo << "--------------------------------- IBM Collision --------------------------------\n";
-    strSimInfo << "\t       Friction Coef.: " << FRICTION_COEF << "\n";
-    strSimInfo << "\t   Restitution  Coef.: " << REST_COEF << "\n";
-    strSimInfo << "\t      Young's Modulus: " << YOUNG_MODULUS << "\n";
-    strSimInfo << "\t        Poisson Ratio: " << POISSON_RATIO << "\n";
-    strSimInfo << "\t       Shear Modulus.: " << SHEAR_MODULUS << "\n";
-    /*strSimInfo << "\t                 Zeta: " << ZETA << "\n";
-    strSimInfo << "\t           Stiff wall: " << STIFF_WALL << "\n";
-    strSimInfo << "\t           Stiff soft: " << STIFF_SOFT << "\n";
-    strSimInfo << "\t           Stiff hard: " << STIFF_HARD << "\n";*/
+    strSimInfo << "\tPart-Part Frict Coef.: " << PP_FRICTION_COEF << "\n";
+    strSimInfo << "\tPart-Wall Frict Coef.: " << PW_FRICTION_COEF << "\n";
+    strSimInfo << "\tPart-Part Rest. Coef.: " << PP_REST_COEF << "\n";
+    strSimInfo << "\tPart-Wall Rest. Coef.: " << PW_REST_COEF << "\n";
+    strSimInfo << "\tParticle Young's Mod.: " << PARTICLE_YOUNG_MODULUS << "\n";
+    strSimInfo << "\tParticle Poisson Rat.: " << PARTICLE_POISSON_RATIO << "\n";
+    strSimInfo << "\t  Particle Shear Mod.: " << PARTICLE_SHEAR_MODULUS << "\n";
+    strSimInfo << "\t    Wall Young's Mod.: " << WALL_YOUNG_MODULUS << "\n";
+    strSimInfo << "\t    Wall Poisson Rat.: " << WALL_POISSON_RATIO << "\n";
+    strSimInfo << "\t      Wall Shear Mod.: " << WALL_SHEAR_MODULUS << "\n";
+    #if LUBRICATION_FORCE
+    strSimInfo << "\t   Max Lubrifi. dist.: " << MAX_LUBRICATION_DISTANCE << "\n";
+    strSimInfo << "\t   Min Lubrifi. dist.: " << MIN_LUBRICATION_DISTANCE << "\n";
+    #endif
     strSimInfo << "--------------------------------------------------------------------------------\n";
 
     strSimInfo << "--------------------------------------------------------------------------------\n";

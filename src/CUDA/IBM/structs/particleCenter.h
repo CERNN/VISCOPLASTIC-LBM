@@ -13,6 +13,36 @@
 #include "../../structs/globalStructs.h"
 #include "../ibmVar.h"
 
+typedef struct tangentialCollisionTracker {
+    
+    
+    /*
+    -4 : Special, i.e round boundary;
+    -7 : Front
+    -1 : Back
+    -6 : North
+    -2 : South
+    -3 : West
+    -5 : East
+    0 >= : particle ID
+    */
+    int collisionIndex;
+    dfloat3 tang_length;
+    unsigned int lastCollisionStep;
+    
+
+    /* Constructor */
+    __host__ __device__
+    tangentialCollisionTracker()
+    {
+        collisionIndex = -8;
+        tang_length = dfloat3();
+        lastCollisionStep = 0;
+    }
+} TangentialCollisionTracker;
+
+
+
 /*
 *   Struct for the particle center properties
 */
@@ -36,6 +66,8 @@ typedef struct particleCenter {
     dfloat volume;      // Particle volume
     dfloat density;     // Particle density
     bool movable;       // If the particle can move
+
+    tangentialCollisionTracker tCT[trackerCollisionSize];
 
     /* Constructor */
     particleCenter()

@@ -11,6 +11,7 @@
 #define __IBM_VAR_H
 
 #include "../var.h"
+#include "ibmBoundaryCondition.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -22,6 +23,8 @@
 #define IBM_MAX_ITERATION 1
 // Particles diameters
 #define PARTICLE_DIAMETER (20)
+// Change to location of nodes http://dx.doi.org/10.1016/j.jcp.2012.02.026
+#define BREUGEM_PARAMETER (0.0)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -31,8 +34,10 @@
 // Assumed boundary thickness for IBM
 #define IBM_THICKNESS (1)
 // Transfer and save forces along with macroscopics
-#define EXPORT_FORCES false
-//collision schemes
+
+#define EXPORT_FORCES true
+
+
 /* ------------------------------------------------------------------------- */
 
 
@@ -63,11 +68,18 @@
 // Leave as 1 if you're not interested in this optimization
 #define IBM_EULER_UPDATE_INTERVAL (10)
 
+
+//Define the discrization coefiecient for the particle movement: 1 = only current time step
+// 0.5 =  half current and half previous,  0 = only previous time step information
+#define IBM_MOVEMENT_DISCRETIZATION (1.0)  //TODO: its not the correct name, but for now i cant recall it.
+
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-#define IBM_PARTICLES_SAVE (100)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (0)                   // Report IBM treated data every given steps (0 not report)
+
+#define IBM_PARTICLES_SAVE (5)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (5)                   // Report IBM treated data every given steps (0 not report)
+
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE false                 // save reported IBM data to file
@@ -76,39 +88,13 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 1.154639;
+constexpr dfloat PARTICLE_DENSITY = 3.97;
 constexpr dfloat FLUID_DENSITY = 1;
 
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
 constexpr dfloat GZ = -1e-5; //-1.179430e-03/SCALE/SCALE/SCALE;
-/* -------------------------------------------------------------------------- */
-
-/* -------------------------- COLLISION PARAMETERS -------------------------- */
-// Soft sphere
-constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
-constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
-
-//material properties
-constexpr dfloat YOUNG_MODULUS = 1.0;
-constexpr dfloat POISSON_RATIO = 0.33;
-constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
-
-
-//Hertzian contact theory -  Johnson 1985
-constexpr dfloat STIFFNESS_NORMAL_CONST = (2.0/3.0) * (YOUNG_MODULUS / (1-POISSON_RATIO*POISSON_RATIO)); 
-//Mindlin theory 1949
-constexpr dfloat STIFFNESS_TANGENTIAL_CONST =  4.0 * (SHEAR_MODULUS / (1 - POISSON_RATIO*POISSON_RATIO)); 
-// Tsuji 1979
-//constexpr dfloat DAMPING_NORMAL_CONST =       - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)));
-//constexpr dfloat DAMPING_TANGENTIAL_CONST =   - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF))); 
-
-
-constexpr dfloat ZETA = 1.0; // Distance threshold
-constexpr dfloat STIFF_WALL = 1.0;  // Stiffness parameter wall
-constexpr dfloat STIFF_SOFT = 1.0;  // Soft stiffness parameter particle
-constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
 /* -------------------------------------------------------------------------- */
 
 

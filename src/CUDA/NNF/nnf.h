@@ -2,12 +2,13 @@
 #define __NNF_H
 
 #include <math.h>
+#include <cmath>
 #include "./../var.h"
 
 
 /* ------------------------ NON NEWTONIAN FLUID TYPE ------------------------ */
 #ifdef POWERLAW
-constexpr dfloat N_INDEX = 1.5;                         // Power index
+constexpr dfloat N_INDEX = 1.25;                         // Power index
 constexpr dfloat K_CONSISTENCY = RHO_0*(TAU-0.5)/3;      // Consistency factor
 constexpr dfloat GAMMA_0 = 0;       // Truncated Power-Law. 
                                     // Leave as 0 to no truncate
@@ -35,6 +36,7 @@ dfloat __forceinline__ calcOmega(
     dfloat omega;
 
 #ifdef POWERLAW
+    /*
     // Apparent viscosity
     dfloat eta = ((1/omegaOld) - 0.5) / 3.0;
 
@@ -49,6 +51,32 @@ dfloat __forceinline__ calcOmega(
     }
 
     omega = 1 / (0.5 + 3 * eta);
+    */
+    
+
+    omega = omegaOld; //initial guess
+
+    dfloat fx, fx_dx;
+    const dfloat c_s_2 = 1.0/3.0;
+    const dfloat a = K_CONSISTENCY*POW_FUNCTION(auxStressMag / (RHO_0 * c_s_2) ,N_INDEX);
+    const dfloat b = 0.5 * auxStressMag;
+    const dfloat c = -auxStressMag;
+    //Newton–Raphson
+
+    //#pragma unroll
+    for (int i = 0; i< 7;i++){
+        fx = a * POW_FUNCTION (omega,N_INDEX) + b * omega + c;
+        fx_dx = a * N_INDEX * POW_FUNCTION (omega,N_INDEX - 1.0) + b ;
+
+        if (abs(fx/fx_dx) < 1e-6){
+            break;
+        } //convergence criteria
+            
+        omega = omega - fx / fx_dx;
+    }
+    
+
+
 #endif // POWERLAW
 
 #ifdef BINGHAM

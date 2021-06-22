@@ -12,6 +12,7 @@
 #define __IBM_H
 
 #include "ibmVar.h"
+#include "ibmBoundaryCondition.h"
 
 #include <string>
 #include "ibmGlobalFunctions.h"

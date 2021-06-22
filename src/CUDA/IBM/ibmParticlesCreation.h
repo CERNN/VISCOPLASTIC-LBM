@@ -11,6 +11,7 @@
 
 #include "structs/particle.h"
 #include "ibmVar.h"
+#include <random>
 
 /**
 *   @brief Create particles for simulation
