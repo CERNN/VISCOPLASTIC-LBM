@@ -288,7 +288,28 @@ void gpuForceInterpolationSpread(
                 aux = aux1 * stencilVal[0][xi];
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
 
-                idx = idxScalar(posBase[0]+xi, posBase[1]+yj, posBase[2]+zk);
+                idx = idxScalar(
+                    #ifdef IBM_BC_X_WALL
+                        posBase[0]+xi
+                    #endif //IBM_BC_X_WALL
+                    #ifdef IBM_BC_X_PERIODIC
+                        (posBase[0]+xi + NX)%NX
+                    #endif //IBM_BC_X_PERIODIC
+                    ,
+                    #ifdef IBM_BC_Y_WALL 
+                        posBase[1]+yj
+                    #endif //IBM_BC_Y_WALL
+                    #ifdef IBM_BC_Y_PERIODIC
+                        (posBase[1]+yj+NY)%NY
+                    #endif //IBM_BC_Y_PERIODIC
+                    , 
+                    #ifdef IBM_BC_Z_WALL 
+                        posBase[2]+zk
+                    #endif //IBM_BC_Z_WALL
+                    #ifdef IBM_BC_Z_PERIODIC
+                        (posBase[2]+zk+NZ)%NZ
+                    #endif //IBM_BC_Z_PERIODIC
+                );
 
                 atomicAdd(&(macr.f.x[idx]), -deltaF.x * aux);
                 atomicAdd(&(macr.f.y[idx]), -deltaF.y * aux);
