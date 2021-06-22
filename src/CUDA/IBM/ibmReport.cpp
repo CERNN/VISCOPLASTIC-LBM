@@ -57,7 +57,8 @@ void saveParticlesInfo(ParticlesSoA particles, unsigned int step, bool saveNodes
 
         std::ostringstream strValuesMesh("");
         strValuesMesh << std::scientific;
-        ParticleNodeSoA pnSoA = particles.nodesSoA;
+        // TODO: fix it
+        ParticleNodeSoA pnSoA = particles.nodesSoA[0];
         for(int i = 0; i < pnSoA.numNodes; i++){
             dfloat3 pos = pnSoA.pos.getValuesFromIdx(i);
             strValuesMesh << pnSoA.particleCenterIdx[i] << sep;

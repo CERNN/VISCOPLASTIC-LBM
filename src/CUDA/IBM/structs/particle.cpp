@@ -13,27 +13,37 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
 
     printf("Total number of nodes: %u\n", totalIbmNodes);
     printf("Total memory used for Particles: %lu Mb\n",
-           (unsigned long)((totalIbmNodes * sizeof(particleNode) + NUM_PARTICLES * sizeof(particleCenter)) / BYTES_PER_MB));
+           (unsigned long)((totalIbmNodes * sizeof(particleNode) * N_GPUS + NUM_PARTICLES * sizeof(particleCenter)) / BYTES_PER_MB));
     fflush(stdout);
 
     printf("Allocating particles in GPU... \t"); fflush(stdout);
-    this->nodesSoA.allocateMemory(totalIbmNodes);
+
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+        this->nodesSoA[i].allocateMemory(totalIbmNodes);
+    }
+
     // Allocate particle center array
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
     checkCudaErrors(
         cudaMallocManaged((void**)&(this->pCenterArray), sizeof(ParticleCenter) * NUM_PARTICLES));
+    // Allocate array of last positions for Particles
+    this->pCenterLastPos = (dfloat3*)malloc(sizeof(dfloat3)*NUM_PARTICLES);
     printf("Particles allocated in GPU!\n"); fflush(stdout);
-
-    size_t baseIdx = 0;
 
     printf("Optimizig memory layout of particles for GPU... \t"); fflush(stdout);
 
     for (int p = 0; p < NUM_PARTICLES; p++)
     {
-        this->nodesSoA.copyNodesFromParticle(particles[p], p, baseIdx);
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
         this->pCenterArray[p] = particles[p].pCenter;
-
-        baseIdx += particles[p].numNodes;
+        this->pCenterLastPos[p] = particles[p].pCenter.pos;
+        for(int i = 0; i < N_GPUS; i++){
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+            this->nodesSoA[i].copyNodesFromParticle(particles[p], p, i);
+        }
     }
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
 
     printf("Optimized memory layout for GPU!\n"); fflush(stdout);
 
@@ -49,9 +59,108 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
     fflush(stdout);
 }
 
+
+void ParticlesSoA::updatedNodesGPUs(){
+    for(int i = 0; i < NUM_PARTICLES; i++){
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
+        if(!this->pCenterArray[i].movable)
+            continue;
+
+        dfloat3 pos_p = this->pCenterArray[i].pos;
+        dfloat3 last_pos = this->pCenterLastPos[i];
+        dfloat radius = this->pCenterArray[i].radius;
+        dfloat min_pos = pos_p.z - radius;
+        dfloat max_pos = pos_p.z + radius;
+        int min_gpu = (int)(min_pos/NZ);
+        int max_gpu = (int)(max_pos/NZ);
+        // minimun and maximum position are in the same GPU
+        if(min_gpu == max_gpu)
+            continue;
+
+        dfloat diff = (last_pos.z - pos_p.z);
+        if(diff < 0)
+            diff = -diff;
+        // Particle has not moved enoush and nodes that needs to be 
+        // updated/synchronized are already considering that
+        if(diff < IBM_EULER_UPDATE_DIST)
+            continue;
+        
+        // Update last particle position
+        this->pCenterLastPos[i] = this->pCenterArray[i].pos;
+        // TODO: transfer necessary nodes from one GPU to another and update IBM_EULER
+
+        for(int n = min_gpu; n < N_GPUS; n++){
+            // Set current device
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[n]));
+            int left_shift = 0;
+            for(int p = 0; p < this->nodesSoA[n].numNodes; p++){
+                // Shift left nodes, if a node was already removed
+                if(left_shift != 0){
+                    this->nodesSoA[n].leftShiftNodesSoA(p, left_shift);
+                }
+
+                // Node is from another particle
+                if(this->nodesSoA[n].particleCenterIdx[p] != i)
+                    continue;
+
+                // Check in what GPU node is
+                dfloat pos_z = this->nodesSoA[n].pos.z[p];
+                int node_gpu = (int) (pos_z/NZ);
+                // If node is still in same GPU, continues
+                if(node_gpu == n)
+                    continue;
+
+                // to not raise any error when setting up device
+                if(node_gpu < 0)
+                    node_gpu = 0;
+                else if(node_gpu >= N_GPUS)
+                    node_gpu = N_GPUS-1;
+                // Nodes will have to be shifted
+                left_shift += 1;
+
+                // Get values to move
+                ParticleNodeSoA nSoA = this->nodesSoA[n];
+                dfloat copy_S = nSoA.S[p];
+                unsigned int copy_pIdx = nSoA.particleCenterIdx[p];
+                dfloat3 copy_pos = nSoA.pos.getValuesFromIdx(p);
+                dfloat3 copy_vel = nSoA.vel.getValuesFromIdx(p);
+                dfloat3 copy_vel_old = nSoA.vel_old.getValuesFromIdx(p);
+                dfloat3 copy_f = nSoA.f.getValuesFromIdx(p);
+                dfloat3 copy_deltaF = nSoA.deltaF.getValuesFromIdx(p);
+
+                // Set device to move to
+                checkCudaErrors(cudaSetDevice(GPUS_TO_USE[node_gpu]));
+                nSoA = this->nodesSoA[node_gpu];
+                // Copy values to last position in nodesSoA
+                size_t idxMove = nSoA.numNodes;
+                nSoA.S[idxMove] = copy_S;
+                nSoA.particleCenterIdx[idxMove] = copy_pIdx;
+                nSoA.pos.copyValuesFromFloat3(copy_pos, idxMove);
+                nSoA.vel.copyValuesFromFloat3(copy_vel, idxMove);
+                nSoA.vel_old.copyValuesFromFloat3(copy_vel_old, idxMove);
+                nSoA.f.copyValuesFromFloat3(copy_f, idxMove);
+                nSoA.deltaF.copyValuesFromFloat3(copy_deltaF, idxMove);
+                // Added one node to it
+                nSoA.numNodes += 1;
+                // Set back particle device
+                checkCudaErrors(cudaSetDevice(n));
+            }
+            // Remove nodes that were added
+            this->nodesSoA[n].numNodes -= left_shift;
+        }
+    }
+}
+
+
 void ParticlesSoA::freeNodesAndCenters(){
-    this->nodesSoA.freeMemory();
+    
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+        this->nodesSoA[i].freeMemory();
+    }
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
     cudaFree(this->pCenterArray);
+    free(this->pCenterLastPos);
     this->pCenterArray = nullptr;
 }
 

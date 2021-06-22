@@ -23,77 +23,6 @@
 
 
 __host__
-void initializationPop( 
-    Populations* pop,
-    FILE* filePop,
-    FILE* filePopAux)
-{
-    dfloat* tmp = (dfloat*)malloc(TOTAL_MEM_SIZE_POP);
-    fread(tmp, TOTAL_MEM_SIZE_POP, 1, filePop);
-
-    for(int i = 0; i < N_GPUS; i++){
-        size_t base_idx = NUMBER_LBM_NODES*Q*i;
-        checkCudaErrors(cudaMemcpy(pop[i].pop, tmp+base_idx, MEM_SIZE_POP, cudaMemcpyDefault));
-    }
-
-    fread(tmp, TOTAL_MEM_SIZE_POP, 1, filePopAux);
-
-    for(int i = 0; i < N_GPUS; i++){
-        size_t base_idx = NUMBER_LBM_NODES*Q*i;
-        checkCudaErrors(cudaMemcpy(pop[i].popAux, tmp+base_idx, MEM_SIZE_POP, cudaMemcpyDefault));
-    }
-
-    free(tmp);
-}
-
-
-__host__
-void initializationMacr(
-    Macroscopics* macr,
-    FILE* fileRho,
-    FILE* fileUx,
-    FILE* fileUy,
-    FILE* fileUz,
-    FILE* fileFx,
-    FILE* fileFy,
-    FILE* fileFz,
-    FILE* fileOmega)
-{
-    dfloat* tmp = (dfloat*)malloc(TOTAL_MEM_SIZE_SCALAR);
-
-    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileRho);
-    checkCudaErrors(cudaMemcpy(macr->rho, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
-
-    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileUx);
-    checkCudaErrors(cudaMemcpy(macr->u.x, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
-
-    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileUy);
-    checkCudaErrors(cudaMemcpy(macr->u.y, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
-
-    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileUz);
-    checkCudaErrors(cudaMemcpy(macr->u.z, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
-
-    #ifdef IBM
-    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileFx);
-    checkCudaErrors(cudaMemcpy(macr->f.x, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
-
-    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileFy);
-    checkCudaErrors(cudaMemcpy(macr->f.y, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
-
-    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileFz);
-    checkCudaErrors(cudaMemcpy(macr->f.z, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
-    #endif
-
-    #ifdef NON_NEWTONIAN_FLUID
-    fread(tmp, TOTAL_MEM_SIZE_SCALAR, 1, fileOmega);
-    checkCudaErrors(cudaMemcpy(macr->omega, tmp, TOTAL_MEM_SIZE_SCALAR, cudaMemcpyDefault));
-    #endif
-
-    free(tmp);
-}
-
-
-__host__
 void initializationRandomNumbers(
     float* randomNumbers, int seed)
 {
@@ -120,7 +49,6 @@ __global__
 void gpuInitialization(
     Populations pop,
     Macroscopics macr,
-    bool isMacrInit,
     float* randomNumbers)
 {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
@@ -129,12 +57,9 @@ void gpuInitialization(
     if (x >= NX || y >= NY || z >= NZ)
         return;
 
-    size_t index = idxScalar(x, y, z);
+    size_t index = idxScalar(x, y, z+MACR_BORDER_NODES);
 
-    if (!isMacrInit)
-    {
-        gpuMacrInitValue(&macr, randomNumbers, x, y, z);
-    }
+    gpuMacrInitValue(&macr, randomNumbers, x, y, z);
 
     for (int i = 0; i < Q; i++)
     {
@@ -157,15 +82,16 @@ void gpuMacrInitValue(
     float* randomNumbers,
     int x, int y, int z)
 {
-    macr->rho[idxScalar(x, y, z)] = RHO_0;
-    macr->u.x[idxScalar(x, y, z)] = 0;
-    macr->u.y[idxScalar(x, y, z)] = 0;
-    macr->u.z[idxScalar(x, y, z)] = 0;
+    // +MACR_BORDER_NODES because of the ghost nodes
+    macr->rho[idxScalar(x, y, z+MACR_BORDER_NODES)] = RHO_0;
+    macr->u.x[idxScalar(x, y, z+MACR_BORDER_NODES)] = 0;
+    macr->u.y[idxScalar(x, y, z+MACR_BORDER_NODES)] = 0;
+    macr->u.z[idxScalar(x, y, z+MACR_BORDER_NODES)] = 0;
 
     #ifdef IBM
-    macr->f.x[idxScalar(x, y, z)] = FX;
-    macr->f.y[idxScalar(x, y, z)] = FY;
-    macr->f.z[idxScalar(x, y, z)] = FZ;
+    macr->f.x[idxScalar(x, y, z+MACR_BORDER_NODES)] = FX;
+    macr->f.y[idxScalar(x, y, z+MACR_BORDER_NODES)] = FY;
+    macr->f.z[idxScalar(x, y, z+MACR_BORDER_NODES)] = FZ;
     #endif
     #ifdef NON_NEWTONIAN_FLUID
     macr->omega[idxScalar(x, y, z)] = 0;

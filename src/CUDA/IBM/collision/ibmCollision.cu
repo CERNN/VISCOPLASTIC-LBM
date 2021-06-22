@@ -5,11 +5,9 @@
 
 __global__
 void gpuParticlesCollision(
-    ParticleNodeSoA particlesNodes,
-    ParticleCenter particleCenters[NUM_PARTICLES],
+    ParticleCenter particleCenters[NUM_PARTICLES]
     unsigned int step
 ){
-
     /* Maps a 1D array to a Floyd triangle, where the last row is for checking
     collision against the wall and the other ones to check collision between 
     particles, with index given by row/column. Example for 7 particles:
@@ -72,6 +70,7 @@ void gpuParticlesCollision(
         dfloat3 normalVector;
         dfloat displacement;
         dfloat pos_mirror,dist_abs;
+
 
         #ifdef HARD_SPHERE
         dfloat3 penetration;
@@ -297,17 +296,18 @@ void gpuParticlesCollision(
                     #endif              
                 }
             #endif
+
             
             //Front z = NZ - 1
             pos_mirror = 2 * (NZ - 1) - pos_i.z;
             dist_abs = abs(pos_i.z - pos_mirror);
+
 
             #if defined LUBRICATION_FORCE
                 if (dist_abs <= min_dist + 2.0*MAX_LUBRICATION_DISTANCE) {
                     normalVector.x = 0.0;
                     normalVector.y = 0.0;
                     normalVector.z = -1.0;
-
 
                     if (dist_abs <= min_dist) {
                     
@@ -353,6 +353,8 @@ void gpuParticlesCollision(
             dfloat yCenter = (NY/2.0); 
 
 
+
+
             dfloat pos_r_i = sqrt((pos_i.x-xCenter)*(pos_i.x-xCenter) + (pos_i.y-yCenter)*(pos_i.y-yCenter));
 
         #endif
@@ -362,6 +364,7 @@ void gpuParticlesCollision(
             pos_mirror = 2 * R - pos_r_i;
             dist_abs = abs(pos_r_i - pos_mirror);
             
+
 
             #if defined LUBRICATION_FORCE
                 if (dist_abs <= min_dist + 2.0*MAX_LUBRICATION_DISTANCE) {
@@ -438,6 +441,7 @@ void gpuParticlesCollision(
         #endif //INTERNAL_DUCT_BC
 
         // end of wall collision if
+
     }
 
     //Collision between particles
@@ -465,6 +469,7 @@ void gpuParticlesCollision(
             diff_pos.x*diff_pos.x
             + diff_pos.y*diff_pos.y
             + diff_pos.z*diff_pos.z);
+
         
         #if defined LUBRICATION_FORCE
             //check if lubrication will occur
@@ -496,7 +501,6 @@ void gpuParticlesCollision(
     }
 }
 
-#ifdef SOFT_SPHERE
 __device__
 void gpuSoftSphereWallCollision(
     dfloat displacement,
@@ -770,6 +774,7 @@ void gpuSoftSphereParticleCollision(
     atomicAdd(&(pc_j->M.y), m_dirs_j.y);
     atomicAdd(&(pc_j->M.z), m_dirs_j.z); 
 }
+
 #endif //SOFT_SPHERE
 
 __device__
@@ -1409,6 +1414,5 @@ void gpuHarSpheredParticleCollision(
 }
 
 
-#endif //HARD_SPERE
 
 #endif //__IBM_COLLISION_H

@@ -38,7 +38,6 @@ void treatData(MacrProc* processing)
             for(int x = 0; x < NX; x++)
             {
                 size_t idx = idxScalar(x, y, z);
-                
                 /* ------- Residual calculation ------- */
                 const dfloat diff_ux = macrCurr->u.x[idx] - macrOld->u.x[idx];
                 const dfloat diff_uy = macrCurr->u.y[idx] - macrOld->u.y[idx];
@@ -52,6 +51,7 @@ void treatData(MacrProc* processing)
 
                 /* ------- Avg. rho calculation ------- */
                 processing->avgRho += macrCurr->rho[idx];
+                // printf("%d %d %d %f\n", x, y, z, macrCurr->rho[idx]);
                 /* ------------------------------------ */
                 
                 /* ----- Avg. Uz plan calculation ----- */
@@ -98,6 +98,7 @@ void printTreatData(MacrProc* processing)
     printf("               Residual: %.4e\n", processing->residual);
     printf("           Avg. density: %.4e\n", processing->avgRho);
     printf("       Avg. Uz (y=NY/2): %.4e\n", processing->avgUzPlanXZ[NY/2]);
+    // +MACR_BORDER_NODES because of the ghost nodes
     printf("ux(x=0.5, y=0.5, z=0.5): %.4e\n", processing->macrCurr->u.x[idxScalar(NX/2, NY/2, NZ/2)]);
     printf("--------------------------------------------------------------------------------\n");
 }

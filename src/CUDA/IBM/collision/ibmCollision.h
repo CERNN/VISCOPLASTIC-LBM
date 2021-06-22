@@ -21,16 +21,16 @@
 
 /**
 *   @brief Perform particles collisions combination, and with the walls.
-*   
-*   @param particlesNodes: particles nodes to update
+*
 *   @param particleCenters: particles centers to perform colision
 *   @param step: current time step
 */
 __global__ 
 void gpuParticlesCollision(
-    ParticleNodeSoA particlesNodes,
-    ParticleCenter particleCenters[NUM_PARTICLES],
+
+    ParticleCenter particleCenters[NUM_PARTICLES]
     unsigned int step
+
 );
 
 /**
@@ -131,46 +131,6 @@ void gpuLubricationParticle(
     dfloat gap,
     ParticleCenter* pc_i,
     ParticleCenter* pc_j
-);
-
-#endif
-
-
-
-/**
-*   @brief Perform particles collisions with wall using soft sphere collision model
-*
-*   @param column: particle i index
-*   @param penetration: total penetration
-*   @param n: wall normal vector  
-*   @param particleCenter: particles centers to perform colision
-*   @param particlesNodes: particles nodes to update
-*/
-__device__ 
-void gpuHardSphereWallCollision(
-    unsigned int column,
-    dfloat3 penetration,
-    dfloat3 n,
-    ParticleCenter* pc_i,
-    ParticleNodeSoA particlesNodes
-);
-
-/**
-*   @brief Perform particles collisions with other particles using soft sphere collision model
-*   
-*   @param column: particle i index
-*   @param row: particle j index
-*   @param particleCenter: particles centers to perform colision index i
-*   @param particleCenter: particles centers to perform colision index j
-*   @param particlesNodes: particles nodes to update
-*/
-__device__ 
-void gpuHarSpheredParticleCollision(
-    unsigned int column,
-    unsigned int row,
-    ParticleCenter* pc_i,
-    ParticleCenter* pc_j,
-    ParticleNodeSoA particlesNodes
 );
 
 

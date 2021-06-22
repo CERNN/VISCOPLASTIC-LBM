@@ -11,7 +11,6 @@
 #define __IBM_VAR_H
 
 #include "../var.h"
-#include "ibmBoundaryCondition.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -23,8 +22,6 @@
 #define IBM_MAX_ITERATION 1
 // Particles diameters
 #define PARTICLE_DIAMETER (20)
-// Change to location of nodes http://dx.doi.org/10.1016/j.jcp.2012.02.026
-#define BREUGEM_PARAMETER (0.0)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -34,10 +31,10 @@
 // Assumed boundary thickness for IBM
 #define IBM_THICKNESS (1)
 // Transfer and save forces along with macroscopics
-
-#define EXPORT_FORCES true
-
-
+#define EXPORT_FORCES false
+//collision schemes
+//#define SOFT_SPHERE
+#define HARD_SPHERE //https://doi.org/10.1201/b11103  chapter 5
 /* ------------------------------------------------------------------------- */
 
 
@@ -46,7 +43,7 @@
 // with a ratio of more than 5% between lagrangian and eulerian nodes)
 #define IBM_EULER_OPTIMIZATION false
 // "Shell thickness" to consider. The Euler nodes are updated every time 
-// the particle moves more than IBM_EULER_UPDATE_DIST and all nodes with 
+// the particle moves more than IBM_EULER_UPDATE_DIST value and all nodes with 
 // less than IBM_EULER_SHELL_THICKNESS+P_DIST distant from the particle are updated.
 // For fixed particles these values does not influence.
 // The higher the value, more Euler nodes will be updated every step and
@@ -64,22 +61,15 @@
 // (equal if IBM_EULER_UPDATE_INTERVAL=1)
 #define IBM_EULER_UPDATE_DIST (1.0)
 // Every interval to check for update of particles. Note that if particle moves
-// more than planned in this interval it may lead to simulations errors. 
+// more than plannes in this interval it may lead to simulations errors. 
 // Leave as 1 if you're not interested in this optimization
 #define IBM_EULER_UPDATE_INTERVAL (10)
-
-
-//Define the discrization coefiecient for the particle movement: 1 = only current time step
-// 0.5 =  half current and half previous,  0 = only previous time step information
-#define IBM_MOVEMENT_DISCRETIZATION (1.0)  //TODO: its not the correct name, but for now i cant recall it.
 
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
-
-#define IBM_PARTICLES_SAVE (5)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (5)                   // Report IBM treated data every given steps (0 not report)
-
+#define IBM_PARTICLES_SAVE (10)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (10)                   // Report IBM treated data every given steps (0 not report)
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE false                 // save reported IBM data to file
@@ -88,13 +78,46 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 3.97;
+constexpr dfloat PARTICLE_DENSITY = 1.154639;
 constexpr dfloat FLUID_DENSITY = 1;
 
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = -1e-5; //-1.179430e-03/SCALE/SCALE/SCALE;
+constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
+/* -------------------------------------------------------------------------- */
+
+/* -------------------------- COLLISION PARAMETERS -------------------------- */
+// Soft sphere
+#if defined SOFT_SPHERE
+constexpr dfloat FRICTION_COEF = 0.001; // friction coeficient
+constexpr dfloat REST_COEF = 1.0; // restitution coeficient   
+
+//material properties
+constexpr dfloat YOUNG_MODULUS = 1.0;
+constexpr dfloat POISSON_RATIO = 0.33;
+constexpr dfloat SHEAR_MODULUS = YOUNG_MODULUS / (2.0+2.0*POISSON_RATIO);
+
+
+//Hertzian contact theory -  Johnson 1985
+constexpr dfloat STIFFNESS_NORMAL_CONST = (2.0/3.0) * (YOUNG_MODULUS / (1-POISSON_RATIO*POISSON_RATIO)); 
+//Mindlin theory 1949
+constexpr dfloat STIFFNESS_TANGENTIAL_CONST =  4.0 * (SHEAR_MODULUS / (1 - POISSON_RATIO*POISSON_RATIO)); 
+// Tsuji 1979
+//constexpr dfloat DAMPING_NORMAL_CONST =       - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF)));
+//constexpr dfloat DAMPING_TANGENTIAL_CONST =   - 2.0 * log(REST_COEF)  / (sqrt(M_PI*M_PI + log(REST_COEF))); 
+
+
+constexpr dfloat ZETA = 1.0; // Distance threshold
+constexpr dfloat STIFF_WALL = 1.0;  // Stiffness parameter wall
+constexpr dfloat STIFF_SOFT = 1.0;  // Soft stiffness parameter particle
+constexpr dfloat STIFF_HARD = 0.1;  // Hard stiffness parameter particle
+#endif
+// Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
+#if defined HARD_SPHERE
+constexpr dfloat FRICTION_COEF = 0.0923; // friction coeficient
+constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
+#endif
 /* -------------------------------------------------------------------------- */
 
 
@@ -115,14 +138,6 @@ constexpr dfloat GZ = -1e-5; //-1.179430e-03/SCALE/SCALE/SCALE;
 
 // Some prints to test IBM
 #define IBM_DEBUG false
-
-#ifdef IBM
-// Border size is the number of ghost nodes in one size of z for each GPU. 
-// These nodes are used for IBM force/macroscopics update/sync
-#define MACR_BORDER_NODES (2+(int)(IBM_EULER_SHELL_THICKNESS+0.99999999))
-#else
-#define MACR_BORDER_NODES (0)
-#endif
 
 /* ------------------------ THREADS AND GRIDS FOR IBM ----------------------- */
 // Threads for IBM particles

@@ -164,6 +164,14 @@ typedef struct dfloat3SoA {
     dfloat3 getValuesFromIdx(size_t idx){
         return dfloat3(this->x[idx], this->y[idx], this->z[idx]);
     }
+
+    __host__ __device__
+    void leftShift(size_t idx, size_t left_shift){
+        this->x[idx-left_shift] = this->x[idx];
+        this->y[idx-left_shift] = this->y[idx];
+        this->z[idx-left_shift] = this->z[idx];
+    }
+
 } dfloat3SoA;
 
 #endif //__GLOBAL_STRUCTS_H

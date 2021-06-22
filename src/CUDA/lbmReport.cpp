@@ -165,38 +165,6 @@ void saveAllMacrBin(
     #endif
 }
 
-
-void saveAllMacrCsv(
-    Macroscopics* macr, 
-    unsigned int nSteps)
-{
-    std::string strOutFile;
-    FILE *outFile = nullptr;
-    
-    strOutFile = getVarFilename("macr", nSteps, ".csv");
-
-    outFile = fopen(strOutFile.c_str(), "w");
-    if(outFile != nullptr)
-    {
-        std::string header = "x\ty\tz\trho\tux\tux\tuy\tuz\n";
-        fprintf(outFile, "%s", header.c_str());
-        for(int z = 0; z < NZ; z++)
-            for(int y = 0; y < NY; y++)
-                for(int x = 0; x < NX; x++)
-                {
-                    size_t idx = idxScalar(x, y, z);
-                    fprintf(outFile, "%d\t%d\t%d\t%.6e\t%.6e\t%.6e\t%.6e\n", 
-                        x, y, z, macr->rho[idx], macr->u.x[idx], macr->u.y[idx], 
-                        macr->u.z[idx]);
-                }
-        fclose(outFile);
-    }
-    else
-    {
-        printf("Error saving \"%s\" \nProbably wrong path!\n", strOutFile.c_str());
-    }
-}
-
 std::string getSimInfoString(SimInfo* info)
 {
     std::ostringstream strSimInfo("");
@@ -294,7 +262,6 @@ std::string getSimInfoString(SimInfo* info)
     #if IBM_EULER_OPTIMIZATION
     strSimInfo << "       Shell thickness: " << IBM_EULER_SHELL_THICKNESS << "\n";
     #endif
-    #if defined SOFT_SPHERE
     strSimInfo << "--------------------------------- IBM Collision --------------------------------\n";
     strSimInfo << "\tPart-Part Frict Coef.: " << PP_FRICTION_COEF << "\n";
     strSimInfo << "\tPart-Wall Frict Coef.: " << PW_FRICTION_COEF << "\n";
@@ -311,13 +278,6 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "\t   Min Lubrifi. dist.: " << MIN_LUBRICATION_DISTANCE << "\n";
     #endif
     strSimInfo << "--------------------------------------------------------------------------------\n";
-    #endif //SOFT_SPHERE
-    #if defined HARD_SPHERE
-    strSimInfo << "--------------------------------- IBM Collision --------------------------------\n";
-    strSimInfo << "\t       Friction Coef.: " << FRICTION_COEF << "\n";
-    strSimInfo << "\t   Restitution  Coef.: " << REST_COEF << "\n";
-    strSimInfo << "--------------------------------------------------------------------------------\n";
-    #endif //HARD_SPHERE
 
     strSimInfo << "--------------------------------------------------------------------------------\n";
     #endif // IBM
@@ -325,7 +285,7 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "\n------------------------------- CUDA INFORMATION -------------------------------\n";
     for(int i = 0; i < info->numDevices; i++)
     {
-        strSimInfo << "\t      device number: "<< i <<"\n";
+        strSimInfo << "\t      device number: " << GPUS_TO_USE[i] << "\n";
         strSimInfo << "\t               name: " << info->devices[i].name << "\n";
         strSimInfo << "\t    multiprocessors: " << info->devices[i].multiProcessorCount << "\n";
         strSimInfo << "\t compute capability: " << info->devices[i].major << "." << info->devices[i].minor << "\n";
