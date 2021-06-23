@@ -369,9 +369,29 @@ void gpuParticlesCollision(
 
         // Particles position difference
         const dfloat3 diff_pos = dfloat3(
-            pos_i.x > pos_j.x ? std::fmod((dfloat)(pos_i.x - pos_j.x + NX),(dfloat)NX) : std::fmod((dfloat)(NX - (pos_i.x - pos_j.x)),(dfloat)NX),
-            pos_i.y > pos_j.y ? std::fmod((dfloat)(pos_i.y - pos_j.y + NY),(dfloat)NY) : std::fmod((dfloat)(NY - (pos_i.y - pos_j.y)),(dfloat)NY),
-            pos_i.z > pos_j.z ? std::fmod((dfloat)(pos_i.z - pos_j.z + NZ),(dfloat)NZ) : std::fmod((dfloat)(NZ - (pos_i.z - pos_j.z)),(dfloat)NZ));
+            #ifdef IBM_BC_X_WALL
+                pos_i.x - pos_j.x
+            #endif //IBM_BC_X_WALL
+            #ifdef IBM_BC_X_PERIODIC
+                std::fmod((dfloat)(pos_i.x - pos_j.x + (NX/2.0)),(dfloat)(NX))-(NX/2.0)
+            #endif //IBM_BC_X_PERIODIC
+            ,
+            #ifdef IBM_BC_Y_WALL
+                pos_i.y - pos_j.y
+            #endif //IBM_BC_Y_WALL
+            #ifdef IBM_BC_Y_PERIODIC
+                std::fmod((dfloat)(pos_i.y - pos_j.y + (NY/2.0)),(dfloat)(NY))-(NY/2.0)
+            #endif //IBM_BC_Y_PERIODIC
+            ,
+            #ifdef IBM_BC_Z_WALL
+                pos_i.z - pos_j.z
+            #endif //IBM_BC_Z_WALL
+            #ifdef IBM_BC_Z_PERIODIC
+                std::fmod((dfloat)(pos_i.z - pos_j.z + (NZ/2.0)),(dfloat)(NZ))-(NZ/2.0)
+            #endif //IBM_BC_Z_PERIODIC
+        );
+
+
 
         const dfloat mag_dist = sqrt(
             diff_pos.x*diff_pos.x
@@ -561,9 +581,27 @@ void gpuSoftSphereParticleCollision(
     
     //TODO it was already calculated, it can be passed through the function
     const dfloat3 diff_pos = dfloat3(
-        pos_i.x - pos_j.x,
-        pos_i.y - pos_j.y,
-        pos_i.z - pos_j.z);
+        #ifdef IBM_BC_X_WALL
+            pos_i.x - pos_j.x
+        #endif //IBM_BC_X_WALL
+        #ifdef IBM_BC_X_PERIODIC
+            std::fmod((dfloat)(pos_i.x - pos_j.x + (NX/2.0)),(dfloat)(NX))-(NX/2.0)
+        #endif //IBM_BC_X_PERIODIC
+        ,
+        #ifdef IBM_BC_Y_WALL
+            pos_i.y - pos_j.y
+        #endif //IBM_BC_Y_WALL
+        #ifdef IBM_BC_Y_PERIODIC
+            std::fmod((dfloat)(pos_i.y - pos_j.y + (NY/2.0)),(dfloat)(NY))-(NY/2.0)
+        #endif //IBM_BC_Y_PERIODIC
+        ,
+        #ifdef IBM_BC_Z_WALL
+            pos_i.z - pos_j.z
+        #endif //IBM_BC_Z_WALL
+        #ifdef IBM_BC_Z_PERIODIC
+            std::fmod((dfloat)(pos_i.z - pos_j.z + (NZ/2.0)),(dfloat)(NZ))-(NZ/2.0)
+        #endif //IBM_BC_Z_PERIODIC
+    );
 
     const dfloat mag_dist = sqrt(
         diff_pos.x*diff_pos.x
@@ -571,7 +609,10 @@ void gpuSoftSphereParticleCollision(
         + diff_pos.z*diff_pos.z);
 
     //normal collision vector
-    const dfloat3 n = dfloat3(diff_pos.x/mag_dist,diff_pos.y/mag_dist,diff_pos.z/mag_dist);
+    const dfloat3 n = dfloat3(
+        diff_pos.x/mag_dist,
+        diff_pos.y/mag_dist,
+        diff_pos.z/mag_dist);
 
     // relative velocity vector
     G.x = v_i.x-v_j.x;
