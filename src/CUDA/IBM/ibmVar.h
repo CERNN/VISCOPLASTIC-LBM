@@ -62,11 +62,11 @@
 #define IBM_EULER_SHELL_THICKNESS (2.0)
 // MUST BE LOWER OR EQUAL TO IBM_EULER_SHELL_THICKNESS, 
 // (equal if IBM_EULER_UPDATE_INTERVAL=1)
-#define IBM_EULER_UPDATE_DIST (1.0)
+#define IBM_EULER_UPDATE_DIST (0.0)
 // Every interval to check for update of particles. Note that if particle moves
 // more than planned in this interval it may lead to simulations errors. 
 // Leave as 1 if you're not interested in this optimization
-#define IBM_EULER_UPDATE_INTERVAL (10)
+#define IBM_EULER_UPDATE_INTERVAL (0)
 
 
 //Define the discrization coefiecient for the particle movement: 1 = only current time step

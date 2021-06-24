@@ -58,14 +58,18 @@ void saveParticlesInfo(ParticlesSoA particles, unsigned int step, bool saveNodes
         std::ostringstream strValuesMesh("");
         strValuesMesh << std::scientific;
         // TODO: fix it
-        ParticleNodeSoA pnSoA = particles.nodesSoA[0];
-        for(int i = 0; i < pnSoA.numNodes; i++){
-            dfloat3 pos = pnSoA.pos.getValuesFromIdx(i);
-            strValuesMesh << pnSoA.particleCenterIdx[i] << sep;
-            strValuesMesh << getStrDfloat3(pos, sep) << sep;
-            strValuesMesh << pnSoA.S[i] << "\n";
+        for(int n_gpu = 0; n_gpu < N_GPUS; n_gpu++){
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[n_gpu]));
+            ParticleNodeSoA pnSoA = particles.nodesSoA[GPUS_TO_USE[n_gpu]];
+
+            for(int i = 0; i < pnSoA.numNodes; i++){
+                dfloat3 pos = pnSoA.pos.getValuesFromIdx(i);
+                strValuesMesh << pnSoA.particleCenterIdx[i] << sep;
+                strValuesMesh << getStrDfloat3(pos, sep) << sep;
+                strValuesMesh << pnSoA.S[i] << "\n";
+            }
         }
-        
+
         // Names of file to save particle info
         std::string strFilePNodes = getVarFilename("pNodes", step, ".csv");
 
