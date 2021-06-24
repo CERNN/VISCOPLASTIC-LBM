@@ -235,7 +235,7 @@ void gpuParticlesCollision(
 
             
             //Front z = NZ - 1
-            pos_mirror = 2 * (NZ - 1) - pos_i.z;
+            pos_mirror = 2 * (NZ_TOTAL - 1) - pos_i.z;
             dist_abs = abs(pos_i.z - pos_mirror);
 
 
@@ -387,7 +387,7 @@ void gpuParticlesCollision(
                 pos_i.z - pos_j.z
             #endif //IBM_BC_Z_WALL
             #ifdef IBM_BC_Z_PERIODIC
-                std::fmod((dfloat)(pos_i.z - pos_j.z + (NZ/2.0)),(dfloat)(NZ))-(NZ/2.0)
+                std::fmod((dfloat)(pos_i.z - pos_j.z + (NZ_TOTAL/2.0)),(dfloat)(NZ_TOTAL))-(NZ_TOTAL/2.0)
             #endif //IBM_BC_Z_PERIODIC
         );
 
@@ -599,7 +599,7 @@ void gpuSoftSphereParticleCollision(
             pos_i.z - pos_j.z
         #endif //IBM_BC_Z_WALL
         #ifdef IBM_BC_Z_PERIODIC
-            std::fmod((dfloat)(pos_i.z - pos_j.z + (NZ/2.0)),(dfloat)(NZ))-(NZ/2.0)
+            std::fmod((dfloat)(pos_i.z - pos_j.z + (NZ_TOTAL/2.0)),(dfloat)(NZ_TOTAL))-(NZ_TOTAL/2.0)
         #endif //IBM_BC_Z_PERIODIC
     );
 

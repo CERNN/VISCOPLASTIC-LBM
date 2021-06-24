@@ -94,7 +94,7 @@ constexpr dfloat FLUID_DENSITY = 1;
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = -1e-5; //-1.179430e-03/SCALE/SCALE/SCALE;
+constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------------------------------------------------------- */
 
 

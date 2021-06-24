@@ -218,7 +218,7 @@ void gpuForceInterpolationSpread(
     int posBase[3] = { 
         int(xIBM - P_DIST + 0.5 - (xIBM < 1.0)), 
         int(yIBM - P_DIST + 0.5 - (yIBM < 1.0)), 
-        int(zIBM - P_DIST + 0.5 - (zIBM < 1.0)) 
+        int(zIBM - P_DIST + 0.5 - (zIBM < 1.0)-n_gpu*NZ) 
     };
     // Maximum stencil index for each direction xyz ("index" to stop)
     const int maxIdx[3] = {
@@ -324,7 +324,7 @@ void gpuForceInterpolationSpread(
                         posBase[2]+zk +MACR_BORDER_NODES
                     #endif //IBM_BC_Z_WALL
                     #ifdef IBM_BC_Z_PERIODIC
-                        (posBase[2]+zk+NZ +MACR_BORDER_NODES)%NZ
+                        (posBase[2]+zk+NZ_TOTAL +MACR_BORDER_NODES)%NZ_TOTAL
                     #endif //IBM_BC_Z_PERIODIC
                 );
               
@@ -412,7 +412,7 @@ void gpuForceInterpolationSpread(
                         posBase[2] + zk + MACR_BORDER_NODES
                     #endif //IBM_BC_Z_WALL
                     #ifdef IBM_BC_Z_PERIODIC
-                        (posBase[2]+zk+NZ+MACR_BORDER_NODES)%NZ
+                        (posBase[2]+zk+NZ_TOTAL+MACR_BORDER_NODES)%NZ_TOTAL
                     #endif //IBM_BC_Z_PERIODIC
                 );
 
@@ -780,7 +780,7 @@ void gpuParticleMovement(
     #endif //IBM_BC_Z_WALL
     #ifdef IBM_BC_Z_PERIODIC
         dfloat dz =  (pc->vel.z * IBM_MOVEMENT_DISCRETIZATION + pc->vel_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
-        pc->pos.z = std::fmod((dfloat)(pc->pos.z + dz + NZ) , (dfloat)NZ); 
+        pc->pos.z = std::fmod((dfloat)(pc->pos.z + dz + NZ_TOTAL) , (dfloat)NZ_TOTAL); 
     #endif //IBM_BC_Z_PERIODIC
 
 
