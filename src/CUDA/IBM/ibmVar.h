@@ -18,7 +18,7 @@
 
 /* -------------------------- IBM GENERAL DEFINES --------------------------- */
 // Total number of IB particles in the system
-#define NUM_PARTICLES 1
+#define NUM_PARTICLES 2
 // Number of IBM inner iterations
 #define IBM_MAX_ITERATION 1
 // Particles diameters
@@ -77,14 +77,14 @@
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
 
-#define IBM_PARTICLES_SAVE (5)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (5)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (25)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (25)                   // Report IBM treated data every given steps (0 not report)
 
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE false                 // save reported IBM data to file
 
-#define IBM_PARTICLES_NODES_SAVE false      // Saves particles nodes data
+#define IBM_PARTICLES_NODES_SAVE true      // Saves particles nodes data
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */

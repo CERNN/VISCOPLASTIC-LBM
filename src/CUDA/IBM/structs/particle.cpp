@@ -410,6 +410,11 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
         node_i->pos.z += center.z;
     }
 
+    /*for(int ii = 0;ii<nodeIndex;ii++){
+        ParticleNode* node_j = &(particleRet.nodes[ii]);
+        printf("%f %f %f \n",node_j->pos.x,node_j->pos.y,node_j->pos.z );
+    }*/
+
     // Free allocated variables
     free(nNodesLayer);
     free(theta);

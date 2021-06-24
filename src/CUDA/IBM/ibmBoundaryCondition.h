@@ -17,8 +17,8 @@
 /* -------------------------- BOUNDARY CONDITIONS -------------------------- */
 
 // --- X direction ---
-//#define IBM_BC_X_WALL
-#define IBM_BC_X_PERIODIC
+#define IBM_BC_X_WALL
+//#define IBM_BC_X_PERIODIC
 
 #ifdef IBM_BC_X_WALL
     // TODO: not implemented yet
@@ -51,8 +51,8 @@
 
 
 // --- Z direction ---
-#define IBM_BC_Z_WALL
-//#define IBM_BC_Z_PERIODIC
+//#define IBM_BC_Z_WALL
+#define IBM_BC_Z_PERIODIC
 
 #ifdef IBM_BC_Z_WALL
     // TODO: not implemented yet
@@ -102,7 +102,7 @@ constexpr dfloat PW_REST_COEF = 0.98; // restitution coeficient particle wall
 
 
 //material properties
-constexpr dfloat PARTICLE_YOUNG_MODULUS = 385.0;
+constexpr dfloat PARTICLE_YOUNG_MODULUS = 10.0;
 constexpr dfloat PARTICLE_POISSON_RATIO = 0.24;
 constexpr dfloat PARTICLE_SHEAR_MODULUS = PARTICLE_YOUNG_MODULUS / (2.0+2.0*PARTICLE_POISSON_RATIO);
 

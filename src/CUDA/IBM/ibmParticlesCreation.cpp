@@ -80,6 +80,7 @@ void createParticles(Particle particles[NUM_PARTICLES])
     
 
     dfloat3 center,vel, w;
+    dfloat3 center1;
     dfloat angle = 11.0;
     vel.x = 0.0;
     vel.y = 0.0; //0.01*sin(angle*M_PI/180.0);
@@ -87,15 +88,20 @@ void createParticles(Particle particles[NUM_PARTICLES])
 
     center.x = 32;
     center.y = 32;
-    center.z = 32;//10.005 - 100.0*vel.z;
+    center.z = 40;//10.005 - 100.0*vel.z;
+
+    center1.x = 32;
+    center1.y = 32;
+    center1.z = 3;//10.005 - 100.0*vel.z;
 
     w.x = 0.0;
     w.y = 0.0;
     w.z = 0.0;
 
-    for(int i = 0; i <NUM_PARTICLES ; i++){
-        particles[i] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true,PARTICLE_DENSITY,vel,w);
-    }
+    //for(int i = 0; i <NUM_PARTICLES ; i++){
+        particles[0] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true,PARTICLE_DENSITY,vel,w);
+        particles[1] = makeSpherePolar(PARTICLE_DIAMETER, center1 , MESH_COULOMB, false,PARTICLE_DENSITY,vel,w);
+    //}
     /*
     // Fixed sphere
     particles[0] = makeSpherePolar(

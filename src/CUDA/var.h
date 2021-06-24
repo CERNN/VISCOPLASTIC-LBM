@@ -47,8 +47,8 @@
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
 
 constexpr unsigned int SCALE = 1;
-constexpr int N_STEPS = 1000;          // maximum number of time steps
-#define MACR_SAVE (5)                  // saves macroscopics every MACR_SAVE steps
+constexpr int N_STEPS = 5000;          // maximum number of time steps
+#define MACR_SAVE (false)                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT (false)                // report every DATA_REPORT steps
 
  
@@ -57,7 +57,7 @@ constexpr int N_STEPS = 1000;          // maximum number of time steps
 
 // Interval to make checkpoint to save all simulation data and restart from it.
 // It must not be very frequent (10000 or more), because it takes a long time
-#define CHECKPOINT_SAVE 20000
+#define CHECKPOINT_SAVE false
 /* ------------------------------------------------------------------------- */
 
 
@@ -76,8 +76,8 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
-constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
-constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0};    // Which GPUs to use
+constexpr unsigned int N_GPUS = 2;    // Number of GPUS to use
+constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0,1};    // Which GPUs to use
 
 
 
@@ -85,7 +85,7 @@ constexpr int N = 64*SCALE;
 constexpr int NX = 64*SCALE;        // size x of the grid 
                                       // (32 multiple for better performance)
 constexpr int NY = 64*SCALE;        // size y of the grid
-constexpr int NZ = 64*SCALE/N_GPUS;        // size z of the grid in one GPU
+constexpr int NZ = 128*SCALE/N_GPUS;        // size z of the grid in one GPU
 constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
 constexpr dfloat U_MAX = 0;           // max velocity
@@ -95,8 +95,8 @@ constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
 
 constexpr dfloat RHO_0 = 1;         // initial rho
 
-constexpr dfloat FX = 1e-4;        // force in x
-constexpr dfloat FY = 0;        // force in y
+constexpr dfloat FX = 0.0;        // force in x
+constexpr dfloat FY = 0.0;        // force in y
 constexpr dfloat FZ = 1e-4;        // force in z (flow direction in most cases)
 
 // values options for boundary conditions

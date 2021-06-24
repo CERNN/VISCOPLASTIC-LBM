@@ -609,10 +609,7 @@ void gpuSoftSphereParticleCollision(
         + diff_pos.z*diff_pos.z);
 
     //normal collision vector
-    const dfloat3 n = dfloat3(
-        diff_pos.x/mag_dist,
-        diff_pos.y/mag_dist,
-        diff_pos.z/mag_dist);
+    const dfloat3 n = dfloat3(diff_pos.x/mag_dist,diff_pos.y/mag_dist,diff_pos.z/mag_dist);
 
     // relative velocity vector
     G.x = v_i.x-v_j.x;
