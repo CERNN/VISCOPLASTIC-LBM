@@ -319,7 +319,7 @@ int main()
         // IBM
         #ifdef IBM
 
-        if((step % IBM_EULER_UPDATE_INTERVAL) == 0)
+        if(IBM_EULER_UPDATE_INTERVAL == 0 || (step % IBM_EULER_UPDATE_INTERVAL) == 0)
         {
             particlesSoA.updatedNodesGPUs();
             #if IBM_EULER_OPTIMIZATION
