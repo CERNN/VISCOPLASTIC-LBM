@@ -88,7 +88,7 @@ void ParticlesSoA::updateNodesGPUs(){
         // Update last particle position
         this->pCenterLastPos[i] = this->pCenterArray[i].pos;
 
-        for(int n = min_gpu; n < N_GPUS; n++){
+        for(int n = min_gpu; n < max_gpu; n++){
             // Set current device
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[n]));
             int left_shift = 0;
