@@ -60,7 +60,7 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
 }
 
 
-void ParticlesSoA::updatedNodesGPUs(){
+void ParticlesSoA::updateNodesGPUs(){
     for(int i = 0; i < NUM_PARTICLES; i++){
         checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
         if(!this->pCenterArray[i].movable)
@@ -87,7 +87,6 @@ void ParticlesSoA::updatedNodesGPUs(){
         
         // Update last particle position
         this->pCenterLastPos[i] = this->pCenterArray[i].pos;
-        // TODO: transfer necessary nodes from one GPU to another and update IBM_EULER
 
         for(int n = min_gpu; n < N_GPUS; n++){
             // Set current device
@@ -141,7 +140,7 @@ void ParticlesSoA::updatedNodesGPUs(){
                 nSoA.f.copyValuesFromFloat3(copy_f, idxMove);
                 nSoA.deltaF.copyValuesFromFloat3(copy_deltaF, idxMove);
                 // Added one node to it
-                nSoA.numNodes += 1;
+                this->nodesSoA[node_gpu].numNodes += 1;
                 // Set back particle device
                 checkCudaErrors(cudaSetDevice(n));
             }

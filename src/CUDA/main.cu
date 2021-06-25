@@ -321,7 +321,7 @@ int main()
 
         if(IBM_EULER_UPDATE_INTERVAL == 0 || (step % IBM_EULER_UPDATE_INTERVAL) == 0)
         {
-            particlesSoA.updatedNodesGPUs();
+            particlesSoA.updateNodesGPUs();
             #if IBM_EULER_OPTIMIZATION
             pEulerNodes.checkParticlesMovement();
             #endif

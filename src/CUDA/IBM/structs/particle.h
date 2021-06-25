@@ -43,7 +43,7 @@ typedef struct particlesSoA{
     dfloat3* pCenterLastPos;
 
     void updateParticlesAsSoA(Particle* particles);
-    void updatedNodesGPUs();
+    void updateNodesGPUs();
     void freeNodesAndCenters();
 } ParticlesSoA;
 
