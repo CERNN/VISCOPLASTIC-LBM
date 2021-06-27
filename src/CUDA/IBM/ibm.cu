@@ -1012,7 +1012,7 @@ void gpuParticleNodeMovement(
     particlesNodes.pos.y[i] =  std::fmod((dfloat)(new_pos_y + NY),(dfloat)NY);
     #endif //IBM_BC_Y_PERIODIC
     #ifdef  IBM_BC_Z_PERIODIC
-    particlesNodes.pos.z[i] =  std::fmod((dfloat)(new_pos_z + NZ),(dfloat)NZ);]
+    particlesNodes.pos.z[i] =  std::fmod((dfloat)(new_pos_z + NZ),(dfloat)NZ);
     #endif //IBM_BC_Z_PERIODIC
 
 
