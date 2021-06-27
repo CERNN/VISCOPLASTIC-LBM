@@ -226,21 +226,21 @@ void gpuForceInterpolationSpread(
             ((posBase[0]+P_DIST*2-1) < (int)NX)? P_DIST*2-1 : ((int)NX-1-posBase[0])
         #endif //IBM_BC_X_WALL
         #ifdef IBM_BC_X_PERIODIC
-            3
+            P_DIST*2-1
         #endif //IBM_BC_X_PERIODIC
         ,
         #ifdef IBM_BC_Y_WALL 
              ((posBase[1]+P_DIST*2-1) < (int)NY)? P_DIST*2-1 : ((int)NY-1-posBase[1])
         #endif //IBM_BC_Y_WALL
         #ifdef IBM_BC_Y_PERIODIC
-            3
+            P_DIST*2-1
         #endif //IBM_BC_Y_PERIODIC
         , 
         #ifdef IBM_BC_Z_WALL 
             ((posBase[2]+P_DIST*2-1) < (int)(n_gpu != N_GPUS-1? NZ : NZ+P_DIST))? P_DIST*2-1 : ((int)NZ-1-posBase[2])
         #endif //IBM_BC_Z_WALL
         #ifdef IBM_BC_Z_PERIODIC
-            3
+            P_DIST*2-1
         #endif //IBM_BC_Z_PERIODIC
     };
     // Minimum stencil index for each direction xyz ("index" to start)
@@ -349,6 +349,37 @@ void gpuForceInterpolationSpread(
     const dfloat y_pc = particleCenters[idx].pos.y;
     const dfloat z_pc = particleCenters[idx].pos.z;
 
+    dfloat dx = xIBM - x_pc;
+    dfloat dy = yIBM - y_pc;
+    dfloat dz = zIBM - z_pc; 
+
+    #ifdef IBM_BC_X_PERIODIC
+    if(abs(dx) > (dfloat)(NX)/2.0){
+        if(dx < 0)
+            dx = (xIBM + NX) - x_pc;
+        else
+            dx = (xIBM - NX) - x_pc;
+    }
+    #endif //IBM_BC_X_PERIODIC
+    
+    #ifdef IBM_BC_Y_PERIODIC
+    if(abs(dy) > (dfloat)(NY)/2.0){
+        if(dy < 0)
+            dy = (yIBM + NY) - y_pc;
+        else
+            dy = (yIBM - NY) - y_pc;
+    }
+    #endif //IBM_BC_Y_PERIODIC
+
+    #ifdef IBM_BC_Z_PERIODIC
+    if(abs(dz) > (dfloat)(NZ)/2.0){
+        if(dz < 0)
+            dz = (zIBM + NZ) - z_pc;
+        else
+            dz = (zIBM - NZ) - z_pc;
+    }
+    #endif //IBM_BC_Z_PERIODIC
+
     // Calculate velocity on node if particle is movable
     if(particleCenters[idx].movable){
         // Load velocity and rotation velocity of particle center
@@ -362,9 +393,9 @@ void gpuForceInterpolationSpread(
 
         // velocity on node, given the center velocity and rotation
         // (i.e. no slip boundary condition velocity)
-        ux_calc = vx_pc + (wy_pc * (zIBM - z_pc) - wz_pc * (yIBM - y_pc));
-        uy_calc = vy_pc + (wz_pc * (xIBM - x_pc) - wx_pc * (zIBM - z_pc));
-        uz_calc = vz_pc + (wx_pc * (yIBM - y_pc) - wy_pc * (xIBM - x_pc));
+        ux_calc = vx_pc + (wy_pc * (dz) - wz_pc * (dy));
+        uy_calc = vy_pc + (wz_pc * (dx) - wx_pc * (dz));
+        uz_calc = vz_pc + (wx_pc * (dy) - wy_pc * (dx));
     }
 
     const dfloat dA = particlesNodes.S[i];
@@ -444,9 +475,9 @@ void gpuForceInterpolationSpread(
     idx = particlesNodes.particleCenterIdx[i];
 
     const dfloat3 deltaMomentum = dfloat3(
-        (yIBM - y_pc) * deltaF.z - (zIBM - z_pc) * deltaF.y,
-        (zIBM - z_pc) * deltaF.x - (xIBM - x_pc) * deltaF.z,
-        (xIBM - x_pc) * deltaF.y - (yIBM - y_pc) * deltaF.x
+        (dy) * deltaF.z - (dz) * deltaF.y,
+        (dz) * deltaF.x - (dx) * deltaF.z,
+        (dx) * deltaF.y - (dy) * deltaF.x
     );
 
     atomicAdd(&(particleCenters[idx].f.x), deltaF.x);
@@ -862,17 +893,59 @@ void gpuParticleNodeMovement(
 
     if(w_norm <= 1e-8)
     {
-        particlesNodes.pos.x[i] += pc.pos.x - pc.pos_old.x;
-        particlesNodes.pos.y[i] += pc.pos.y - pc.pos_old.y;
-        particlesNodes.pos.z[i] += pc.pos.z - pc.pos_old.z;
+        dfloat dx,dy,dz;
+        dfloat new_pos_x,new_pos_y,new_pos_z;
+
+        dx = pc.pos.x - pc.pos_old.x;
+        dy = pc.pos.y - pc.pos_old.y;
+        dz = pc.pos.z - pc.pos_old.z;
+
+        #ifdef IBM_BC_X_WALL
+            particlesNodes.pos.x[i] += dx;
+        #endif //IBM_BC_X_WALL
+        #ifdef IBM_BC_X_PERIODIC
+            if(abs(dx) > (dfloat)NX/2.0){
+                if(pc.pos.x < pc.pos_old.x )
+                    dx = (pc.pos.x  + NX) - pc.pos_old.x;
+                else
+                    dx = (pc.pos.x  - NX) - pc.pos_old.x;
+            }
+            particlesNodes.pos.x[i] = std::fmod((dfloat)(particlesNodes.pos.x[i] + dx + NX),(dfloat)NX);
+        #endif //IBM_BC_X_PERIODIC
+
+
+        #ifdef IBM_BC_Y_WALL
+            particlesNodes.pos.y[i] += dy;
+        #endif //IBM_BC_Y_WALL
+        #ifdef IBM_BC_Y_PERIODIC
+            if(abs(dy) > (dfloat)NY/2.0){
+                if(pc.pos.y < pc.pos_old.y )
+                    dy = (pc.pos.y  + NY) - pc.pos_old.y;
+                else
+                    dy = (pc.pos.y  - NY) - pc.pos_old.y;
+            }
+            particlesNodes.pos.y[i] = std::fmod((dfloat)(particlesNodes.pos.y[i] + dy + NY),(dfloat)NY);
+        #endif // IBM_BC_Y_PERIODIC
+
+
+        #ifdef IBM_BC_Z_WALL
+            particlesNodes.pos.z[i] += dz;
+        #endif //IBM_BC_Z_WALL
+        #ifdef IBM_BC_Z_PERIODIC
+            if(abs(dz) > (dfloat)NZ/2.0){
+                if(pc.pos.y < pc.pos_old.y )
+                    dz = (pc.pos.z  + NZ) - pc.pos_old.z;
+                else
+                    dz = (pc.pos.z  - NZ) - pc.pos_old.z;
+            }
+            particlesNodes.pos.z[i] = std::fmod((dfloat)(particlesNodes.pos.z[i] + dz + NZ),(dfloat)NZ);
+        #endif //IBM_BC_Z_PERIODIC
+
         return;
     }
 
-    // particlesNodes.pos.x[i] += (pc.pos.x - pc.pos_old.x);
-    // particlesNodes.pos.y[i] += (pc.pos.y - pc.pos_old.y);
-    // particlesNodes.pos.z[i] += (pc.pos.z - pc.pos_old.z);
-
     // TODO: these variables are the same for every particle center, optimize it
+    
     const dfloat q0 = cos(0.5*w_norm);
     const dfloat qi = (pc.w_avg.x/w_norm) * sin (0.5*w_norm);
     const dfloat qj = (pc.w_avg.y/w_norm) * sin (0.5*w_norm);
@@ -880,13 +953,71 @@ void gpuParticleNodeMovement(
 
     const dfloat tq0m1 = (q0*q0) - 0.5;
 
-    const dfloat x_vec = particlesNodes.pos.x[i] - pc.pos_old.x;
-    const dfloat y_vec = particlesNodes.pos.y[i] - pc.pos_old.y;
-    const dfloat z_vec = particlesNodes.pos.z[i] - pc.pos_old.z;
+    dfloat x_vec = particlesNodes.pos.x[i] - pc.pos_old.x;
+    dfloat y_vec = particlesNodes.pos.y[i] - pc.pos_old.y;
+    dfloat z_vec = particlesNodes.pos.z[i] - pc.pos_old.z;
 
-    particlesNodes.pos.x[i] = pc.pos.x + 2 * (   (tq0m1 + (qi*qi))*x_vec + ((qi*qj) - (q0*qk))*y_vec + ((qi*qk) + (q0*qj))*z_vec);
-    particlesNodes.pos.y[i] = pc.pos.y + 2 * ( ((qi*qj) + (q0*qk))*x_vec +   (tq0m1 + (qj*qj))*y_vec + ((qj*qk) - (q0*qi))*z_vec);
-    particlesNodes.pos.z[i] = pc.pos.z + 2 * ( ((qi*qj) - (q0*qj))*x_vec + ((qj*qk) + (q0*qi))*y_vec +   (tq0m1 + (qk*qk))*z_vec);
+
+    #ifdef IBM_BC_X_PERIODIC
+        if(abs(x_vec) > (dfloat)NX/2.0){
+            if(particlesNodes.pos.x[i] < pc.pos_old.x )
+                x_vec = (particlesNodes.pos.x[i]  + NX) - pc.pos_old.x;
+            else
+                x_vec = (particlesNodes.pos.x[i]  - NX) - pc.pos_old.x;
+        }
+    #endif //IBM_BC_X_PERIODIC
+
+
+    #ifdef IBM_BC_Y_PERIODIC
+        if(abs(y_vec) > (dfloat)NY/2.0){
+            if(pc.pos.y < pc.pos_old.y )
+                y_vec = (particlesNodes.pos.y[i]  + NY) - pc.pos_old.y;
+            else
+                y_vec = (particlesNodes.pos.y[i]  - NY) - pc.pos_old.y;
+        }
+    #endif //IBM_BC_Y_PERIODIC
+
+
+    #ifdef IBM_BC_Z_PERIODIC
+        if(abs(z_vec) > (dfloat)NZ/2.0){
+            if(pc.pos.y < pc.pos_old.y )
+                z_vec = ( particlesNodes.pos.z[i]  + NZ) - pc.pos_old.z;
+            else
+                z_vec = ( particlesNodes.pos.z[i]  - NZ) - pc.pos_old.z;
+        }
+    #endif //IBM_BC_Z_PERIODIC
+
+
+    
+    dfloat new_pos_x = pc.pos.x + 2 * (   (tq0m1 + (qi*qi))*x_vec + ((qi*qj) - (q0*qk))*y_vec + ((qi*qk) + (q0*qj))*z_vec);
+    dfloat new_pos_y = pc.pos.y + 2 * ( ((qi*qj) + (q0*qk))*x_vec +   (tq0m1 + (qj*qj))*y_vec + ((qj*qk) - (q0*qi))*z_vec);
+    dfloat new_pos_z = pc.pos.z + 2 * ( ((qi*qj) - (q0*qj))*x_vec + ((qj*qk) + (q0*qi))*y_vec +   (tq0m1 + (qk*qk))*z_vec);
+
+    #ifdef  IBM_BC_X_WALL
+    particlesNodes.pos.x[i] =  new_pos_x;
+    #endif //IBM_BC_X_WALL
+    #ifdef  IBM_BC_Y_WALL
+    particlesNodes.pos.y[i] =  new_pos_y;
+    #endif //IBM_BC_Y_WALL
+    #ifdef  IBM_BC_Z_WALL
+    particlesNodes.pos.z[i] =  new_pos_z;
+    #endif //IBM_BC_Z_WALL
+
+
+
+    #ifdef  IBM_BC_X_PERIODIC
+    particlesNodes.pos.x[i] =  std::fmod((dfloat)(new_pos_x + NX),(dfloat)NX);
+    #endif //IBM_BC_X_PERIODIC
+    #ifdef  IBM_BC_Y_PERIODIC
+    particlesNodes.pos.y[i] =  std::fmod((dfloat)(new_pos_y + NY),(dfloat)NY);
+    #endif //IBM_BC_Y_PERIODIC
+    #ifdef  IBM_BC_Z_PERIODIC
+    particlesNodes.pos.z[i] =  std::fmod((dfloat)(new_pos_z + NZ),(dfloat)NZ);]
+    #endif //IBM_BC_Z_PERIODIC
+
+
+
+    
 }
 
 
