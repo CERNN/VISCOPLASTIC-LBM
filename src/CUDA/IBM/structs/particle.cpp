@@ -68,7 +68,11 @@ void ParticlesSoA::updateNodesGPUs(){
 
         dfloat3 pos_p = this->pCenterArray[i].pos;
         dfloat3 last_pos = this->pCenterLastPos[i];
+        dfloat3 w_pos = this->pCenterArray[i].w_pos;
+        dfloat3 last_w_pos = this->pCenterLastWPos[i];
+        dfloat3 diff_w_pos = dfloat3(w_pos.x-last_w_pos.x, w_pos.y-last_w_pos.y, w_pos.z-last_w_pos.z);
         dfloat radius = this->pCenterArray[i].radius;
+
         dfloat min_pos = pos_p.z - radius;
         dfloat max_pos = pos_p.z + radius;
         int min_gpu = (int)(min_pos/NZ);
@@ -77,16 +81,21 @@ void ParticlesSoA::updateNodesGPUs(){
         if(min_gpu == max_gpu)
             continue;
 
-        dfloat diff = (last_pos.z - pos_p.z);
-        if(diff < 0)
-            diff = -diff;
+        // Translation
+        dfloat diff_z = (pos_p.z-last_pos.z);
+        // Maximum rotation
+        diff_z += radius*sqrt(diff_w_pos.x*diff_w_pos.x+diff_w_pos.y*diff_w_pos.y);
+        
+        if(diff_z < 0)
+            diff_z = -diff_z;
         // Particle has not moved enoush and nodes that needs to be 
         // updated/synchronized are already considering that
-        if(diff < IBM_EULER_UPDATE_DIST)
+        if(diff_z < IBM_EULER_UPDATE_DIST)
             continue;
         
-        // Update last particle position
+        // Update particle's last position
         this->pCenterLastPos[i] = this->pCenterArray[i].pos;
+        this->pCenterLastWPos[i] = this->pCenterArray[i].w_pos;
 
         for(int n = min_gpu; n <= max_gpu; n++){
             // Set current device

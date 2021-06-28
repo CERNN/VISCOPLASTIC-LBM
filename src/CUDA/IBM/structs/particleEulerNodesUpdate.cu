@@ -11,6 +11,7 @@ ParticleEulerNodesUpdate::particleEulerNodesUpdate(){
     maxEulerNodes = 0;
     pCenterMovable = nullptr;
     particlesLastPos = nullptr;
+    particlesLastWPos = nullptr;
     hasFixed = false;
     nParticlesMovable = 0;
 }
@@ -67,6 +68,7 @@ void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICL
     this->pCenterMovable = (ParticleCenter**)malloc(this->nParticlesMovable*sizeof(ParticleCenter*));
     // Allocate particles last position array, for moving particles
     this->particlesLastPos = (dfloat3*)malloc(this->nParticlesMovable*sizeof(dfloat3));
+    this->particlesLastWPos = (dfloat3*)malloc(this->nParticlesMovable*sizeof(dfloat3));
 
     for(int i=0; i < nParticlesFixed; i++){
         for(int j=0; j< N_GPUS; j++){
@@ -81,6 +83,7 @@ void ParticleEulerNodesUpdate::initializeEulerNodes(ParticleCenter p[NUM_PARTICL
         ParticleCenter* mp = &(p[idxMoving[i]]);
         this->pCenterMovable[i] = mp;
         this->particlesLastPos[i] = mp->pos;
+        this->particlesLastWPos[i] = mp->w_pos;
         for(int j = 0; j < N_GPUS; j++){
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
             // Mask for fixes particles is 0b1 shifted its index +shift to the left
@@ -100,6 +103,7 @@ void ParticleEulerNodesUpdate::freeEulerNodes(){
     }
     free(this->pCenterMovable);
     free(this->particlesLastPos);
+    free(this->particlesLastWPos);
 }
 
 __host__
@@ -112,12 +116,20 @@ void ParticleEulerNodesUpdate::checkParticlesMovement(){
     const unsigned int shift = this->hasFixed? 1 : 0;
 
     for(int i = 0; i < nParticlesMovable; i++){
+        dfloat radius = this->pCenterMovable[i]->radius;
         dfloat3 pos = this->pCenterMovable[i]->pos;
         dfloat3 posOld = this->particlesLastPos[i];
+        dfloat3 w_pos = this->pCenterMovable[i]->w_pos;
+        dfloat3 w_posOld = this->particlesLastWPos[i];
+        dfloat3 w_posDiff = dfloat3(w_pos.x-w_posOld.x, w_pos.y-w_posOld.y, w_pos.z-w_posOld.z);
+
+        // Translation
         dfloat distSq = (
             (pos.x-posOld.x)*(pos.x-posOld.x)+
             (pos.y-posOld.y)*(pos.y-posOld.y)+
             (pos.z-posOld.z)*(pos.z-posOld.z));
+        // Maximum rotation
+        distSq += radius*radius*((w_posDiff.x*w_posDiff.x+w_posDiff.y*w_posDiff.y+w_posDiff.z*w_posDiff.z));
         #if IBM_DEBUG
         // printf("pos %d: %f %f %f. Old: %f %f %f\n", i, pos.x, pos.y, pos.z, posOld.x, posOld.y, posOld.z);
         // printf("dist %d: %f. Min: %f\n", i, distSq, IBM_EULER_UPDATE_DIST*IBM_EULER_UPDATE_DIST);
@@ -148,6 +160,7 @@ void ParticleEulerNodesUpdate::checkParticlesMovement(){
                 }
                 checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
                 this->particlesLastPos[count] = this->pCenterMovable[count]->pos;
+                this->particlesLastWPos[count] = this->pCenterMovable[count]->w_pos;
             }
             maskRemove >>= 1;
             count += 1;

@@ -54,6 +54,7 @@ typedef struct particleCenter {
     dfloat3 w;          // Particle center rotation velocity
     dfloat3 w_avg;      // Average particle rotation (used by nodes in movement)
     dfloat3 w_old;      // Old particle center rotation velocity
+    dfloat3 w_pos;      // Particle angular position
     dfloat3 f;          // Sum of the forces acting on particle
     dfloat3 f_old;      // Old sum of the forces acting on particle
     dfloat3 M;          // Total momentum acting on particle
@@ -80,6 +81,7 @@ typedef struct particleCenter {
         w = dfloat3();
         w_avg = dfloat3();
         w_old = dfloat3();
+        w_pos = dfloat3();
         f = dfloat3();
         f_old = dfloat3();
         M = dfloat3();
