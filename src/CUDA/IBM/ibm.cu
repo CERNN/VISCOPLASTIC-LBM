@@ -310,21 +310,21 @@ void gpuForceInterpolationSpread(
                         posBase[0]+xi
                     #endif //IBM_BC_X_WALL
                     #ifdef IBM_BC_X_PERIODIC
-                        IBM_BC_X_0 + (posBase[0]+xi + IBM_BC_X_E - IBM_BC_X_0)%(IBM_BC_X_E - IBM_BC_X_0)
+                        IBM_BC_X_0 + (posBase[0]+xi + IBM_BC_X_E - IBM_BC_X_0-IBM_BC_X_0)%(IBM_BC_X_E - IBM_BC_X_0)
                     #endif //IBM_BC_X_PERIODIC
                     ,
                     #ifdef IBM_BC_Y_WALL 
                         posBase[1]+yj
                     #endif //IBM_BC_Y_WALL
                     #ifdef IBM_BC_Y_PERIODIC
-                        IBM_BC_Y_0 + (posBase[1]+yj + IBM_BC_Y_E - IBM_BC_Y_0)%(IBM_BC_Y_E - IBM_BC_Y_0)
+                        IBM_BC_Y_0 + (posBase[1]+yj + IBM_BC_Y_E - IBM_BC_Y_0-IBM_BC_Y_0)%(IBM_BC_Y_E - IBM_BC_Y_0)
                     #endif //IBM_BC_Y_PERIODIC
                     , 
                     #ifdef IBM_BC_Z_WALL  // +MACR_BORDER_NODES in z because of the ghost nodes
                         posBase[2]+zk +MACR_BORDER_NODES
                     #endif //IBM_BC_Z_WALL
                     #ifdef IBM_BC_Z_PERIODIC
-                        IBM_BC_Z_0 + (posBase[2]+zk + IBM_BC_Z_E - IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
+                        IBM_BC_Z_0 + (posBase[2]+zk + IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
                     #endif //IBM_BC_Z_PERIODIC
                 );
               
@@ -429,21 +429,21 @@ void gpuForceInterpolationSpread(
                         posBase[0]+xi
                     #endif //IBM_BC_X_WALL
                     #ifdef IBM_BC_X_PERIODIC
-                        IBM_BC_X_0 + (posBase[0]+xi + IBM_BC_X_E - IBM_BC_X_0)%(IBM_BC_X_E - IBM_BC_X_0)
+                        IBM_BC_X_0 + (posBase[0]+xi + IBM_BC_X_E - IBM_BC_X_0-IBM_BC_X_0)%(IBM_BC_X_E - IBM_BC_X_0)
                     #endif //IBM_BC_X_PERIODIC
                     ,
                     #ifdef IBM_BC_Y_WALL 
                         posBase[1]+yj
                     #endif //IBM_BC_Y_WALL
                     #ifdef IBM_BC_Y_PERIODIC
-                        IBM_BC_Y_0 + (posBase[1]+yj + IBM_BC_Y_E - IBM_BC_Y_0)%(IBM_BC_Y_E - IBM_BC_Y_0)
+                        IBM_BC_Y_0 + (posBase[1]+yj + IBM_BC_Y_E - IBM_BC_Y_0-IBM_BC_Y_0)%(IBM_BC_Y_E - IBM_BC_Y_0)
                     #endif //IBM_BC_Y_PERIODIC
                     , 
                     #ifdef IBM_BC_Z_WALL  // +MACR_BORDER_NODES in z because of the ghost nodes
                         posBase[2]+zk +MACR_BORDER_NODES
                     #endif //IBM_BC_Z_WALL
                     #ifdef IBM_BC_Z_PERIODIC
-                        IBM_BC_Z_0 + (posBase[2]+zk + IBM_BC_Z_E - IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
+                        IBM_BC_Z_0 + (posBase[2]+zk + IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
                     #endif //IBM_BC_Z_PERIODIC
                 );
 
