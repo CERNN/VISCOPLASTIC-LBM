@@ -37,7 +37,7 @@
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
 
 #define ID_SIM "001"            // prefix for simulation's files
-#define PATH_FILES "TEST"  // path to save simulation's files
+#define PATH_FILES "TEST_IBM"  // path to save simulation's files
 
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
@@ -77,7 +77,7 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
 constexpr unsigned int N_GPUS = 2;    // Number of GPUS to use
-constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0,1};    // Which GPUs to use
+constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0, 0};    // Which GPUs to use
 
 
 

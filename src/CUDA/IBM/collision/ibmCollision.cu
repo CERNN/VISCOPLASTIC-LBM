@@ -267,10 +267,7 @@ void gpuParticlesCollision(
                 }
             #endif // LUBRICATION_FORCE
         #endif //IBM_BC_Z_WALL
-        
-
-        //   --------------- DUCT BOUNDARY CONDITIONS ------------------------
-
+        //   --------------- DUCT BOUNDARY CONDITIONS -----------------------
         #ifdef EXTERNAL_DUCT_BC || INTERNAL_DUCT_BC
             // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
             dfloat xCenter = (NX/2.0);
