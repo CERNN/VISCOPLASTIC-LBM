@@ -88,7 +88,7 @@ void ParticlesSoA::updateNodesGPUs(){
         // Update last particle position
         this->pCenterLastPos[i] = this->pCenterArray[i].pos;
 
-        for(int n = min_gpu; n < max_gpu; n++){
+        for(int n = min_gpu; n <= max_gpu; n++){
             // Set current device
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[n]));
             int left_shift = 0;
@@ -127,7 +127,7 @@ void ParticlesSoA::updateNodesGPUs(){
                 dfloat3 copy_f = nSoA.f.getValuesFromIdx(p);
                 dfloat3 copy_deltaF = nSoA.deltaF.getValuesFromIdx(p);
 
-                // Set device to move to
+                // Set device to move to (unnecessary)
                 checkCudaErrors(cudaSetDevice(GPUS_TO_USE[node_gpu]));
                 nSoA = this->nodesSoA[node_gpu];
                 // Copy values to last position in nodesSoA
@@ -141,13 +141,23 @@ void ParticlesSoA::updateNodesGPUs(){
                 nSoA.deltaF.copyValuesFromFloat3(copy_deltaF, idxMove);
                 // Added one node to it
                 this->nodesSoA[node_gpu].numNodes += 1;
-                // Set back particle device
-                checkCudaErrors(cudaSetDevice(n));
+                // Set back particle device (unnecessary)
+                checkCudaErrors(cudaSetDevice(GPUS_TO_USE[n]));
+                // printf("idx %d  gpu curr %d  ", p, n);
+                // for(int nnn = 0; nnn < N_GPUS; nnn++){
+                //     printf("Nodes GPU %d: %d\t", nnn, this->nodesSoA[nnn].numNodes);
+                // }
+                // printf("\n");
             }
             // Remove nodes that were added
             this->nodesSoA[n].numNodes -= left_shift;
         }
     }
+    // int sum = 0;
+    // for(int nnn = 0; nnn < N_GPUS; nnn++){
+    //     sum += this->nodesSoA[nnn].numNodes;
+    // }
+    // printf("sum nodes %d\n\n", sum);
 }
 
 

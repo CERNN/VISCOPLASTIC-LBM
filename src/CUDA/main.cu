@@ -72,12 +72,12 @@ int main()
     
     // Number of devices
     checkCudaErrors(cudaGetDeviceCount(&info.numDevices));
-    if(N_GPUS > info.numDevices){
-        printf("N_GPUS is higher than the number of detected GPUS\n");
-        printf("N_GPUS: %d\n", N_GPUS);
-        printf("Number of devices: %d\n", info.numDevices);
-        return -1;
-    }
+    // if(N_GPUS > info.numDevices){
+    //     printf("N_GPUS is higher than the number of detected GPUS\n");
+    //     printf("N_GPUS: %d\n", N_GPUS);
+    //     printf("Number of devices: %d\n", info.numDevices);
+    //     return -1;
+    // }
     info.numDevices = N_GPUS;
 
     /* ------------------------- ALLOCATION FOR CPU ------------------------- */
@@ -101,7 +101,7 @@ int main()
     for(int i = 0; i < N_GPUS; i++)
     {
         checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
-        checkCudaErrors(cudaGetDeviceProperties(&(info.devices[i]), i));
+        checkCudaErrors(cudaGetDeviceProperties(&(info.devices[i]), GPUS_TO_USE[i]));
 
         checkCudaErrors(cudaStreamCreate(&streamsLBM[i]));
         #ifdef IBM
@@ -247,14 +247,14 @@ int main()
         bool save = false, rep = false, repIBM = false, checkpoint = false;
         if(aux != 0)
         {
-            if(MACR_SAVE != 0)
+            if(MACR_SAVE)
                 save = !(aux % MACR_SAVE);
-            if(DATA_REPORT != 0)
+            if(DATA_REPORT)
                 rep = !(aux % DATA_REPORT);
-            if(CHECKPOINT_SAVE != 0)
+            if(CHECKPOINT_SAVE)
                 checkpoint = !(aux % CHECKPOINT_SAVE);
             #ifdef IBM
-            if(IBM_DATA_REPORT != 0)
+            if(IBM_DATA_REPORT)
                 repIBM = !(aux % IBM_DATA_REPORT);
             #endif
         }
@@ -319,7 +319,7 @@ int main()
         // IBM
         #ifdef IBM
 
-        if(IBM_EULER_UPDATE_INTERVAL == 0 || (step % IBM_EULER_UPDATE_INTERVAL) == 0)
+        if(!IBM_EULER_UPDATE_INTERVAL || (step % IBM_EULER_UPDATE_INTERVAL) == 0)
         {
             particlesSoA.updateNodesGPUs();
             #if IBM_EULER_OPTIMIZATION
@@ -333,7 +333,7 @@ int main()
             &pEulerNodes);
 
         // Save particles informations
-        if(IBM_PARTICLES_SAVE != 0 && !(step % IBM_PARTICLES_SAVE)){
+        if(IBM_PARTICLES_SAVE && !(step % IBM_PARTICLES_SAVE)){
             saveParticlesInfo(particlesSoA, step, IBM_PARTICLES_NODES_SAVE);
         }
         #endif

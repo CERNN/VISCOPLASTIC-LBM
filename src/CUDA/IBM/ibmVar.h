@@ -18,7 +18,7 @@
 
 /* -------------------------- IBM GENERAL DEFINES --------------------------- */
 // Total number of IB particles in the system
-#define NUM_PARTICLES 2
+#define NUM_PARTICLES 1
 // Number of IBM inner iterations
 #define IBM_MAX_ITERATION 1
 // Particles diameters

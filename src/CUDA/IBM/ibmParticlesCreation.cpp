@@ -100,7 +100,7 @@ void createParticles(Particle particles[NUM_PARTICLES])
 
     //for(int i = 0; i <NUM_PARTICLES ; i++){
         particles[0] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true,PARTICLE_DENSITY,vel,w);
-        particles[1] = makeSpherePolar(PARTICLE_DIAMETER, center1 , MESH_COULOMB, false,PARTICLE_DENSITY,vel,w);
+        // particles[1] = makeSpherePolar(PARTICLE_DIAMETER, center1 , MESH_COULOMB, false,PARTICLE_DENSITY,vel,w);
     //}
     /*
     // Fixed sphere

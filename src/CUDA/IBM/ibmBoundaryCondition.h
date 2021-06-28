@@ -126,11 +126,6 @@ constexpr dfloat PW_STIFFNESS_TANGENTIAL_CONST =  4.0 * SQRT_2 / ((2-PARTICLE_PO
 
 
 #endif
-// Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
-#if defined HARD_SPHERE
-constexpr dfloat FRICTION_COEF = 0.00923; // friction coeficient
-constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
-#endif
 /* -------------------------------------------------------------------------- */
 
 
