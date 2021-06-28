@@ -27,8 +27,8 @@
 #endif //IBM_BC_X_WALL
 
 #ifdef IBM_BC_X_PERIODIC
-    #define IBM_BC_X_0 0.0
-    #define IBM_BC_X_E NX
+    #define IBM_BC_X_0 (0)
+    #define IBM_BC_X_E (NX-0)
 #endif //IBM_BC_X_PERIODIC
 
 
@@ -44,8 +44,8 @@
 #endif //IBM_BC_Y_WALL
 
 #ifdef IBM_BC_Y_PERIODIC
-    #define IBM_BC_Y_0 0.0
-    #define IBM_BC_Y_E NY
+    #define IBM_BC_Y_0 0
+    #define IBM_BC_Y_E (NY)
 #endif //IBM_BC_Y_PERIODIC
 
 
@@ -61,8 +61,8 @@
 #endif //IBM_BC_Z_WALL
 
 #ifdef IBM_BC_Z_PERIODIC
-    #define IBM_BC_Z_0 0.0
-    #define IBM_BC_Z_E NZ
+    #define IBM_BC_Z_0 0
+    #define IBM_BC_Z_E (NZ_TOTAL)
 #endif //IBM_BC_Z_PERIODIC
 
 
