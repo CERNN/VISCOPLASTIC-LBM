@@ -373,21 +373,21 @@ void gpuParticlesCollision(
                 pos_i.x - pos_j.x
             #endif //IBM_BC_X_WALL
             #ifdef IBM_BC_X_PERIODIC
-                std::fmod((dfloat)(pos_i.x - pos_j.x + (NX/2.0)),(dfloat)(NX))-(NX/2.0)
+                std::fmod((dfloat)(pos_i.x - pos_j.x + ((IBM_BC_X_E-IBM_BC_X_0)/2.0)),(dfloat)(IBM_BC_X_E-IBM_BC_X_0))-((IBM_BC_X_E-IBM_BC_X_0)/2.0)
             #endif //IBM_BC_X_PERIODIC
             ,
             #ifdef IBM_BC_Y_WALL
                 pos_i.y - pos_j.y
             #endif //IBM_BC_Y_WALL
             #ifdef IBM_BC_Y_PERIODIC
-                std::fmod((dfloat)(pos_i.y - pos_j.y + (NY/2.0)),(dfloat)(NY))-(NY/2.0)
+                std::fmod((dfloat)(pos_i.y - pos_j.y + ((IBM_BC_Y_E-IBM_BC_Y_0)/2.0)),(dfloat)(IBM_BC_Y_E-IBM_BC_Y_0))-((IBM_BC_Y_E-IBM_BC_Y_0)/2.0)
             #endif //IBM_BC_Y_PERIODIC
             ,
             #ifdef IBM_BC_Z_WALL
                 pos_i.z - pos_j.z
             #endif //IBM_BC_Z_WALL
             #ifdef IBM_BC_Z_PERIODIC
-                std::fmod((dfloat)(pos_i.z - pos_j.z + (NZ_TOTAL/2.0)),(dfloat)(NZ_TOTAL))-(NZ_TOTAL/2.0)
+                std::fmod((dfloat)(pos_i.z - pos_j.z + ((IBM_BC_Z_E-IBM_BC_Z_0)/2.0)),(dfloat)(IBM_BC_Z_E-IBM_BC_Z_0))-((IBM_BC_Z_E-IBM_BC_Z_0)/2.0)
             #endif //IBM_BC_Z_PERIODIC
         );
 
@@ -584,22 +584,22 @@ void gpuSoftSphereParticleCollision(
         #ifdef IBM_BC_X_WALL
             pos_i.x - pos_j.x
         #endif //IBM_BC_X_WALL
-        #ifdef IBM_BC_X_PERIODIC
-            std::fmod((dfloat)(pos_i.x - pos_j.x + (NX/2.0)),(dfloat)(NX))-(NX/2.0)
+        #ifdef IBM_BC_X_PERIODIC 
+            std::fmod((dfloat)(pos_i.x - pos_j.x + ((IBM_BC_X_E-IBM_BC_X_0)/2.0)),(dfloat)(IBM_BC_X_E-IBM_BC_X_0))-((IBM_BC_X_E-IBM_BC_X_0)/2.0)
         #endif //IBM_BC_X_PERIODIC
         ,
         #ifdef IBM_BC_Y_WALL
             pos_i.y - pos_j.y
         #endif //IBM_BC_Y_WALL
         #ifdef IBM_BC_Y_PERIODIC
-            std::fmod((dfloat)(pos_i.y - pos_j.y + (NY/2.0)),(dfloat)(NY))-(NY/2.0)
+            std::fmod((dfloat)(pos_i.y - pos_j.y + ((IBM_BC_Y_E-IBM_BC_Y_0)/2.0)),(dfloat)(IBM_BC_Y_E-IBM_BC_Y_0))-((IBM_BC_Y_E-IBM_BC_Y_0)/2.0)
         #endif //IBM_BC_Y_PERIODIC
         ,
         #ifdef IBM_BC_Z_WALL
             pos_i.z - pos_j.z
         #endif //IBM_BC_Z_WALL
         #ifdef IBM_BC_Z_PERIODIC
-            std::fmod((dfloat)(pos_i.z - pos_j.z + (NZ_TOTAL/2.0)),(dfloat)(NZ_TOTAL))-(NZ_TOTAL/2.0)
+            std::fmod((dfloat)(pos_i.z - pos_j.z + ((IBM_BC_Z_E-IBM_BC_Z_0)/2.0)),(dfloat)(IBM_BC_Z_E-IBM_BC_Z_0))-((IBM_BC_Z_E-IBM_BC_Z_0)/2.0)
         #endif //IBM_BC_Z_PERIODIC
     );
 
