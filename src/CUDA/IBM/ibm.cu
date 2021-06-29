@@ -814,11 +814,12 @@ void gpuParticleMovement(
         pc->pos.z = IBM_BC_Z_0 + std::fmod((dfloat)(pc->pos.z + dz + IBM_BC_Z_E - IBM_BC_Z_0 - IBM_BC_Z_0) , (dfloat)(IBM_BC_Z_E - IBM_BC_Z_0)); 
     #endif //IBM_BC_Z_PERIODIC
 
-
-
     pc->w_avg.x = (pc->w.x   * IBM_MOVEMENT_DISCRETIZATION + pc->w_old.x   * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
     pc->w_avg.y = (pc->w.y   * IBM_MOVEMENT_DISCRETIZATION + pc->w_old.y   * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
     pc->w_avg.z = (pc->w.z   * IBM_MOVEMENT_DISCRETIZATION + pc->w_old.z   * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
+    pc->w_pos.x += pc->w_avg.x;
+    pc->w_pos.y += pc->w_avg.y;
+    pc->w_pos.z += pc->w_avg.z;
 }
 
 

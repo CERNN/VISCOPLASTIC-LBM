@@ -26,6 +26,8 @@ typedef struct particleEulerNodesUpdate{
     ParticleCenter** pCenterMovable;
     // Particles last position
     dfloat3* particlesLastPos;
+    // Particles last angular position
+    dfloat3* particlesLastWPos;
     // Has fixed particles
     bool hasFixed;
     // TODO: keep particle angle as well to count rotation

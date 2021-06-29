@@ -40,7 +40,8 @@ typedef struct particle {
 typedef struct particlesSoA{
     ParticleNodeSoA nodesSoA[N_GPUS];
     ParticleCenter* pCenterArray;
-    dfloat3* pCenterLastPos;
+    dfloat3* pCenterLastPos;    // Last particle position
+    dfloat3* pCenterLastWPos;   // Last angular particle position
 
     void updateParticlesAsSoA(Particle* particles);
     void updateNodesGPUs();
