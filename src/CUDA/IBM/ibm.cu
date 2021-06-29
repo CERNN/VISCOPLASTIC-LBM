@@ -980,7 +980,7 @@ void gpuParticleNodeMovement(
 
     #ifdef IBM_BC_Z_PERIODIC
         if(abs(z_vec) > (dfloat)(IBM_BC_Z_E - IBM_BC_Z_0)/2.0){
-            if(pc.pos.y < pc.pos_old.y )
+            if(pc.pos.z < pc.pos_old.z )
                 z_vec = ( particlesNodes.pos.z[i]  + (IBM_BC_Z_E - IBM_BC_Z_0)) - pc.pos_old.z;
             else
                 z_vec = ( particlesNodes.pos.z[i]  - (IBM_BC_Z_E - IBM_BC_Z_0)) - pc.pos_old.z;
