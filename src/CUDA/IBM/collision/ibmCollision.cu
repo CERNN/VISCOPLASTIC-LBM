@@ -369,22 +369,40 @@ void gpuParticlesCollision(
             #ifdef IBM_BC_X_WALL
                 pos_i.x - pos_j.x
             #endif //IBM_BC_X_WALL
-            #ifdef IBM_BC_X_PERIODIC
-                std::fmod((dfloat)(pos_i.x - pos_j.x + ((IBM_BC_X_E-IBM_BC_X_0)/2.0)),(dfloat)(IBM_BC_X_E-IBM_BC_X_0))-((IBM_BC_X_E-IBM_BC_X_0)/2.0)
+            #ifdef IBM_BC_X_PERIODIC 
+            abs(pos_i.x - pos_j.x) > ((IBM_BC_X_E - IBM_BC_X_0) / 2.0) ? 
+            (pos_i.x < pos_j.x ?
+                (pos_i.x + (IBM_BC_X_E - IBM_BC_X_0) - pos_j.x)
+                : 
+                (pos_i.x - (IBM_BC_X_E - IBM_BC_X_0) - pos_j.x)
+            )
+            : pos_i.x - pos_j.x
             #endif //IBM_BC_X_PERIODIC
             ,
             #ifdef IBM_BC_Y_WALL
                 pos_i.y - pos_j.y
             #endif //IBM_BC_Y_WALL
             #ifdef IBM_BC_Y_PERIODIC
-                std::fmod((dfloat)(pos_i.y - pos_j.y + ((IBM_BC_Y_E-IBM_BC_Y_0)/2.0)),(dfloat)(IBM_BC_Y_E-IBM_BC_Y_0))-((IBM_BC_Y_E-IBM_BC_Y_0)/2.0)
+            abs(pos_i.y - pos_j.y) > ((IBM_BC_Y_E - IBM_BC_Y_0) / 2.0) ? 
+            (pos_i.y < pos_j.y ?
+                (pos_i.y + (IBM_BC_Y_E - IBM_BC_Y_0) - pos_j.y)
+                : 
+                (pos_i.y - (IBM_BC_Y_E - IBM_BC_Y_0) - pos_j.y)
+            )
+            : pos_i.y - pos_j.y
             #endif //IBM_BC_Y_PERIODIC
             ,
             #ifdef IBM_BC_Z_WALL
                 pos_i.z - pos_j.z
             #endif //IBM_BC_Z_WALL
             #ifdef IBM_BC_Z_PERIODIC
-                std::fmod((dfloat)(pos_i.z - pos_j.z + ((IBM_BC_Z_E-IBM_BC_Z_0)/2.0)),(dfloat)(IBM_BC_Z_E-IBM_BC_Z_0))-((IBM_BC_Z_E-IBM_BC_Z_0)/2.0)
+                abs(pos_i.z - pos_j.z) > ((IBM_BC_Z_E - IBM_BC_Z_0) / 2.0) ? 
+                (pos_i.z < pos_j.z ?
+                    (pos_i.z + (IBM_BC_Z_E - IBM_BC_Z_0) - pos_j.z)
+                    : 
+                    (pos_i.z - (IBM_BC_Z_E - IBM_BC_Z_0) - pos_j.z)
+                )
+                : pos_i.z - pos_j.z
             #endif //IBM_BC_Z_PERIODIC
         );
 
@@ -395,7 +413,7 @@ void gpuParticlesCollision(
             + diff_pos.y*diff_pos.y
             + diff_pos.z*diff_pos.z);
 
-        
+        //printf("i: %f , j: %f , dx: %f \n",pos_i.z,pos_j.z,diff_pos.z);
         #if defined LUBRICATION_FORCE
             //check if lubrication will occur
             if(mag_dist < r_i+r_j + MAX_LUBRICATION_DISTANCE){
@@ -582,21 +600,39 @@ void gpuSoftSphereParticleCollision(
             pos_i.x - pos_j.x
         #endif //IBM_BC_X_WALL
         #ifdef IBM_BC_X_PERIODIC 
-            std::fmod((dfloat)(pos_i.x - pos_j.x + ((IBM_BC_X_E-IBM_BC_X_0)/2.0)),(dfloat)(IBM_BC_X_E-IBM_BC_X_0))-((IBM_BC_X_E-IBM_BC_X_0)/2.0)
+        abs(pos_i.x - pos_j.x) > ((IBM_BC_X_E - IBM_BC_X_0) / 2.0) ? 
+        (pos_i.x < pos_j.x ?
+            (pos_i.x + (IBM_BC_X_E - IBM_BC_X_0) - pos_j.x)
+            : 
+            (pos_i.x - (IBM_BC_X_E - IBM_BC_X_0) - pos_j.x)
+        )
+        : pos_i.x - pos_j.x
         #endif //IBM_BC_X_PERIODIC
         ,
         #ifdef IBM_BC_Y_WALL
             pos_i.y - pos_j.y
         #endif //IBM_BC_Y_WALL
         #ifdef IBM_BC_Y_PERIODIC
-            std::fmod((dfloat)(pos_i.y - pos_j.y + ((IBM_BC_Y_E-IBM_BC_Y_0)/2.0)),(dfloat)(IBM_BC_Y_E-IBM_BC_Y_0))-((IBM_BC_Y_E-IBM_BC_Y_0)/2.0)
+        abs(pos_i.y - pos_j.y) > ((IBM_BC_Y_E - IBM_BC_Y_0) / 2.0) ? 
+        (pos_i.y < pos_j.y ?
+            (pos_i.y + (IBM_BC_Y_E - IBM_BC_Y_0) - pos_j.y)
+            : 
+            (pos_i.y - (IBM_BC_Y_E - IBM_BC_Y_0) - pos_j.y)
+        )
+        : pos_i.y - pos_j.y
         #endif //IBM_BC_Y_PERIODIC
         ,
         #ifdef IBM_BC_Z_WALL
             pos_i.z - pos_j.z
         #endif //IBM_BC_Z_WALL
         #ifdef IBM_BC_Z_PERIODIC
-            std::fmod((dfloat)(pos_i.z - pos_j.z + ((IBM_BC_Z_E-IBM_BC_Z_0)/2.0)),(dfloat)(IBM_BC_Z_E-IBM_BC_Z_0))-((IBM_BC_Z_E-IBM_BC_Z_0)/2.0)
+            abs(pos_i.z - pos_j.z) > ((IBM_BC_Z_E - IBM_BC_Z_0) / 2.0) ? 
+            (pos_i.z < pos_j.z ?
+                (pos_i.z + (IBM_BC_Z_E - IBM_BC_Z_0) - pos_j.z)
+                : 
+                (pos_i.z - (IBM_BC_Z_E - IBM_BC_Z_0) - pos_j.z)
+            )
+            : pos_i.z - pos_j.z
         #endif //IBM_BC_Z_PERIODIC
     );
 

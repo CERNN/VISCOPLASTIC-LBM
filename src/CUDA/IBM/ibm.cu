@@ -947,12 +947,7 @@ void gpuParticleNodeMovement(
 
     // TODO: these variables are the same for every particle center, optimize it
     
-    const dfloat q0 = cos(0.5*w_norm);
-    const dfloat qi = (pc.w_avg.x/w_norm) * sin (0.5*w_norm);
-    const dfloat qj = (pc.w_avg.y/w_norm) * sin (0.5*w_norm);
-    const dfloat qk = (pc.w_avg.z/w_norm) * sin (0.5*w_norm);
 
-    const dfloat tq0m1 = (q0*q0) - 0.5;
 
     dfloat x_vec = particlesNodes.pos.x[i] - pc.pos_old.x;
     dfloat y_vec = particlesNodes.pos.y[i] - pc.pos_old.y;
@@ -962,33 +957,48 @@ void gpuParticleNodeMovement(
     #ifdef IBM_BC_X_PERIODIC
         if(abs(x_vec) > (dfloat)(IBM_BC_X_E - IBM_BC_X_0)/2.0){
             if(particlesNodes.pos.x[i] < pc.pos_old.x )
-                x_vec = (particlesNodes.pos.x[i]  + (IBM_BC_X_E - IBM_BC_X_0)) - pc.pos_old.x;
+                particlesNodes.pos.x[i] += (dfloat)(IBM_BC_X_E - IBM_BC_X_0) ;
             else
-                x_vec = (particlesNodes.pos.x[i]  - (IBM_BC_X_E - IBM_BC_X_0)) - pc.pos_old.x;
+                particlesNodes.pos.x[i] -= (dfloat)(IBM_BC_X_E - IBM_BC_X_0) ;
         }
+
+        x_vec = particlesNodes.pos.x[i] - pc.pos_old.x;
     #endif //IBM_BC_X_PERIODIC
 
 
     #ifdef IBM_BC_Y_PERIODIC
         if(abs(y_vec) > (dfloat)(IBM_BC_Y_E - IBM_BC_Y_0)/2.0){
-            if(pc.pos.y < pc.pos_old.y )
-                y_vec = (particlesNodes.pos.y[i]  + (IBM_BC_Y_E - IBM_BC_Y_0)) - pc.pos_old.y;
+            if(particlesNodes.pos.y[i] < pc.pos_old.y )
+                particlesNodes.pos.y[i] += (dfloat)(IBM_BC_Y_E - IBM_BC_Y_0) ;
             else
-                y_vec = (particlesNodes.pos.y[i]  - (IBM_BC_Y_E - IBM_BC_Y_0)) - pc.pos_old.y;
+                particlesNodes.pos.y[i] -= (dfloat)(IBM_BC_Y_E - IBM_BC_Y_0) ;
         }
+
+        y_vec = particlesNodes.pos.y[i] - pc.pos_old.y;
     #endif //IBM_BC_Y_PERIODIC
 
 
     #ifdef IBM_BC_Z_PERIODIC
         if(abs(z_vec) > (dfloat)(IBM_BC_Z_E - IBM_BC_Z_0)/2.0){
-            if(pc.pos.z < pc.pos_old.z )
-                z_vec = ( particlesNodes.pos.z[i]  + (IBM_BC_Z_E - IBM_BC_Z_0)) - pc.pos_old.z;
+            if(particlesNodes.pos.z[i] < pc.pos_old.z )
+                particlesNodes.pos.z[i] += (dfloat)(IBM_BC_Z_E - IBM_BC_Z_0) ;
             else
-                z_vec = ( particlesNodes.pos.z[i]  - (IBM_BC_Z_E - IBM_BC_Z_0)) - pc.pos_old.z;
+                particlesNodes.pos.z[i] -= (IBM_BC_Z_E - IBM_BC_Z_0) ;
         }
+
+        z_vec = particlesNodes.pos.z[i] - pc.pos_old.z;
     #endif //IBM_BC_Z_PERIODIC
 
+    
+    
+    
 
+    const dfloat q0 = cos(0.5*w_norm);
+    const dfloat qi = (pc.w_avg.x/w_norm) * sin (0.5*w_norm);
+    const dfloat qj = (pc.w_avg.y/w_norm) * sin (0.5*w_norm);
+    const dfloat qk = (pc.w_avg.z/w_norm) * sin (0.5*w_norm);
+
+    const dfloat tq0m1 = (q0*q0) - 0.5;
     
     dfloat new_pos_x = pc.pos.x + 2 * (   (tq0m1 + (qi*qi))*x_vec + ((qi*qj) - (q0*qk))*y_vec + ((qi*qk) + (q0*qj))*z_vec);
     dfloat new_pos_y = pc.pos.y + 2 * ( ((qi*qj) + (q0*qk))*x_vec +   (tq0m1 + (qj*qj))*y_vec + ((qj*qk) - (q0*qi))*z_vec);
