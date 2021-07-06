@@ -237,7 +237,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     // Number of layers in the sphere
     nLayer = (unsigned int)(2.0 * sqrt(2) * r / MESH_SCALE + 1.0); 
 
-    nNodesLayer = (unsigned int*)malloc(nLayer * sizeof(unsigned int));
+    nNodesLayer = (unsigned int*)malloc((nLayer+1) * sizeof(unsigned int));
     theta = (dfloat*)malloc((nLayer+1) * sizeof(dfloat));
     zeta = (dfloat*)malloc((nLayer+1) * sizeof(dfloat));
     S = (dfloat*)malloc((nLayer+1) * sizeof(dfloat));
