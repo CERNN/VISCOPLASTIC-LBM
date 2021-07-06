@@ -297,7 +297,7 @@ std::string getSimInfoString(SimInfo* info)
     #ifdef IBM_BC_Z_WALL
     strSimInfo << "\t        IBM BC. Z-Dir: Wall \n";
     #endif
-    #ifdef IBM_BC_Y_PERIODIC
+    #ifdef IBM_BC_Z_PERIODIC
     strSimInfo << "\t        IBM BC. Z-Dir: Periodic \n";
     strSimInfo << "\t           IBM_BC_Z_0:"<< IBM_BC_Z_0 <<  "\n";
     strSimInfo << "\t           IBM_BC_Z_E:"<< IBM_BC_Z_E <<  "\n";
