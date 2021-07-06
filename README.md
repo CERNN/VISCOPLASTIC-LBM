@@ -62,6 +62,20 @@ Two example files are presented in _CUDA/Post Processing/_ folder. Basic data tr
 
 Implementations details and more informations can be obtained in the source files and in [files.md](./doc/files.md).
 
+## Create Visual Studio 2019 Project
+
+1. Create project with CUDA template
+2. Exclude the default file kernel.cu
+3. Add all .cpp, .cu, .h, etc. files in the _src/CUDA_ folder to the project, __except for the ones in boundaryConditionsBuilders folder__
+4. Change the project settings (right click on projetct, then properties) to:
+   1. Set __Depuração->Diretório de trabalho__ to the folder where main.cu is (src/CUDA)
+   2. __Cuda C/C++ -> Common__ set __Generate Relocatable Device Code__ to __yes (-rdc=True)__
+   3. Update __CUDA C/C++ -> Device__ 
+      1. __Code Generation__ to __compute\_CC,sm\_CC__ where CC is the compute capability of your device (37, 61, 75, etc.)
+      2. __Use fast math__ to __yes__
+   4. Update __Linker -> Input__
+      1. Add to _Additional dependencies_ the libs _cudadevrt.lib;curand.lib_. The final string should be something like "cudadevrt.lib;curand.lib;cudart_static.lib;kernel32.lib;...[continues]"
+
 ## License
 
 This software is provided under the [GPLv2 license](./LICENSE.txt).

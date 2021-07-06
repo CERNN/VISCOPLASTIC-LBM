@@ -17,9 +17,7 @@
 doc/Reports/*
 doc/Requirements.docx
 bin/*
-src/CUDA/.vs/
-src/CUDA/x64
-*.vcxproj*
-*.sln
+*.vs/
+*Debug/
 *.csv
 *.test
