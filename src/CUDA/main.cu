@@ -531,7 +531,6 @@ int main()
     for(int i = 0; i < NUM_PARTICLES; i++){
         free(particles[i].nodes);
     }
-    free(particles);
     particlesSoA.freeNodesAndCenters();
     ibmMacrsAux.ibmMacrsAuxFree();
     #if IBM_EULER_OPTIMIZATION

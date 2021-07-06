@@ -99,19 +99,19 @@ void createParticles(Particle particles[NUM_PARTICLES])
     w.z = 0.0;
 
     //for(int i = 0; i <NUM_PARTICLES ; i++){
-        particles[0] = makeSpherePolar(PARTICLE_DIAMETER, center , MESH_COULOMB, true,PARTICLE_DENSITY,vel,w);
-        // particles[1] = makeSpherePolar(PARTICLE_DIAMETER, center1 , MESH_COULOMB, false,PARTICLE_DENSITY,vel,w);
+        particles[0].makeSpherePolar(PARTICLE_DIAMETER, center, MESH_COULOMB, true, PARTICLE_DENSITY, vel, w);
+        // particles[1].makeSpherePolar(PARTICLE_DIAMETER, center1 , MESH_COULOMB, false,PARTICLE_DENSITY,vel,w);
     //}
     /*
     // Fixed sphere
-    particles[0] = makeSpherePolar(
+    particles[0].makeSpherePolar(
         PARTICLE_DIAMETER, 
         dfloat3((NX)/2.0, (NY)/2.0, (NZ_TOTAL)/4.0), 
         MESH_COULOMB, false);
     */
     /*  
     // Sphere in couette flow (Neutrally buoyant particle in a shear flow)
-    particles[0] = makeSpherePolar(
+    particles[0].makeSpherePolar(
         PARTICLE_DIAMETER, 
         dfloat3(NX/2, NY/2, NZ/2), 
         MESH_COULOMB, true);

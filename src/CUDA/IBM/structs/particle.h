@@ -31,6 +31,30 @@ typedef struct particle {
         numNodes = 0;
         nodes = nullptr;
     }
+    /*
+    *   @brief Create the particle in the shape of a sphere with given diameter and center
+    *   @param part: particle object to override values
+    *   @param diameter: sphere diameter in dfloat
+    *   @param center : sphere center position
+    *   @param coloumb: number of interations for coloumb optimization
+    *   @param move: particle is movable or not
+    *   @param density: particle density
+    *   @param vel: particle velocity
+    *   @param w: particle rotation velocity
+    */
+    __host__
+    void makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move,
+        dfloat density = PARTICLE_DENSITY, dfloat3 vel = dfloat3(0, 0, 0), dfloat3 w = dfloat3(0, 0, 0));
+
+    /*
+    *   @brief Create a fixed open cylinder in the bases given the diameter and location of the base center
+    *   @param diameter: cylinder diameter in dfloat
+    *   @param baseOneCenter: coordinates of the first base center
+    *   @param baseTwoCenter: coordinates of the second base center
+    *   @param pattern: false: in-line pattern, true: staggered pattern
+    */
+    __host__
+    void makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern);
 } Particle;
 
 
@@ -47,30 +71,5 @@ typedef struct particlesSoA{
     void updateNodesGPUs();
     void freeNodesAndCenters();
 } ParticlesSoA;
-
-
-/*
-*   @brief Create the particle in the shape of a sphere with given diameter and center
-*   @param diameter: sphere diameter in dfloat
-*   @param center : sphere center position
-*   @param coloumb: number of interations for coloumb optimization
-*   @param move: particle is movable or not
-*   @param density: particle density
-*   @param vel: particle velocity
-*   @param w: particle rotation velocity
-*/
-Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move,
-    dfloat density=PARTICLE_DENSITY, dfloat3 vel=dfloat3(0, 0, 0), dfloat3 w=dfloat3(0, 0, 0));
-
-
-/*
-*   @brief Create a fixed open cylinder in the bases given the diameter and location of the base center
-*   @param diameter: cylinder diameter in dfloat
-*   @param baseOneCenter: coordinates of the first base center
-*   @param baseTwoCenter: coordinates of the second base center
-*   @param pattern: false: in-line pattern, true: staggered pattern
-*/
-Particle makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern);
-
 
 #endif
