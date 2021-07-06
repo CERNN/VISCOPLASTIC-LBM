@@ -52,13 +52,13 @@ int main()
     int step = INI_STEP;
     dim3* gridsBC;
 
-    #ifdef IBM
-    Particle particles[NUM_PARTICLES];
     ParticlesSoA particlesSoA;
+    Particle particles[NUM_PARTICLES];
     ParticleEulerNodesUpdate pEulerNodes;
 
     IBMProc ibmProcessData;
     IBMMacrsAux ibmMacrsAux;
+    #ifdef IBM
     allocateIBMProc(&ibmProcessData);
     #endif
 
