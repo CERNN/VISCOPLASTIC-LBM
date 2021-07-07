@@ -259,8 +259,14 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "IBM Euler optimization: " << IBM_EULER_OPTIMIZATION << "\n";
     strSimInfo << " IBM Breugem parameter: " << BREUGEM_PARAMETER << "\n";
     strSimInfo << " IBM Movement Disctre.: " << IBM_MOVEMENT_DISCRETIZATION << "\n";
+    strSimInfo << "-------------------------------- IBM Optimization ------------------------------\n";
+    strSimInfo << " Part. shell thickness: " << IBM_PARTICLE_SHELL_THICKNESS << "\n";
+    strSimInfo << "     Part. update dist: " << IBM_PARTICLE_UPDATE_DIST << "\n";
+    strSimInfo << "Part. update frequency: " << IBM_PARTICLE_UPDATE_DIST << "\n";
     #if IBM_EULER_OPTIMIZATION
-    strSimInfo << "       Shell thickness: " << IBM_EULER_SHELL_THICKNESS << "\n";
+    strSimInfo << " Euler shell thickness: " << IBM_EULER_SHELL_THICKNESS << "\n";
+    strSimInfo << "     Euler update dist: " << IBM_EULER_UPDATE_DIST << "\n";
+    strSimInfo << "Euler update frequency: " << IBM_EULER_UPDATE_DIST << "\n";
     #endif
     strSimInfo << "--------------------------------- IBM Collision --------------------------------\n";
     strSimInfo << "\tPart-Part Frict Coef.: " << PP_FRICTION_COEF << "\n";

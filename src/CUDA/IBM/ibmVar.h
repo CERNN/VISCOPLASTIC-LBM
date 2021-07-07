@@ -42,32 +42,61 @@
 
 
 /* ---------------------------- IBM OPTIMIZATION --------------------------- */
+
+/*                      READ THIS FOR OPTIMIZATION OF IBM 
+*   The formula below must be used to define the values of the variables below:
+*       MAX_MOVE_PER_STEP*(IBM_PARTICLE_SHELL_THICKNESS) < IBM_PARTICLE_UPDATE_INTERVAL
+*-  MAX_MOVE_PER_STEP must considers TRANSLATION AND ROTATION movement at the border nodes
+*
+*   The frequency of update (freq) is:
+*       freq = IBM_PARTICLE_UPDATE_DIST/avg_move_per_step
+*
+*   In order to minimize the frequency update, you must choose values that respecti
+*   the first formula, while minimizing the frequency. 
+*   Also, you must keep in mind that the higher IBM_PARTICLE_UPDATE_DIST and
+*   IBM_PARTICLE_SHELL_THICKNESS, more memory is required
+*
+*   If the particle max movement is 0.1, examples of good values are:
+*       IBM_PARTICLE_SHELL_THICKNESS=5.1
+*       IBM_PARTICLE_UPDATE_DIST=2.0
+*       IBM_PARTICLE_UPDATE_INTERVAL=50
+*   Note that the values satisfies the first formula (0.1*50 < 5.1). 
+*   If you wanted to be more conservative, you could decrease IBM_PARTICLE_UPDATE_INTERVAL
+*   or increase IBM_PARTICLE_SHELL_THICKNESS. 
+*   For lower frequency of update, you could increase IBM_PARTICLE_UPDATE_DIST.
+*   Fow lower use of memory, you could decrease IBM_PARTICLE_UPDATE_DIST 
+*   or IBM_PARTICLE_SHELL_THICKNESS.
+*/
+
+// Shell thickness to consider for each particle. Particle can move at most
+// this value in IBM_PARTICLE_UPDATE_INTERVAL steps. If it moves more, simulation 
+// may be wrong
+#define IBM_PARTICLE_SHELL_THICKNESS (5.0)
+// How much a particle must move to be updated (checking is done with frequency)
+// of IBM_PARTICLE_UPDATE_INTERVAL
+#define IBM_PARTICLE_UPDATE_DIST (5.0)
+// Frequency to check if particle has moved more than IBM_PARTICLE_UPDATE_DIST and update
+// its nodes in each GPU. If particle nodes move more than (
+// IBM_PARTICLE_SHELL_THICKNESS+IBM_PARTICLE_UPDATE_DIST) in this interval, it may lead
+// to simulation errors.
+#define IBM_PARTICLE_UPDATE_INTERVAL (50)
+
+/*  EULER OPTIMZATION FOLLOWS SIMILAR RULES OF ABOVE OPTIMIZATION. 
+*   BUT IT DOES NOT USE CONSIDERABLY MORE MEMORY */
 // Optimize Euler nodes updates for IBM (only recommended to test false
 // with a ratio of more than 5% between lagrangian and eulerian nodes)
 #define IBM_EULER_OPTIMIZATION false
 // "Shell thickness" to consider. The Euler nodes are updated every time 
 // the particle moves more than IBM_EULER_UPDATE_DIST and all nodes with 
-// less than IBM_EULER_SHELL_THICKNESS+P_DIST distant from the particle are updated.
+// less than IBM_EULER_SHELL_THICKNESS+IBM_EULER_UPDATE_DIST+P_DIST 
+// distant from the particle are updated.
 // For fixed particles these values does not influence.
-// The higher the value, more Euler nodes will be updated every step and
-// performance may decrease.
-// This value is a tradeoff between:
-// Calculate euler nodes that must be updated (lower the value or higher the 
-//        particle movement, more frequent this update will be)
-// vs.
-// Number of euler nodes updated (higher value, higher the eulerian nodes)
-// The difference between IBM_EULER_SHELL_THICKNESS and IBM_EULER_UPDATE_DIST must
-// be low enough so that the particle doesn't move more than that in 
-// IBM_EULER_UPDATE_INTERVAL steps
 #define IBM_EULER_SHELL_THICKNESS (2.0)
-// MUST BE LOWER OR EQUAL TO IBM_EULER_SHELL_THICKNESS, 
-// (equal if IBM_EULER_UPDATE_INTERVAL=1)
 #define IBM_EULER_UPDATE_DIST (0.0)
 // Every interval to check for update of particles. Note that if particle moves
 // more than planned in this interval it may lead to simulations errors. 
 // Leave as 1 if you're not interested in this optimization
 #define IBM_EULER_UPDATE_INTERVAL (0)
-
 
 //Define the discrization coefiecient for the particle movement: 1 = only current time step
 // 0.5 =  half current and half previous,  0 = only previous time step information
@@ -119,7 +148,7 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 #ifdef IBM
 // Border size is the number of ghost nodes in one size of z for each GPU. 
 // These nodes are used for IBM force/macroscopics update/sync
-#define MACR_BORDER_NODES (2+(int)(IBM_EULER_SHELL_THICKNESS+0.99999999))
+#define MACR_BORDER_NODES (2+(int)((IBM_EULER_UPDATE_DIST+IBM_PARTICLE_SHELL_THICKNESS)+0.99999999))
 #else
 #define MACR_BORDER_NODES (0)
 #endif

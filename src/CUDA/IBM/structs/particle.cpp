@@ -63,6 +63,10 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
 
 
 void ParticlesSoA::updateNodesGPUs(){
+    // No need to update for 1 GPU
+    if(N_GPUS == 1)
+        return;
+
     for(int i = 0; i < NUM_PARTICLES; i++){
         checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
         if(!this->pCenterArray[i].movable)
@@ -92,9 +96,9 @@ void ParticlesSoA::updateNodesGPUs(){
 
         // Particle has not moved enoush and nodes that needs to be 
         // updated/synchronized are already considering that
-        if(diff_z < IBM_EULER_UPDATE_DIST)
+        if(diff_z < IBM_PARTICLE_UPDATE_DIST)
             continue;
-        
+
         // Update particle's last position
         this->pCenterLastPos[i] = this->pCenterArray[i].pos;
         this->pCenterLastWPos[i] = this->pCenterArray[i].w_pos;

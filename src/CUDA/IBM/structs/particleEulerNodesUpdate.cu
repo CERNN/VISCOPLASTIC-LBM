@@ -226,7 +226,7 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
     // TODO: update this for other geometries than sphere
     dfloat sphereShellThick = P_DIST;
     if(pc->movable)
-        sphereShellThick += IBM_EULER_SHELL_THICKNESS;
+        sphereShellThick += IBM_EULER_UPDATE_DIST+IBM_EULER_SHELL_THICKNESS;
     dfloat addTerm = radius+sphereShellThick;
 
     const int maxX = myMin(pos.x+addTerm+1, NX-1); // +1 for ceil

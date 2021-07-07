@@ -319,13 +319,17 @@ int main()
         // IBM
         #ifdef IBM
 
+        // Update particle nodes in each GPU
+        if(!IBM_PARTICLE_UPDATE_INTERVAL || (step % IBM_PARTICLE_UPDATE_INTERVAL) == 0){
+            particlesSoA.updateNodesGPUs();
+        }
+
+        #if IBM_EULER_OPTIMIZATION
         if(!IBM_EULER_UPDATE_INTERVAL || (step % IBM_EULER_UPDATE_INTERVAL) == 0)
         {
-            particlesSoA.updateNodesGPUs();
-            #if IBM_EULER_OPTIMIZATION
             pEulerNodes.checkParticlesMovement();
-            #endif
-        }
+        }    
+        #endif
 
         immersedBoundaryMethod(
             particlesSoA, macr, ibmMacrsAux, pop, grid, threads,
