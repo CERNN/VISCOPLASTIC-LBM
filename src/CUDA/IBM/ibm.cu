@@ -136,7 +136,7 @@ void immersedBoundaryMethod(
         // Sum border macroscopics
         for(int j = 0; j < N_GPUS; j++){
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
-            int nxt = j+1 % N_GPUS;
+            int nxt = (j+1) % N_GPUS;
             int prv = (j-1+N_GPUS) % N_GPUS;
             bool run_nxt = nxt != 0;
             bool run_prv = prv != (N_GPUS-1);
