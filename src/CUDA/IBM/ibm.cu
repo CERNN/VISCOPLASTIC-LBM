@@ -137,17 +137,21 @@ void immersedBoundaryMethod(
         for(int j = 0; j < N_GPUS; j++){
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
             int nxt = j+1 % N_GPUS;
-            int prv = j-1 % N_GPUS;
-            // Run anyway if is z periodic
-            #ifndef IBM_BC_Z_PERIODIC
-            if(nxt != 0)
+            int prv = (j-1+N_GPUS) % N_GPUS;
+            bool run_nxt = nxt != 0;
+            bool run_prv = prv != (N_GPUS-1);
+            #ifdef IBM_BC_Z_PERIODIC
+            run_nxt = true;
+            run_prv = true;
             #endif
+            if(run_nxt){
                 gpuSumBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[nxt], ibmMacrsAux, j, 1);
-            #ifndef IBM_BC_Z_PERIODIC
-            if(prv != N_GPUS-1)
-            #endif
+                checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
+            }
+            if(run_prv){
                 gpuSumBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[prv], ibmMacrsAux, j, -1);
-            checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
+                checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
+            }
             getLastCudaError("Sum border macroscopics error\n");
         }
 
