@@ -64,11 +64,20 @@ void immersedBoundaryMethod(
     for(int i = 0; i < N_GPUS; i++){
         checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
         // Update macroscopics post boundary conditions and reset forces
-        gpuUpdateMacrIBM<<<gridLBM, threadsLBM, 0, streamLBM[i]>>>(pop[i], macr[i], ibmMacrsAux, i);
+        gpuUpdateMacrIBM<<<borderMacrGrid, threadsLBM, 0, streamLBM[i]>>>(pop[i], macr[i], ibmMacrsAux, i);
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
-        gpuResetBorderMacrAuxIBM<<<copyMacrGrid, threadsLBM, 0, streamLBM[i]>>>(ibmMacrsAux, i);
+        // gpuResetBorderMacrAuxIBM<<<copyMacrGrid, threadsLBM, 0, streamLBM[i]>>>(ibmMacrsAux, i);
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
         getLastCudaError("IBM update macr error\n");
+        // for(int z = 0; z < NZ+MACR_BORDER_NODES*2; z++)
+        //     for(int y = 0; y < NY; y++)
+        //         for(int x = 0; x < NX; x++){
+        //             size_t myidx = idxScalar(x, y, z);
+        //             dfloat myux = ibmMacrsAux.velAux[i].x[myidx];
+        //             dfloat myfx = ibmMacrsAux.fAux[i].x[myidx];
+        //             if(myux != 0 || myfx != 0)
+        //                 printf("error ibmMacrsAux(%d %d %d): ux %.2e fx %.2e\n", x, y, z, myux, myfx);
+        //         }
     }
     #endif
 
@@ -127,11 +136,16 @@ void immersedBoundaryMethod(
         // Sum border macroscopics
         for(int j = 0; j < N_GPUS; j++){
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
-            int nxt = j+1;
-            int prv = j-1;
-            if(nxt < N_GPUS)
+            int nxt = j+1 % N_GPUS;
+            int prv = j-1 % N_GPUS;
+            // Run anyway if is z periodic
+            #ifndef IBM_BC_Z_PERIODIC
+            if(nxt != 0)
+            #endif
                 gpuSumBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[nxt], ibmMacrsAux, j, 1);
-            if(prv >= 0)
+            #ifndef IBM_BC_Z_PERIODIC
+            if(prv != N_GPUS-1)
+            #endif
                 gpuSumBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[prv], ibmMacrsAux, j, -1);
             checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
             getLastCudaError("Sum border macroscopics error\n");
@@ -151,9 +165,27 @@ void immersedBoundaryMethod(
         }
         #else
         for(int j = 0; j < N_GPUS; j++){
+            // for(int z = 0; z < NZ+MACR_BORDER_NODES*2; z++)
+            //     for(int y = 0; y < NY; y++)
+            //         for(int x = 0; x < NX; x++){
+            //             size_t myidx = idxScalar(x, y, z);
+            //             dfloat myux = ibmMacrsAux.velAux[j].x[myidx];
+            //             dfloat myfx = ibmMacrsAux.fAux[j].x[myidx];
+            //             if(myux != 0 || myfx != 0)
+            //                 printf("b ibmMacrsAux(%d %d %d): ux %.2e fx %.2e\n", x, y, z, myux, myfx);
+            //         }
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
             gpuEulerSumIBMAuxsReset<<<borderMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[j], ibmMacrsAux, j);
             checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
+            // for(int z = 0; z < NZ+MACR_BORDER_NODES*2; z++)
+            //     for(int y = 0; y < NY; y++)
+            //         for(int x = 0; x < NX; x++){
+            //             size_t myidx = idxScalar(x, y, z);
+            //             dfloat myux = ibmMacrsAux.velAux[j].x[myidx];
+            //             dfloat myfx = ibmMacrsAux.fAux[j].x[myidx];
+            //             if(myux != 0 || myfx != 0)
+            //                 printf("reset error ibmMacrsAux(%d %d %d): ux %.2e fx %.2e\n", x, y, z, myux, myfx);
+            //         }
         }
         #endif
 
@@ -218,7 +250,7 @@ void gpuForceInterpolationSpread(
     int posBase[3] = { 
         int(xIBM - P_DIST + 0.5 - (xIBM < 1.0)), 
         int(yIBM - P_DIST + 0.5 - (yIBM < 1.0)), 
-        int(zIBM - P_DIST + 0.5 - (zIBM < 1.0)-n_gpu*NZ) 
+        int(zIBM - P_DIST + 0.5 - (zIBM < 1.0)) - NZ*n_gpu 
     };
     // Maximum stencil index for each direction xyz ("index" to stop)
     const int maxIdx[3] = {
@@ -351,7 +383,7 @@ void gpuForceInterpolationSpread(
 
     dfloat dx = xIBM - x_pc;
     dfloat dy = yIBM - y_pc;
-    dfloat dz = zIBM - z_pc; 
+    dfloat dz = zIBM - z_pc;
 
     #ifdef IBM_BC_X_PERIODIC
     if(abs(dx) > (dfloat)((IBM_BC_X_E - IBM_BC_X_0))/2.0){
@@ -447,7 +479,6 @@ void gpuForceInterpolationSpread(
                     #endif //IBM_BC_Z_PERIODIC
                 );
 
-
                 atomicAdd(&(ibmMacrsAux.fAux[n_gpu].x[idx]), -deltaF.x * aux);
                 atomicAdd(&(ibmMacrsAux.fAux[n_gpu].y[idx]), -deltaF.y * aux);
                 atomicAdd(&(ibmMacrsAux.fAux[n_gpu].z[idx]), -deltaF.z * aux);
@@ -512,8 +543,9 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
 
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
-    int z = threadIdx.z + blockDim.z * blockIdx.z;
-    if (x >= NX || y >= NY || z >= NZ)
+    // this kernel includes border
+    int z = threadIdx.z + blockDim.z * blockIdx.z-MACR_BORDER_NODES;
+    if (x >= NX || y >= NY || z >= (NZ+MACR_BORDER_NODES))
        return;
 
     // +MACR_BORDER_NODES because of the ghost nodes in z
@@ -685,12 +717,12 @@ void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int
         // read from right ghost nodes of ibmMacrsAux
         read = idxScalar(x, y, NZ+z+MACR_BORDER_NODES);
         // write to left ghost nodes of macr
-        write = idxScalar(x, y, MACR_BORDER_NODES-z);
+        write = idxScalar(x, y, z);
     }
     // macr to the left of ibmMacrsAux
     else if(borders == -1){
         // read from left ghost nodes of ibmMacrsAux
-        read = idxScalar(x, y, MACR_BORDER_NODES-z);
+        read = idxScalar(x, y, z);
         // write to right ghost nodes of macr
         write = idxScalar(x, y, NZ+z+MACR_BORDER_NODES);
     }
@@ -703,7 +735,7 @@ void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int
     macr.u.x[write] += ibmMacrsAux.velAux[n_gpu].x[read];
     macr.u.y[write] += ibmMacrsAux.velAux[n_gpu].y[read];
     macr.u.z[write] += ibmMacrsAux.velAux[n_gpu].z[read];
-    // Sum forces
+    // Sum forces  
     macr.f.x[write] += ibmMacrsAux.fAux[n_gpu].x[read];
     macr.f.y[write] += ibmMacrsAux.fAux[n_gpu].y[read];
     macr.f.z[write] += ibmMacrsAux.fAux[n_gpu].z[read];
@@ -1025,10 +1057,6 @@ void gpuParticleNodeMovement(
     #ifdef  IBM_BC_Z_PERIODIC
     particlesNodes.pos.z[i] =  IBM_BC_Z_0 + std::fmod((dfloat)(new_pos_z + IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0),(dfloat)(IBM_BC_Z_E - IBM_BC_Z_0));
     #endif //IBM_BC_Z_PERIODIC
-
-
-
-    
 }
 
 
