@@ -352,7 +352,7 @@ int main()
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
             checkCudaErrors(cudaEventRecord(stop_step, 0));
             checkCudaErrors(cudaEventSynchronize(stop_step));
-            dfloat elapsedTime;
+            float elapsedTime;
             checkCudaErrors(cudaEventElapsedTime(&(elapsedTime), start_step, stop_step));
             
             elapsedTime *= 0.001;
