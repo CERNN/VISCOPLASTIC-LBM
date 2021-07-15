@@ -251,11 +251,12 @@ void gpuForceInterpolationSpread(
        (int)(yIBM+0.5)-P_DIST+1, 
        (int)(zIBM+0.5)-P_DIST+1-n_gpu*NZ}
    ;*/
-    int posBase[3] = { 
+    /*int posBase[3] = { 
         int(xIBM - P_DIST + 0.5 - (xIBM < 1.0)), 
         int(yIBM - P_DIST + 0.5 - (yIBM < 1.0)), 
         int(zIBM - P_DIST + 0.5 - (zIBM < 1.0)) - NZ*n_gpu 
-    };
+    };*/
+    const int posBase[3] = {int(xIBM-P_DIST+1), int(yIBM-P_DIST+1), int(zIBM-P_DIST+1-n_gpu*NZ)};
     // Maximum stencil index for each direction xyz ("index" to stop)
     const int maxIdx[3] = {
         #ifdef IBM_BC_X_WALL
