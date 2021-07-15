@@ -329,8 +329,8 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "\t Volume Concentration: " << VolumeConcentration << "\n";
     strSimInfo << "\t       Velocity Scale:"<< VelocityScale <<  "\n";
     strSimInfo << "\t           Time Scale:"<< TimeScale <<  "\n";
-    strSimInfo << "\t    Archimedes Number:"<< IBM_BC_X_0 <<  "\n";
-    strSimInfo << "\t       Galileo Number:"<< IBM_BC_X_0 <<  "\n";
+    strSimInfo << "\t    Archimedes Number:"<< ArchimedesNumber <<  "\n";
+    strSimInfo << "\t       Galileo Number:"<< GalileoNumber <<  "\n";
     strSimInfo << "\t        Density Ratio:"<< densityRatio <<  "\n";
     strSimInfo << "--------------------------------------------------------------------------------\n";
 
