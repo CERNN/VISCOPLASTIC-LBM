@@ -18,7 +18,7 @@
 #define SINGLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
 #define D3Q19               // velocity set to use (D3Q19 OR D3Q27)
 // Comment to disable IBM. Uncomment to enable IBM
-// #define IBM
+#define IBM
 /* -------------------------------------------------------------------------- */
 
 /* ------------------------ NON NEWTONIAN FLUID TYPE ------------------------ */
@@ -76,8 +76,8 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
-constexpr unsigned int N_GPUS = 3;    // Number of GPUS to use
-constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0,0,0};    // Which GPUs to use
+constexpr unsigned int N_GPUS = 2;    // Number of GPUS to use
+constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0,0};    // Which GPUs to use
 
 
 
@@ -95,7 +95,7 @@ constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
 
 constexpr dfloat RHO_0 = 1;         // initial rho
 
-constexpr dfloat FX = 1.0e-6;        // force in x
+constexpr dfloat FX = 0.0;        // force in x
 constexpr dfloat FY = 0.0;        // force in y
 constexpr dfloat FZ = 0.0;        // force in z (flow direction in most cases)
 

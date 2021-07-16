@@ -71,15 +71,15 @@
 // Shell thickness to consider for each particle. Particle can move at most
 // this value in IBM_PARTICLE_UPDATE_INTERVAL steps. If it moves more, simulation 
 // may be wrong
-#define IBM_PARTICLE_SHELL_THICKNESS (5.0)
+#define IBM_PARTICLE_SHELL_THICKNESS (1.0)
 // How much a particle must move to be updated (checking is done with frequency)
 // of IBM_PARTICLE_UPDATE_INTERVAL
-#define IBM_PARTICLE_UPDATE_DIST (5.0)
+#define IBM_PARTICLE_UPDATE_DIST (0.0)
 // Frequency to check if particle has moved more than IBM_PARTICLE_UPDATE_DIST and update
 // its nodes in each GPU. If particle nodes move more than (
 // IBM_PARTICLE_SHELL_THICKNESS+IBM_PARTICLE_UPDATE_DIST) in this interval, it may lead
 // to simulation errors.
-#define IBM_PARTICLE_UPDATE_INTERVAL (50)
+#define IBM_PARTICLE_UPDATE_INTERVAL (0)
 
 /*  EULER OPTIMZATION FOLLOWS SIMILAR RULES OF ABOVE OPTIMIZATION. 
 *   BUT IT DOES NOT USE CONSIDERABLY MORE MEMORY */
@@ -106,8 +106,8 @@
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
 
-#define IBM_PARTICLES_SAVE (25)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (25)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (1000)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (1000)                   // Report IBM treated data every given steps (0 not report)
 
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
@@ -121,8 +121,8 @@ constexpr dfloat PARTICLE_DENSITY = 3.97;
 constexpr dfloat FLUID_DENSITY = 1;
 
 // Gravity accelaration on particle (Lattice units)
+constexpr dfloat GY = 1e-4;
 constexpr dfloat GX = 0.0;
-constexpr dfloat GY = 0.0;
 constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------------------------------------------------------- */
 

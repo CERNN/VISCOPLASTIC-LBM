@@ -86,9 +86,9 @@ void createParticles(Particle particles[NUM_PARTICLES])
     vel.y = 0.0; //0.01*sin(angle*M_PI/180.0);
     vel.z = 0.0; //-0.01*cos(angle*M_PI/180.0);
 
-    center.x = 40;
-    center.y = 32;
-    center.z = 32;//10.005 - 100.0*vel.z;
+    center.x = (NX-1)/2.0;
+    center.y = (NY-1)/2.0;
+    center.z = (NZ_TOTAL-1)/2.0;//10.005 - 100.0*vel.z;
 
     center1.x = 3;
     center1.y = 32;

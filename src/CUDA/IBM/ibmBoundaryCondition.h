@@ -34,8 +34,8 @@
 
 
 // --- Y direction ---
-#define IBM_BC_Y_WALL
-//#define IBM_BC_Y_PERIODIC
+//#define IBM_BC_Y_WALL
+#define IBM_BC_Y_PERIODIC
 
 #ifdef IBM_BC_Y_WALL
     // TODO: not implemented yet
