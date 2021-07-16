@@ -256,6 +256,8 @@ void gpuForceInterpolationSpread(
         int(yIBM - P_DIST + 0.5 - (yIBM < 1.0)), 
         int(zIBM - P_DIST + 0.5 - (zIBM < 1.0)) - NZ*n_gpu 
     };*/
+    
+
     const int posBase[3] = {int(xIBM-P_DIST+1), int(yIBM-P_DIST+1), int(zIBM-P_DIST+1-n_gpu*NZ)};
     // Maximum stencil index for each direction xyz ("index" to stop)
     const int maxIdx[3] = {
@@ -320,7 +322,7 @@ void gpuForceInterpolationSpread(
 
     for(int i = 0; i < 3; i++){
         for(int j=minIdx[i]; j <= maxIdx[i]; j++){
-            stencilVal[i][j] = stencil(posBase[i]+j-pos[i]);
+            stencilVal[i][j] = stencil(posBase[i]+j-(pos[i]-(i == 2? NZ*n_gpu : 0)));
         }
     }
 
@@ -460,6 +462,9 @@ void gpuForceInterpolationSpread(
                 aux = aux1 * stencilVal[0][xi];
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
 
+                
+                //if(n_gpu == 1 ) //&& zk ==minIdx[2] && yj ==minIdx[1] && xi ==minIdx[0]
+                //    printf("z: %f posBase %d fx %.2e fy %.2e fz %.2e aux %f  \n",pos[2],posBase[2],deltaF.x,deltaF.y,deltaF.z,aux);
 
                 idx = idxScalar(
                     #ifdef IBM_BC_X_WALL
