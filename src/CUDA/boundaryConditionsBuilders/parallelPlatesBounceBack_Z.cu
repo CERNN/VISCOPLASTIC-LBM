@@ -142,9 +142,9 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
         gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
     }
     else if (x == (NX - 1) && zDomain == 0) // EB
+    {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
         gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
-    {
     }
     else if (x == (NX - 1) && zDomain == (NZ_TOTAL-1)) // EF
     {
