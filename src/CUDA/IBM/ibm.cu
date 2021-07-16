@@ -571,9 +571,13 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
     ibmMacrsAux.fAux[n_gpu].z[idx] = 0;
 
     
-    // check if it is some kind of border, if so, just not update
-    if(z < 0 || z >= NZ)
+    // check if it is some kind of border, if so, just reset forces and not update 
+    if(z < 0 || z >= NZ){
+        macr.f.x[idx] = FX;
+        macr.f.y[idx] = FY;
+        macr.f.z[idx] = FZ;
         return;
+    }
 
     // load populations
     dfloat fNode[Q];
@@ -697,9 +701,6 @@ void gpuCopyBorderMacr(Macroscopics macrBase, Macroscopics macrNext)
     macrNext.u.x[idx_m_w] = macrBase.u.x[idx_m_r];
     macrNext.u.y[idx_m_w] = macrBase.u.y[idx_m_r];
     macrNext.u.z[idx_m_w] = macrBase.u.z[idx_m_r];
-    macrNext.f.x[idx_m_w] = macrBase.f.x[idx_m_r];
-    macrNext.f.y[idx_m_w] = macrBase.f.y[idx_m_r];
-    macrNext.f.z[idx_m_w] = macrBase.f.z[idx_m_r];
 
     // write to base
     size_t idx_p_w = idxScalar(x, y, zp_w+MACR_BORDER_NODES);
@@ -707,9 +708,6 @@ void gpuCopyBorderMacr(Macroscopics macrBase, Macroscopics macrNext)
     macrBase.u.x[idx_p_w] = macrNext.u.x[idx_p_r];
     macrBase.u.y[idx_p_w] = macrNext.u.y[idx_p_r];
     macrBase.u.z[idx_p_w] = macrNext.u.z[idx_p_r];
-    macrBase.f.x[idx_p_w] = macrNext.f.x[idx_p_r];
-    macrBase.f.y[idx_p_w] = macrNext.f.y[idx_p_r];
-    macrBase.f.z[idx_p_w] = macrNext.f.z[idx_p_r];
 }
 
 
@@ -725,16 +723,16 @@ void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int
     // macr to the right of ibmMacrsAux
     if(borders == 1){
         // read from right ghost nodes of ibmMacrsAux
-        read = idxScalar(x, y, NZ+z+MACR_BORDER_NODES);
+        read = idxScalar(x, y, (NZ-1)+1+z+MACR_BORDER_NODES);
         // write to left ghost nodes of macr
-        write = idxScalar(x, y, z);
+        write = idxScalar(x, y, z+MACR_BORDER_NODES);
     }
     // macr to the left of ibmMacrsAux
     else if(borders == -1){
         // read from left ghost nodes of ibmMacrsAux
-        read = idxScalar(x, y, z);
+        read = idxScalar(x, y, MACR_BORDER_NODES-1-z);
         // write to right ghost nodes of macr
-        write = idxScalar(x, y, NZ+z+MACR_BORDER_NODES);
+        write = idxScalar(x, y, (NZ-1)-z+MACR_BORDER_NODES);
     }
     // invalid
     else{
