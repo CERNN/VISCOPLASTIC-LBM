@@ -361,7 +361,7 @@ void gpuForceInterpolationSpread(
                         posBase[2]+zk +MACR_BORDER_NODES
                     #endif //IBM_BC_Z_WALL
                     #ifdef IBM_BC_Z_PERIODIC
-                        IBM_BC_Z_0 + (posBase[2]+zk + IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
+                        IBM_BC_Z_0 + (posBase[2]+zk +MACR_BORDER_NODES+ IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
                     #endif //IBM_BC_Z_PERIODIC
                 );
               
@@ -480,7 +480,7 @@ void gpuForceInterpolationSpread(
                         posBase[2]+zk +MACR_BORDER_NODES
                     #endif //IBM_BC_Z_WALL
                     #ifdef IBM_BC_Z_PERIODIC
-                        IBM_BC_Z_0 + (posBase[2]+zk + IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
+                        IBM_BC_Z_0 + (posBase[2]+zk +MACR_BORDER_NODES+ IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
                     #endif //IBM_BC_Z_PERIODIC
                 );
 
