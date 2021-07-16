@@ -28,7 +28,7 @@ void gpuMacrCollisionStream(
     const unsigned short int xm1 = (NX + x - 1) % NX;
     const unsigned short int ym1 = (NY + y - 1) % NY;
     // +1 due to ghost node in z
-    const unsigned short int zm1 = (NZ + z - 1 + 1) % (NZ+1);
+    const unsigned short int zm1 = ((NZ+1) + z - 1) % (NZ+1);
 
     // Node populations
     dfloat fNode[Q];
@@ -598,25 +598,21 @@ void gpuPopulationsTransfer(
     // so the higher level of popBase must be streamed to the lower level of
     // popNext and vice versa
 
-    // pop[6] -> cz = 1; pop[5] -> cz = -1;
-    popPostStreamBase[idxPop(x, y, zMax, 5)] = popPostStreamNxt[idxPop(x, y, zRead, 5)];
-    popPostStreamNxt[idxPop(x, y, 0, 6)] = popPostStreamBase[idxPop(x, y, zRead, 6)];
-
+    // pop[5] -> cz = 1; pop[6] -> cz = -1
+    popPostStreamBase[idxPop(x, y, zMax, 6)] = popPostStreamNxt[idxPop(x, y, zRead, 6)];
+    popPostStreamNxt[idxPop(x, y, 0, 5)] = popPostStreamBase[idxPop(x, y, zRead, 5)];    
     // pop[9] -> cz = 1; pop[10] -> cz = -1;
-    popPostStreamBase[idxPop(x, y, zMax, 9)] = popPostStreamNxt[idxPop(x, y, zRead, 9)];
-    popPostStreamNxt[idxPop(x, y, 0, 10)] = popPostStreamBase[idxPop(x, y, zRead, 10)];
-    
+    popPostStreamBase[idxPop(x, y, zMax, 10)] = popPostStreamNxt[idxPop(x, y, zRead, 10)];
+    popPostStreamNxt[idxPop(x, y, 0, 9)] = popPostStreamBase[idxPop(x, y, zRead, 9)];    
     // pop[11] -> cz = 1; pop[12] -> cz = -1;
-    popPostStreamBase[idxPop(x, y, zMax, 11)] = popPostStreamNxt[idxPop(x, y, zRead, 11)];
-    popPostStreamNxt[idxPop(x, y, 0, 12)] = popPostStreamBase[idxPop(x, y, zRead, 12)];
-    
-    // pop[15] -> cz = 1; pop[16] -> cz = -1;
-    popPostStreamBase[idxPop(x, y, zMax, 16)] = popPostStreamNxt[idxPop(x, y, zRead, 16)];
-    popPostStreamNxt[idxPop(x, y, 0, 15)] = popPostStreamBase[idxPop(x, y, zRead, 15)];
-
-    // pop[18] -> cz = 1; pop[17] -> cz = -1;
-    popPostStreamBase[idxPop(x, y, zMax, 18)] =   popPostStreamNxt[idxPop(x, y, zRead, 18)];
-    popPostStreamNxt[idxPop(x, y, 0, 17)] = popPostStreamBase[idxPop(x, y, zRead, 17)];
+    popPostStreamBase[idxPop(x, y, zMax, 12)] = popPostStreamNxt[idxPop(x, y, zRead, 12)];
+    popPostStreamNxt[idxPop(x, y, 0, 11)] = popPostStreamBase[idxPop(x, y, zRead, 11)];    
+    // pop[16] -> cz = 1; pop[15] -> cz = -1
+    popPostStreamBase[idxPop(x, y, zMax, 15)] = popPostStreamNxt[idxPop(x, y, zRead, 15)];
+    popPostStreamNxt[idxPop(x, y, 0, 16)] = popPostStreamBase[idxPop(x, y, zRead, 16)];    
+    // pop[18] -> cz = 1; pop[17] -> cz = -1
+    popPostStreamBase[idxPop(x, y, zMax, 17)] =   popPostStreamNxt[idxPop(x, y, zRead, 17)];
+    popPostStreamNxt[idxPop(x, y, 0, 18)] = popPostStreamBase[idxPop(x, y, zRead, 18)];
 
     #ifdef D3Q27
     // pop[19] -> cz = 1; pop[20] -> cz = -1;
