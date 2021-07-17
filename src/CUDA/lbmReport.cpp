@@ -324,7 +324,7 @@ std::string getSimInfoString(SimInfo* info)
     dfloat TimeScale =  LengthScale / VelocityScale; 
     dfloat ArchimedesNumber = GM * POW_FUNCTION(PARTICLE_DIAMETER, (2.0+n_index)/(2.0 - n_index));
            ArchimedesNumber = ArchimedesNumber * (PARTICLE_DENSITY - FLUID_DENSITY) * POW_FUNCTION(FLUID_DENSITY,(n_index)/(2.0 - n_index));
-           ArchimedesNumber = ArchimedesNumber * POW_FUNCTION(m,(n_index)/(2.0 - n_index));
+           ArchimedesNumber = (4.0/3.0)*ArchimedesNumber * POW_FUNCTION(m,(2.0)/(2.0 - n_index));
     dfloat GalileoNumber = sqrt(ArchimedesNumber);
     strSimInfo << "\t Volume Concentration: " << VolumeConcentration << "\n";
     strSimInfo << "\t       Velocity Scale:"<< VelocityScale <<  "\n";
