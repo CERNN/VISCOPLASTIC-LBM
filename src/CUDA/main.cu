@@ -187,10 +187,13 @@ int main()
     else
     {
         step = INI_STEP;
+        dim3 gridInit = grid;
+        // Initialize ghost nodes
+        gridInit.z += 1;
         for(int i = 0; i < N_GPUS; i++){
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             // Initialize populations
-            gpuInitialization<<<grid, threads>>>(pop[i], macr[i], randomNumbers[i]);
+            gpuInitialization<<<gridInit, threads>>>(pop[i], macr[i], randomNumbers[i]);
             checkCudaErrors(cudaDeviceSynchronize());
         }
         getLastCudaError("Initialization error");

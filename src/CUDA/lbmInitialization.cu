@@ -54,21 +54,35 @@ void gpuInitialization(
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
     int z = threadIdx.z + blockDim.z * blockIdx.z;
-    if (x >= NX || y >= NY || z >= NZ)
+    if (x >= NX || y >= NY || z >= NZ+1)
         return;
 
     size_t index = idxScalar(x, y, z+MACR_BORDER_NODES);
 
-    gpuMacrInitValue(&macr, randomNumbers, x, y, z);
+    dfloat rho, ux, uy, uz;
+    // Is inside physical domain
+    if(z < NZ){
+        gpuMacrInitValue(&macr, randomNumbers, x, y, z);
+        rho = macr.rho[index];
+        ux = macr.u.x[index];
+        uy = macr.u.y[index];
+        uz = macr.u.z[index];
+    }
+    else{
+        rho = 1;
+        ux = 0;
+        uy = 0;
+        uz = 0;
+    }
 
     for (int i = 0; i < Q; i++)
     {
         // calculate equilibrium population and initialize populations to equilibrium
-        dfloat feq = gpu_f_eq(w[i] * macr.rho[index],
-            3 * (macr.u.x[index] * cx[i] + macr.u.y[index] * cy[i] + macr.u.z[index] * cz[i]),
-            1 - 1.5*(  macr.u.x[index] * macr.u.x[index] 
-                 + macr.u.y[index] * macr.u.y[index] 
-                 + macr.u.z[index] * macr.u.z[index]));
+        dfloat feq = gpu_f_eq(w[i] * rho,
+            3 * (ux * cx[i] + uy * cy[i] + uz * cz[i]),
+            1 - 1.5*(  ux * ux 
+                 + uy * uy 
+                 + uz * uz));
         
         pop.pop[idxPop(x, y, z, i)] = feq;
         pop.popAux[idxPop(x, y, z, i)] = feq;
