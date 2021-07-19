@@ -142,9 +142,9 @@ public:
 
         // Sum ghost index of ghost nodes, to not consider it
         if(this->varLocation == IN_VIRTUAL)
-            baseIdx += idxScalar(0, 0, MACR_BORDER_NODES);
+            baseIdx += idxScalarWBorder(0, 0, 0);
         if(macrRef->varLocation == IN_VIRTUAL)
-            baseIdxRef += idxScalar(0, 0, MACR_BORDER_NODES);
+            baseIdxRef += idxScalarWBorder(0, 0, 0);
 
         checkCudaErrors(cudaStreamCreate(&(streamRho)));
         checkCudaErrors(cudaStreamCreate(&(streamUx)));

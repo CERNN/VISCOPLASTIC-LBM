@@ -57,7 +57,7 @@ void gpuInitialization(
     if (x >= NX || y >= NY || z >= NZ+1)
         return;
 
-    size_t index = idxScalar(x, y, z+MACR_BORDER_NODES);
+    size_t index = idxScalarWBorder(x, y, z);
 
     dfloat rho, ux, uy, uz;
     // Is inside physical domain
@@ -97,15 +97,15 @@ void gpuMacrInitValue(
     int x, int y, int z)
 {
     // +MACR_BORDER_NODES because of the ghost nodes
-    macr->rho[idxScalar(x, y, z+MACR_BORDER_NODES)] = RHO_0;
-    macr->u.x[idxScalar(x, y, z+MACR_BORDER_NODES)] = 0;
-    macr->u.y[idxScalar(x, y, z+MACR_BORDER_NODES)] = 0;
-    macr->u.z[idxScalar(x, y, z+MACR_BORDER_NODES)] = 0;
+    macr->rho[idxScalarWBorder(x, y, z)] = RHO_0;
+    macr->u.x[idxScalarWBorder(x, y, z)] = 0;
+    macr->u.y[idxScalarWBorder(x, y, z)] = 0;
+    macr->u.z[idxScalarWBorder(x, y, z)] = 0;
 
     #ifdef IBM
-    macr->f.x[idxScalar(x, y, z+MACR_BORDER_NODES)] = FX;
-    macr->f.y[idxScalar(x, y, z+MACR_BORDER_NODES)] = FY;
-    macr->f.z[idxScalar(x, y, z+MACR_BORDER_NODES)] = FZ;
+    macr->f.x[idxScalarWBorder(x, y, z)] = FX;
+    macr->f.y[idxScalarWBorder(x, y, z)] = FY;
+    macr->f.z[idxScalarWBorder(x, y, z)] = FZ;
     #endif
     #ifdef NON_NEWTONIAN_FLUID
     macr->omega[idxScalar(x, y, z)] = 0;

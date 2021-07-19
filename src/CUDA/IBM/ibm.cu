@@ -66,7 +66,6 @@ void immersedBoundaryMethod(
         // Update macroscopics post boundary conditions and reset forces
         gpuUpdateMacrIBM<<<borderMacrGrid, threadsLBM, 0, streamLBM[i]>>>(pop[i], macr[i], ibmMacrsAux, i);
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
-        // gpuResetBorderMacrAuxIBM<<<copyMacrGrid, threadsLBM, 0, streamLBM[i]>>>(ibmMacrsAux, i);
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
         getLastCudaError("IBM update macr error\n");
         // for(int z = 0; z < NZ+MACR_BORDER_NODES*2; z++)
@@ -353,7 +352,7 @@ void gpuForceInterpolationSpread(
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
 
 
-                idx = idxScalar(
+                idx = idxScalarWBorder(
                     #ifdef IBM_BC_X_WALL
                         posBase[0]+xi
                     #endif //IBM_BC_X_WALL
@@ -369,10 +368,10 @@ void gpuForceInterpolationSpread(
                     #endif //IBM_BC_Y_PERIODIC
                     , 
                     #ifdef IBM_BC_Z_WALL  // +MACR_BORDER_NODES in z because of the ghost nodes
-                        posBase[2]+zk +MACR_BORDER_NODES
+                        posBase[2]+zk
                     #endif //IBM_BC_Z_WALL
                     #ifdef IBM_BC_Z_PERIODIC
-                        IBM_BC_Z_0 + (posBase[2]+zk +MACR_BORDER_NODES+ IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
+                        IBM_BC_Z_0 + (posBase[2]+zk+ IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
                     #endif //IBM_BC_Z_PERIODIC
                 );
                 rhoVar += macr.rho[idx] * aux;
@@ -470,11 +469,10 @@ void gpuForceInterpolationSpread(
                 aux = aux1 * stencilVal[0][xi];
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
 
-                
                 //if(n_gpu == 1 ) //&& zk ==minIdx[2] && yj ==minIdx[1] && xi ==minIdx[0]
                 //    printf("z: %f posBase %d fx %.2e fy %.2e fz %.2e aux %f  \n",pos[2],posBase[2],deltaF.x,deltaF.y,deltaF.z,aux);
 
-                idx = idxScalar(
+                idx = idxScalarWBorder(
                     #ifdef IBM_BC_X_WALL
                         posBase[0]+xi
                     #endif //IBM_BC_X_WALL
@@ -490,10 +488,10 @@ void gpuForceInterpolationSpread(
                     #endif //IBM_BC_Y_PERIODIC
                     , 
                     #ifdef IBM_BC_Z_WALL  // +MACR_BORDER_NODES in z because of the ghost nodes
-                        posBase[2]+zk +MACR_BORDER_NODES
+                        posBase[2]+zk
                     #endif //IBM_BC_Z_WALL
                     #ifdef IBM_BC_Z_PERIODIC
-                        IBM_BC_Z_0 + (posBase[2]+zk +MACR_BORDER_NODES+ IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
+                        IBM_BC_Z_0 + (posBase[2]+zk+ IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
                     #endif //IBM_BC_Z_PERIODIC
                 );
 
@@ -567,7 +565,7 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
        return;
 
     // +MACR_BORDER_NODES because of the ghost nodes in z
-    size_t idx = idxScalar(x, y, z+MACR_BORDER_NODES);
+    size_t idx = idxScalarWBorder(x, y, z);
     #endif
 
     // Reset values from auxiliary vectors
@@ -644,28 +642,6 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
     macr.u.z[idx] = uzVar;
 }
 
-__global__
-void gpuResetBorderMacrAuxIBM(IBMMacrsAux ibmMacrsAux, int n_gpu){
-    int x = threadIdx.x + blockDim.x * blockIdx.x;
-    int y = threadIdx.y + blockDim.y * blockIdx.y;
-    int z = threadIdx.z + blockDim.z * blockIdx.z;
-    if (x >= NX || y >= NY || z >= MACR_BORDER_NODES)
-       return;
-
-    const size_t idx_left = idxScalar(x, y, z);
-    const size_t idx_right = idxScalar(x, y, z+MACR_BORDER_NODES+NZ);
-
-    dfloat3SoA vel = ibmMacrsAux.velAux[n_gpu];
-    dfloat3SoA f = ibmMacrsAux.fAux[n_gpu];
-
-    vel.x[idx_left] = 0; vel.x[idx_right] = 0;
-    vel.y[idx_left] = 0; vel.y[idx_right] = 0;
-    vel.z[idx_left] = 0; vel.z[idx_right] = 0;
-
-    f.x[idx_left] = 0; f.x[idx_right] = 0;
-    f.y[idx_left] = 0; f.y[idx_right] = 0;
-    f.z[idx_left] = 0; f.z[idx_right] = 0;
-}
 
 __global__ 
 void gpuResetNodesForces(ParticleNodeSoA particlesNodes)
@@ -703,16 +679,16 @@ void gpuCopyBorderMacr(Macroscopics macrBase, Macroscopics macrNext)
 
     // This may be used from the auxiliary velocities vectors 
     // write to next
-    size_t idx_m_w = idxScalar(x, y, zm_w+MACR_BORDER_NODES);
-    size_t idx_m_r = idxScalar(x, y, zm_r+MACR_BORDER_NODES);
+    size_t idx_m_w = idxScalarWBorder(x, y, zm_w);
+    size_t idx_m_r = idxScalarWBorder(x, y, zm_r);
     macrNext.rho[idx_m_w] = macrBase.rho[idx_m_r];
     macrNext.u.x[idx_m_w] = macrBase.u.x[idx_m_r];
     macrNext.u.y[idx_m_w] = macrBase.u.y[idx_m_r];
-    macrNext.u.z[idx_m_w] = macrBase.u.z[idx_m_r];    
+    macrNext.u.z[idx_m_w] = macrBase.u.z[idx_m_r];
     
     // write to base
-    size_t idx_p_w = idxScalar(x, y, zp_w+MACR_BORDER_NODES);
-    size_t idx_p_r = idxScalar(x, y, zp_r+MACR_BORDER_NODES);
+    size_t idx_p_w = idxScalarWBorder(x, y, zp_w);
+    size_t idx_p_r = idxScalarWBorder(x, y, zp_r);
     macrBase.rho[idx_p_w] = macrNext.rho[idx_p_r];
     macrBase.u.x[idx_p_w] = macrNext.u.x[idx_p_r];
     macrBase.u.y[idx_p_w] = macrNext.u.y[idx_p_r];
@@ -731,23 +707,23 @@ void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int
     // macr to the right of ibmMacrsAux
     if(borders == 1){
         // read from right ghost nodes of ibmMacrsAux
-        read = idxScalar(x, y, (NZ-1)+1+z+MACR_BORDER_NODES);
+        read = idxScalarWBorder(x, y, (NZ-1)+1+z);
         // write to left ghost nodes of macr
-        write = idxScalar(x, y, z+MACR_BORDER_NODES);
+        write = idxScalarWBorder(x, y, z);
     }
     // macr to the left of ibmMacrsAux
     else if(borders == -1){
         // read from left ghost nodes of ibmMacrsAux
-        read = idxScalar(x, y, MACR_BORDER_NODES-1-z);
+        read = idxScalarWBorder(x, y, -1-z);
         // write to right ghost nodes of macr
-        write = idxScalar(x, y, (NZ-1)-z+MACR_BORDER_NODES);
+        write = idxScalarWBorder(x, y, (NZ-1)-z);
     }
     // invalid
     else{
         return;
     }
-    if(borders == -1)
-        printf("%f %f %f \n ",ibmMacrsAux.fAux[n_gpu].x[read],ibmMacrsAux.fAux[n_gpu].y[read],ibmMacrsAux.fAux[n_gpu].z[read]);
+    // if(borders == -1)
+    //     printf("%f %f %f \n ",ibmMacrsAux.fAux[n_gpu].x[read],ibmMacrsAux.fAux[n_gpu].y[read],ibmMacrsAux.fAux[n_gpu].z[read]);
     //if(ibmMacrsAux.fAux[n_gpu].y[read] != 0 && borders == -1)
     //    printf("somou x %d %d %d -- %d \n", x,y,z, borders);
     // Sum velocities

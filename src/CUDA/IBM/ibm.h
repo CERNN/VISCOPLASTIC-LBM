@@ -94,16 +94,6 @@ void gpuUpdateMacrIBM(Populations pop, Macroscopics macr, IBMMacrsAux ibmMacrsAu
 
 
 /**
-*   @brief Reset border auxiliary macroscopics to zero
-*
-*   @param ibmMacrsAux Auxiliary macroscopics to reset
-*   @param n_gpu current GPU number
-*/
-__global__
-void gpuResetBorderMacrAuxIBM(IBMMacrsAux ibmMacrsAux, int n_gpu);
-
-
-/**
 *   @brief Reset forces from all IBM nodes
 *   
 *   @param particlesNodes: nodes to reset forces
