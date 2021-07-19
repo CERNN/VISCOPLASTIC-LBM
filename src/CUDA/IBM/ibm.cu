@@ -259,6 +259,10 @@ void gpuForceInterpolationSpread(
     
 
     const int posBase[3] = {int(xIBM-P_DIST+1), int(yIBM-P_DIST+1), int(zIBM-P_DIST+1-n_gpu*NZ)};
+    // Maximum position to interpolate in Z, used for maxIdx in Z
+    const int zMaxIdxPos = (n_gpu == N_GPUS-1 ? NZ : NZ+MACR_BORDER_NODES);
+    // Minimum position to interpolate in Z, used for minIdx in Z
+    const int zMinIdxPos = (n_gpu == 0 ? 0 : -MACR_BORDER_NODES);
     // Maximum stencil index for each direction xyz ("index" to stop)
     const int maxIdx[3] = {
         #ifdef IBM_BC_X_WALL
@@ -276,7 +280,7 @@ void gpuForceInterpolationSpread(
         #endif //IBM_BC_Y_PERIODIC
         , 
         #ifdef IBM_BC_Z_WALL 
-            ((posBase[2]+P_DIST*2-1) < (int)(n_gpu != N_GPUS-1? NZ : NZ+P_DIST))? P_DIST*2-1 : ((int)NZ-1-posBase[2])
+            ((posBase[2]+P_DIST*2-1) < zMaxIdxPos)? P_DIST*2-1 : ((int)zMaxIdxPos-1-posBase[2])
         #endif //IBM_BC_Z_WALL
         #ifdef IBM_BC_Z_PERIODIC
             P_DIST*2-1
@@ -299,7 +303,7 @@ void gpuForceInterpolationSpread(
         #endif //IBM_BC_Y_PERIODIC
         , 
         #ifdef IBM_BC_Z_WALL 
-            (posBase[2] >= (int)(n_gpu != 0? 0 : -P_DIST))? 0 : -posBase[2]
+            (posBase[2] >= zMinIdxPos)? 0 : zMinIdxPos-posBase[2]
         #endif //IBM_BC_Z_WALL
         #ifdef IBM_BC_Z_PERIODIC
             0
@@ -313,6 +317,8 @@ void gpuForceInterpolationSpread(
     // Particle stencil out of the domain
     if(minIdx[0] >= P_DIST*2 || minIdx[1] >= P_DIST*2 || minIdx[2] >= P_DIST*2)
         return;
+
+        
 
     // printf("posN %.2f %.2f %.2f posBase %d %d %d minIdx %d %d %d maxIdx %d %d %d pNodes %d i %d\n", 
     //     pos[0], pos[1], pos[2], posBase[0], posBase[1], posBase[2], 
@@ -366,7 +372,6 @@ void gpuForceInterpolationSpread(
                         IBM_BC_Z_0 + (posBase[2]+zk +MACR_BORDER_NODES+ IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
                     #endif //IBM_BC_Z_PERIODIC
                 );
-              
                 rhoVar += macr.rho[idx] * aux;
                 uxVar += macr.u.x[idx] * aux;
                 uyVar += macr.u.y[idx] * aux;
@@ -747,6 +752,8 @@ void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int
     macr.f.x[write] += ibmMacrsAux.fAux[n_gpu].x[read];
     macr.f.y[write] += ibmMacrsAux.fAux[n_gpu].y[read];
     macr.f.z[write] += ibmMacrsAux.fAux[n_gpu].z[read];
+
+    //printf("fx: %.2e fy %.2e fz %.2e rho %f \n", macr.f.x[write],macr.f.y[write],macr.f.z[write],macr.rho[write]);
 }
 
 __global__ 
