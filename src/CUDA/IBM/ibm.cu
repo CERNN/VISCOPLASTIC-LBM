@@ -144,11 +144,14 @@ void immersedBoundaryMethod(
             run_nxt = true;
             run_prv = true;
             #endif
+            
             if(run_nxt){
+                printf("next %d - gpu %d \n",nxt,j);
                 gpuSumBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[nxt], ibmMacrsAux, j, 1);
                 checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
             }
             if(run_prv){
+                printf("prev %d - gpu %d \n",prv,j);
                 gpuSumBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[prv], ibmMacrsAux, j, -1);
                 checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
             }
@@ -698,18 +701,19 @@ void gpuCopyBorderMacr(Macroscopics macrBase, Macroscopics macrNext)
     // values to read from next and write to base
     const int zp_w = NZ+z, zp_r = z;
 
-    // FIXME: wrong, it needs to consider the added values in ghost nodes. 
     // This may be used from the auxiliary velocities vectors 
     // write to next
     size_t idx_m_w = idxScalar(x, y, zm_w+MACR_BORDER_NODES);
     size_t idx_m_r = idxScalar(x, y, zm_r+MACR_BORDER_NODES);
+    macrNext.rho[idx_m_w] = macrBase.rho[idx_m_r];
     macrNext.u.x[idx_m_w] = macrBase.u.x[idx_m_r];
     macrNext.u.y[idx_m_w] = macrBase.u.y[idx_m_r];
-    macrNext.u.z[idx_m_w] = macrBase.u.z[idx_m_r];
-
+    macrNext.u.z[idx_m_w] = macrBase.u.z[idx_m_r];    
+    
     // write to base
     size_t idx_p_w = idxScalar(x, y, zp_w+MACR_BORDER_NODES);
     size_t idx_p_r = idxScalar(x, y, zp_r+MACR_BORDER_NODES);
+    macrBase.rho[idx_p_w] = macrNext.rho[idx_p_r];
     macrBase.u.x[idx_p_w] = macrNext.u.x[idx_p_r];
     macrBase.u.y[idx_p_w] = macrNext.u.y[idx_p_r];
     macrBase.u.z[idx_p_w] = macrNext.u.z[idx_p_r];
@@ -723,7 +727,6 @@ void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int
     int z = threadIdx.z + blockDim.z * blockIdx.z;
     if (x >= NX || y >= NY || z >= MACR_BORDER_NODES)
        return;
-    
     size_t read, write;
     // macr to the right of ibmMacrsAux
     if(borders == 1){
@@ -743,7 +746,10 @@ void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int
     else{
         return;
     }
-
+    if(borders == -1)
+        printf("%f %f %f \n ",ibmMacrsAux.fAux[n_gpu].x[read],ibmMacrsAux.fAux[n_gpu].y[read],ibmMacrsAux.fAux[n_gpu].z[read]);
+    //if(ibmMacrsAux.fAux[n_gpu].y[read] != 0 && borders == -1)
+    //    printf("somou x %d %d %d -- %d \n", x,y,z, borders);
     // Sum velocities
     macr.u.x[write] += ibmMacrsAux.velAux[n_gpu].x[read];
     macr.u.y[write] += ibmMacrsAux.velAux[n_gpu].y[read];
