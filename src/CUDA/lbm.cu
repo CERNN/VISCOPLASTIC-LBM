@@ -575,9 +575,7 @@ void gpuApplyBC(NodeTypeMap* mapBC,
 __global__
 void gpuPopulationsTransfer(
     dfloat* popPostStreamBase,
-    dfloat* popPostCollBase,
-    dfloat* popPostStreamNxt,
-    dfloat* popPostCollNxt)
+    dfloat* popPostStreamNxt)
 {
     const unsigned short int x = threadIdx.x + blockDim.x * blockIdx.x;
     const unsigned short int y = threadIdx.y + blockDim.y * blockIdx.y;

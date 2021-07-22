@@ -296,7 +296,7 @@ int main()
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             int nxt = (i+1)%N_GPUS;
             gpuPopulationsTransfer<<<gridTransfer, threadsTransfer>>>
-                (pop[i].pop, pop[i].popAux, pop[nxt].pop, pop[nxt].popAux);
+                (pop[i].popAux, pop[nxt].popAux);
             checkCudaErrors(cudaDeviceSynchronize());
             getLastCudaError("Mem transfer kernel error\n");
         }
