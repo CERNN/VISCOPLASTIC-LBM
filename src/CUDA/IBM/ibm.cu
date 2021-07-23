@@ -68,15 +68,6 @@ void immersedBoundaryMethod(
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
         checkCudaErrors(cudaStreamSynchronize(streamLBM[i]));
         getLastCudaError("IBM update macr error\n");
-        // for(int z = 0; z < NZ+MACR_BORDER_NODES*2; z++)
-        //     for(int y = 0; y < NY; y++)
-        //         for(int x = 0; x < NX; x++){
-        //             size_t myidx = idxScalar(x, y, z);
-        //             dfloat myux = ibmMacrsAux.velAux[i].x[myidx];
-        //             dfloat myfx = ibmMacrsAux.fAux[i].x[myidx];
-        //             if(myux != 0 || myfx != 0)
-        //                 printf("error ibmMacrsAux(%d %d %d): ux %.2e fx %.2e\n", x, y, z, myux, myfx);
-        //         }
     }
     #endif
 
@@ -145,12 +136,10 @@ void immersedBoundaryMethod(
             #endif
             
             if(run_nxt){
-                printf("next %d - gpu %d \n",nxt,j);
                 gpuSumBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[nxt], ibmMacrsAux, j, 1);
                 checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
             }
             if(run_prv){
-                printf("prev %d - gpu %d \n",prv,j);
                 gpuSumBorderMacr<<<copyMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[prv], ibmMacrsAux, j, -1);
                 checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
             }
@@ -171,27 +160,9 @@ void immersedBoundaryMethod(
         }
         #else
         for(int j = 0; j < N_GPUS; j++){
-            // for(int z = 0; z < NZ+MACR_BORDER_NODES*2; z++)
-            //     for(int y = 0; y < NY; y++)
-            //         for(int x = 0; x < NX; x++){
-            //             size_t myidx = idxScalar(x, y, z);
-            //             dfloat myux = ibmMacrsAux.velAux[j].x[myidx];
-            //             dfloat myfx = ibmMacrsAux.fAux[j].x[myidx];
-            //             if(myux != 0 || myfx != 0)
-            //                 printf("b ibmMacrsAux(%d %d %d): ux %.2e fx %.2e\n", x, y, z, myux, myfx);
-            //         }
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[j]));
             gpuEulerSumIBMAuxsReset<<<borderMacrGrid, threadsLBM, 0, streamLBM[j]>>>(macr[j], ibmMacrsAux, j);
             checkCudaErrors(cudaStreamSynchronize(streamLBM[j]));
-            // for(int z = 0; z < NZ+MACR_BORDER_NODES*2; z++)
-            //     for(int y = 0; y < NY; y++)
-            //         for(int x = 0; x < NX; x++){
-            //             size_t myidx = idxScalar(x, y, z);
-            //             dfloat myux = ibmMacrsAux.velAux[j].x[myidx];
-            //             dfloat myfx = ibmMacrsAux.fAux[j].x[myidx];
-            //             if(myux != 0 || myfx != 0)
-            //                 printf("reset error ibmMacrsAux(%d %d %d): ux %.2e fx %.2e\n", x, y, z, myux, myfx);
-            //         }
         }
         #endif
 
@@ -472,9 +443,6 @@ void gpuForceInterpolationSpread(
                 aux = aux1 * stencilVal[0][xi];
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
 
-                //if(n_gpu == 1 ) //&& zk ==minIdx[2] && yj ==minIdx[1] && xi ==minIdx[0]
-                //    printf("z: %f posBase %d fx %.2e fy %.2e fz %.2e aux %f  \n",pos[2],posBase[2],deltaF.x,deltaF.y,deltaF.z,aux);
-
                 idx = idxScalarWBorder(
                     #ifdef IBM_BC_X_WALL
                         posBase[0]+xi
@@ -739,10 +707,6 @@ void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int
     else{
         return;
     }
-    // if(borders == -1)
-    //     printf("%f %f %f \n ",ibmMacrsAux.fAux[n_gpu].x[read],ibmMacrsAux.fAux[n_gpu].y[read],ibmMacrsAux.fAux[n_gpu].z[read]);
-    //if(ibmMacrsAux.fAux[n_gpu].y[read] != 0 && borders == -1)
-    //    printf("somou x %d %d %d -- %d \n", x,y,z, borders);
     // Sum velocities
     macr.u.x[write] += ibmMacrsAux.velAux[n_gpu].x[read];
     macr.u.y[write] += ibmMacrsAux.velAux[n_gpu].y[read];
@@ -752,7 +716,6 @@ void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int
     macr.f.y[write] += ibmMacrsAux.fAux[n_gpu].y[read];
     macr.f.z[write] += ibmMacrsAux.fAux[n_gpu].z[read];
 
-    //printf("fx: %.2e fy %.2e fz %.2e rho %f \n", macr.f.x[write],macr.f.y[write],macr.f.z[write],macr.rho[write]);
 }
 
 __global__ 
