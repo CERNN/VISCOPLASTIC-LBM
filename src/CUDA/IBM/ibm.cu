@@ -260,11 +260,19 @@ void gpuForceInterpolationSpread(
     };*/
     
 
-    const int posBase[3] = {int(xIBM-P_DIST+1), int(yIBM-P_DIST+1), int(zIBM-P_DIST+1-n_gpu*NZ)};
+    const int posBase[3] = { 
+        int(xIBM) - (P_DIST) + 1, 
+        int(yIBM) - (P_DIST) + 1, 
+        int(zIBM) - (P_DIST) + 1 - NZ*n_gpu 
+    };
     // Maximum position to interpolate in Z, used for maxIdx in Z
-    const int zMaxIdxPos = (n_gpu == N_GPUS-1 ? NZ : NZ+MACR_BORDER_NODES);
+    int zMaxIdxPos = (n_gpu == N_GPUS-1 ? NZ : NZ+MACR_BORDER_NODES);
     // Minimum position to interpolate in Z, used for minIdx in Z
-    const int zMinIdxPos = (n_gpu == 0 ? 0 : -MACR_BORDER_NODES);
+    int zMinIdxPos = (n_gpu == 0 ? 0 : -MACR_BORDER_NODES);
+    #if IBM_BC_Z_PERIODIC
+        zMinIdxPos = -MACRO_BORDER_NODES;
+        zMaxIdxPos = NZ+MACR_BORDER_NODES;
+    #endif
     // Maximum stencil index for each direction xyz ("index" to stop)
     const int maxIdx[3] = {
         #ifdef IBM_BC_X_WALL
@@ -321,11 +329,6 @@ void gpuForceInterpolationSpread(
         return;
 
         
-
-    // printf("posN %.2f %.2f %.2f posBase %d %d %d minIdx %d %d %d maxIdx %d %d %d pNodes %d i %d\n", 
-    //     pos[0], pos[1], pos[2], posBase[0], posBase[1], posBase[2], 
-    //     minIdx[0], minIdx[1], minIdx[2], maxIdx[0], maxIdx[1], maxIdx[2],
-    //     particlesNodes.numNodes, i);
 
 
     for(int i = 0; i < 3; i++){
@@ -673,23 +676,32 @@ void gpuCopyBorderMacr(Macroscopics macrBase, Macroscopics macrNext)
        return;
 
     // values to read from base and write to next
-    const int zm_w = -z-1, zm_r = NZ-1-z;
-    // values to read from next and write to base
-    const int zp_w = NZ+z, zp_r = z;
+    const int zm_w = -z-1;
+    const int zm_r = NZ-1-z;
+
 
     // This may be used from the auxiliary velocities vectors 
     // write to next
     size_t idx_m_w = idxScalarWBorder(x, y, zm_w);
     size_t idx_m_r = idxScalarWBorder(x, y, zm_r);
+
     macrNext.rho[idx_m_w] = macrBase.rho[idx_m_r];
+
     macrNext.u.x[idx_m_w] = macrBase.u.x[idx_m_r];
     macrNext.u.y[idx_m_w] = macrBase.u.y[idx_m_r];
     macrNext.u.z[idx_m_w] = macrBase.u.z[idx_m_r];
     
     // write to base
+
+    // values to read from next and write to base
+    const int zp_w = NZ+z;
+    const int zp_r = z;
+
     size_t idx_p_w = idxScalarWBorder(x, y, zp_w);
     size_t idx_p_r = idxScalarWBorder(x, y, zp_r);
+
     macrBase.rho[idx_p_w] = macrNext.rho[idx_p_r];
+
     macrBase.u.x[idx_p_w] = macrNext.u.x[idx_p_r];
     macrBase.u.y[idx_p_w] = macrNext.u.y[idx_p_r];
     macrBase.u.z[idx_p_w] = macrNext.u.z[idx_p_r];
@@ -704,19 +716,24 @@ void gpuSumBorderMacr(Macroscopics macr, IBMMacrsAux ibmMacrsAux, int n_gpu, int
     if (x >= NX || y >= NY || z >= MACR_BORDER_NODES)
        return;
     size_t read, write;
+    int zr,zw;
     // macr to the right of ibmMacrsAux
     if(borders == 1){
         // read from right ghost nodes of ibmMacrsAux
-        read = idxScalarWBorder(x, y, (NZ-1)+1+z);
+        zr = (NZ-1)+1+z;
+        zw = z;
+        read = idxScalarWBorder(x, y, zr);
         // write to left ghost nodes of macr
-        write = idxScalarWBorder(x, y, z);
+        write = idxScalarWBorder(x, y, zw);
     }
     // macr to the left of ibmMacrsAux
     else if(borders == -1){
         // read from left ghost nodes of ibmMacrsAux
-        read = idxScalarWBorder(x, y, -1-z);
+        zr =  -1-z;
+        zw = (NZ-1)-z;
+        read = idxScalarWBorder(x, y, zr);
         // write to right ghost nodes of macr
-        write = idxScalarWBorder(x, y, (NZ-1)-z);
+        write = idxScalarWBorder(x, y, zw);
     }
     // invalid
     else{
