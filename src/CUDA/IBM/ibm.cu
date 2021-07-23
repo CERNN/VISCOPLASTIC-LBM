@@ -240,8 +240,8 @@ void gpuForceInterpolationSpread(
     int zMaxIdxPos = (n_gpu == N_GPUS-1 ? NZ : NZ+MACR_BORDER_NODES);
     // Minimum position to interpolate in Z, used for minIdx in Z
     int zMinIdxPos = (n_gpu == 0 ? 0 : -MACR_BORDER_NODES);
-    #if IBM_BC_Z_PERIODIC
-        zMinIdxPos = -MACRO_BORDER_NODES;
+    #ifdef IBM_BC_Z_PERIODIC
+        zMinIdxPos = -MACR_BORDER_NODES;
         zMaxIdxPos = NZ+MACR_BORDER_NODES;
     #endif
     // Maximum stencil index for each direction xyz ("index" to stop)
