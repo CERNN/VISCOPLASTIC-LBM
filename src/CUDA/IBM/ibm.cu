@@ -337,7 +337,7 @@ void gpuForceInterpolationSpread(
                     #ifdef IBM_BC_Y_WALL 
                         posBase[1]+yj
                     #endif //IBM_BC_Y_WALL
-                    #ifdef IBM_BC_Y_PERIODIC
+                    #ifdef IBM_BC_Y_PERIODIC    
                         IBM_BC_Y_0 + (posBase[1]+yj + IBM_BC_Y_E - IBM_BC_Y_0-IBM_BC_Y_0)%(IBM_BC_Y_E - IBM_BC_Y_0)
                     #endif //IBM_BC_Y_PERIODIC
                     , 
@@ -345,7 +345,7 @@ void gpuForceInterpolationSpread(
                         posBase[2]+zk
                     #endif //IBM_BC_Z_WALL
                     #ifdef IBM_BC_Z_PERIODIC
-                        IBM_BC_Z_0 + (posBase[2]+zk+ IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
+                        posBase[2]+zk
                     #endif //IBM_BC_Z_PERIODIC
                 );
                 rhoVar += macr.rho[idx] * aux;
@@ -442,7 +442,7 @@ void gpuForceInterpolationSpread(
                 // Dirac delta (kernel)
                 aux = aux1 * stencilVal[0][xi];
                 // same as aux = stencil(x - xIBM) * stencil(y - yIBM) * stencil(z - zIBM);
-
+ 
                 idx = idxScalarWBorder(
                     #ifdef IBM_BC_X_WALL
                         posBase[0]+xi
@@ -462,7 +462,8 @@ void gpuForceInterpolationSpread(
                         posBase[2]+zk
                     #endif //IBM_BC_Z_WALL
                     #ifdef IBM_BC_Z_PERIODIC
-                        IBM_BC_Z_0 + (posBase[2]+zk+ IBM_BC_Z_E - IBM_BC_Z_0-IBM_BC_Z_0)%(IBM_BC_Z_E - IBM_BC_Z_0)
+                        posBase[2]+zk
+                        //OLD: IBM_BC_Z_0 + (posBase[2]+zk+ (IBM_BC_Z_E-n_gpu*NZ) - IBM_BC_Z_0-IBM_BC_Z_0)%((IBM_BC_Z_E-n_gpu*NZ) - IBM_BC_Z_0)
                     #endif //IBM_BC_Z_PERIODIC
                 );
 

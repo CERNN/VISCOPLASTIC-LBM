@@ -34,8 +34,8 @@
 
 
 // --- Y direction ---
-//#define IBM_BC_Y_WALL
-#define IBM_BC_Y_PERIODIC
+#define IBM_BC_Y_WALL
+//#define IBM_BC_Y_PERIODIC
 
 #ifdef IBM_BC_Y_WALL
     // TODO: not implemented yet
@@ -51,8 +51,8 @@
 
 
 // --- Z direction ---
-#define IBM_BC_Z_WALL
-//#define IBM_BC_Z_PERIODIC
+//#define IBM_BC_Z_WALL
+#define IBM_BC_Z_PERIODIC
 
 #ifdef IBM_BC_Z_WALL
     // TODO: not implemented yet
@@ -61,6 +61,7 @@
 #endif //IBM_BC_Z_WALL
 
 #ifdef IBM_BC_Z_PERIODIC
+    //TODO: FIX with multi-gpu, it currently does not work with values different than 0 and NZ_TOTAl
     #define IBM_BC_Z_0 0
     #define IBM_BC_Z_E (NZ_TOTAL)
 #endif //IBM_BC_Z_PERIODIC
