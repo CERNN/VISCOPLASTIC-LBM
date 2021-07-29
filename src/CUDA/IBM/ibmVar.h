@@ -24,7 +24,7 @@
 // Particles diameters
 #define PARTICLE_DIAMETER (20)
 // Change to location of nodes http://dx.doi.org/10.1016/j.jcp.2012.02.026
-#define BREUGEM_PARAMETER (0.0)
+#define BREUGEM_PARAMETER (0.3)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -35,7 +35,7 @@
 #define IBM_THICKNESS (1)
 // Transfer and save forces along with macroscopics
 
-#define EXPORT_FORCES true
+#define EXPORT_FORCES false
 
 
 /* ------------------------------------------------------------------------- */
@@ -85,7 +85,7 @@
 *   BUT IT DOES NOT USE CONSIDERABLY MORE MEMORY */
 // Optimize Euler nodes updates for IBM (only recommended to test false
 // with a ratio of more than 5% between lagrangian and eulerian nodes)
-#define IBM_EULER_OPTIMIZATION false
+#define IBM_EULER_OPTIMIZATION true
 // "Shell thickness" to consider. The Euler nodes are updated every time 
 // the particle moves more than IBM_EULER_UPDATE_DIST and all nodes with 
 // less than IBM_EULER_SHELL_THICKNESS+IBM_EULER_UPDATE_DIST+P_DIST 
@@ -106,24 +106,24 @@
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
 
-#define IBM_PARTICLES_SAVE (1000)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (1000)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (5000)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (100)                   // Report IBM treated data every given steps (0 not report)
 
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE false                 // save reported IBM data to file
 
-#define IBM_PARTICLES_NODES_SAVE true      // Saves particles nodes data
+#define IBM_PARTICLES_NODES_SAVE false      // Saves particles nodes data
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 3.97;
+constexpr dfloat PARTICLE_DENSITY = 2.25;
 constexpr dfloat FLUID_DENSITY = 1;
 
 // Gravity accelaration on particle (Lattice units)
-constexpr dfloat GX = 1e-4;
+constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
+constexpr dfloat GZ = -1e-3; //-1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------------------------------------------------------- */
 
 

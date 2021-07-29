@@ -8,7 +8,7 @@
 
 /* ------------------------ NON NEWTONIAN FLUID TYPE ------------------------ */
 #ifdef POWERLAW
-constexpr dfloat N_INDEX = 1.25;                         // Power index
+constexpr dfloat N_INDEX = 0.5;                         // Power index
 constexpr dfloat K_CONSISTENCY = RHO_0*(TAU-0.5)/3;      // Consistency factor
 constexpr dfloat GAMMA_0 = 0;       // Truncated Power-Law. 
                                     // Leave as 0 to no truncate
@@ -36,7 +36,7 @@ dfloat __forceinline__ calcOmega(
     dfloat omega;
 
 #ifdef POWERLAW
-    /*
+    
     // Apparent viscosity
     dfloat eta = ((1/omegaOld) - 0.5) / 3.0;
 
@@ -51,9 +51,9 @@ dfloat __forceinline__ calcOmega(
     }
 
     omega = 1 / (0.5 + 3 * eta);
-    */
     
-
+    
+/*
     omega = omegaOld; //initial guess
 
     dfloat fx, fx_dx;
@@ -75,7 +75,7 @@ dfloat __forceinline__ calcOmega(
         omega = omega - fx / fx_dx;
     }
     
-
+*/
 
 #endif // POWERLAW
 

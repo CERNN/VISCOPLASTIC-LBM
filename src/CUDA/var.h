@@ -15,7 +15,7 @@
 
 
 /* ------------------------ GENERAL SIMULATION DEFINES ---------------------- */
-#define SINGLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
+#define DOUBLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
 #define D3Q19               // velocity set to use (D3Q19 OR D3Q27)
 // Comment to disable IBM. Uncomment to enable IBM
 #define IBM
@@ -36,8 +36,8 @@
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
 
-#define ID_SIM "001"            // prefix for simulation's files
-#define PATH_FILES "TEST"  // path to save simulation's files
+#define ID_SIM "000"            // prefix for simulation's files
+#define PATH_FILES "SINGLE_SETTLING"  // path to save simulation's files
 
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
@@ -48,7 +48,7 @@
 
 constexpr unsigned int SCALE = 1;
 constexpr int N_STEPS = 10000;          // maximum number of time steps
-#define MACR_SAVE (1000)                  // saves macroscopics every MACR_SAVE steps
+#define MACR_SAVE (false)                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT (false)                // report every DATA_REPORT steps
 
  
@@ -76,16 +76,16 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
-constexpr unsigned int N_GPUS = 2;    // Number of GPUS to use
-constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0,0};    // Which GPUs to use
+constexpr unsigned int N_GPUS = 3;    // Number of GPUS to use
+constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0,0,0};    // Which GPUs to use
 
 
 
 constexpr int N = 64*SCALE;
-constexpr int NX = 64*SCALE;        // size x of the grid 
+constexpr int NX = 92*SCALE;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr int NY = 128*SCALE;        // size y of the grid
-constexpr int NZ = 64*SCALE/N_GPUS;        // size z of the grid in one GPU
+constexpr int NY = 92*SCALE;        // size y of the grid
+constexpr int NZ = 92*SCALE/N_GPUS;        // size z of the grid in one GPU
 constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
 constexpr dfloat U_MAX = 0;           // max velocity

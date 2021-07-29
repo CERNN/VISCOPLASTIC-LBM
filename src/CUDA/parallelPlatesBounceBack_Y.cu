@@ -3,7 +3,7 @@
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
 *   @brief Parallel plates using bounce boundary conditions in walls,
 *          periodic condition in flow direction and force in Z
-*          N, S: periodic; B, F: Wall; W, E: periodic
+*          N, S: wall; B, F: periodic; W, E: periodic
 *   @version 0.3.0
 *   @date 16/12/2019
 */
@@ -57,107 +57,105 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
     if (y == 0 && x == 0 && zDomain == 0) // SWB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
     else if (y == 0 && x == 0 && zDomain == (NZ_TOTAL-1)) // SWF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
     else if (y == 0 && x == (NX - 1) && zDomain == 0) // SEB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
     else if (y == 0 && x == (NX - 1) && zDomain == (NZ_TOTAL-1)) // SEF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
     else if (y == (NY - 1) && x == 0 && zDomain == 0) // NWB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
     else if (y == (NY - 1) && x == 0 && zDomain == (NZ_TOTAL-1)) // NWF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
     else if (y == (NY - 1) && x == (NX - 1) && zDomain == 0) // NEB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
 
     }
     else if (y == (NY - 1) && x == (NX - 1) && zDomain == (NZ_TOTAL-1)) // NEF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
     else if (y == 0 && x == 0) // SW
     {
-
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
     else if (y == 0 && x == (NX - 1)) // SE
     {
-
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
     else if (y == (NY - 1) && x == 0) // NW
     {
-
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
     else if (y == (NY - 1) && x == (NX - 1)) // NE
     {
-
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
     else if (y == 0 && zDomain == 0) // SB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
     else if (y == 0 && zDomain == (NZ_TOTAL-1)) // SF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
     else if (y == (NY - 1) && zDomain == 0) // NB
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
     else if (y == (NY - 1) && zDomain == (NZ_TOTAL-1)) // NF
     {
         gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
     else if (x == 0 && zDomain == 0) // WB
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
     }
     else if (x == 0 && zDomain == (NZ_TOTAL-1)) // WF
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
     }
     else if (x == (NX - 1) && zDomain == 0) // EB
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
     }
     else if (x == (NX - 1) && zDomain == (NZ_TOTAL-1)) // EF
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
-    }
+   }
     else if (y == 0) // S
     {
-
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(SOUTH);
     }
     else if (y == (NY - 1)) // N
     {
-
+        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
+        gpuMapBC[idxScalar(x, y, z)].setDirection(NORTH);
     }
     else if (x == 0) // W
     {
@@ -169,13 +167,9 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
     }
     else if (zDomain == 0) // B
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
     }
     else if (zDomain == (NZ_TOTAL-1)) // F
     {
-        gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_BOUNCE_BACK);
-        gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
     }
 }
 
