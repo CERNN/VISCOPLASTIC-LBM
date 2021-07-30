@@ -18,7 +18,7 @@
 
 /* -------------------------- IBM GENERAL DEFINES --------------------------- */
 // Total number of IB particles in the system
-#define NUM_PARTICLES 1
+#define NUM_PARTICLES 100
 // Number of IBM inner iterations
 #define IBM_MAX_ITERATION 1
 // Particles diameters
@@ -106,8 +106,8 @@
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
 
-#define IBM_PARTICLES_SAVE (5000)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (100)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (1000)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (1000)                   // Report IBM treated data every given steps (0 not report)
 
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
@@ -123,7 +123,7 @@ constexpr dfloat FLUID_DENSITY = 1;
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = -1e-3; //-1.179430e-03/SCALE/SCALE/SCALE;
+constexpr dfloat GZ = -1e-4; //-1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------------------------------------------------------- */
 
 

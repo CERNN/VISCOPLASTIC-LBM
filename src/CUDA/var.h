@@ -36,8 +36,8 @@
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
 
-#define ID_SIM "000"            // prefix for simulation's files
-#define PATH_FILES "SINGLE_SETTLING"  // path to save simulation's files
+#define ID_SIM "002"            // prefix for simulation's files
+#define PATH_FILES "MULTI_SETTLING"  // path to save simulation's files
 
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
@@ -47,7 +47,7 @@
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
 
 constexpr unsigned int SCALE = 1;
-constexpr int N_STEPS = 10000;          // maximum number of time steps
+constexpr int N_STEPS = 500000;          // maximum number of time steps
 #define MACR_SAVE (false)                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT (false)                // report every DATA_REPORT steps
 
@@ -76,16 +76,16 @@ constexpr int INI_STEP = 0; // initial simulation step (0 default)
 
 
 /* --------------------------  SIMULATION DEFINES -------------------------- */
-constexpr unsigned int N_GPUS = 3;    // Number of GPUS to use
-constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0,0,0};    // Which GPUs to use
+constexpr unsigned int N_GPUS = 4;    // Number of GPUS to use
+constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0,1,2,3};    // Which GPUs to use
 
 
 
 constexpr int N = 64*SCALE;
-constexpr int NX = 92*SCALE;        // size x of the grid 
+constexpr int NX = 360*SCALE;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr int NY = 92*SCALE;        // size y of the grid
-constexpr int NZ = 92*SCALE/N_GPUS;        // size z of the grid in one GPU
+constexpr int NY = 1200*SCALE;        // size y of the grid
+constexpr int NZ = 360*SCALE/N_GPUS;        // size z of the grid in one GPU
 constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
 constexpr dfloat U_MAX = 0;           // max velocity
