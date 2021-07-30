@@ -325,6 +325,7 @@ int main()
         // Update particle nodes in each GPU
         if(!IBM_PARTICLE_UPDATE_INTERVAL || (step % IBM_PARTICLE_UPDATE_INTERVAL) == 0){
             particlesSoA.updateNodesGPUs();
+            checkCudaErrors(cudaDeviceSynchronize());
         }
 
         #if IBM_EULER_OPTIMIZATION

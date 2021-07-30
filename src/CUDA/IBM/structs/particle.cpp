@@ -79,20 +79,17 @@ void ParticlesSoA::updateNodesGPUs(){
         dfloat3 diff_w_pos = dfloat3(w_pos.x-last_w_pos.x, w_pos.y-last_w_pos.y, w_pos.z-last_w_pos.z);
         dfloat radius = this->pCenterArray[i].radius;
 
-        dfloat min_pos = pos_p.z - radius;
-        dfloat max_pos = pos_p.z + radius;
-        int min_gpu = (int)(min_pos/NZ);
+        dfloat min_pos = myMin(pos_p.z,last_pos.z) - (radius - BREUGEM_PARAMETER);
+        dfloat max_pos = myMax(pos_p.z,last_pos.z) + (radius - BREUGEM_PARAMETER);
+        int min_gpu = (int)(min_pos+NZ_TOTAL)/(NZ)-N_GPUS;
         int max_gpu = (int)(max_pos/NZ);
-        // minimun and maximum position are in the same GPU
-        if(min_gpu == max_gpu)
-            continue;
 
         // Translation
         dfloat diff_z = (pos_p.z-last_pos.z);
         if (diff_z < 0)
             diff_z = -diff_z;
         // Maximum rotation
-        diff_z += radius*sqrt(diff_w_pos.x*diff_w_pos.x+diff_w_pos.y*diff_w_pos.y);
+        diff_z += (radius-BREUGEM_PARAMETER)*sqrt(diff_w_pos.x*diff_w_pos.x+diff_w_pos.y*diff_w_pos.y);
 
         // Particle has not moved enoush and nodes that needs to be 
         // updated/synchronized are already considering that
@@ -102,38 +99,46 @@ void ParticlesSoA::updateNodesGPUs(){
         // Update particle's last position
         this->pCenterLastPos[i] = this->pCenterArray[i].pos;
         this->pCenterLastWPos[i] = this->pCenterArray[i].w_pos;
+        if(min_gpu == max_gpu)
+            continue;
 
         for(int n = min_gpu; n <= max_gpu; n++){
             // Set current device
-            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[n]));
+            int real_gpu = (n+N_GPUS)%N_GPUS;
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[real_gpu]));
             int left_shift = 0;
-            for(int p = 0; p < this->nodesSoA[n].numNodes; p++){
+            for(int p = 0; p < this->nodesSoA[real_gpu].numNodes; p++){
                 // Shift left nodes, if a node was already removed
                 if(left_shift != 0){
-                    this->nodesSoA[n].leftShiftNodesSoA(p, left_shift);
+                    this->nodesSoA[real_gpu].leftShiftNodesSoA(p, left_shift);
                 }
 
                 // Node is from another particle
-                if(this->nodesSoA[n].particleCenterIdx[p] != i)
+                if(this->nodesSoA[real_gpu].particleCenterIdx[p] != i)
                     continue;
 
                 // Check in what GPU node is
-                dfloat pos_z = this->nodesSoA[n].pos.z[p];
+                dfloat pos_z = this->nodesSoA[real_gpu].pos.z[p];
                 int node_gpu = (int) (pos_z/NZ);
                 // If node is still in same GPU, continues
-                if(node_gpu == n)
+                if(node_gpu == real_gpu)
                     continue;
-
+                //printf("b");
                 // to not raise any error when setting up device
-                if(node_gpu < 0)
-                    node_gpu = 0;
-                else if(node_gpu >= N_GPUS)
-                    node_gpu = N_GPUS-1;
+                #ifdef IBM_BC_Z_PERIODIC
+                    node_gpu = (node_gpu+N_GPUS)%N_GPUS;
+                #else
+                    if(node_gpu < 0)
+                        node_gpu = 0;
+                    else if(node_gpu >= N_GPUS)
+                        node_gpu = N_GPUS-1;
+                #endif
+
                 // Nodes will have to be shifted
                 left_shift += 1;
 
                 // Get values to move
-                ParticleNodeSoA nSoA = this->nodesSoA[n];
+                ParticleNodeSoA nSoA = this->nodesSoA[real_gpu];
                 dfloat copy_S = nSoA.S[p];
                 unsigned int copy_pIdx = nSoA.particleCenterIdx[p];
                 dfloat3 copy_pos = nSoA.pos.getValuesFromIdx(p);
@@ -157,7 +162,7 @@ void ParticlesSoA::updateNodesGPUs(){
                 // Added one node to it
                 this->nodesSoA[node_gpu].numNodes += 1;
                 // Set back particle device (unnecessary)
-                checkCudaErrors(cudaSetDevice(GPUS_TO_USE[n]));
+                checkCudaErrors(cudaSetDevice(GPUS_TO_USE[real_gpu]));
                 // printf("idx %d  gpu curr %d  ", p, n);
                 // for(int nnn = 0; nnn < N_GPUS; nnn++){
                 //     printf("Nodes GPU %d: %d\t", nnn, this->nodesSoA[nnn].numNodes);
@@ -165,7 +170,7 @@ void ParticlesSoA::updateNodesGPUs(){
                 // printf("\n");
             }
             // Remove nodes that were added
-            this->nodesSoA[n].numNodes -= left_shift;
+            this->nodesSoA[real_gpu].numNodes -= left_shift;
         }
     }
     // int sum = 0;

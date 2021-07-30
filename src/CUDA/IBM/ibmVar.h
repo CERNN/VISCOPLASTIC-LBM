@@ -85,7 +85,7 @@
 *   BUT IT DOES NOT USE CONSIDERABLY MORE MEMORY */
 // Optimize Euler nodes updates for IBM (only recommended to test false
 // with a ratio of more than 5% between lagrangian and eulerian nodes)
-#define IBM_EULER_OPTIMIZATION true
+#define IBM_EULER_OPTIMIZATION false
 // "Shell thickness" to consider. The Euler nodes are updated every time 
 // the particle moves more than IBM_EULER_UPDATE_DIST and all nodes with 
 // less than IBM_EULER_SHELL_THICKNESS+IBM_EULER_UPDATE_DIST+P_DIST 

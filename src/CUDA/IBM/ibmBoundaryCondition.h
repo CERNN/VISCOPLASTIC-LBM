@@ -63,7 +63,7 @@
 #ifdef IBM_BC_Z_PERIODIC
     //TODO: FIX with multi-gpu, it currently does not work with values different than 0 and NZ_TOTAl
     #define IBM_BC_Z_0 0
-    #define IBM_BC_Z_E NZ_TOTAL
+    #define IBM_BC_Z_E (NZ_TOTAL)
 #endif //IBM_BC_Z_PERIODIC
 
 
