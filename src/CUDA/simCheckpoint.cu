@@ -278,9 +278,9 @@ void operateSimCheckpoint(
             nSoA.numNodes = (filesize) / sizeof(unsigned int);
         }
         size_t ibm_nodes_arr_size = nSoA.numNodes * sizeof(dfloat);
-
+        size_t ibm_nodes_arr_size_uint = nSoA.numNodes * sizeof(unsigned int);
         // Load/save IBM nodes values
-        f_arr(nSoA.particleCenterIdx, f_filename("IBM_nodes_centers_idx", i), ibm_nodes_arr_size, tmp);
+        f_arr(nSoA.particleCenterIdx, f_filename("IBM_nodes_centers_idx", i), ibm_nodes_arr_size_uint, tmp);
         f_dfloat3SoA(nSoA.pos, f_filename("IBM_nodes_pos", i), ibm_nodes_arr_size, tmp);
         f_dfloat3SoA(nSoA.vel, f_filename("IBM_nodes_vel", i), ibm_nodes_arr_size, tmp);
         f_dfloat3SoA(nSoA.vel_old, f_filename("IBM_nodes_vel_old", i), ibm_nodes_arr_size, tmp);
