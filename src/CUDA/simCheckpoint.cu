@@ -174,7 +174,7 @@ __host__
 std::string getCheckpointFilenameRead(std::string name, int n_gpu){
     std::string filename = SIMULATION_FOLDER_LOAD_CHECKPOINT;
     #ifdef _WIN32
-    return filename + "\\\\" + ID_SIM + "\\\\checkpoint\\\\" + 
+    return filename + "\\\\" + ID_SIM + "\\\\checkpoint\\\\" +
         std::to_string(n_gpu) + "_" + name;
     #else
     return filename + "/" + ID_SIM + "/checkpoint/" + 
@@ -274,7 +274,7 @@ void operateSimCheckpoint(
 
         // IBM nodes bytes size
         if(oper == __LOAD_CHECKPOINT){
-            size_t filesize = getFileSize(f_filename("IBM_nodes_centers_idx", i));
+            size_t filesize = getFileSize(f_filename("IBM_nodes_centers_idx.bin", i));
             nSoA.numNodes = (filesize) / sizeof(unsigned int);
         }
         size_t ibm_nodes_arr_size = nSoA.numNodes * sizeof(dfloat);
