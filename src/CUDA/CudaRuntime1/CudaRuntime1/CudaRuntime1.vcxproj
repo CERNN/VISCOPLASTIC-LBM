@@ -10,9 +10,78 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\boundaryConditionsBuilder.h" />
+    <ClInclude Include="..\..\boundaryConditionsHandler.h" />
+    <ClInclude Include="..\..\boundaryConditionsSchemes\bounceBack.h" />
+    <ClInclude Include="..\..\boundaryConditionsSchemes\D3Q19_PresZouHe.h" />
+    <ClInclude Include="..\..\boundaryConditionsSchemes\D3Q19_VelBounceBack.h" />
+    <ClInclude Include="..\..\boundaryConditionsSchemes\D3Q19_VelZouHe.h" />
+    <ClInclude Include="..\..\boundaryConditionsSchemes\freeSlip.h" />
+    <ClInclude Include="..\..\boundaryConditionsSchemes\interpolatedBounceBack.h" />
+    <ClInclude Include="..\..\errorDef.h" />
+    <ClInclude Include="..\..\globalFunctions.h" />
+    <ClInclude Include="..\..\IBM\collision\ibmCollision.h" />
+    <ClInclude Include="..\..\IBM\ibm.h" />
+    <ClInclude Include="..\..\IBM\ibmBoundaryCondition.h" />
+    <ClInclude Include="..\..\IBM\ibmGlobalFunctions.h" />
+    <ClInclude Include="..\..\IBM\ibmParticlesCreation.h" />
+    <ClInclude Include="..\..\IBM\ibmReport.h" />
+    <ClInclude Include="..\..\IBM\ibmTreatData.h" />
+    <ClInclude Include="..\..\IBM\ibmVar.h" />
+    <ClInclude Include="..\..\IBM\structs\ibmMacrsAux.h" />
+    <ClInclude Include="..\..\IBM\structs\ibmProc.h" />
+    <ClInclude Include="..\..\IBM\structs\particle.h" />
+    <ClInclude Include="..\..\IBM\structs\particleCenter.h" />
+    <ClInclude Include="..\..\IBM\structs\particleEulerNodesUpdate.h" />
+    <ClInclude Include="..\..\IBM\structs\particleNode.h" />
+    <ClInclude Include="..\..\lbm.h" />
+    <ClInclude Include="..\..\lbmInitialization.h" />
+    <ClInclude Include="..\..\lbmReport.h" />
+    <ClInclude Include="..\..\NNF\nnf.h" />
+    <ClInclude Include="..\..\simCheckpoint.h" />
+    <ClInclude Include="..\..\structs\boundaryConditionsInfo.h" />
+    <ClInclude Include="..\..\structs\globalStructs.h" />
+    <ClInclude Include="..\..\structs\macroscopics.h" />
+    <ClInclude Include="..\..\structs\macrProc.h" />
+    <ClInclude Include="..\..\structs\nodeTypeMap.h" />
+    <ClInclude Include="..\..\structs\populations.h" />
+    <ClInclude Include="..\..\structs\simInfo.h" />
+    <ClInclude Include="..\..\treatData.h" />
+    <ClInclude Include="..\..\var.h" />
+    <ClInclude Include="..\..\velocitySets\D3Q19.h" />
+    <ClInclude Include="..\..\velocitySets\D3Q27.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\..\boundaryConditionsHandler.cu" />
+    <CudaCompile Include="..\..\boundaryConditionsSchemes\bounceBack.cu" />
+    <CudaCompile Include="..\..\boundaryConditionsSchemes\D3Q19_PresZouHe.cu" />
+    <CudaCompile Include="..\..\boundaryConditionsSchemes\D3Q19_VelBounceBack.cu" />
+    <CudaCompile Include="..\..\boundaryConditionsSchemes\D3Q19_VelZouHe.cu" />
+    <CudaCompile Include="..\..\boundaryConditionsSchemes\freeSlip.cu" />
+    <CudaCompile Include="..\..\boundaryConditionsSchemes\interpolatedBounceBack.cu" />
+    <CudaCompile Include="..\..\globalFunctions.cu" />
+    <CudaCompile Include="..\..\IBM\collision\ibmCollision.cu" />
+    <CudaCompile Include="..\..\IBM\ibm.cu" />
+    <CudaCompile Include="..\..\IBM\structs\particleEulerNodesUpdate.cu" />
+    <CudaCompile Include="..\..\IBM\structs\particleNode.cu" />
+    <CudaCompile Include="..\..\lbm.cu" />
+    <CudaCompile Include="..\..\lbmInitialization.cu" />
+    <CudaCompile Include="..\..\main.cu" />
+    <CudaCompile Include="..\..\parallelPlatesBounceBack_Y.cu" />
+    <CudaCompile Include="..\..\simCheckpoint.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\IBM\ibmParticlesCreation.cpp" />
+    <ClCompile Include="..\..\IBM\ibmReport.cpp" />
+    <ClCompile Include="..\..\IBM\ibmTreatData.cpp" />
+    <ClCompile Include="..\..\IBM\structs\particle.cpp" />
+    <ClCompile Include="..\..\lbmReport.cpp" />
+    <ClCompile Include="..\..\treatData.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{404B001C-9C29-459A-B6AF-A6C60F0FDE19}</ProjectGuid>
-    <RootNamespace>VisualStudioProject</RootNamespace>
+    <ProjectGuid>{96746A98-BE5C-4FF1-B060-D2743462C3FB}</ProjectGuid>
+    <RootNamespace>CudaRuntime1</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -30,7 +99,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.2.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.4.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -56,13 +125,9 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
-      <CodeGeneration>compute_37,sm_37</CodeGeneration>
-      <PtxAsOptionV>true</PtxAsOptionV>
+      <CodeGeneration>compute_75,sm_75</CodeGeneration>
+      <FastMath>true</FastMath>
     </CudaCompile>
-    <CudaLink>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
-    </CudaLink>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -83,77 +148,8 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <CudaCompile Include="..\boundaryConditionsHandler.cu" />
-    <CudaCompile Include="..\boundaryConditionsSchemes\bounceBack.cu" />
-    <CudaCompile Include="..\boundaryConditionsSchemes\D3Q19_PresZouHe.cu" />
-    <CudaCompile Include="..\boundaryConditionsSchemes\D3Q19_VelBounceBack.cu" />
-    <CudaCompile Include="..\boundaryConditionsSchemes\D3Q19_VelZouHe.cu" />
-    <CudaCompile Include="..\boundaryConditionsSchemes\freeSlip.cu" />
-    <CudaCompile Include="..\boundaryConditionsSchemes\interpolatedBounceBack.cu" />
-    <CudaCompile Include="..\globalFunctions.cu" />
-    <CudaCompile Include="..\IBM\collision\ibmCollision.cu" />
-    <CudaCompile Include="..\IBM\ibm.cu" />
-    <CudaCompile Include="..\IBM\structs\particleEulerNodesUpdate.cu" />
-    <CudaCompile Include="..\IBM\structs\particleNode.cu" />
-    <CudaCompile Include="..\lbm.cu" />
-    <CudaCompile Include="..\lbmInitialization.cu" />
-    <CudaCompile Include="..\main.cu" />
-    <CudaCompile Include="..\parallelPlatesBounceBack.cu" />
-    <CudaCompile Include="..\simCheckpoint.cu" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\boundaryConditionsBuilder.h" />
-    <ClInclude Include="..\boundaryConditionsHandler.h" />
-    <ClInclude Include="..\boundaryConditionsSchemes\bounceBack.h" />
-    <ClInclude Include="..\boundaryConditionsSchemes\D3Q19_PresZouHe.h" />
-    <ClInclude Include="..\boundaryConditionsSchemes\D3Q19_VelBounceBack.h" />
-    <ClInclude Include="..\boundaryConditionsSchemes\D3Q19_VelZouHe.h" />
-    <ClInclude Include="..\boundaryConditionsSchemes\freeSlip.h" />
-    <ClInclude Include="..\boundaryConditionsSchemes\interpolatedBounceBack.h" />
-    <ClInclude Include="..\errorDef.h" />
-    <ClInclude Include="..\globalFunctions.h" />
-    <ClInclude Include="..\IBM\collision\ibmCollision.h" />
-    <ClInclude Include="..\IBM\ibm.h" />
-    <ClInclude Include="..\IBM\ibmBoundaryCondition.h" />
-    <ClInclude Include="..\IBM\ibmGlobalFunctions.h" />
-    <ClInclude Include="..\IBM\ibmParticlesCreation.h" />
-    <ClInclude Include="..\IBM\ibmReport.h" />
-    <ClInclude Include="..\IBM\ibmTreatData.h" />
-    <ClInclude Include="..\IBM\ibmVar.h" />
-    <ClInclude Include="..\IBM\structs\ibmMacrsAux.h" />
-    <ClInclude Include="..\IBM\structs\ibmProc.h" />
-    <ClInclude Include="..\IBM\structs\particle.h" />
-    <ClInclude Include="..\IBM\structs\particleCenter.h" />
-    <ClInclude Include="..\IBM\structs\particleEulerNodesUpdate.h" />
-    <ClInclude Include="..\IBM\structs\particleNode.h" />
-    <ClInclude Include="..\lbm.h" />
-    <ClInclude Include="..\lbmInitialization.h" />
-    <ClInclude Include="..\lbmReport.h" />
-    <ClInclude Include="..\NNF\nnf.h" />
-    <ClInclude Include="..\simCheckpoint.h" />
-    <ClInclude Include="..\structs\boundaryConditionsInfo.h" />
-    <ClInclude Include="..\structs\globalStructs.h" />
-    <ClInclude Include="..\structs\macroscopics.h" />
-    <ClInclude Include="..\structs\macrProc.h" />
-    <ClInclude Include="..\structs\nodeTypeMap.h" />
-    <ClInclude Include="..\structs\populations.h" />
-    <ClInclude Include="..\structs\simInfo.h" />
-    <ClInclude Include="..\treatData.h" />
-    <ClInclude Include="..\var.h" />
-    <ClInclude Include="..\velocitySets\D3Q19.h" />
-    <ClInclude Include="..\velocitySets\D3Q27.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\IBM\ibmParticlesCreation.cpp" />
-    <ClCompile Include="..\IBM\ibmReport.cpp" />
-    <ClCompile Include="..\IBM\ibmTreatData.cpp" />
-    <ClCompile Include="..\IBM\structs\particle.cpp" />
-    <ClCompile Include="..\lbmReport.cpp" />
-    <ClCompile Include="..\treatData.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.2.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.4.targets" />
   </ImportGroup>
 </Project>
