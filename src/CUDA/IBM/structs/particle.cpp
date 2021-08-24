@@ -13,27 +13,39 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
 
     printf("Total number of nodes: %u\n", totalIbmNodes);
     printf("Total memory used for Particles: %lu Mb\n",
-           (unsigned long)((totalIbmNodes * sizeof(particleNode) + NUM_PARTICLES * sizeof(particleCenter)) / BYTES_PER_MB));
+           (unsigned long)((totalIbmNodes * sizeof(particleNode) * N_GPUS + NUM_PARTICLES * sizeof(particleCenter)) / BYTES_PER_MB));
     fflush(stdout);
 
     printf("Allocating particles in GPU... \t"); fflush(stdout);
-    this->nodesSoA.allocateMemory(totalIbmNodes);
+    // Allocate nodes in each GPU
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+        this->nodesSoA[i].allocateMemory(totalIbmNodes);
+    }
+
     // Allocate particle center array
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
     checkCudaErrors(
         cudaMallocManaged((void**)&(this->pCenterArray), sizeof(ParticleCenter) * NUM_PARTICLES));
+    // Allocate array of last positions for Particles
+    this->pCenterLastPos = (dfloat3*)malloc(sizeof(dfloat3)*NUM_PARTICLES);
+    this->pCenterLastWPos = (dfloat3*)malloc(sizeof(dfloat3) * NUM_PARTICLES);
     printf("Particles allocated in GPU!\n"); fflush(stdout);
-
-    size_t baseIdx = 0;
 
     printf("Optimizig memory layout of particles for GPU... \t"); fflush(stdout);
 
     for (int p = 0; p < NUM_PARTICLES; p++)
     {
-        this->nodesSoA.copyNodesFromParticle(particles[p], p, baseIdx);
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
         this->pCenterArray[p] = particles[p].pCenter;
-
-        baseIdx += particles[p].numNodes;
+        this->pCenterLastPos[p] = particles[p].pCenter.pos;
+        this->pCenterLastWPos[p] = particles[p].pCenter.w_pos;
+        for(int i = 0; i < N_GPUS; i++){
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+            this->nodesSoA[i].copyNodesFromParticle(particles[p], p, i);
+        }
     }
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
 
     printf("Optimized memory layout for GPU!\n"); fflush(stdout);
 
@@ -49,17 +61,142 @@ void ParticlesSoA::updateParticlesAsSoA(Particle* particles){
     fflush(stdout);
 }
 
+
+void ParticlesSoA::updateNodesGPUs(){
+    // No need to update for 1 GPU
+    if(N_GPUS == 1)
+        return;
+
+    for(int i = 0; i < NUM_PARTICLES; i++){
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
+        if(!this->pCenterArray[i].movable)
+            continue;
+
+        dfloat3 pos_p = this->pCenterArray[i].pos;
+        dfloat3 last_pos = this->pCenterLastPos[i];
+        dfloat3 w_pos = this->pCenterArray[i].w_pos;
+        dfloat3 last_w_pos = this->pCenterLastWPos[i];
+        dfloat3 diff_w_pos = dfloat3(w_pos.x-last_w_pos.x, w_pos.y-last_w_pos.y, w_pos.z-last_w_pos.z);
+        dfloat radius = this->pCenterArray[i].radius;
+
+        dfloat min_pos = myMin(pos_p.z,last_pos.z) - (radius - BREUGEM_PARAMETER);
+        dfloat max_pos = myMax(pos_p.z,last_pos.z) + (radius - BREUGEM_PARAMETER);
+        int min_gpu = (int)(min_pos+NZ_TOTAL)/(NZ)-N_GPUS;
+        int max_gpu = (int)(max_pos/NZ);
+
+        // Translation
+        dfloat diff_z = (pos_p.z-last_pos.z);
+        if (diff_z < 0)
+            diff_z = -diff_z;
+        // Maximum rotation
+        diff_z += (radius-BREUGEM_PARAMETER)*sqrt(diff_w_pos.x*diff_w_pos.x+diff_w_pos.y*diff_w_pos.y);
+
+        // Particle has not moved enoush and nodes that needs to be 
+        // updated/synchronized are already considering that
+        if(diff_z < IBM_PARTICLE_UPDATE_DIST)
+            continue;
+
+        // Update particle's last position
+        this->pCenterLastPos[i] = this->pCenterArray[i].pos;
+        this->pCenterLastWPos[i] = this->pCenterArray[i].w_pos;
+        if(min_gpu == max_gpu)
+            continue;
+
+        for(int n = min_gpu; n <= max_gpu; n++){
+            // Set current device
+            int real_gpu = (n+N_GPUS)%N_GPUS;
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[real_gpu]));
+            int left_shift = 0;
+            for(int p = 0; p < this->nodesSoA[real_gpu].numNodes; p++){
+                // Shift left nodes, if a node was already removed
+                if(left_shift != 0){
+                    this->nodesSoA[real_gpu].leftShiftNodesSoA(p, left_shift);
+                }
+
+                // Node is from another particle
+                if(this->nodesSoA[real_gpu].particleCenterIdx[p] != i)
+                    continue;
+
+                // Check in what GPU node is
+                dfloat pos_z = this->nodesSoA[real_gpu].pos.z[p];
+                int node_gpu = (int) (pos_z/NZ);
+                // If node is still in same GPU, continues
+                if(node_gpu == real_gpu)
+                    continue;
+                //printf("b");
+                // to not raise any error when setting up device
+                #ifdef IBM_BC_Z_PERIODIC
+                    node_gpu = (node_gpu+N_GPUS)%N_GPUS;
+                #else
+                    if(node_gpu < 0)
+                        node_gpu = 0;
+                    else if(node_gpu >= N_GPUS)
+                        node_gpu = N_GPUS-1;
+                #endif
+
+                // Nodes will have to be shifted
+                left_shift += 1;
+
+                // Get values to move
+                ParticleNodeSoA nSoA = this->nodesSoA[real_gpu];
+                dfloat copy_S = nSoA.S[p];
+                unsigned int copy_pIdx = nSoA.particleCenterIdx[p];
+                dfloat3 copy_pos = nSoA.pos.getValuesFromIdx(p);
+                dfloat3 copy_vel = nSoA.vel.getValuesFromIdx(p);
+                dfloat3 copy_vel_old = nSoA.vel_old.getValuesFromIdx(p);
+                dfloat3 copy_f = nSoA.f.getValuesFromIdx(p);
+                dfloat3 copy_deltaF = nSoA.deltaF.getValuesFromIdx(p);
+
+                // Set device to move to (unnecessary)
+                checkCudaErrors(cudaSetDevice(GPUS_TO_USE[node_gpu]));
+                nSoA = this->nodesSoA[node_gpu];
+                // Copy values to last position in nodesSoA
+                size_t idxMove = nSoA.numNodes;
+                nSoA.S[idxMove] = copy_S;
+                nSoA.particleCenterIdx[idxMove] = copy_pIdx;
+                nSoA.pos.copyValuesFromFloat3(copy_pos, idxMove);
+                nSoA.vel.copyValuesFromFloat3(copy_vel, idxMove);
+                nSoA.vel_old.copyValuesFromFloat3(copy_vel_old, idxMove);
+                nSoA.f.copyValuesFromFloat3(copy_f, idxMove);
+                nSoA.deltaF.copyValuesFromFloat3(copy_deltaF, idxMove);
+                // Added one node to it
+                this->nodesSoA[node_gpu].numNodes += 1;
+                // Set back particle device (unnecessary)
+                checkCudaErrors(cudaSetDevice(GPUS_TO_USE[real_gpu]));
+                // printf("idx %d  gpu curr %d  ", p, n);
+                // for(int nnn = 0; nnn < N_GPUS; nnn++){
+                //     printf("Nodes GPU %d: %d\t", nnn, this->nodesSoA[nnn].numNodes);
+                // }
+                // printf("\n");
+            }
+            // Remove nodes that were added
+            this->nodesSoA[real_gpu].numNodes -= left_shift;
+        }
+    }
+    // int sum = 0;
+    // for(int nnn = 0; nnn < N_GPUS; nnn++){
+    //     sum += this->nodesSoA[nnn].numNodes;
+    // }
+    // printf("sum nodes %d\n\n", sum);
+}
+
+
 void ParticlesSoA::freeNodesAndCenters(){
-    this->nodesSoA.freeMemory();
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+        this->nodesSoA[i].freeMemory();
+    }
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
     cudaFree(this->pCenterArray);
+    free(this->pCenterLastPos);
+    free(this->pCenterLastWPos);
     this->pCenterArray = nullptr;
 }
 
-Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move,
+
+void Particle::makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move,
     dfloat density, dfloat3 vel, dfloat3 w)
 {
-    // Particle to be returned
-    Particle particleRet;
     // Maximum number of layer of sphere
     //unsigned int maxNumLayers = 5000;
     // Number of layers in sphere
@@ -71,38 +208,38 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
     dfloat phase = 0.0;
 
-    // particleRet.pCenter = ParticleCenter();
+    // this->pCenter = ParticleCenter();
 
     // Define the properties of the particle
     dfloat r = diameter / 2.0;
     dfloat volume = r*r*r*4*M_PI/3;
 
-    particleRet.pCenter.radius = r;
-    particleRet.pCenter.volume = r*r*r*4*M_PI/3;
+    this->pCenter.radius = r;
+    this->pCenter.volume = r*r*r*4*M_PI/3;
     // Particle area
-    particleRet.pCenter.S = 4.0 * M_PI * r * r;
+    this->pCenter.S = 4.0 * M_PI * r * r;
     // Particle density
-    particleRet.pCenter.density = density;
+    this->pCenter.density = density;
 
     // Particle center position
-    particleRet.pCenter.pos = center;
-    particleRet.pCenter.pos_old = center;
+    this->pCenter.pos = center;
+    this->pCenter.pos_old = center;
 
     // Particle velocity
-    particleRet.pCenter.vel = vel;
-    particleRet.pCenter.vel_old = vel;
+    this->pCenter.vel = vel;
+    this->pCenter.vel_old = vel;
 
     // Particle rotation
-    particleRet.pCenter.w = w;
-    particleRet.pCenter.w_avg = w;
-    particleRet.pCenter.w_old = w;
+    this->pCenter.w = w;
+    this->pCenter.w_avg = w;
+    this->pCenter.w_old = w;
 
     // Innertia momentum
-    particleRet.pCenter.I.x = 2.0 * volume * particleRet.pCenter.density * r * r / 5.0;
-    particleRet.pCenter.I.y = 2.0 * volume * particleRet.pCenter.density * r * r / 5.0;
-    particleRet.pCenter.I.z = 2.0 * volume * particleRet.pCenter.density * r * r / 5.0;
+    this->pCenter.I.x = 2.0 * volume * this->pCenter.density * r * r / 5.0;
+    this->pCenter.I.y = 2.0 * volume * this->pCenter.density * r * r / 5.0;
+    this->pCenter.I.z = 2.0 * volume * this->pCenter.density * r * r / 5.0;
 
-    particleRet.pCenter.movable = move;
+    this->pCenter.movable = move;
 
     //breugem correction
     r -= BREUGEM_PARAMETER;
@@ -110,19 +247,19 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     // Number of layers in the sphere
     nLayer = (unsigned int)(2.0 * sqrt(2) * r / MESH_SCALE + 1.0); 
 
-    nNodesLayer = (unsigned int*)malloc(nLayer * sizeof(unsigned int));
+    nNodesLayer = (unsigned int*)malloc((nLayer+1) * sizeof(unsigned int));
     theta = (dfloat*)malloc((nLayer+1) * sizeof(dfloat));
     zeta = (dfloat*)malloc((nLayer+1) * sizeof(dfloat));
     S = (dfloat*)malloc((nLayer+1) * sizeof(dfloat));
 
-    particleRet.numNodes = 0;
+    this->numNodes = 0;
     for (int i = 0; i <= nLayer; i++) {
         // Angle of each layer
         theta[i] = M_PI * ((double)i / (double)nLayer - 0.5); 
         // Determine the number of node per layer
         nNodesLayer[i] = (unsigned int)(1.5 + cos(theta[i]) * nLayer * sqrt(3)); 
         // Total number of nodes on the sphere
-        particleRet.numNodes += nNodesLayer[i]; 
+        this->numNodes += nNodesLayer[i]; 
         zeta[i] = r * sin(theta[i]); // Height of each layer
     }
 
@@ -143,9 +280,9 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     S[0] = S[nLayer];
     
 
-    particleRet.nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * particleRet.numNodes);
+    this->nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * this->numNodes);
 
-    ParticleNode* first_node = &(particleRet.nodes[0]);
+    ParticleNode* first_node = &(this->nodes[0]);
 
     // South node - define all properties
     first_node->pos.x = 0;
@@ -172,23 +309,22 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
         for (int j = 0; j < nNodesLayer[i]; j++) {
             // Determine the properties of each node in the mid layers
-            particleRet.nodes[nodeIndex].pos.x = r * cos(theta[i]) * cos((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
-            particleRet.nodes[nodeIndex].pos.y = r * cos(theta[i]) * sin((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
-            particleRet.nodes[nodeIndex].pos.z = r * sin(theta[i]);
+            this->nodes[nodeIndex].pos.x = r * cos(theta[i]) * cos((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
+            this->nodes[nodeIndex].pos.y = r * cos(theta[i]) * sin((dfloat)j * 2.0 * M_PI / nNodesLayer[i] + phase);
+            this->nodes[nodeIndex].pos.z = r * sin(theta[i]);
 
             // The area of sphere segment is divided by the number of node
             // in the layer, so all nodes have the same area in the layer
-            particleRet.nodes[nodeIndex].S = S[i] / nNodesLayer[i];
+            this->nodes[nodeIndex].S = S[i] / nNodesLayer[i];
 
             // Define node velocity
-            particleRet.nodes[nodeIndex].vel.x = vel.x + w.y * particleRet.nodes[nodeIndex].pos.z - w.z * particleRet.nodes[nodeIndex].pos.y;
-            particleRet.nodes[nodeIndex].vel.y = vel.y + w.z * particleRet.nodes[nodeIndex].pos.x - w.x * particleRet.nodes[nodeIndex].pos.z;
-            particleRet.nodes[nodeIndex].vel.z = vel.z + w.x * particleRet.nodes[nodeIndex].pos.y - w.y * particleRet.nodes[nodeIndex].pos.x;
+            this->nodes[nodeIndex].vel.x = vel.x + w.y * this->nodes[nodeIndex].pos.z - w.z * this->nodes[nodeIndex].pos.y;
+            this->nodes[nodeIndex].vel.y = vel.y + w.z * this->nodes[nodeIndex].pos.x - w.x * this->nodes[nodeIndex].pos.z;
+            this->nodes[nodeIndex].vel.z = vel.z + w.x * this->nodes[nodeIndex].pos.y - w.y * this->nodes[nodeIndex].pos.x;
 
-            particleRet.nodes[nodeIndex].vel_old.x = vel.x + w.y * particleRet.nodes[nodeIndex].pos.z - w.z * particleRet.nodes[nodeIndex].pos.y;
-            particleRet.nodes[nodeIndex].vel_old.y = vel.y + w.z * particleRet.nodes[nodeIndex].pos.x - w.x * particleRet.nodes[nodeIndex].pos.z;
-            particleRet.nodes[nodeIndex].vel_old.z = vel.z + w.x * particleRet.nodes[nodeIndex].pos.y - w.y * particleRet.nodes[nodeIndex].pos.x;
-            
+            this->nodes[nodeIndex].vel_old.x = vel.x + w.y * this->nodes[nodeIndex].pos.z - w.z * this->nodes[nodeIndex].pos.y;
+            this->nodes[nodeIndex].vel_old.y = vel.y + w.z * this->nodes[nodeIndex].pos.x - w.x * this->nodes[nodeIndex].pos.z;
+            this->nodes[nodeIndex].vel_old.z = vel.z + w.x * this->nodes[nodeIndex].pos.y - w.y * this->nodes[nodeIndex].pos.x;
 
             // Add one node
             nodeIndex++;
@@ -196,7 +332,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     }
 
     // North pole -define all properties
-    ParticleNode* last_node = &(particleRet.nodes[particleRet.numNodes-1]);
+    ParticleNode* last_node = &(this->nodes[this->numNodes-1]);
     
     last_node->pos.x = 0;
     last_node->pos.y = 0;
@@ -211,7 +347,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     last_node->vel_old.y = vel.y + w.z * last_node->pos.x  - w.x * last_node->pos.z;
     last_node->vel_old.z = vel.z + w.x * last_node->pos.y  - w.y * last_node->pos.x;
 
-    unsigned int numNodes = particleRet.numNodes;
+    unsigned int numNodes = this->numNodes;
 
     // Coulomb node positions distribution
     if (coulomb != 0) {
@@ -234,11 +370,11 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
             }
 
             for (int i = 0; i < numNodes; i++) {
-                ParticleNode* node_i = &(particleRet.nodes[i]);
+                ParticleNode* node_i = &(this->nodes[i]);
 
                 for (int j = i+1; j < numNodes; j++) {
 
-                    ParticleNode* node_j = &(particleRet.nodes[j]);
+                    ParticleNode* node_j = &(this->nodes[j]);
 
                     dir.x = node_j->pos.x - node_i->pos.x;
                     dir.y = node_j->pos.y - node_i->pos.y;
@@ -261,7 +397,7 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
                 fy = cForce[i].y / scaleF;
                 fz = cForce[i].z / scaleF;
                 
-                ParticleNode* node_i = &(particleRet.nodes[i]);
+                ParticleNode* node_i = &(this->nodes[i]);
 
                 node_i->pos.x += fx;
                 node_i->pos.y += fy;
@@ -280,26 +416,31 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
 
         // Area fix
         for (int i = 0; i < numNodes; i++) {
-            ParticleNode* node_i = &(particleRet.nodes[i]);
+            ParticleNode* node_i = &(this->nodes[i]);
 
-            node_i->S = particleRet.pCenter.S / (numNodes);
+            node_i->S = this->pCenter.S / (numNodes);
         }
 
         // Free coulomb force
         free(cForce);
 
-        dfloat dA =  particleRet.pCenter.S/particleRet.numNodes;
+        dfloat dA =  this->pCenter.S/this->numNodes;
         for(int i = 0; i < numNodes; i++){
-            particleRet.nodes[i].S = dA;
+            this->nodes[i].S = dA;
         }
     }
     ParticleNode* node_i;
     for (int i = 0; i < numNodes; i++) {
-        node_i = &(particleRet.nodes[i]);
+        node_i = &(this->nodes[i]);
         node_i->pos.x += center.x;
         node_i->pos.y += center.y;
         node_i->pos.z += center.z;
     }
+
+    /*for(int ii = 0;ii<nodeIndex;ii++){
+        ParticleNode* node_j = &(this->nodes[ii]);
+        printf("%f %f %f \n",node_j->pos.x,node_j->pos.y,node_j->pos.z );
+    }*/
 
     // Free allocated variables
     free(nNodesLayer);
@@ -308,17 +449,12 @@ Particle makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, 
     free(S);
 
     // Update old position value
-    particleRet.pCenter.pos_old = particleRet.pCenter.pos;
-
-    return particleRet;
+    this->pCenter.pos_old = this->pCenter.pos;
 }
 
 
-Particle makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern)
+void Particle::makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern)
 {
-    // Particle to be returned
-    Particle particleRet;
-
     // Define the properties of the cylinder
     dfloat r = diameter / 2.0;
     dfloat x = baseTwoCenter.x - baseOneCenter.x;
@@ -327,18 +463,18 @@ Particle makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTw
     dfloat length = sqrt (x*x +y*y+z*z);
     dfloat volume = r*r*M_PI*length;
 
-    particleRet.pCenter.radius = r;
+    this->pCenter.radius = r;
     // Particle volume
-    particleRet.pCenter.volume = volume;
+    this->pCenter.volume = volume;
     // Particle area
-    particleRet.pCenter.S = 2.0*M_PI*r*length;
+    this->pCenter.S = 2.0*M_PI*r*length;
 
     // Particle center position
-    particleRet.pCenter.pos.x = (baseOneCenter.x + baseTwoCenter.x)/2;
-    particleRet.pCenter.pos.y = (baseOneCenter.y + baseTwoCenter.y)/2;
-    particleRet.pCenter.pos.z = (baseOneCenter.z + baseTwoCenter.z)/2;
+    this->pCenter.pos.x = (baseOneCenter.x + baseTwoCenter.x)/2;
+    this->pCenter.pos.y = (baseOneCenter.y + baseTwoCenter.y)/2;
+    this->pCenter.pos.z = (baseOneCenter.z + baseTwoCenter.z)/2;
 
-    particleRet.pCenter.movable = false;
+    this->pCenter.movable = false;
 
 
     int nLayer, nNodesLayer;
@@ -358,9 +494,9 @@ Particle makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTw
     nNodesLayer = (int)(M_PI * 2.0 *r / scale);
 
     //total number of nodes
-    particleRet.numNodes = nLayer * nNodesLayer;
+    this->numNodes = nLayer * nNodesLayer;
 
-    particleRet.nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * particleRet.numNodes);
+    this->nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * this->numNodes);
 
     //layer center position step
     dfloat dx = x / nLayer;
@@ -423,18 +559,15 @@ Particle makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTw
         }
         for (int j = 0; j < nNodesLayer; j++) {
             angle = (dfloat)j * 2.0 * M_PI / nNodesLayer + phase;
-            particleRet.nodes[nodeIndex].pos.x = centerLayer[i].x + r * cos(angle) * v1.x + r * sin(angle) * v2.x; 
-            particleRet.nodes[nodeIndex].pos.y = centerLayer[i].y + r * cos(angle) * v1.y + r * sin(angle) * v2.y;
-            particleRet.nodes[nodeIndex].pos.z = centerLayer[i].z + r * cos(angle) * v1.z + r * sin(angle) * v2.z;
+            this->nodes[nodeIndex].pos.x = centerLayer[i].x + r * cos(angle) * v1.x + r * sin(angle) * v2.x; 
+            this->nodes[nodeIndex].pos.y = centerLayer[i].y + r * cos(angle) * v1.y + r * sin(angle) * v2.y;
+            this->nodes[nodeIndex].pos.z = centerLayer[i].z + r * cos(angle) * v1.z + r * sin(angle) * v2.z;
 
-            particleRet.nodes[i].S = particleRet.pCenter.S/((dfloat)nNodesLayer * nLayer);
+            this->nodes[i].S = this->pCenter.S/((dfloat)nNodesLayer * nLayer);
 
             nodeIndex++;
         }
     }
-
-    return particleRet;
-
 }
 
 

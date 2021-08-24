@@ -165,38 +165,6 @@ void saveAllMacrBin(
     #endif
 }
 
-
-void saveAllMacrCsv(
-    Macroscopics* macr, 
-    unsigned int nSteps)
-{
-    std::string strOutFile;
-    FILE *outFile = nullptr;
-    
-    strOutFile = getVarFilename("macr", nSteps, ".csv");
-
-    outFile = fopen(strOutFile.c_str(), "w");
-    if(outFile != nullptr)
-    {
-        std::string header = "x\ty\tz\trho\tux\tux\tuy\tuz\n";
-        fprintf(outFile, "%s", header.c_str());
-        for(int z = 0; z < NZ; z++)
-            for(int y = 0; y < NY; y++)
-                for(int x = 0; x < NX; x++)
-                {
-                    size_t idx = idxScalar(x, y, z);
-                    fprintf(outFile, "%d\t%d\t%d\t%.6e\t%.6e\t%.6e\t%.6e\n", 
-                        x, y, z, macr->rho[idx], macr->u.x[idx], macr->u.y[idx], 
-                        macr->u.z[idx]);
-                }
-        fclose(outFile);
-    }
-    else
-    {
-        printf("Error saving \"%s\" \nProbably wrong path!\n", strOutFile.c_str());
-    }
-}
-
 std::string getSimInfoString(SimInfo* info)
 {
     std::ostringstream strSimInfo("");
@@ -291,10 +259,15 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "IBM Euler optimization: " << IBM_EULER_OPTIMIZATION << "\n";
     strSimInfo << " IBM Breugem parameter: " << BREUGEM_PARAMETER << "\n";
     strSimInfo << " IBM Movement Disctre.: " << IBM_MOVEMENT_DISCRETIZATION << "\n";
+    strSimInfo << "-------------------------------- IBM Optimization ------------------------------\n";
+    strSimInfo << " Part. shell thickness: " << IBM_PARTICLE_SHELL_THICKNESS << "\n";
+    strSimInfo << "     Part. update dist: " << IBM_PARTICLE_UPDATE_DIST << "\n";
+    strSimInfo << "Part. update frequency: " << IBM_PARTICLE_UPDATE_DIST << "\n";
     #if IBM_EULER_OPTIMIZATION
-    strSimInfo << "       Shell thickness: " << IBM_EULER_SHELL_THICKNESS << "\n";
+    strSimInfo << " Euler shell thickness: " << IBM_EULER_SHELL_THICKNESS << "\n";
+    strSimInfo << "     Euler update dist: " << IBM_EULER_UPDATE_DIST << "\n";
+    strSimInfo << "Euler update frequency: " << IBM_EULER_UPDATE_DIST << "\n";
     #endif
-    #if defined SOFT_SPHERE
     strSimInfo << "--------------------------------- IBM Collision --------------------------------\n";
     strSimInfo << "\tPart-Part Frict Coef.: " << PP_FRICTION_COEF << "\n";
     strSimInfo << "\tPart-Wall Frict Coef.: " << PW_FRICTION_COEF << "\n";
@@ -310,14 +283,56 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "\t   Max Lubrifi. dist.: " << MAX_LUBRICATION_DISTANCE << "\n";
     strSimInfo << "\t   Min Lubrifi. dist.: " << MIN_LUBRICATION_DISTANCE << "\n";
     #endif
+    strSimInfo << "--------------------------------- IBM Boundary Conditions ----------------------\n";
+    #ifdef IBM_BC_X_WALL
+    strSimInfo << "\t        IBM BC. X-Dir: Wall \n";
+    #endif
+    #ifdef IBM_BC_X_PERIODIC
+    strSimInfo << "\t        IBM BC. X-Dir: Periodic \n";
+    strSimInfo << "\t           IBM_BC_X_0:"<< IBM_BC_X_0 <<  "\n";
+    strSimInfo << "\t           IBM_BC_X_E:"<< IBM_BC_X_E <<  "\n";
+    #endif
+    #ifdef IBM_BC_Y_WALL
+    strSimInfo << "\t        IBM BC. Y-Dir: Wall \n";
+    #endif
+    #ifdef IBM_BC_Y_PERIODIC
+    strSimInfo << "\t        IBM BC. Y-Dir: Periodic \n";
+    strSimInfo << "\t           IBM_BC_Y_0:"<< IBM_BC_Y_0 <<  "\n";
+    strSimInfo << "\t           IBM_BC_Y_E:"<< IBM_BC_Y_E <<  "\n";
+    #endif
+    #ifdef IBM_BC_Z_WALL
+    strSimInfo << "\t        IBM BC. Z-Dir: Wall \n";
+    #endif
+    #ifdef IBM_BC_Z_PERIODIC
+    strSimInfo << "\t        IBM BC. Z-Dir: Periodic \n";
+    strSimInfo << "\t           IBM_BC_Z_0:"<< IBM_BC_Z_0 <<  "\n";
+    strSimInfo << "\t           IBM_BC_Z_E:"<< IBM_BC_Z_E <<  "\n";
+    #endif
+    strSimInfo << "--------------------------------- IBM Derivative Properties --------------------\n";
+    constexpr dfloat VolumeConcentration  =  NUM_PARTICLES * ((PARTICLE_DIAMETER/2)*(PARTICLE_DIAMETER/2)*(PARTICLE_DIAMETER/2)*M_PI*4.0/3.0)/(NX*NY*NZ_TOTAL);
+    constexpr dfloat LengthScale = PARTICLE_DIAMETER;
+    constexpr dfloat densityRatio = PARTICLE_DENSITY / FLUID_DENSITY ;
+    #ifdef POWERLAW
+    constexpr dfloat n_index = N_INDEX;
+    #else if
+    constexpr dfloat n_index = 1.0;
+    #endif
+    dfloat m = (RHO_0*(TAU-0.5)/3);
+    dfloat GM = sqrt(GX*GX + GY*GY + GZ*GZ);
+    dfloat VelocityScale =  GM * POW_FUNCTION(PARTICLE_DIAMETER, dfloat(n_index+1.0)) * (PARTICLE_DENSITY - FLUID_DENSITY) / m;    
+           VelocityScale = POW_FUNCTION(VelocityScale, 1.0/n_index) ;
+    dfloat TimeScale =  LengthScale / VelocityScale; 
+    dfloat ArchimedesNumber = GM * POW_FUNCTION(PARTICLE_DIAMETER, (2.0+n_index)/(2.0 - n_index));
+           ArchimedesNumber = ArchimedesNumber * (PARTICLE_DENSITY - FLUID_DENSITY) * POW_FUNCTION(FLUID_DENSITY,(n_index)/(2.0 - n_index));
+           ArchimedesNumber = (4.0/3.0)*ArchimedesNumber * POW_FUNCTION(m,(2.0)/(2.0 - n_index));
+    dfloat GalileoNumber = sqrt(ArchimedesNumber);
+    strSimInfo << "\t Volume Concentration: " << VolumeConcentration << "\n";
+    strSimInfo << "\t       Velocity Scale:"<< VelocityScale <<  "\n";
+    strSimInfo << "\t           Time Scale:"<< TimeScale <<  "\n";
+    strSimInfo << "\t    Archimedes Number:"<< ArchimedesNumber <<  "\n";
+    strSimInfo << "\t       Galileo Number:"<< GalileoNumber <<  "\n";
+    strSimInfo << "\t        Density Ratio:"<< densityRatio <<  "\n";
     strSimInfo << "--------------------------------------------------------------------------------\n";
-    #endif //SOFT_SPHERE
-    #if defined HARD_SPHERE
-    strSimInfo << "--------------------------------- IBM Collision --------------------------------\n";
-    strSimInfo << "\t       Friction Coef.: " << FRICTION_COEF << "\n";
-    strSimInfo << "\t   Restitution  Coef.: " << REST_COEF << "\n";
-    strSimInfo << "--------------------------------------------------------------------------------\n";
-    #endif //HARD_SPHERE
 
     strSimInfo << "--------------------------------------------------------------------------------\n";
     #endif // IBM
@@ -325,7 +340,7 @@ std::string getSimInfoString(SimInfo* info)
     strSimInfo << "\n------------------------------- CUDA INFORMATION -------------------------------\n";
     for(int i = 0; i < info->numDevices; i++)
     {
-        strSimInfo << "\t      device number: "<< i <<"\n";
+        strSimInfo << "\t      device number: " << GPUS_TO_USE[i] << "\n";
         strSimInfo << "\t               name: " << info->devices[i].name << "\n";
         strSimInfo << "\t    multiprocessors: " << info->devices[i].multiProcessorCount << "\n";
         strSimInfo << "\t compute capability: " << info->devices[i].major << "." << info->devices[i].minor << "\n";

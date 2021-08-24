@@ -66,29 +66,23 @@ public:
         {
         case IN_HOST:
             // allocate with CUDA for pinned memory and for all GPUS
-            checkCudaErrors(cudaMallocHost((void**)&(this->rho), TOTAL_MEM_SIZE_SCALAR));
-            this->u.allocateMemory(TOTAL_NUMBER_LBM_NODES, IN_HOST);
-            // checkCudaErrors(cudaMallocHost((void**)&(this->ux), TOTAL_MEM_SIZE_SCALAR));
-            // checkCudaErrors(cudaMallocHost((void**)&(this->uy), TOTAL_MEM_SIZE_SCALAR));
-            // checkCudaErrors(cudaMallocHost((void**)&(this->uz), TOTAL_MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocHost((void**)&(this->rho), TOTAL_MEM_SIZE_IBM_SCALAR));
+            this->u.allocateMemory(TOTAL_NUMBER_LBM_IB_MACR_NODES, IN_HOST);
             #ifdef IBM
-            this->f.allocateMemory(TOTAL_NUMBER_LBM_NODES, IN_HOST);
-            // checkCudaErrors(cudaMallocHost((void**)&(this->fx), TOTAL_MEM_SIZE_SCALAR));
-            // checkCudaErrors(cudaMallocHost((void**)&(this->fy), TOTAL_MEM_SIZE_SCALAR));
-            // checkCudaErrors(cudaMallocHost((void**)&(this->fz), TOTAL_MEM_SIZE_SCALAR));
+            this->f.allocateMemory(TOTAL_NUMBER_LBM_IB_MACR_NODES, IN_HOST);
             #endif
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaMallocHost((void**)&(this->omega), TOTAL_MEM_SIZE_SCALAR));
             #endif
             break;
         case IN_VIRTUAL:
-            checkCudaErrors(cudaMallocManaged((void**)&(this->rho), MEM_SIZE_SCALAR));
-            this->u.allocateMemory(TOTAL_NUMBER_LBM_NODES, IN_VIRTUAL);
+            checkCudaErrors(cudaMallocManaged((void**)&(this->rho), MEM_SIZE_IBM_SCALAR));
+            this->u.allocateMemory(NUMBER_LBM_IB_MACR_NODES, IN_VIRTUAL);
             #ifdef IBM
-            this->f.allocateMemory(TOTAL_NUMBER_LBM_NODES, IN_VIRTUAL);
+            this->f.allocateMemory(NUMBER_LBM_IB_MACR_NODES, IN_VIRTUAL);
             #endif
             #ifdef NON_NEWTONIAN_FLUID
-            checkCudaErrors(cudaMallocManaged((void**)&(this->omega), TOTAL_MEM_SIZE_SCALAR));
+            checkCudaErrors(cudaMallocManaged((void**)&(this->omega), MEM_SIZE_SCALAR));
             #endif
             break;
         default:
@@ -142,7 +136,15 @@ public:
         #endif
         #ifdef NON_NEWTONIAN_FLUID
         cudaStream_t streamOmega;
+        // Constants base index, to use for macroscopics that do not have ghost nodes (omega)
+        size_t cteBaseIdx = baseIdx, cteBaseIdxRef = baseIdxRef;
         #endif
+
+        // Sum ghost index of ghost nodes, to not consider it
+        if(this->varLocation == IN_VIRTUAL)
+            baseIdx += idxScalarWBorder(0, 0, 0);
+        if(macrRef->varLocation == IN_VIRTUAL)
+            baseIdxRef += idxScalarWBorder(0, 0, 0);
 
         checkCudaErrors(cudaStreamCreate(&(streamRho)));
         checkCudaErrors(cudaStreamCreate(&(streamUx)));
@@ -177,7 +179,7 @@ public:
         #endif
 
         #ifdef NON_NEWTONIAN_FLUID
-        checkCudaErrors(cudaMemcpyAsync(this->omega+baseIdx, macrRef->omega+baseIdxRef,
+        checkCudaErrors(cudaMemcpyAsync(this->omega+cteBaseIdx, macrRef->omega+cteBaseIdxRef,
             memSize, cudaMemcpyDefault, streamOmega));
         #endif
 

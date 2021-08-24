@@ -35,6 +35,7 @@
 #include <curand.h>
 
 #include "var.h"
+#include "IBM/ibmVar.h"
 #include "structs/globalStructs.h"
 
 /*
@@ -115,8 +116,24 @@ size_t __forceinline__ idxScalar(unsigned int x, unsigned int y, unsigned int z)
 
 
 /*
+*   @brief Evaluate the position of the element of a 3D matrix ([NX][NY][NZ+2*MACR_BORDER_NODES]) 
+*         in a 1D array
+*   @param x: x axis value
+*   @param y: y axis value
+*   @param z: z axis value (-MACR_BORDER_NODES <= z < NZ+MACR_BORDER_NODES)
+*   @return element index
+*/
+__host__ __device__
+size_t __forceinline__ idxScalarWBorder(unsigned int x, unsigned int y, unsigned int z)
+{
+    return NX * ((size_t)NY*(z+MACR_BORDER_NODES) + y) + x;
+}
+
+
+
+/*
 *   @brief Evaluate the element of the population of a 4D matrix 
-*          ([NX][NY][NZ][Q]) in a 1D array
+*          ([NX][NY][NZ+1][Q]) in a 1D array
 *   @param x: x axis value
 *   @param y: y axis value
 *   @param z: z axis value
@@ -126,7 +143,7 @@ size_t __forceinline__ idxScalar(unsigned int x, unsigned int y, unsigned int z)
 __host__ __device__
 size_t __forceinline__ idxPop(const unsigned int x, const unsigned int y, const unsigned int z, const unsigned int d)
 {
-    return NX*(NY*((size_t)NZ*d + z) + y) + x;
+    return NX*(NY*((size_t)(NZ+1)*d + z) + y) + x;
 }
 
 

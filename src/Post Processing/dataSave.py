@@ -2,7 +2,7 @@ from pyevtk.hl import gridToVTK
 from fileTreat import *
 
 
-def saveVTK3D(macrsDict, filenameWrite, points=True, normVal=0):
+def saveVTK3D(macrsDict, filenameWrite, points=True, normVal=1):
     """ Saves variables values to VTK format
 
     Parameters

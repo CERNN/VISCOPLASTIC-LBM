@@ -17,8 +17,8 @@
 /* -------------------------- BOUNDARY CONDITIONS -------------------------- */
 
 // --- X direction ---
-#define IBM_BC_X_WALL
-//#define IBM_BC_X_PERIODIC
+//#define IBM_BC_X_WALL
+#define IBM_BC_X_PERIODIC
 
 #ifdef IBM_BC_X_WALL
     // TODO: not implemented yet
@@ -27,15 +27,15 @@
 #endif //IBM_BC_X_WALL
 
 #ifdef IBM_BC_X_PERIODIC
-    #define IBM_BC_X_0 0.0
-    #define IBM_BC_X_E NX
+    #define IBM_BC_X_0 (0)
+    #define IBM_BC_X_E (NX-0)
 #endif //IBM_BC_X_PERIODIC
 
 
 
 // --- Y direction ---
-#define IBM_BC_Y_WALL
-//#define IBM_BC_Y_PERIODIC
+//#define IBM_BC_Y_WALL
+#define IBM_BC_Y_PERIODIC
 
 #ifdef IBM_BC_Y_WALL
     // TODO: not implemented yet
@@ -44,15 +44,15 @@
 #endif //IBM_BC_Y_WALL
 
 #ifdef IBM_BC_Y_PERIODIC
-    #define IBM_BC_Y_0 0.0
-    #define IBM_BC_Y_E NY
+    #define IBM_BC_Y_0 32
+    #define IBM_BC_Y_E (NY-32)
 #endif //IBM_BC_Y_PERIODIC
 
 
 
 // --- Z direction ---
-#define IBM_BC_Z_WALL
-//#define IBM_BC_Z_PERIODIC
+//#define IBM_BC_Z_WALL
+#define IBM_BC_Z_PERIODIC
 
 #ifdef IBM_BC_Z_WALL
     // TODO: not implemented yet
@@ -61,8 +61,9 @@
 #endif //IBM_BC_Z_WALL
 
 #ifdef IBM_BC_Z_PERIODIC
-    #define IBM_BC_Z_0 0.0
-    #define IBM_BC_Z_E NZ
+    //TODO: FIX with multi-gpu, it currently does not work with values different than 0 and NZ_TOTAl
+    #define IBM_BC_Z_0 0
+    #define IBM_BC_Z_E (NZ_TOTAL)
 #endif //IBM_BC_Z_PERIODIC
 
 
@@ -102,7 +103,7 @@ constexpr dfloat PW_REST_COEF = 0.98; // restitution coeficient particle wall
 
 
 //material properties
-constexpr dfloat PARTICLE_YOUNG_MODULUS = 385.0;
+constexpr dfloat PARTICLE_YOUNG_MODULUS = 10.0;
 constexpr dfloat PARTICLE_POISSON_RATIO = 0.24;
 constexpr dfloat PARTICLE_SHEAR_MODULUS = PARTICLE_YOUNG_MODULUS / (2.0+2.0*PARTICLE_POISSON_RATIO);
 
@@ -125,11 +126,6 @@ constexpr dfloat PW_STIFFNESS_TANGENTIAL_CONST =  4.0 * SQRT_2 / ((2-PARTICLE_PO
 #endif
 
 
-#endif
-// Hard sphere // WARNING: ONLY FOR 2 OR LESS PARTICLES
-#if defined HARD_SPHERE
-constexpr dfloat FRICTION_COEF = 0.00923; // friction coeficient
-constexpr dfloat REST_COEF = 0.98; // restitution coeficient   
 #endif
 /* -------------------------------------------------------------------------- */
 

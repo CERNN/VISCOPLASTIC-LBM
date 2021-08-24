@@ -47,11 +47,11 @@ typedef struct particleNodeSoA {
     ~particleNodeSoA();
 
     /**
-    *   @brief Allocate memory for given number of nodes
+    *   @brief Allocate memory for given maximum number of nodes
     *   
-    *   @param numNodes: number of nodes that must be allocated
+    *   @param numMaxNodes: maximum number of nodes
     */
-    void allocateMemory(unsigned int numNodes);
+    void allocateMemory(unsigned int numMaxNodes);
 
     /**
     *   @brief Free allocated memory
@@ -65,8 +65,9 @@ typedef struct particleNodeSoA {
     *   @param pCenterIdx: index of particle center for given particle nodes
     *   @param baseIdx: base index to use while copying
     */
-    void copyNodesFromParticle(struct particle p, unsigned int pCenterIdx, unsigned int baseIdx);
+    void copyNodesFromParticle(struct particle p, unsigned int pCenterIdx, unsigned int n_gpu);
 
+    void leftShiftNodesSoA(int idx, int left_shit);
 } ParticleNodeSoA;
 
 #endif // !__PARTICLE_NODE_H
