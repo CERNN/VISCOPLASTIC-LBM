@@ -18,13 +18,13 @@
 
 /* -------------------------- IBM GENERAL DEFINES --------------------------- */
 // Total number of IB particles in the system
-#define NUM_PARTICLES 100
+#define NUM_PARTICLES 1
 // Number of IBM inner iterations
 #define IBM_MAX_ITERATION 1
 // Particles diameters
 #define PARTICLE_DIAMETER (20)
 // Change to location of nodes http://dx.doi.org/10.1016/j.jcp.2012.02.026
-#define BREUGEM_PARAMETER (0.3)
+#define BREUGEM_PARAMETER (0.0)
 // Mesh scale for IBM, minimum distance between nodes (lower, more nodes in particle)
 #define MESH_SCALE 1.0
 // Number of iterations of Coulomb algorithm to optimize the nodes positions
@@ -100,14 +100,14 @@
 
 //Define the discrization coefiecient for the particle movement: 1 = only current time step
 // 0.5 =  half current and half previous,  0 = only previous time step information
-#define IBM_MOVEMENT_DISCRETIZATION (1.0)  //TODO: its not the correct name, but for now i cant recall it.
+#define IBM_MOVEMENT_DISCRETIZATION (0.5)  //TODO: its not the correct name, but for now i cant recall it.
 
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- TIME AND SAVE DEFINES ------------------------- */
 
-#define IBM_PARTICLES_SAVE (1000)               // Save particles info every given steps (0 not report)
-#define IBM_DATA_REPORT (1000)                   // Report IBM treated data every given steps (0 not report)
+#define IBM_PARTICLES_SAVE (100)               // Save particles info every given steps (0 not report)
+#define IBM_DATA_REPORT (100)                   // Report IBM treated data every given steps (0 not report)
 
  
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
@@ -117,13 +117,13 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
-constexpr dfloat PARTICLE_DENSITY = 2.25;
-constexpr dfloat FLUID_DENSITY = 1;
+constexpr dfloat PARTICLE_DENSITY = 2.0;
+constexpr dfloat FLUID_DENSITY = 1.0;
 
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = -1e-4; //-1.179430e-03/SCALE/SCALE/SCALE;
+constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------------------------------------------------------- */
 
 

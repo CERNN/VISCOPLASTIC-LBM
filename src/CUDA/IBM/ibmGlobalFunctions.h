@@ -16,7 +16,8 @@
 
 // Only compile for compute capability lower than 6.0, since for 6.0 or higher
 // this functionality already exists
-  #if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+// https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#atomic-functions
+  #if __CUDA_ARCH__ >= 600
 /*
 *   @brief Double atomic add for Cuda capabailities less than 6.0
 *   @param address: memory address where will be added the value
