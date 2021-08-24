@@ -44,8 +44,8 @@
 #endif //IBM_BC_Y_WALL
 
 #ifdef IBM_BC_Y_PERIODIC
-    #define IBM_BC_Y_0 0
-    #define IBM_BC_Y_E (NY-0)
+    #define IBM_BC_Y_0 32
+    #define IBM_BC_Y_E (NY-32)
 #endif //IBM_BC_Y_PERIODIC
 
 
