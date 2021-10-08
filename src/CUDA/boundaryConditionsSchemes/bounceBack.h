@@ -10,6 +10,7 @@
 #define __BC_BOUNCE_BACK_H
 
 #include "./../globalFunctions.h"
+#include "./../structs/nodeTypeMap.h"
 #include <cuda_runtime.h>
 
 

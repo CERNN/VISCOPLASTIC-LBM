@@ -23,201 +23,406 @@
 #include <stdlib.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
+
 #include "treatData.h"
 #include "lbmReport.h"
 #include "lbm.h"
 #include "lbmInitialization.h"
+#include "simCheckpoint.h"
 #include "boundaryConditionsBuilder.h"
 #include "structs/boundaryConditionsInfo.h"
+
+#include "IBM/ibm.h"
+#include "IBM/ibmParticlesCreation.h"
+#include "IBM/ibmTreatData.h"
 
 
 int main()
 {
-    // VARIABLE DECLARATIONS
+    // Variables declaration
     Populations* pop;
     Macroscopics* macr;
     Macroscopics macrCPUCurrent;
     Macroscopics macrCPUOld;
     MacrProc processData;
-    BoundaryConditionsInfo bcInfo;
+    BoundaryConditionsInfo* bcInfos;
     SimInfo info;
-    float* randomNumbers = nullptr; // useful for turbulence
-    int step = INI_STEP;
 
-    // SETUP SAVING FOLDER
+    float** randomNumbers = nullptr; // useful for turbulence
+    int step = INI_STEP;
+    dim3* gridsBC;
+
+    ParticlesSoA particlesSoA;
+    Particle particles[NUM_PARTICLES];
+    ParticleEulerNodesUpdate pEulerNodes;
+
+    IBMProc ibmProcessData;
+    IBMMacrsAux ibmMacrsAux;
+    #ifdef IBM
+    allocateIBMProc(&ibmProcessData);
+    #endif
+
+    // Setup saving folder
     folderSetup();
 
-    // INITALIZE PROCESS DATA
+    // Initializes process data
     processData.step = &step;
     processData.macrCurr = &macrCPUCurrent;
     processData.macrOld = &macrCPUOld;
     
-    // NUMBER OF DEVICES
+    // Number of devices
     checkCudaErrors(cudaGetDeviceCount(&info.numDevices));
-    const int N_GPUS = 1;
+    // if(N_GPUS > info.numDevices){
+    //     printf("N_GPUS is higher than the number of detected GPUS\n");
+    //     printf("N_GPUS: %d\n", N_GPUS);
+    //     printf("Number of devices: %d\n", info.numDevices);
+    //     return -1;
+    // }
+    info.numDevices = N_GPUS;
 
-    // ALLOCATION FOR CPU
+    /* ------------------------- ALLOCATION FOR CPU ------------------------- */
     info.devices = (cudaDeviceProp*) malloc(sizeof(cudaDeviceProp)*N_GPUS);
+    bcInfos = (BoundaryConditionsInfo*) malloc(sizeof(BoundaryConditionsInfo)*N_GPUS);
+    gridsBC = (dim3*) malloc(sizeof(dim3)*N_GPUS);
     macrCPUCurrent.macrAllocation(IN_HOST);
     macrCPUOld.macrAllocation(IN_HOST);
+    pop = (Populations*) malloc(sizeof(Populations) * N_GPUS);
+    macr = (Macroscopics*) malloc(sizeof(Macroscopics) * N_GPUS);
+    randomNumbers = (float**)malloc(sizeof(float*) * N_GPUS);
+    /* ---------------------------------------------------------------------- */
 
-    // STREAMS AND MEMORY ALLOCATION FOR GPU
-    cudaStream_t streamsKernelLBM[1]; // stream kernel for each GPU
-    checkCudaErrors(cudaSetDevice(0));
-    checkCudaErrors(cudaMallocManaged((void**)&pop, 
-        sizeof(Populations)*N_GPUS));
-    checkCudaErrors(cudaMallocManaged((void**)&macr, 
-        sizeof(Macroscopics)*N_GPUS));
+    /* -------------- ALLOCATION AND CONFIGURATION FOR EACH GPU ------------- */
+    // Streams for GPU
+    cudaStream_t streamsLBM[N_GPUS];
+    #ifdef IBM
+    cudaStream_t streamsIBM[N_GPUS];
+    #endif
 
-    // ALLOCATION AND CONFIGURATION FOR EACH GPU
     for(int i = 0; i < N_GPUS; i++)
     {
-        checkCudaErrors(cudaSetDevice(i));
-        checkCudaErrors(cudaGetDeviceProperties(&(info.devices[i]), i));
-        checkCudaErrors(cudaStreamCreate(&streamsKernelLBM[i]));
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+        checkCudaErrors(cudaGetDeviceProperties(&(info.devices[i]), GPUS_TO_USE[i]));
+
+        checkCudaErrors(cudaStreamCreate(&streamsLBM[i]));
+        #ifdef IBM
+        checkCudaErrors(cudaStreamCreate(&streamsIBM[i]));
+        #endif
+
         pop[i].popAllocation();
         macr[i].macrAllocation(IN_VIRTUAL);
-    }
-
-    checkCudaErrors(cudaSetDevice(0));
-
-    // ALLOCATION AND INITIALIZATION OF RANDOM NUMBERS
-    if(RANDOM_NUMBERS)
-    {
-        checkCudaErrors(cudaMallocManaged((void**)&randomNumbers, sizeof(float)*numberNodes));
-        initializationRandomNumbers(randomNumbers, CURAND_SEED);
-        checkCudaErrors(cudaDeviceSynchronize());
-        getLastCudaError("random numbers transfer error");
-    }
-
-/*  
-    ---------------------------------------------------------------------------
-    ---------------------------------------------------------------------------
-    ------------------ CODE BELOW DOES NOT SUPPORT MULTI GPU! -----------------
-    ----------------------------- MUST BE UPDATED! ----------------------------
-    ---------------------------------------------------------------------------
-    ---------------------------------------------------------------------------
-*/
-
-    // GRID AND THREADS DEFINITION FOR LBM
-    dim3 grid(((NX%nThreads)? (NX/nThreads+1) : (NX/nThreads)), NY, NZ);
-    // threads in block
-    dim3 threads(nThreads, 1, 1);
-
-    // REPORT
-    printParamInfo(&info, true); fflush(stdout);
-    printGPUInfo(&info); fflush(stdout);
-
-    // BOUNDARY CONDITIONS INITIALIZATION
-    gpuBuildBoundaryConditions<<<grid, threads>>>(pop[0].mapBC);
-    checkCudaErrors(cudaDeviceSynchronize());
-    bcInfo.setupBoundaryConditionsInfo(pop->mapBC);
-
-    // LBM INITIALIZATION
-    if(LOAD_POP)
-    {
-        FILE* filePop = fopen(STR_POP, "rb");
-        if(filePop == nullptr)
+        if(RANDOM_NUMBERS)
         {
-            printf("Error reading population file\n");
-            return -1;
+            checkCudaErrors(cudaMallocManaged((void**)&randomNumbers[i], 
+                sizeof(float)*NUMBER_LBM_NODES));
+            initializationRandomNumbers(randomNumbers[i], CURAND_SEED);
+            checkCudaErrors(cudaDeviceSynchronize());
+            getLastCudaError("random numbers transfer error");
         }
-        initializationPop(&pop[0], filePop);
-        gpuUpdateMacr<<<grid, threads>>>(&pop[0], &macr[0]);
-        checkCudaErrors(cudaDeviceSynchronize());
-        getLastCudaError("Update macroscopics error");
     }
-    else 
+    getLastCudaError("LBM setup error");
+    /* ---------------------------------------------------------------------- */
+
+    /* ------------------ IBM ALLOCATION AND CONFIGURATION ------------------ */
+    #ifdef IBM
+    printf("-------------------------------- IBM INFORMATION -------------------------------\n");
+
+    printf("Creating particles...\t"); fflush(stdout);
+    createParticles(particles);
+    printf("Particles created!\n"); fflush(stdout);
+
+    particlesSoA.updateParticlesAsSoA(particles);
+    ibmMacrsAux.ibmMacrsAuxAllocation();
+    getLastCudaError("IBM setup error");
+
+    ibmProcessData.step = &step;
+    ibmProcessData.macrCurr = &macrCPUCurrent;
+    #endif
+    /* ---------------------------------------------------------------------- */
+
+    /* ----------------- GRID AND THREADS DEFINITION FOR LBM ---------------- */
+    dim3 grid(((NX%N_THREADS)? (NX/N_THREADS+1) : (NX/N_THREADS)), NY, NZ);
+    // threads in block
+    dim3 threads(N_THREADS, 1, 1);
+
+    // Grid and threads for memory transfers in multiGPUS
+    dim3 gridTransfer(grid.x, grid.y, 1);
+    dim3 threadsTransfer(N_THREADS, 1, 1);
+    /* ---------------------------------------------------------------------- */
+
+    /* ------------------------------- REPORT ------------------------------- */
+    printSimInfo(&info);
+    saveSimInfo(&info);
+    /* ---------------------------------------------------------------------- */
+
+
+    /* ----------------- BOUNDARY CONDITIONS INITIALIZATION ----------------- */
+    // Divide in two fors to allow kernels of "gpuBuilBoundaryConditions"
+    // to run in parallel. Otherwise they would run sequentially
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+        gpuBuildBoundaryConditions<<<grid, threads>>>(pop[i].mapBC, i);
+    }
+    for (int i = 0; i < N_GPUS; i++) {
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+        cudaDeviceSynchronize();
+    }
+    getLastCudaError("Initialization error");
+
+    // Build auxiliary informations of boundary conditions for each GPU
+    NodeTypeMap* hMapBC;
+    checkCudaErrors(cudaMallocHost((void**)(&hMapBC), MEM_SIZE_MAP_BC));
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaMemcpy(hMapBC, pop[i].mapBC, MEM_SIZE_MAP_BC, cudaMemcpyDefault));
+        bcInfos[i].setupBoundaryConditionsInfo(hMapBC);
+    }
+    cudaFreeHost(hMapBC);
+    /* ---------------------------------------------------------------------- */
+
+    /* ------------------------- LBM INITIALIZATION ------------------------- */
+    // Load populations from files
+    if(LOAD_CHECKPOINT)
     {
-        if(LOAD_MACR)
-        {   
-            FILE* fileRho = fopen(STR_RHO, "rb");
-            FILE* fileUx = fopen(STR_UX, "rb");
-            FILE* fileUy = fopen(STR_UY, "rb");
-            FILE* fileUz = fopen(STR_UZ, "rb");
-            if(fileRho == nullptr || fileUz == nullptr 
-                || fileUy == nullptr || fileUx == nullptr)
-            {
-                printf("Error reading macroscopics files\n");
-                return -1;
-            }
-            initializationMacr(&macr[0], fileRho, fileUx, fileUy, fileUz);
-            fclose (fileRho);
-            fclose (fileUx);
-            fclose (fileUy);
-            fclose (fileUz);
+        loadSimCheckpoint(pop, macr, particlesSoA, &step);
+    }
+    else
+    {
+        step = INI_STEP;
+        dim3 gridInit = grid;
+        // Initialize ghost nodes
+        gridInit.z += 1;
+        for(int i = 0; i < N_GPUS; i++){
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+            // Initialize populations
+            gpuInitialization<<<gridInit, threads>>>(pop[i], macr[i], randomNumbers[i]);
+            checkCudaErrors(cudaDeviceSynchronize());
         }
-        gpuInitialization<<<grid, threads>>>(&pop[0], &macr[0], LOAD_MACR, randomNumbers);
-        checkCudaErrors(cudaDeviceSynchronize());
         getLastCudaError("Initialization error");
     }
+    int first_step = step;
+    /* ---------------------------------------------------------------------- */
 
-    // GRID AND THREAD DEFINITION FOR BOUNDARY CONDITIONS
-    dim3 gridBC(((bcInfo.totalBCNodes%32)? (bcInfo.totalBCNodes/32+1) : 
-        (bcInfo.totalBCNodes/32)), 1, 1); // TODO
+    // Initialize Euler nodes for optimization
+    #if IBM_EULER_OPTIMIZATION
+    pEulerNodes.initializeEulerNodes(particlesSoA.pCenterArray);
+    #endif
+
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+        size_t baseIdx = i*NUMBER_LBM_NODES;
+        macrCPUCurrent.copyMacr(&macr[i], baseIdx, 0, false);
+        checkCudaErrors(cudaDeviceSynchronize());
+    }
+    macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
+
+    // Grid and thread definition for boundary conditions
+    for(int i = 0; i < N_GPUS; i++)
+        gridsBC[i] = dim3(((bcInfos[i].totalBCNodes%32)? (bcInfos[i].totalBCNodes/32+1) : 
+                (bcInfos[i].totalBCNodes/32)), 1, 1); // TODO
+
     dim3 threadsBC(32, 1, 1);
 
-    if(RANDOM_NUMBERS)
-        checkCudaErrors(cudaFree(randomNumbers));
+    // Free random numbers
+    if (RANDOM_NUMBERS) {
+        for (int i = 0; i < N_GPUS; i++) {
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+            cudaFree(randomNumbers[i]);
+        }
+        free(randomNumbers);
+    }
 
-    // TIMING
-    cudaEvent_t start, stop;
+    // Timing
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
+    cudaEvent_t start, stop, start_step, stop_step;
+    int last_step_sync = step;
     checkCudaErrors(cudaEventCreate(&start));
     checkCudaErrors(cudaEventCreate(&stop));
+    checkCudaErrors(cudaEventCreate(&start_step));
+    checkCudaErrors(cudaEventCreate(&stop_step));
 
     checkCudaErrors(cudaEventRecord(start, 0));
-    
-    // LBM
-    for(step = INI_STEP; step < N_STEPS; step++)
+    checkCudaErrors(cudaEventRecord(start_step, 0));
+
+    /* ------------------------------ LBM LOOP ------------------------------ */
+    for(step = step; step < N_STEPS; step++)
     {
         int aux = step-INI_STEP;
         // WHAT NEEDS TO BE DONE IN THIS TIME STEP
-        bool save = false, rep = false;
+        bool save = false, rep = false, repIBM = false, checkpoint = false;
         if(aux != 0)
         {
-            if(MACR_SAVE != 0)
+            if(MACR_SAVE)
                 save = !(aux % MACR_SAVE);
-            if(DATA_REPORT != 0)
+            if(DATA_REPORT)
                 rep = !(aux % DATA_REPORT);
+            if(CHECKPOINT_SAVE)
+                checkpoint = !(aux % CHECKPOINT_SAVE);
+            #ifdef IBM
+            if(IBM_DATA_REPORT)
+                repIBM = !(aux % IBM_DATA_REPORT);
+            #endif
+        }
+        // Save macroscopics to array in LBM kernel
+        bool save_macr_to_array;
+        #if defined(IBM) && !(IBM_EULER_OPTIMIZATION)
+        save_macr_to_array = false;
+        #else
+        save_macr_to_array = rep || save || repIBM || ((step+1)>=(int)N_STEPS);
+        #endif
+
+        // LBM solver
+        for(int i = 0; i < N_GPUS; i++){
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+            gpuMacrCollisionStream<<<grid, threads>>>
+                (pop[i].pop, pop[i].popAux, pop[i].mapBC, macr[i],
+                save_macr_to_array, step);
+            //checkCudaErrors(cudaDeviceSynchronize());
+            getLastCudaError("LBM kernel error\n");
         }
 
-        // LBM SOLVER
-        gpuMacrCollisionStream<<<grid, threads, 0, streamsKernelLBM[0]>>>
-            (pop->pop, pop->popAux, pop->mapBC, 
-            &macr[0], rep || save || ((step+1)>=(int)N_STEPS), step);
-        checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
-        // BOUNDARY CONDITIONS
-        if(bcInfo.totalBCNodes > 0)
-            gpuApplyBC<<<gridBC, threadsBC, 0, streamsKernelLBM[0]>>>
-                (pop->mapBC, pop->popAux, pop->pop, 
-                bcInfo.idxBCNodes, bcInfo.totalBCNodes);
-        checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
-        getLastCudaError("lbm/BC kernel error");
+        /*
+        // While running kernel code, organize IBM Euler nodes
+        #if defined(IBM) && IBM_EULER_OPTIMIZATION
+        pEulerNodes.checkParticlesMovement();
+        #endif
+        */
 
-        pop[0].swapPop();
+        for(int i = 0; i < N_GPUS; i++) {
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+            checkCudaErrors(cudaDeviceSynchronize());
+        }
 
-        // SYNCHRONIZING
-        if(save || rep)
+        // Populations ghost nodes transfer
+        for(int i = 0; i < N_GPUS; i++){
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+            int nxt = (i+1)%N_GPUS;
+            gpuPopulationsTransfer<<<gridTransfer, threadsTransfer>>>
+                (pop[i].popAux, pop[nxt].popAux);
+            checkCudaErrors(cudaDeviceSynchronize());
+            getLastCudaError("Mem transfer kernel error\n");
+        }
+
+        // Boundary conditions
+        for(int i = 0; i < N_GPUS; i++){
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+            if(bcInfos[i].totalBCNodes > 0){
+                gpuApplyBC<<<gridsBC[i], threadsBC>>>
+                    (pop[i].mapBC, pop[i].popAux, pop[i].pop, 
+                    bcInfos[i].idxBCNodes, bcInfos[i].totalBCNodes);
+            }
+            getLastCudaError("BC kernel error\n");
+        }
+
+        // Synchronize and swap populations
+        for (int i = 0; i < N_GPUS; i++) {
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+            checkCudaErrors(cudaDeviceSynchronize());
+            pop[i].swapPop();
+        }
+
+        // IBM
+        #ifdef IBM
+
+        // Update particle nodes in each GPU
+        if(!IBM_PARTICLE_UPDATE_INTERVAL || (step % IBM_PARTICLE_UPDATE_INTERVAL) == 0){
+            particlesSoA.updateNodesGPUs();
+            checkCudaErrors(cudaDeviceSynchronize());
+        }
+
+        #if IBM_EULER_OPTIMIZATION
+        if(!IBM_EULER_UPDATE_INTERVAL || (step % IBM_EULER_UPDATE_INTERVAL) == 0)
+        {
+            pEulerNodes.checkParticlesMovement();
+        }    
+        #endif
+
+        immersedBoundaryMethod(
+            particlesSoA, macr, ibmMacrsAux, pop, grid, threads,
+            streamsLBM, streamsIBM, step, 
+            &pEulerNodes);
+
+        // Save particles informations
+        if(IBM_PARTICLES_SAVE && !(step % IBM_PARTICLES_SAVE)){
+            saveParticlesInfo(particlesSoA, step, IBM_PARTICLES_NODES_SAVE);
+        }
+        #endif
+
+        // Synchronizing data (macroscopics) between GPU and CPU
+        if(save || rep || repIBM)
         {
             printf("\n------------------------- Synchronizing in step %06d -------------------------\n", step);
-            checkCudaErrors(cudaStreamSynchronize(streamsKernelLBM[0]));
+            fflush(stdout);
+
+            // Timing between syncs
+            checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
+            checkCudaErrors(cudaEventRecord(stop_step, 0));
+            checkCudaErrors(cudaEventSynchronize(stop_step));
+            float elapsedTime;
+            checkCudaErrors(cudaEventElapsedTime(&(elapsedTime), start_step, stop_step));
             
-            macrCPUOld.copyMacr(&macrCPUCurrent);
-            macrCPUCurrent.copyMacr(&macr[0]); 
+            elapsedTime *= 0.001;
+            // Calculate MLUPS
+            size_t nodesUpdatedSync = (step-last_step_sync) * NUMBER_LBM_NODES * N_GPUS;
+            info.MLUPS = (nodesUpdatedSync / 1e6) / elapsedTime;
+            info.timeElapsed += elapsedTime;
+            last_step_sync = step;
+            // Save simulation info
+            saveSimInfo(&info);
+            
+            printf("                  MLUPS: %f\n", info.MLUPS);
+            printf("       Elapsed time (s): %f\n", info.timeElapsed);
+            fflush(stdout);
+
+            // Restart start and stop event
+            checkCudaErrors(cudaEventDestroy(start_step));
+            checkCudaErrors(cudaEventCreate(&start_step));
+            checkCudaErrors(cudaEventDestroy(stop_step));
+            checkCudaErrors(cudaEventCreate(&stop_step));
+
+            checkCudaErrors(cudaEventRecord(start_step, 0));
+
+            if(rep)
+                macrCPUOld.copyMacr(&macrCPUCurrent, 0, 0, true);
+            for(int i = 0; i < N_GPUS; i++){
+                checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+                macrCPUCurrent.copyMacr(&macr[i], NUMBER_LBM_NODES*i);
+                checkCudaErrors(cudaDeviceSynchronize());
+            }
+
+            // for(int z = 0; z < NZ_TOTAL; z++)
+            // {
+            //     for(int y = 0; y < NY; y++)
+            //     {
+            //         for(int x = 0; x < NX; x++)
+            //         {
+            //             size_t idx = idxScalar(x, y, z);
+            //             size_t idxGPU = idxScalar(x, y, z+MACR_BORDER_NODES);
+            //             printf("(z, y, x) %d %d %d (rho cpu, gpu) %.2f, %.2f\n", z, y, x, macrCPUCurrent.rho[idx], macr[0].rho[idxGPU]);
+            //         }
+            //     }
+            // }
         }
 
-        // SAVE
+        if(checkpoint){
+            printf("\n--------------------------- Saving checkpoint %06d ---------------------------\n", step);
+            fflush(stdout);
+            saveSimCheckpoint(pop, macr, particlesSoA, &step);
+            // Save info as well (to know when it stopped, conf, etc.)
+            saveSimInfo(&info);
+        }
+        // Save macroscopics
         if(save)
         {
-            printf("\n---------------------------- Saving in step %06d -----------------------------\n", step);
+            printf("\n---------------------------- Saving in step %06d -----------------------------\n", step); 
+            fflush(stdout);
             saveAllMacrBin(&macrCPUCurrent, step);
         }
 
-        // REPORT
+        // Report data
         if(rep)
         {
             treatData(&processData);
-            printTreatData(&processData);
+            printTreatData(&processData); 
+            fflush(stdout);
             if(DATA_SAVE)
             {
                 saveTreatData(&processData);
@@ -225,66 +430,124 @@ int main()
             if(DATA_STOP)
             {
                 if(stopSim(&processData))
+                {
+                    printf("Stopping because of LBM\n");
                     break;
+                }
             }
         }
-    }
 
-    // TIMING
+        // Report IBM data
+        #ifdef IBM
+        if(repIBM){
+            treatDataIBM(&ibmProcessData, particlesSoA);
+            printTreatDataIBM(&ibmProcessData);
+            fflush(stdout);
+            if(IBM_DATA_SAVE)
+            {
+                saveTreatDataIBM(&ibmProcessData);
+            }
+            if(IBM_DATA_STOP)
+            {
+                if(stopSimIBM(&ibmProcessData, particlesSoA))
+                {
+                    printf("Stopping because of IBM\n");
+                    break;
+                }
+            }
+        }
+        #endif
+    }
+    /* ---------------------------------------------------------------------- */
+
+    // Timing
+    checkCudaErrors(cudaSetDevice(GPUS_TO_USE[0]));
     checkCudaErrors(cudaEventRecord(stop, 0));
     checkCudaErrors(cudaEventSynchronize(stop));
     checkCudaErrors(cudaEventElapsedTime(&(info.timeElapsed), start, stop));
+
+    checkCudaErrors(cudaEventDestroy(start_step));
+    checkCudaErrors(cudaEventDestroy(stop_step));
+    checkCudaErrors(cudaEventDestroy(start));
+    checkCudaErrors(cudaEventDestroy(stop));
+
     info.timeElapsed *= 0.001;
 
-    // SAVE FINAL MACROSCOPICS
-    macrCPUCurrent.copyMacr(&macr[0]); 
+    // Save final macroscopics
+    for(int i = 0; i < N_GPUS; i++){
+        macrCPUCurrent.copyMacr(&macr[i], NUMBER_LBM_NODES*i);
+    }
     saveAllMacrBin(&macrCPUCurrent, step);
+    checkCudaErrors(cudaDeviceSynchronize());
 
-    // SAVE FINAL POPULATIONS (IF REQUIRED)
-    if(POP_SAVE)
-        savePopBin(pop, step);
+    // Save final IBM values
+    #ifdef IBM
+    saveParticlesInfo(particlesSoA, step, IBM_PARTICLES_NODES_SAVE);
+    if(IBM_DATA_SAVE){
+        saveTreatDataIBM(&ibmProcessData);
+    }
+    #endif
 
-    // EVALUATE PERFORMANCE
-    info.totalSteps = step - INI_STEP;
-    size_t nodesUpdated = info.totalSteps * numberNodes;
+    // Evaluate performance
+    info.totalSteps = step - first_step;
+    size_t nodesUpdated = info.totalSteps * NUMBER_LBM_NODES * N_GPUS;
     info.MLUPS = (nodesUpdated / 1e6) / info.timeElapsed;
     // bandwidth for AB scheme and does not consider macroscopics transfers
-    info.bandwidth = memSizePop*2.0 / (info.timeElapsed*BYTES_PER_GB) 
+    info.bandwidth = MEM_SIZE_POP*2.0*N_GPUS / (info.timeElapsed*BYTES_PER_GB) 
         * info.totalSteps;
 
-    // SIMULATION INFO
+    // Save last checkpoint, if required
+    if(CHECKPOINT_SAVE != 0)
+            saveSimCheckpoint(pop, macr, particlesSoA, &step);
+    // Save simulation info
     saveSimInfo(&info);
 
-    // REPORT
+    // Report data (last calculated one)
     if(DATA_REPORT)
     {
         printTreatData(&processData);
         if(DATA_SAVE)
             saveTreatData(&processData);
     }
-    printParamInfo(&info, true);
-    printGPUInfo(&info);
-    
-    // FREE MEMORY FOR EACH GPU
+    printSimInfo(&info);
+
+    /* ---------------------------- FREE MEMORY ----------------------------- */
+    // Free memory for each GPU
     for(int i = 0; i < N_GPUS; i++)
     {
-        checkCudaErrors(cudaSetDevice(i));
-        checkCudaErrors(cudaStreamDestroy(streamsKernelLBM[i]));
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+        checkCudaErrors(cudaStreamDestroy(streamsLBM[i]));
+        #ifdef IBM
+        checkCudaErrors(cudaStreamDestroy(streamsIBM[i]));
+        #endif
         pop[i].popFree();
         macr[i].macrFree();
+        bcInfos[i].freeIdxBC();
     }
 
-    bcInfo.freeIdxBC();
-
-    // FREE GPU VARIABLES
-    checkCudaErrors(cudaSetDevice(0));
-    checkCudaErrors(cudaFree(pop));
-    checkCudaErrors(cudaFree(macr));
-
-    // FREE CPU VARIABLES
+    // Free CPU variables
+    free(pop);
+    free(macr);
     macrCPUCurrent.macrFree();
     macrCPUOld.macrFree();
     free(info.devices);
+    free(bcInfos);
+    free(gridsBC);
+
+    #ifdef IBM
+    freeIBMProc(&ibmProcessData);
+    for(int i = 0; i < NUM_PARTICLES; i++){
+        free(particles[i].nodes);
+    }
+    particlesSoA.freeNodesAndCenters();
+    ibmMacrsAux.ibmMacrsAuxFree();
+    #if IBM_EULER_OPTIMIZATION
+    pEulerNodes.freeEulerNodes();
+    #endif
+    #endif
+    /* ---------------------------------------------------------------------- */
+
+    fflush(stdout);
 
     return 0;
 }

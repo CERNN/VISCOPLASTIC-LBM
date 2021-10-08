@@ -10,7 +10,7 @@
 #define __POPULATIONS_H
 
 #include "../var.h"
-#include "errorDef.h"
+#include "../errorDef.h"
 #include "nodeTypeMap.h"
 #include <cuda.h>
 
@@ -46,9 +46,9 @@ public:
     __host__
     void popAllocation()
     {
-        checkCudaErrors(cudaMallocManaged((void**)&(this->pop), memSizePop));
-        checkCudaErrors(cudaMallocManaged((void**)&(this->popAux), memSizePop));
-        checkCudaErrors(cudaMallocManaged((void**)&(this->mapBC), memSizeMapBC));
+        checkCudaErrors(cudaMallocManaged((void**)&(this->pop), MEM_SIZE_POP));
+        checkCudaErrors(cudaMallocManaged((void**)&(this->popAux), MEM_SIZE_POP));
+        checkCudaErrors(cudaMalloc((void**)&(this->mapBC), MEM_SIZE_MAP_BC));
     }
 
     /* Free populations */

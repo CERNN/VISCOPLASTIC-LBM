@@ -21,6 +21,7 @@
 
 #include "freeSlip.h"
 
+#ifdef BC_SCHEME_FREE_SLIP
 
 __device__ 
 void gpuBCFreeSlipN(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
@@ -164,3 +165,5 @@ void gpuBCFreeSlipB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned 
     fPostStream[idxPop(x, y, z, 25)] = fPostCol[idxPop(xp1, ym1, z, 24)];
     #endif
 }
+
+#endif

@@ -1,5 +1,8 @@
 #include "interpolatedBounceBack.h"
 
+
+#ifdef BC_SCHEME_INTERP_BOUNCE_BACK
+
 __device__ 
 void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
     const bool is_inside,
@@ -337,3 +340,5 @@ dfloat gpuDistNormalizedFromNodePopulationToWall_am1(
     dist = distPoints2D(x, y, x1, y1);
     return dist/SQRT_2;
 }
+
+#endif

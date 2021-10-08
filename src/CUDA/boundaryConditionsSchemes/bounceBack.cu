@@ -21,6 +21,8 @@
 
 #include "bounceBack.h"
 
+#ifdef BC_SCHEME_BOUNCE_BACK
+
 __device__ 
 void gpuBCBounceBackN(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
     const short unsigned int z)
@@ -494,3 +496,5 @@ void gpuBCBounceBackSEB(dfloat* fPostStream, dfloat* fPostCol, const short unsig
     #endif
     //Dead Pop are: [7, 8, 9, 10, 17, 18, 19, 20, 21, 22, 23, 24]
 }
+
+#endif

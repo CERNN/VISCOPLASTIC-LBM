@@ -23,63 +23,6 @@
 
 
 __host__
-void initializationPop( 
-    Populations* pop,
-    FILE* filePop)
-{
-    dfloat* tmp = (dfloat*)malloc(memSizePop);
-    if (filePop != NULL)
-    {
-        fread(tmp, memSizePop, 1, filePop);
-        
-        for(size_t idx = 0; idx < numberNodes*Q; idx++)
-        {
-            pop->pop[idx] = tmp[idx];
-            pop->popAux[idx] = tmp[idx];
-        }
-    }
-    free(tmp);
-}
-
-
-__host__
-void initializationMacr(
-    Macroscopics* macr,
-    FILE* fileRho,
-    FILE* fileUx,
-    FILE* fileUy,
-    FILE* fileUz)
-{
-    dfloat* tmp = (dfloat*)malloc(memSizeScalar);
-    if (fileRho != NULL)
-    {
-        fread(tmp, memSizeScalar, 1, fileRho);
-        for(size_t idx = 0; idx < numberNodes; idx++)
-            macr->rho[idx] = tmp[idx];
-    }
-    if (fileUx != NULL)
-    {
-        fread(tmp, memSizeScalar, 1, fileUx);
-        for(size_t idx = 0; idx < numberNodes; idx++)
-            macr->ux[idx] = tmp[idx];
-    }
-    if (fileUy != NULL)
-    {
-        fread(tmp, memSizeScalar, 1, fileUy);
-        for(size_t idx = 0; idx < numberNodes; idx++)
-            macr->uy[idx] = tmp[idx];
-    }
-    if (fileUz != NULL)
-    {
-        fread(tmp, memSizeScalar, 1, fileUz);
-        for(size_t idx = 0; idx < numberNodes; idx++)
-            macr->uz[idx] = tmp[idx];
-    }
-    free(tmp);
-}
-
-
-__host__
 void initializationRandomNumbers(
     float* randomNumbers, int seed)
 {
@@ -95,7 +38,7 @@ void initializationRandomNumbers(
     
     // Generate NX*NY*NZ floats on device, using normal distribution
     // with mean=0 and std_dev=NORMAL_STD_DEV
-    checkCurandStatus(curandGenerateNormal(gen, randomNumbers, numberNodes,
+    checkCurandStatus(curandGenerateNormal(gen, randomNumbers, NUMBER_LBM_NODES,
         0, CURAND_STD_DEV));
 
     checkCurandStatus(curandDestroyGenerator(gen));
@@ -104,35 +47,45 @@ void initializationRandomNumbers(
 
 __global__
 void gpuInitialization(
-    Populations* pop,
-    Macroscopics* macr,
-    bool isMacrInit,
+    Populations pop,
+    Macroscopics macr,
     float* randomNumbers)
 {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int y = threadIdx.y + blockDim.y * blockIdx.y;
     int z = threadIdx.z + blockDim.z * blockIdx.z;
-    if (x >= NX || y >= NY || z >= NZ)
+    if (x >= NX || y >= NY || z >= NZ+1)
         return;
 
-    size_t index = idxScalar(x, y, z);
+    size_t index = idxScalarWBorder(x, y, z);
 
-    if (!isMacrInit)
-    {
-        gpuMacrInitValue(macr, randomNumbers, x, y, z);
+    dfloat rho, ux, uy, uz;
+    // Is inside physical domain
+    if(z < NZ){
+        gpuMacrInitValue(&macr, randomNumbers, x, y, z);
+        rho = macr.rho[index];
+        ux = macr.u.x[index];
+        uy = macr.u.y[index];
+        uz = macr.u.z[index];
+    }
+    else{
+        rho = 1;
+        ux = 0;
+        uy = 0;
+        uz = 0;
     }
 
     for (int i = 0; i < Q; i++)
     {
         // calculate equilibrium population and initialize populations to equilibrium
-        dfloat feq = gpu_f_eq(w[i] * macr->rho[index],
-            3 * (macr->ux[index] * cx[i] + macr->uy[index] * cy[i] + macr->uz[index] * cz[i]),
-            1 - 1.5*(  macr->ux[index] * macr->ux[index] 
-                 + macr->uy[index] * macr->uy[index] 
-                 + macr->uz[index] * macr->uz[index]));
+        dfloat feq = gpu_f_eq(w[i] * rho,
+            3 * (ux * cx[i] + uy * cy[i] + uz * cz[i]),
+            1 - 1.5*(  ux * ux 
+                 + uy * uy 
+                 + uz * uz));
         
-        pop->pop[idxPop(x, y, z, i)] = feq;
-        pop->popAux[idxPop(x, y, z, i)] = feq;
+        pop.pop[idxPop(x, y, z, i)] = feq;
+        pop.popAux[idxPop(x, y, z, i)] = feq;
     }
 }
 
@@ -143,10 +96,20 @@ void gpuMacrInitValue(
     float* randomNumbers,
     int x, int y, int z)
 {
-    macr->rho[idxScalar(x, y, z)] = RHO_0;
-    macr->ux[idxScalar(x, y, z)] = 0;
-    macr->uy[idxScalar(x, y, z)] = 0;
-    macr->uz[idxScalar(x, y, z)] = 0;
+    // +MACR_BORDER_NODES because of the ghost nodes
+    macr->rho[idxScalarWBorder(x, y, z)] = RHO_0;
+    macr->u.x[idxScalarWBorder(x, y, z)] = 0;
+    macr->u.y[idxScalarWBorder(x, y, z)] = 0;
+    macr->u.z[idxScalarWBorder(x, y, z)] = 0;
+
+    #ifdef IBM
+    macr->f.x[idxScalarWBorder(x, y, z)] = FX;
+    macr->f.y[idxScalarWBorder(x, y, z)] = FY;
+    macr->f.z[idxScalarWBorder(x, y, z)] = FZ;
+    #endif
+    #ifdef NON_NEWTONIAN_FLUID
+    macr->omega[idxScalar(x, y, z)] = 0;
+    #endif
 
     // Example of usage of random numbers for turbulence in parallel plates flow in z
 
@@ -157,16 +120,16 @@ void gpuMacrInitValue(
     dfloat uz_log, pos = (y < NY/2 ? y + 0.5 : NY - (y + 0.5));
     uz_log = (uc_f*U_TAU)*(pos/del)*(pos/del);
 ​
-    macr->uz[idxScalar(x, y, z)] = uz_log;
-    macr->ux[idxScalar(x, y, z)] = 0.0;
-    macr->uy[idxScalar(x, y, z)] = 0.0;
+    macr->u.z[idxScalar(x, y, z)] = uz_log;
+    macr->u.x[idxScalar(x, y, z)] = 0.0;
+    macr->u.y[idxScalar(x, y, z)] = 0.0;
     macr->rho[idxScalar(x, y, z)] = RHO_0;
 ​
     // perturbation
     dfloat pert = 0.1;
-    int l = idxScalar(x, y, z), Nt = numberNodes;
-    macr->uz[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NZ - Nt*((l + NZ) / Nt)];
-    macr->ux[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NX - Nt*((l + NX) / Nt)];
-    macr->uy[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NY - Nt*((l + NY) / Nt)];
+    int l = idxScalar(x, y, z), Nt = NUMBER_LBM_NODES;
+    macr->u.z[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NZ - Nt*((l + NZ) / Nt)];
+    macr->u.x[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NX - Nt*((l + NX) / Nt)];
+    macr->u.y[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NY - Nt*((l + NY) / Nt)];
     */
 }

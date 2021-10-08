@@ -86,10 +86,14 @@ std::string getVarFilename(
 void saveVarBin(
     std::string strFile, 
     dfloat* var, 
-    size_t memSize)
+    size_t memSize,
+    bool append)
 {
     FILE* outFile = nullptr;
-    outFile = fopen(strFile.c_str(), "wb");
+    if(append)
+        outFile = fopen(strFile.c_str(), "ab");
+    else
+        outFile = fopen(strFile.c_str(), "wb");
     if(outFile != nullptr)
     {
         fwrite(var, memSize, 1, outFile);
@@ -106,13 +110,22 @@ void savePopBin(
     Populations* pop, 
     unsigned int nSteps)
 {
-    std::string strFilePop;
+    std::string strFilePop, strFilePopAux;
     strFilePop = getVarFilename("pop", nSteps, ".bin");
-    
+    strFilePopAux = getVarFilename("pop_aux", nSteps, ".bin");
+
     dfloat* tmp = nullptr;
-    checkCudaErrors(cudaMallocHost((void**)&(tmp), memSizePop));
-    checkCudaErrors(cudaMemcpy(tmp, pop[0].pop, memSizePop, cudaMemcpyDeviceToHost));
-    saveVarBin(strFilePop, tmp, memSizePop);
+    checkCudaErrors(cudaMallocHost((void**)&(tmp), MEM_SIZE_POP));
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaMemcpy(tmp, pop[i].pop, MEM_SIZE_POP, cudaMemcpyDeviceToHost));
+        saveVarBin(strFilePop, tmp, MEM_SIZE_POP, i != 0);
+    }
+
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaMemcpy(tmp, pop[i].popAux, MEM_SIZE_POP, cudaMemcpyDeviceToHost));
+        saveVarBin(strFilePopAux, tmp, MEM_SIZE_POP, i != 0);
+    }
+
     checkCudaErrors(cudaFreeHost(tmp));
 }
 
@@ -121,53 +134,222 @@ void saveAllMacrBin(
     Macroscopics* macr, 
     unsigned int nSteps)
 {
-    // names of files
+    // Names of files
     std::string strFileRho, strFileUx, strFileUy, strFileUz;
-    
+
     strFileRho = getVarFilename("rho", nSteps, ".bin");
     strFileUx = getVarFilename("ux", nSteps, ".bin");
     strFileUy = getVarFilename("uy", nSteps, ".bin");
     strFileUz = getVarFilename("uz", nSteps, ".bin");
-    
+
     // saving files
-    saveVarBin(strFileRho, macr->rho, memSizeScalar);
-    saveVarBin(strFileUx, macr->ux, memSizeScalar);
-    saveVarBin(strFileUy, macr->uy, memSizeScalar);
-    saveVarBin(strFileUz, macr->uz, memSizeScalar);
-}
+    saveVarBin(strFileRho, macr->rho, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileUx, macr->u.x, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileUy, macr->u.y, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileUz, macr->u.z, TOTAL_MEM_SIZE_SCALAR, false);
 
+    #if defined(IBM) && EXPORT_FORCES
+    std::string strFileFx = getVarFilename("fx", nSteps, ".bin");
+    std::string strFileFy = getVarFilename("fy", nSteps, ".bin");
+    std::string strFileFz = getVarFilename("fz", nSteps, ".bin");
 
-void saveAllMacrCsv(
-    Macroscopics* macr, 
-    unsigned int nSteps)
-{
-    std::string strOutFile;
-    FILE *outFile = nullptr;
+    saveVarBin(strFileFx, macr->f.x, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileFy, macr->f.y, TOTAL_MEM_SIZE_SCALAR, false);
+    saveVarBin(strFileFz, macr->f.z, TOTAL_MEM_SIZE_SCALAR, false);
+    #endif
     
-    strOutFile = getVarFilename("macr", nSteps, ".csv");
+    #ifdef NON_NEWTONIAN_FLUID
+    std::string strFileOmega = getVarFilename("omega", nSteps, ".bin");
 
-    outFile = fopen(strOutFile.c_str(), "w");
-    if(outFile != nullptr)
-    {
-        std::string header = "x\ty\tz\trho\tux\tux\tuy\tuz\n";
-        fprintf(outFile, "%s", header.c_str());
-        for(int z = 0; z < NZ; z++)
-            for(int y = 0; y < NY; y++)
-                for(int x = 0; x < NX; x++)
-                {
-                    size_t idx = idxScalar(x, y, z);
-                    fprintf(outFile, "%d\t%d\t%d\t%.6e\t%.6e\t%.6e\t%.6e\n", 
-                        x, y, z, macr->rho[idx], macr->ux[idx], macr->uy[idx], 
-                        macr->uz[idx]);
-                }
-        fclose(outFile);
-    }
-    else
-    {
-        printf("Error saving \"%s\" \nProbably wrong path!\n", strOutFile.c_str());
-    }
+    saveVarBin(strFileOmega, macr->omega, TOTAL_MEM_SIZE_SCALAR, false);
+    #endif
 }
 
+std::string getSimInfoString(SimInfo* info)
+{
+    std::ostringstream strSimInfo("");
+    
+    strSimInfo << std::scientific;
+    strSimInfo << std::setprecision(6);
+    
+    strSimInfo << "---------------------------- SIMULATION INFORMATION ----------------------------\n";
+    strSimInfo << "      Simulation ID: " << ID_SIM << "\n";
+    #ifdef D3Q19
+    strSimInfo << "       Velocity set: D3Q19\n";
+    #endif // !D3Q19
+    #ifdef D3Q27
+    strSimInfo << "       Velocity set: D3Q27\n";
+    #endif // !D3Q27
+    #ifdef SINGLE_PRECISION
+        strSimInfo << "          Precision: float\n";
+    #else
+        strSimInfo << "          Precision: double\n";
+    #endif
+    strSimInfo << "                 NX: " << NX << "\n";
+    strSimInfo << "                 NY: " << NY << "\n";
+    strSimInfo << "                 NZ: " << NZ << "\n";
+    strSimInfo << "           NZ_TOTAL: " << NZ_TOTAL << "\n";
+    strSimInfo << std::scientific << std::setprecision(6);
+    strSimInfo << "                Tau: " << TAU << "\n";
+    strSimInfo << "               Umax: " << U_MAX << "\n";
+    strSimInfo << "                 FX: " << FX << "\n";
+    strSimInfo << "                 FY: " << FY << "\n";
+    strSimInfo << "                 FZ: " << FZ << "\n";
+    strSimInfo << "       Report steps: " << DATA_REPORT << "\n";
+    strSimInfo << "         Save steps: " << MACR_SAVE << "\n";
+    strSimInfo << "             Nsteps: " << info->totalSteps << "\n";
+    strSimInfo << std::fixed << std::setprecision(1);
+    strSimInfo << "              MLUPS: " << info->MLUPS << "\n";
+    strSimInfo << "          Bandwidht: " << info->bandwidth << " (Gb/s)\n";
+    strSimInfo << std::setprecision(3);
+    strSimInfo << "       Time elapsed: " << info->timeElapsed << " (s)\n";
+    strSimInfo << "            threads: (" << N_THREADS << " , 1, 1)\n";
+    strSimInfo << "--------------------------------------------------------------------------------\n";
+
+    #ifdef NON_NEWTONIAN_FLUID
+    strSimInfo << "\n------------------------------ NON NEWTONIAN FLUID -----------------------------\n";
+    strSimInfo << std::scientific << std::setprecision(6);
+    
+    #ifdef POWERLAW
+    strSimInfo << "              Model: Power-Law\n";
+    strSimInfo << "        Power index: " << N_INDEX << "\n";
+    strSimInfo << " Consistency factor: " << K_CONSISTENCY << "\n";
+    strSimInfo << "            Gamma 0: " << GAMMA_0 << "\n";
+    #endif // POWERLAW
+
+    #ifdef BINGHAM
+    strSimInfo << "              Model: Bingham\n";
+    strSimInfo << "  Plastic viscosity: " << ETA_P << "\n";
+    strSimInfo << "       Yield stress: " << S_Y << "\n";
+    strSimInfo << "      Plastic omega: " << OMEGA_P << "\n";
+    #endif // BINGHAM
+    strSimInfo << "--------------------------------------------------------------------------------\n";
+    #endif // NON_NEWTONIAN_FLUID
+
+    #ifdef IBM
+    strSimInfo << "\n------------------------------------- IBM --------------------------------------\n";
+    strSimInfo << std::scientific << std::setprecision(6);
+
+    strSimInfo << "   Number of particles: " << NUM_PARTICLES << "\n";
+    strSimInfo << "        IBM iterations: " << IBM_MAX_ITERATION << "\n";
+    strSimInfo << "          Stencil size: ";
+
+    #if defined STENCIL_2
+    strSimInfo << "2" << "\n";
+    #elif defined STENCIL_4
+    strSimInfo << "4" << "\n";
+    #else
+    strSimInfo << "Invalid" << "\n";
+    #endif
+
+    strSimInfo << "  Particle density cte: " << PARTICLE_DENSITY << "\n";
+    strSimInfo << "         Fluid density: " << FLUID_DENSITY << "\n";
+    strSimInfo << "                    GX: " << GX << "\n";
+    strSimInfo << "                    GY: " << GY << "\n";
+    strSimInfo << "                    GZ: " << GZ << "\n";
+    strSimInfo << std::fixed << std::setprecision(2);
+    strSimInfo << "            Mesh scale: " << MESH_SCALE << "\n";
+    strSimInfo << "          Mesh coulomb: " << MESH_COULOMB << "\n";
+    strSimInfo << "         IBM thickness: " << IBM_THICKNESS << "\n";
+    strSimInfo << "        Particles save: " << IBM_PARTICLES_SAVE << "\n";
+    strSimInfo << "  Particles nodes save: " << IBM_PARTICLES_NODES_SAVE << "\n";
+    strSimInfo << "       IBM data report: " << IBM_DATA_REPORT << "\n";
+    strSimInfo << "         IBM data stop: " << IBM_DATA_STOP << "\n";
+    strSimInfo << "         IBM data save: " << IBM_DATA_SAVE << "\n";
+    strSimInfo << "IBM Euler optimization: " << IBM_EULER_OPTIMIZATION << "\n";
+    strSimInfo << " IBM Breugem parameter: " << BREUGEM_PARAMETER << "\n";
+    strSimInfo << " IBM Movement Disctre.: " << IBM_MOVEMENT_DISCRETIZATION << "\n";
+    strSimInfo << "-------------------------------- IBM Optimization ------------------------------\n";
+    strSimInfo << " Part. shell thickness: " << IBM_PARTICLE_SHELL_THICKNESS << "\n";
+    strSimInfo << "     Part. update dist: " << IBM_PARTICLE_UPDATE_DIST << "\n";
+    strSimInfo << "Part. update frequency: " << IBM_PARTICLE_UPDATE_DIST << "\n";
+    #if IBM_EULER_OPTIMIZATION
+    strSimInfo << " Euler shell thickness: " << IBM_EULER_SHELL_THICKNESS << "\n";
+    strSimInfo << "     Euler update dist: " << IBM_EULER_UPDATE_DIST << "\n";
+    strSimInfo << "Euler update frequency: " << IBM_EULER_UPDATE_DIST << "\n";
+    #endif
+    strSimInfo << "--------------------------------- IBM Collision --------------------------------\n";
+    strSimInfo << "\tPart-Part Frict Coef.: " << PP_FRICTION_COEF << "\n";
+    strSimInfo << "\tPart-Wall Frict Coef.: " << PW_FRICTION_COEF << "\n";
+    strSimInfo << "\tPart-Part Rest. Coef.: " << PP_REST_COEF << "\n";
+    strSimInfo << "\tPart-Wall Rest. Coef.: " << PW_REST_COEF << "\n";
+    strSimInfo << "\tParticle Young's Mod.: " << PARTICLE_YOUNG_MODULUS << "\n";
+    strSimInfo << "\tParticle Poisson Rat.: " << PARTICLE_POISSON_RATIO << "\n";
+    strSimInfo << "\t  Particle Shear Mod.: " << PARTICLE_SHEAR_MODULUS << "\n";
+    strSimInfo << "\t    Wall Young's Mod.: " << WALL_YOUNG_MODULUS << "\n";
+    strSimInfo << "\t    Wall Poisson Rat.: " << WALL_POISSON_RATIO << "\n";
+    strSimInfo << "\t      Wall Shear Mod.: " << WALL_SHEAR_MODULUS << "\n";
+    #if LUBRICATION_FORCE
+    strSimInfo << "\t   Max Lubrifi. dist.: " << MAX_LUBRICATION_DISTANCE << "\n";
+    strSimInfo << "\t   Min Lubrifi. dist.: " << MIN_LUBRICATION_DISTANCE << "\n";
+    #endif
+    strSimInfo << "--------------------------------- IBM Boundary Conditions ----------------------\n";
+    #ifdef IBM_BC_X_WALL
+    strSimInfo << "\t        IBM BC. X-Dir: Wall \n";
+    #endif
+    #ifdef IBM_BC_X_PERIODIC
+    strSimInfo << "\t        IBM BC. X-Dir: Periodic \n";
+    strSimInfo << "\t           IBM_BC_X_0:"<< IBM_BC_X_0 <<  "\n";
+    strSimInfo << "\t           IBM_BC_X_E:"<< IBM_BC_X_E <<  "\n";
+    #endif
+    #ifdef IBM_BC_Y_WALL
+    strSimInfo << "\t        IBM BC. Y-Dir: Wall \n";
+    #endif
+    #ifdef IBM_BC_Y_PERIODIC
+    strSimInfo << "\t        IBM BC. Y-Dir: Periodic \n";
+    strSimInfo << "\t           IBM_BC_Y_0:"<< IBM_BC_Y_0 <<  "\n";
+    strSimInfo << "\t           IBM_BC_Y_E:"<< IBM_BC_Y_E <<  "\n";
+    #endif
+    #ifdef IBM_BC_Z_WALL
+    strSimInfo << "\t        IBM BC. Z-Dir: Wall \n";
+    #endif
+    #ifdef IBM_BC_Z_PERIODIC
+    strSimInfo << "\t        IBM BC. Z-Dir: Periodic \n";
+    strSimInfo << "\t           IBM_BC_Z_0:"<< IBM_BC_Z_0 <<  "\n";
+    strSimInfo << "\t           IBM_BC_Z_E:"<< IBM_BC_Z_E <<  "\n";
+    #endif
+    strSimInfo << "--------------------------------- IBM Derivative Properties --------------------\n";
+    constexpr dfloat VolumeConcentration  =  NUM_PARTICLES * ((PARTICLE_DIAMETER/2)*(PARTICLE_DIAMETER/2)*(PARTICLE_DIAMETER/2)*M_PI*4.0/3.0)/(NX*NY*NZ_TOTAL);
+    constexpr dfloat LengthScale = PARTICLE_DIAMETER;
+    constexpr dfloat densityRatio = PARTICLE_DENSITY / FLUID_DENSITY ;
+    #ifdef POWERLAW
+    constexpr dfloat n_index = N_INDEX;
+    #else if
+    constexpr dfloat n_index = 1.0;
+    #endif
+    dfloat m = (RHO_0*(TAU-0.5)/3);
+    dfloat GM = sqrt(GX*GX + GY*GY + GZ*GZ);
+    dfloat VelocityScale =  GM * POW_FUNCTION(PARTICLE_DIAMETER, dfloat(n_index+1.0)) * (PARTICLE_DENSITY - FLUID_DENSITY) / m;    
+           VelocityScale = POW_FUNCTION(VelocityScale, 1.0/n_index) ;
+    dfloat TimeScale =  LengthScale / VelocityScale; 
+    dfloat ArchimedesNumber = GM * POW_FUNCTION(PARTICLE_DIAMETER, (2.0+n_index)/(2.0 - n_index));
+           ArchimedesNumber = ArchimedesNumber * (PARTICLE_DENSITY - FLUID_DENSITY) * POW_FUNCTION(FLUID_DENSITY,(n_index)/(2.0 - n_index));
+           ArchimedesNumber = (4.0/3.0)*ArchimedesNumber * POW_FUNCTION(m,(2.0)/(2.0 - n_index));
+    dfloat GalileoNumber = sqrt(ArchimedesNumber);
+    strSimInfo << "\t Volume Concentration: " << VolumeConcentration << "\n";
+    strSimInfo << "\t       Velocity Scale:"<< VelocityScale <<  "\n";
+    strSimInfo << "\t           Time Scale:"<< TimeScale <<  "\n";
+    strSimInfo << "\t    Archimedes Number:"<< ArchimedesNumber <<  "\n";
+    strSimInfo << "\t       Galileo Number:"<< GalileoNumber <<  "\n";
+    strSimInfo << "\t        Density Ratio:"<< densityRatio <<  "\n";
+    strSimInfo << "--------------------------------------------------------------------------------\n";
+
+    strSimInfo << "--------------------------------------------------------------------------------\n";
+    #endif // IBM
+
+    strSimInfo << "\n------------------------------- CUDA INFORMATION -------------------------------\n";
+    for(int i = 0; i < info->numDevices; i++)
+    {
+        strSimInfo << "\t      device number: " << GPUS_TO_USE[i] << "\n";
+        strSimInfo << "\t               name: " << info->devices[i].name << "\n";
+        strSimInfo << "\t    multiprocessors: " << info->devices[i].multiProcessorCount << "\n";
+        strSimInfo << "\t compute capability: " << info->devices[i].major << "." << info->devices[i].minor << "\n";
+        strSimInfo << "\t        ECC enabled: " << info->devices[i].ECCEnabled << "\n";
+    }
+    strSimInfo << "--------------------------------------------------------------------------------\n";
+
+    return strSimInfo.str();
+}
 
 void saveSimInfo(SimInfo* info)
 {
@@ -182,46 +364,8 @@ void saveSimInfo(SimInfo* info)
     outFile = fopen(strInf.c_str(), "w");
     if(outFile != nullptr)
     {
-        fprintf(outFile, "\n---------------------------- SIMULATION INFORMATION ----------------------------\n");
-        fprintf(outFile, "      Simulation ID: %s\n", ID_SIM);
-        #ifdef D3Q19
-        fprintf(outFile, "       Velocity set: D3Q19\n");
-        #endif // !D3Q19
-        #ifdef D3Q27
-        fprintf(outFile, "       Velocity set: D3Q27\n");
-        #endif // !D3Q27
-        if(sizeof(dfloat) == sizeof(float))
-            fprintf(outFile, "          Precision: float\n");
-        else if(sizeof(dfloat) == sizeof(double))
-            fprintf(outFile, "          Precision: double\n");
-        fprintf(outFile, "                 NX: %d\n", NX);
-        fprintf(outFile, "                 NY: %d\n", NY);
-        fprintf(outFile, "                 NZ: %d\n", NZ);
-        fprintf(outFile, "                Tau: %.6f\n", TAU);
-        fprintf(outFile, "               Umax: %.6e\n", U_MAX);
-        fprintf(outFile, "                 FX: %.6e\n", FX);
-        fprintf(outFile, "                 FY: %.6e\n", FY);
-        fprintf(outFile, "                 FZ: %.6e\n", FZ);  
-        fprintf(outFile, "       Report steps: %d\n", DATA_REPORT);
-        fprintf(outFile, "         Save steps: %d\n", MACR_SAVE);
-        fprintf(outFile, "             Nsteps: %d\n", info->totalSteps);
-        fprintf(outFile, "              MLUPS: %.1f\n", info->MLUPS);
-        fprintf(outFile, "          Bandwidht: %.1f (Gb/s)\n", info->bandwidth);
-        fprintf(outFile, "       Time elapsed: %.3f (s)\n", info->timeElapsed);
-        fprintf(outFile, "            threads: (%d, %d, %d)\n", nThreads, 1, 1);
-        fprintf(outFile, "--------------------------------------------------------------------------------\n");
-    
-        fprintf(outFile, "\n------------------------------- CUDA INFORMATION -------------------------------\n");
-        for(int i = 0; i < info->numDevices; i++)
-        {
-            fprintf(outFile, "\t      device number: %d\n", i);
-            fprintf(outFile, "\t               name: %s\n", info->devices[i].name);
-            fprintf(outFile, "\t    multiprocessors: %d\n", info->devices[i].multiProcessorCount);
-            fprintf(outFile, "\t compute capability: %d.%d\n", info->devices[i].major, 
-                                                               info->devices[i].minor);
-            fprintf(outFile, "\t        ECC enabled: %d\n", info->devices[i].ECCEnabled);
-        }
-        fprintf(outFile, "--------------------------------------------------------------------------------\n");
+        std::string strSimInfo = getSimInfoString(info);
+        fprintf(outFile, strSimInfo.c_str());
         fclose(outFile);
     }
     else
@@ -232,55 +376,8 @@ void saveSimInfo(SimInfo* info)
 }
 
 
-void printParamInfo(
-    SimInfo* info,
-    bool hasEnded)
-{          
-    printf("\n---------------------------- SIMULATION INFORMATION ----------------------------\n");
-    printf("      Simulation ID: %s\n", ID_SIM);
-#ifdef D3Q19
-    printf("       Velocity set: D3Q19\n");
-#endif // !D3Q19
-#ifdef D3Q27
-    printf("       Velocity set: D3Q27\n");
-#endif // !D3Q27
-    if(sizeof(dfloat) == sizeof(float))
-        printf("          Precision: float\n");
-    else if(sizeof(dfloat) == sizeof(double))
-        printf("          Precision: double\n");
-    printf("                 NX: %d\n", NX);
-    printf("                 NY: %d\n", NY);
-    printf("                 NZ: %d\n", NZ);
-    printf("                Tau: %.6e\n", TAU);
-    printf("               Umax: %.6e\n", U_MAX);
-    printf("                 FX: %.6e\n", FX);
-    printf("                 FY: %.6e\n", FY);
-    printf("                 FZ: %.6e\n", FZ);  
-    printf("     Residual steps: %d\n", DATA_REPORT);
-    printf("         Save steps: %d\n", MACR_SAVE);
-    printf("             Nsteps: %d\n", info->totalSteps);
-    if(hasEnded)
-    {
-        printf("              MLUPS: %.1f\n", info->MLUPS);
-        printf("          Bandwidht: %.1f (Gb/s)\n", info->bandwidth);
-        printf("       Time elapsed: %.3f (s)\n", info->timeElapsed);
-    }
-    printf("            threads: (%d, %d, %d)\n", nThreads, 1, 1);
-    printf("--------------------------------------------------------------------------------\n");
-}
-
-
-void printGPUInfo(SimInfo* info)
+void printSimInfo(
+    SimInfo* info)
 {
-    printf("\n------------------------------- CUDA INFORMATION -------------------------------\n");
-    for(int i = 0; i < info->numDevices; i++)
-    {
-        printf("\t      device number: %d\n", i);
-        printf("\t               name: %s\n", info->devices[i].name);
-        printf("\t    multiprocessors: %d\n", info->devices[i].multiProcessorCount);
-        printf("\t compute capability: %d.%d\n", info->devices[i].major, 
-                                                 info->devices[i].minor);
-        printf("\t        ECC enabled: %d\n", info->devices[i].ECCEnabled);
-        printf("--------------------------------------------------------------------------------\n");
-    }
+    printf(getSimInfoString(info).c_str()); fflush(stdout);
 }

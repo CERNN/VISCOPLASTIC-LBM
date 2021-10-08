@@ -14,93 +14,118 @@
 #define _USE_MATH_DEFINES
 
 
-/* --------------------- PRECISION AND VEL. SET DEFINES -------------------- */
-typedef double dfloat;      // single or double precision
-#define D3Q19               // velocity set to use
-/* ------------------------------------------------------------------------- */
+/* ------------------------ GENERAL SIMULATION DEFINES ---------------------- */
+#define DOUBLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
+#define D3Q19               // velocity set to use (D3Q19 OR D3Q27)
+// Comment to disable IBM. Uncomment to enable IBM
+// #define IBM
+/* -------------------------------------------------------------------------- */
 
+/* ------------------------ NON NEWTONIAN FLUID TYPE ------------------------ */
+// Uncomment the one to use. Comment all to simulate newtonian fluid
+// #define POWERLAW
+// #define BINGHAM
+/* -------------------------------------------------------------------------- */
+
+#ifdef SINGLE_PRECISION
+    typedef float dfloat;      // single precision
+#endif
+#ifdef DOUBLE_PRECISION
+    typedef double dfloat;      // double precision
+#endif
 
 /* ----------------------------- OUTPUT DEFINES ---------------------------- */
+
 #define ID_SIM "000"            // prefix for simulation's files
-#define PATH_FILES "annularDuctInterp"  // path to save simulation's files
+#define PATH_FILES "TEST"  // path to save simulation's files
+
                     // the final path is PATH_FILES/ID_SIM
                     // DO NOT ADD "/" AT THE END OF PATH_FILES
 /* ------------------------------------------------------------------------- */
 
 
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
-constexpr int N_STEPS = 10000;          // maximum number of time steps
-#define MACR_SAVE 1000                  // saves macroscopics every MACR_SAVE steps
-#define DATA_REPORT 1000                // report every DATA_REPORT steps
 
+constexpr unsigned int SCALE = 1;
+constexpr int N_STEPS = 1000;          // maximum number of time steps
+#define MACR_SAVE (100)                  // saves macroscopics every MACR_SAVE steps
+#define DATA_REPORT (false)                // report every DATA_REPORT steps
+
+ 
 #define DATA_STOP false                 // stop condition by treated data
 #define DATA_SAVE false                 // save reported data to file
 
-#define POP_SAVE false                  // saves last step's population
+// Interval to make checkpoint to save all simulation data and restart from it.
+// It must not be very frequent (10000 or more), because it takes a long time
+#define CHECKPOINT_SAVE false
 /* ------------------------------------------------------------------------- */
 
 
 /* --------------------- INITIALIZATION LOADING DEFINES -------------------- */
 constexpr int INI_STEP = 0; // initial simulation step (0 default)
-#define LOAD_POP false      // loads population from binary file (file names
-                            // defined below; LOAD_MACR must be false)
-#define LOAD_MACR false     // loads macroscopics from binary file (file names
-                            // defined below; LOAD_POP must be false)
+#define LOAD_CHECKPOINT false   // loads simulation checkpoint from folder 
+                                // (folder name defined below)
+#define RANDOM_NUMBERS false    // to generate random numbers 
+                                // (useful for turbulence)
 
-#define RANDOM_NUMBERS false // to generate random numbers 
-                            // (useful for turbulence)
-
-// file names to load
-#define STR_POP "pop.bin"
-#define STR_RHO "rho.bin"
-#define STR_UX "ux.bin"
-#define STR_UY "uy.bin"
-#define STR_UZ "uz.bin"
+// Folder with simulation to load data from last checkpoint. 
+// WITHOUT ID_SIM (change it in ID_SIM) AND "/" AT THE END
+#define SIMULATION_FOLDER_LOAD_CHECKPOINT "TEST"
 /* ------------------------------------------------------------------------- */
 
 
+
 /* --------------------------  SIMULATION DEFINES -------------------------- */
-constexpr unsigned int N = 32;
-constexpr unsigned int NX = N;        // size x of the grid 
+constexpr unsigned int N_GPUS = 1;    // Number of GPUS to use
+constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0};    // Which GPUs to use
+
+
+
+constexpr int N = 64*SCALE;
+constexpr int NX = N*SCALE;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr unsigned int NY = N;        // size y of the grid
-constexpr unsigned int NZ = 10;        // size z of the grid
+constexpr int NY = N*SCALE;        // size y of the grid
+constexpr int NZ = N*SCALE/N_GPUS;        // size z of the grid in one GPU
+constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
-constexpr dfloat U_MAX = 0.05;        // max velocity
+constexpr dfloat U_MAX = 0;           // max velocity
 
-constexpr dfloat TAU = 0.9;              // relaxation time
-
+constexpr dfloat TAU = 0.6;     // relaxation time
 constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
-constexpr dfloat T_OMEGA = 1-OMEGA;      // 1-omega, for collision
-constexpr dfloat TT_OMEGA = 1-0.5*OMEGA; // 1-0.5*omega, for force term
 
 constexpr dfloat RHO_0 = 1;         // initial rho
 
-constexpr dfloat FX = 0;        // force in x
-constexpr dfloat FY = 0;        // force in y
-constexpr dfloat FZ = 1e-5;     // force in z (flow direction in most cases)
-constexpr dfloat FX_D3 = FX/3;  // util for regularization
-constexpr dfloat FY_D3 = FY/3;  // util for regularization
-constexpr dfloat FZ_D3 = FZ/3;  // util for regularization
+constexpr dfloat FX = 0.0;        // force in x
+constexpr dfloat FY = 0.0;        // force in y
+constexpr dfloat FZ = 1.0e-4;        // force in z (flow direction in most cases)
 
 // values options for boundary conditions
-__device__ const dfloat uxBC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
-__device__ const dfloat uyBC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
-__device__ const dfloat uzBC[8] = { 0, U_MAX/2, -U_MAX/2, 0, 0, 0, 0, 0 };
-__device__ const dfloat rhoBC[8] = { RHO_0, 1, 1, 1, 1, 1, 1, 1 };
+__device__ const dfloat UX_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
+__device__ const dfloat UY_BC[8] = { 0, U_MAX/2, -U_MAX/2, 0, 0, 0, 0, 0 };
+__device__ const dfloat UZ_BC[8] = { 0, U_MAX, -U_MAX, 0, 0, 0, 0, 0 };
+__device__ const dfloat RHO_BC[8] = { RHO_0, 1, 1, 1, 1, 1, 1, 1 };
 
 constexpr dfloat RESID_MAX = 1e-5;      // maximal residual
 /* ------------------------------------------------------------------------- */
 
 
 /* ------------------------------ GPU DEFINES ------------------------------ */
-const int nThreads = (NX%64?((NX%32||(NX<32))?NX:32):64); // NX or 32 or 64 
+const int N_THREADS = (NX%64?((NX%32||(NX<32))?NX:32):64); // NX or 32 or 64 
                                     // multiple of 32 for better performance.
 const int CURAND_SEED = 0;          // seed for random numbers for CUDA
 constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers 
                                     // in normal distribution
 /* ------------------------------------------------------------------------- */
 
+/* -------------------- BOUNDARY CONDITIONS TO COMPILE --------------------- */
+#define COMP_ALL_BC false                // Compile all boundary conditions
+#define COMP_BOUNCE_BACK true          // Compile bounce back
+#define COMP_FREE_SLIP false            // Compile free slip
+#define COMP_PRES_ZOU_HE false          // Compile pressure zou-he
+#define COMP_VEL_ZOU_HE false           // Compile velocity zou he
+#define COMP_VEL_BOUNCE_BACK false      // Compile velocityr bounce back
+#define COMP_INTERP_BOUNCE_BACK false   // Compile interpolated bounce back
+/* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -115,6 +140,13 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
 #include "velocitySets/D3Q27.h"
 #endif // !D3Q27
 
+// Pow function to use
+#ifdef SINGLE_PRECISION
+    #define POW_FUNCTION powf 
+#else
+    #define POW_FUNCTION pow
+#endif
+
 /* --------------------------- AUXILIARY DEFINES --------------------------- */ 
 #define IN_HOST 1       // variable accessible only for host
 #define IN_VIRTUAL 2    // variable accessible for device and host
@@ -126,10 +158,33 @@ constexpr size_t BYTES_PER_MB = (1<<20);
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------ MEMORY SIZE ------------------------------ */ 
-const size_t numberNodes = NX*NY*NZ;
-const size_t memSizePop = sizeof(dfloat) * numberNodes * Q;
-const size_t memSizeScalar = sizeof(dfloat) * numberNodes;
-const size_t memSizeMapBC = sizeof(uint32_t) * numberNodes;
+// Values for each GPU
+const size_t NUMBER_LBM_NODES = NX*NY*NZ;
+// There are ghosts nodes in z for IBM macroscopics (velocity, density, force)
+#define NUMBER_LBM_IB_MACR_NODES (size_t)(NX*NY*(NZ+MACR_BORDER_NODES*2))
+// There is 1 ghost node in z for communication multi-gpu
+const size_t NUMBER_LBM_POP_NODES = NX*NY*(NZ+1);
+const size_t MEM_SIZE_POP = sizeof(dfloat) * NUMBER_LBM_POP_NODES * Q;
+const size_t MEM_SIZE_SCALAR = sizeof(dfloat) * NUMBER_LBM_NODES;
+#define MEM_SIZE_IBM_SCALAR (size_t)(sizeof(dfloat) * NUMBER_LBM_IB_MACR_NODES)
+const size_t MEM_SIZE_MAP_BC = sizeof(uint32_t) * NUMBER_LBM_NODES;
+// Values for all GPUs
+const size_t TOTAL_NUMBER_LBM_NODES = NX*NY*NZ_TOTAL;
+#define TOTAL_NUMBER_LBM_IB_MACR_NODES (size_t)(NUMBER_LBM_IB_MACR_NODES * N_GPUS)
+const size_t TOTAL_NUMBER_LBM_POP_NODES = NUMBER_LBM_POP_NODES * N_GPUS;
+const size_t TOTAL_MEM_SIZE_POP = MEM_SIZE_POP * N_GPUS;
+#define TOTAL_MEM_SIZE_IBM_SCALAR (size_t)(MEM_SIZE_IBM_SCALAR * N_GPUS)
+const size_t TOTAL_MEM_SIZE_SCALAR = MEM_SIZE_SCALAR * N_GPUS;
+const size_t TOTAL_MEM_SIZE_MAP_BC = MEM_SIZE_MAP_BC * N_GPUS;
 /* ------------------------------------------------------------------------- */
+
+
+#ifndef myMax
+#define myMax(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef myMin
+#define myMin(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
 
 #endif // !__VAR_H

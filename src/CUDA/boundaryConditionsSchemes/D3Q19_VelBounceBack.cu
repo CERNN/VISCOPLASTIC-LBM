@@ -21,6 +21,8 @@
 
 #include "D3Q19_VelBounceBack.h"
 
+#ifdef BC_SCHEME_VEL_BOUNCE_BACK
+#ifdef D3Q19
 
 __device__
 void gpuBCVelBounceBackN(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
@@ -143,3 +145,6 @@ void gpuBCVelBounceBackB(dfloat* fPostStream, dfloat* fPostCol, const short unsi
     f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)] - 6 * rho_w*W2*(-uz_w + ux_w);
     f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)] - 6 * rho_w*W2*(-uz_w + uy_w);
 }
+
+#endif //!D3Q19
+#endif

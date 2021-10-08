@@ -9,7 +9,7 @@
 #ifndef __MACR_PROC_H
 #define __MACR_PROC_H
 
-#include "globalFunctions.h"
+#include "../globalFunctions.h"
 #include "macroscopics.h"
 
 

@@ -29,43 +29,54 @@ typedef struct boundaryConditionsInfo{
     __host__
     boundaryConditionsInfo()
     {
-        totalBCNodes = 0;
-        totalNonLocalBCNodes = 0;
-        idxBCNodes = nullptr;
+        this->totalBCNodes = 0;
+        this->totalNonLocalBCNodes = 0;
+        this->idxBCNodes = nullptr;
     }
 
     /* Destructor */
     __host__
     ~boundaryConditionsInfo()
     {
-        totalBCNodes = 0;
-        totalNonLocalBCNodes = 0;
-        idxBCNodes = nullptr;
+        this->totalBCNodes = 0;
+        this->totalNonLocalBCNodes = 0;
+        this->idxBCNodes = nullptr;
     }
 
+    /**
+    *   @brief Allocate BC indexes
+    */
     __host__
     void allocateIdxBC()
     {
-        if(totalBCNodes <= 0)
+        if(this->totalBCNodes <= 0)
             return;
-        size_t memSizeIdxBC = totalBCNodes*sizeof(size_t);
+        size_t memSizeIdxBC = this->totalBCNodes*sizeof(size_t);
         checkCudaErrors(cudaMallocManaged((void**)&(this->idxBCNodes), memSizeIdxBC));
     }
 
+    /**
+    *   @brief Free BC indexes
+    */
     __host__
     void freeIdxBC()
     {
-        if(idxBCNodes == nullptr)
+        if(this->idxBCNodes == nullptr || this->totalBCNodes == 0)
             return;
         checkCudaErrors(cudaFree(this->idxBCNodes));
-        idxBCNodes = nullptr;
+        this->idxBCNodes = nullptr;
     }
 
+    /**
+    *   @brief setup boundary conditions informations and nodes, using BC map
+    *   
+    *   @param mapBC: map with simulation's BC
+    */
     __host__
     void setupBoundaryConditionsInfo(NodeTypeMap* mapBC)
     {
-        totalBCNodes = 0;
-        totalNonLocalBCNodes = 0;
+        this->totalBCNodes = 0;
+        this->totalNonLocalBCNodes = 0;
 
         // get number of BC nodes
         for(int z = 0; z < NZ; z++)
@@ -76,13 +87,13 @@ typedef struct boundaryConditionsInfo{
                     if(ntm.getIsUsed())
                         if(ntm.getSchemeBC() != BC_NULL)
                         {
-                            totalBCNodes++;
+                            this->totalBCNodes++;
                             if(!(ntm.isBCLocal()))
-                                totalNonLocalBCNodes++;
+                                this->totalNonLocalBCNodes++;
                         }
                 }
 
-        if(totalBCNodes <= 0)
+        if(this->totalBCNodes <= 0)
             return;
 
         // allocate memory for idx
@@ -98,7 +109,7 @@ typedef struct boundaryConditionsInfo{
                     if(ntm.getIsUsed())
                         if(ntm.getSchemeBC() != BC_NULL)
                         {
-                            idxBCNodes[i] = idxScalar(x, y, z);
+                            this->idxBCNodes[i] = idxScalar(x, y, z);
                             i++;
                         }
                 }

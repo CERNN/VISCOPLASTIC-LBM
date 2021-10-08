@@ -12,9 +12,10 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "structs\macroscopics.h"
-#include "structs\macrProc.h"
+#include "structs/macroscopics.h"
+#include "structs/macrProc.h"
 #include "boundaryConditionsHandler.h"
+#include "NNF/nnf.h"
 
 
 /*
@@ -31,7 +32,7 @@ void gpuMacrCollisionStream(
     dfloat* const pop,
     dfloat* const popAux,
     NodeTypeMap* const mapBC,
-    Macroscopics* const macr,
+    Macroscopics const macr,
     bool const save,
     int const step
 );
@@ -44,8 +45,8 @@ void gpuMacrCollisionStream(
 */
 __global__
 void gpuUpdateMacr(
-    Populations* pop,
-    Macroscopics* macr
+    Populations pop,
+    Macroscopics macr
 );
 
 
@@ -65,5 +66,17 @@ void gpuApplyBC(NodeTypeMap* mapBC,
     size_t totalBCNodes
 );
 
+/*
+*   @brief Transfers populations from one GPU to another, with the plane dividing
+*       both domains being between the lower level (z=0) of the population "base"
+*       and the higher level (z=NZ-1) of the population "next"
+* 
+*   @param popPostStreamBase: Base post streaming populations
+*   @param popPostStreamNxt: Next post streaming populations
+*/
+__global__
+void gpuPopulationsTransfer(
+    dfloat* popPostStreamBase,
+    dfloat* popPostStreamNxt);
 
 #endif // __LBM_H

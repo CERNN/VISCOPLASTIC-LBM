@@ -21,6 +21,8 @@
 
 #include "D3Q19_VelZouHe.h"
 
+#ifdef BC_SCHEME_VEL_ZOUHE
+#ifdef D3Q19
 
 __device__
 void gpuBCVelZouHeN(dfloat* fPostStream, dfloat* fPostCol, const short unsigned int x, const short unsigned int y,
@@ -166,3 +168,6 @@ void gpuBCVelZouHeB(dfloat* fPostStream, dfloat* fPostCol, const short unsigned 
     f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)] + rho_w * (uz_w + ux_w) / 6 - nzy;
     f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)] + rho_w * (uz_w - ux_w) / 6 + nzy;
 }
+
+#endif //!D3Q19
+#endif 

@@ -1,7 +1,7 @@
 /*
-*   @file parallelPlatesZouHe.cu
+*   @file annularDuctInerpBounceBack.cu
 *   @author Waine Jr. (waine@alunos.utfpr.edu.br)
-*   @brief Circular duct interpolated bounce boundary conditions in walls,
+*   @brief Annular duct interpolated bounce boundary conditions in walls,
 *          periodic condition in flow direction and force in Z
 *          N, S: wall; B, F: periodic; W, E: periodic
 *   @version 0.3.0
@@ -33,13 +33,15 @@
 
 
 __global__
-void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
+void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
 {
     const unsigned int x = threadIdx.x + blockDim.x * blockIdx.x;
     const unsigned int y = threadIdx.y + blockDim.y * blockIdx.y;
     const unsigned int z = threadIdx.z + blockDim.z * blockIdx.z;
+    const unsigned int zDomain = z + NZ*gpuNumber;
 
-    if(x >= NX || y > NY || z >= NZ)
+
+    if(x >= NX || y >= NY || z >= NZ)
         return;
 
     gpuMapBC[idxScalar(x, y, z)].setIsUsed(true); //set all nodes fluid inicially and no bc
@@ -63,7 +65,6 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC)
     // Node values
     dfloat xNode = x+0.5;
     dfloat yNode = y+0.5;
-    dfloat zNode = z+0.5;
 
     // Axial direction of the cilinder
     gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);

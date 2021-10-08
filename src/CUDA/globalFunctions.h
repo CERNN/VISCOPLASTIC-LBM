@@ -35,7 +35,8 @@
 #include <curand.h>
 
 #include "var.h"
-
+#include "IBM/ibmVar.h"
+#include "structs/globalStructs.h"
 
 /*
 *   @brief Evaluate the population of equilibrium
@@ -110,13 +111,29 @@ dfloat __forceinline__ randGauss(const unsigned long long int seed, const unsign
 __host__ __device__
 size_t __forceinline__ idxScalar(unsigned int x, unsigned int y, unsigned int z)
 {
-    return NX * (NY*z + y) + x;
+    return NX * ((size_t)NY*z + y) + x;
 }
 
 
 /*
+*   @brief Evaluate the position of the element of a 3D matrix ([NX][NY][NZ+2*MACR_BORDER_NODES]) 
+*         in a 1D array
+*   @param x: x axis value
+*   @param y: y axis value
+*   @param z: z axis value (-MACR_BORDER_NODES <= z < NZ+MACR_BORDER_NODES)
+*   @return element index
+*/
+__host__ __device__
+size_t __forceinline__ idxScalarWBorder(unsigned int x, unsigned int y, unsigned int z)
+{
+    return NX * ((size_t)NY*(z+MACR_BORDER_NODES) + y) + x;
+}
+
+
+
+/*
 *   @brief Evaluate the element of the population of a 4D matrix 
-*          ([NX][NY][NZ][Q]) in a 1D array
+*          ([NX][NY][NZ+1][Q]) in a 1D array
 *   @param x: x axis value
 *   @param y: y axis value
 *   @param z: z axis value
@@ -126,7 +143,7 @@ size_t __forceinline__ idxScalar(unsigned int x, unsigned int y, unsigned int z)
 __host__ __device__
 size_t __forceinline__ idxPop(const unsigned int x, const unsigned int y, const unsigned int z, const unsigned int d)
 {
-    return NX*(NY*(NZ*d + z) + y) + x;
+    return NX*(NY*((size_t)(NZ+1)*d + z) + y) + x;
 }
 
 
@@ -144,5 +161,13 @@ dfloat __forceinline__ distPoints2D(const dfloat x1, const dfloat y1, const dflo
     return sqrt((float)(x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
 
+/**
+*   @brief Copy values from src to dst (shape [NZ, NY, NX])
+*
+*   @param dst: destiny arrays
+*   @param src: source arrays
+*/
+__global__
+void copyFromArray(dfloat3SoA dst, dfloat3SoA src);
 
 #endif // !__GLOBAL_FUNCTIONS_H

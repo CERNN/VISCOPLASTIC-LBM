@@ -10,12 +10,17 @@
 #define __LBM_REPORT_H
 
 #include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>     // std::cout, std::fixed
+#include <iomanip>      // std::setprecision
 #include <cuda.h>
 #include "globalFunctions.h"
 #include "errorDef.h"
 #include "structs/macroscopics.h"
 #include "structs/populations.h"
 #include "structs/simInfo.h"
+#include "IBM/ibmVar.h"
 
 
 
@@ -44,11 +49,13 @@ std::string getVarFilename(
 *   @param strFile: filename to save
 *   @param var: float variable to save
 *   @param memSize: sizeof var
+*   @param append: content must be appended to file or overwrite
 */
 void saveVarBin(
     std::string strFile, 
     dfloat* var, 
-    size_t memSize
+    size_t memSize,
+    bool append
 );
 
 
@@ -79,20 +86,12 @@ void saveAllMacrBin(
     unsigned int nSteps
 );
 
-
 /*
-*   Save all macroscopics in csv format (x y z macroscopics)
-*   @param macr: macroscopics to save
-*   @param nSteps: number of steps of the simulation
-*   @obs Check CPU endianess
-*   @obs The initial position of the array is x=0 and y=0 and z=0, 
-*        so the variables starts on SWF and ends in NEB
+*   Get string with simulation information
+*   @param info: simulation's informations
+*   @return string with simulation info
 */
-void saveAllMacrCsv(
-    Macroscopics* macr, 
-    unsigned int nSteps
-);
-
+std::string getSimInfoString(SimInfo* info);
 
 /*
 *   Save simulation's information
@@ -104,22 +103,10 @@ void saveSimInfo(
 
 
 /*
-*   Print simulation parameters
+*   Print simulation information
 *   @param info: simulation's informations
-*   @param hasEnded: simulation has ended or not
 */
-void printParamInfo(
-    SimInfo* info,
-    bool hasEnded
-);
-
-
-/*
-*   Print GPUs information
-*   @param info: simulation's informations
-*   @param hasEnded: simulation has ended or not
-*/
-void printGPUInfo(
+void printSimInfo(
     SimInfo* info
 );
 
