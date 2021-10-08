@@ -612,21 +612,21 @@ void gpuPopulationsTransfer(
     popPostStreamBase[idxPop(x, y, zMax, 17)] =   popPostStreamNxt[idxPop(x, y, zRead, 17)];
     popPostStreamNxt[idxPop(x, y, 0, 18)] = popPostStreamBase[idxPop(x, y, zRead, 18)];
 
-    #ifdef D3Q27
+#ifdef D3Q27
     // pop[19] -> cz = 1; pop[20] -> cz = -1;
-    popPostStreamBase[idxPop(x, y, zMax, 19)] = popPostStreamNxt[idxPop(x, y, zRead, 19)];
-    popPostStreamNxt[idxPop(x, y, 0, 20)] = popPostStreamBase[idxPop(x, y, zRead, 20)];
+    popPostStreamBase[idxPop(x, y, zMax, 20)] = popPostStreamNxt[idxPop(x, y, zRead, 20)];
+    popPostStreamNxt[idxPop(x, y, 0, 19)] = popPostStreamBase[idxPop(x, y, zRead, 19)];
 
     // pop[22] -> cz = 1; pop[21] -> cz = -1;
-    popPostStreamBase[idxPop(x, y, zMax, 22)] = popPostStreamNxt[idxPop(x, y, zRead, 22)];
-    popPostStreamNxt[idxPop(x, y, 0, 21)] = popPostStreamBase[idxPop(x, y, zRead, 21)];
+    popPostStreamBase[idxPop(x, y, zMax, 21)] = popPostStreamNxt[idxPop(x, y, zRead, 21)];
+    popPostStreamNxt[idxPop(x, y, 0, 22)] = popPostStreamBase[idxPop(x, y, zRead, 22)];
 
     // pop[23] -> cz = 1; pop[24] -> cz = -1;
-    popPostStreamBase[idxPop(x, y, zMax, 23)] = popPostStreamNxt[idxPop(x, y, zRead, 23)];
-    popPostStreamNxt[idxPop(x, y, 0, 24)] = popPostStreamBase[idxPop(x, y, zRead, 24)];
+    popPostStreamBase[idxPop(x, y, zMax, 24)] = popPostStreamNxt[idxPop(x, y, zRead, 24)];
+    popPostStreamNxt[idxPop(x, y, 0, 23)] = popPostStreamBase[idxPop(x, y, zRead, 23)];
 
     // pop[25] -> cz = 1; pop[26] -> cz = -1;
-    popPostStreamBase[idxPop(x, y, zMax, 25)] = popPostStreamNxt[idxPop(x, y, zRead, 25)];
-    popPostStreamNxt[idxPop(x, y, 0, 26)] = popPostStreamBase[idxPop(x, y, zRead, 26)];
+    popPostStreamBase[idxPop(x, y, zMax, 26)] = popPostStreamNxt[idxPop(x, y, zRead, 26)];
+    popPostStreamNxt[idxPop(x, y, 0, 25)] = popPostStreamBase[idxPop(x, y, zRead, 25)];
     #endif
 }
