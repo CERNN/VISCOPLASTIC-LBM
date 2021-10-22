@@ -155,34 +155,28 @@ void gpuMacrCollisionStream(
     const dfloat momNeqYZt2 = (sumPopYZ - rhoVar*uyVar*uzVar) * 2;
     #endif // !D3Q19 
     #ifdef D3Q27
-    // ERROR: DEPRECATED FOR NON NEWTONIAN!!!!!!!!
-    const dfloat aux = (fNode[19] + fNode[20] + fNode[21] + fNode[22] + fNode[23]
-            + fNode[24] + fNode[25] + fNode[26]) - 
-            (8*rhoW3*(ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
-    const dfloat momNeqXX = (fNode[1] + fNode[2] + fNode[7] + fNode[8] + fNode[9] 
-            + fNode[10] + fNode[13] + fNode[14] + fNode[15] + fNode[16] + aux) -
-            (2*rhoW1*(p1_muu15 + ux3ux3d2) + 
-             4*rhoW2*(2*p1_muu15 + 2*ux3ux3d2 + uy3uy3d2 + uz3uz3d2));
-    const dfloat momNeqYY = (fNode[3] + fNode[4] + fNode[7] + fNode[8] + fNode[11]
-            + fNode[12] + fNode[13] + fNode[14] + fNode[17] + fNode[18] + aux) -
-            (2*rhoW1*(p1_muu15 + uy3uy3d2) + 
-             4*rhoW2*(ux3ux3d2 + 2*uy3uy3d2 + uz3uz3d2)); 
-    const dfloat momNeqZZ = (fNode[5] + fNode[6] + fNode[9] + fNode[10] + fNode[11]
-            + fNode[12] + fNode[15] + fNode[16] + fNode[17] + fNode[18] + aux) -
-            (2*rhoW1*(p1_muu15 + uz3uz3d2) + 
-             4*rhoW2*(ux3ux3d2 + uy3uy3d2 + 2*uz3uz3d2));
-    const dfloat momNeqXYt2 = ((fNode[7] + fNode[8] - fNode[13] - fNode[14] + fNode[19]
-            + fNode[20] + fNode[21] + fNode[22] - fNode[23] - fNode[24] - fNode[25]
-            - fNode[26]) - 
-            (4*rhoW2*(ux3uy3) + 8*rhoW3*(ux3uy3))) * 2;
-    const dfloat momNeqXZt2 = ((fNode[9] + fNode[10] - fNode[15] - fNode[16] + fNode[19]
-            + fNode[20] - fNode[21] - fNode[22] + fNode[23] + fNode[24] - fNode[25]
-            - fNode[26]) - 
-            (4*rhoW2*(ux3uz3) + 8*rhoW3*(ux3uz3))) * 2;
-    const dfloat momNeqYZt2 = ((fNode[11] + fNode[12] - fNode[17] - fNode[18] + fNode[19]
-            + fNode[20] - fNode[21] - fNode[22] - fNode[23] - fNode[24] + fNode[25]
-            + fNode[26]) - 
-            (4*rhoW2*(uy3uz3) + 8*rhoW3*(uy3uz3))) * 2;
+    const dfloat sumPopXX = fNode[1] + fNode[2] + fNode[7] + fNode[8] + fNode[9] 
+            + fNode[10] + fNode[13] + fNode[14] + fNode[15] + fNode[16]
+            + fNode[19] + fNode[20] + fNode[21] + fNode[22] + fNode[23] + fNode[24] + fNode[25] + fNode[26];
+    const dfloat sumPopYY = fNode[3] + fNode[4] + fNode[7] + fNode[8] + fNode[11]
+            + fNode[12] + fNode[13] + fNode[14] + fNode[17] + fNode[18]
+            + fNode[19] + fNode[20] + fNode[21] + fNode[22] + fNode[23] + fNode[24] + fNode[25] + fNode[26];
+    const dfloat sumPopZZ = fNode[5] + fNode[6] + fNode[9] + fNode[10] + fNode[11]
+            + fNode[12] + fNode[15] + fNode[16] + fNode[17] + fNode[18]
+            + fNode[19] + fNode[20] + fNode[21] + fNode[22] + fNode[23] + fNode[24] + fNode[25] + fNode[26];
+    const dfloat sumPopXY = fNode[7] + fNode[8] - fNode[13] - fNode[14]
+            + fNode[19] + fNode[20] + fNode[21] + fNode[22] - fNode[23] - fNode[24] - fNode[25] - fNode[26];
+    const dfloat sumPopXZ = fNode[9] + fNode[10] - fNode[15] - fNode[16]
+            + fNode[19] + fNode[20] - fNode[21] - fNode[22] + fNode[23] + fNode[24] - fNode[25] - fNode[26];
+    const dfloat sumPopYZ = fNode[11] + fNode[12] - fNode[17] - fNode[18]
+            + fNode[19] + fNode[20] - fNode[21] - fNode[22] - fNode[23] - fNode[24] + fNode[25] + fNode[26];
+    
+    const dfloat momNeqXX = sumPopXX - rhoVar*(uxVar*uxVar + cs2);
+    const dfloat momNeqYY = sumPopYY - rhoVar*(uyVar*uyVar + cs2); 
+    const dfloat momNeqZZ = sumPopZZ - rhoVar*(uzVar*uzVar + cs2);
+    const dfloat momNeqXYt2 = (sumPopXY - rhoVar*uxVar*uyVar) * 2;
+    const dfloat momNeqXZt2 = (sumPopXZ - rhoVar*uxVar*uzVar) * 2;
+    const dfloat momNeqYZt2 = (sumPopYZ - rhoVar*uyVar*uzVar) * 2;
     #endif // !D3Q27
 
     #ifdef NON_NEWTONIAN_FLUID
