@@ -122,6 +122,14 @@ int main()
     getLastCudaError("LBM setup error");
     /* ---------------------------------------------------------------------- */
 
+        /* ------------------------------- MEMORY USAGE ------------------------- */
+    printf("\n------------------------------ MEMORY ALLOCATION ------------------------------\n");
+    printf("\n         Populations: %.1f MB (%u bytes) \n", (dfloat)2*TOTAL_MEM_SIZE_POP/(dfloat)BYTES_PER_MB,2*TOTAL_MEM_SIZE_POP);
+    printf("             Scalars: %.1f MB (%u bytes) \n", (dfloat)(TOTAL_MEM_SIZE_SCALAR * TOTAL_NUMBER_SCALAR)/(dfloat)BYTES_PER_MB, TOTAL_MEM_SIZE_SCALAR * TOTAL_NUMBER_SCALAR);
+    printf("               Total: %.1f MB (%u bytes) \n", (dfloat)(2*TOTAL_MEM_SIZE_POP + (TOTAL_MEM_SIZE_SCALAR * TOTAL_NUMBER_SCALAR))/(dfloat)BYTES_PER_MB, (2*TOTAL_MEM_SIZE_POP + (TOTAL_MEM_SIZE_SCALAR * TOTAL_NUMBER_SCALAR)) );
+    printf("\n--------------------------------------------------------------------------------\n"); 
+    /* ---------------------------------------------------------------------- */
+
     /* ------------------ IBM ALLOCATION AND CONFIGURATION ------------------ */
     #ifdef IBM
     printf("-------------------------------- IBM INFORMATION -------------------------------\n");
