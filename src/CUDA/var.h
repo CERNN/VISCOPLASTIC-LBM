@@ -176,6 +176,8 @@ const size_t TOTAL_MEM_SIZE_POP = MEM_SIZE_POP * N_GPUS;
 #define TOTAL_MEM_SIZE_IBM_SCALAR (size_t)(MEM_SIZE_IBM_SCALAR * N_GPUS)
 const size_t TOTAL_MEM_SIZE_SCALAR = MEM_SIZE_SCALAR * N_GPUS;
 const size_t TOTAL_MEM_SIZE_MAP_BC = MEM_SIZE_MAP_BC * N_GPUS;
+
+const size_t TOTAL_NUMBER_SCALAR = 1+3+3+1; //TODO FIX CONDITIONS FOR FORCE AND LOCAL OMEGA
 /* ------------------------------------------------------------------------- */
 
 
