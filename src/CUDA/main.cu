@@ -53,7 +53,8 @@ int main()
     dim3* gridsBC;
 
     ParticlesSoA particlesSoA;
-    Particle particles[NUM_PARTICLES];
+    Particle *particles;
+    particles = (Particle*) malloc(sizeof(Particle)*NUM_PARTICLES);
     ParticleEulerNodesUpdate pEulerNodes;
 
     IBMProc ibmProcessData;
@@ -539,6 +540,7 @@ int main()
     for(int i = 0; i < NUM_PARTICLES; i++){
         free(particles[i].nodes);
     }
+    free(particles);
     particlesSoA.freeNodesAndCenters();
     ibmMacrsAux.ibmMacrsAuxFree();
     #if IBM_EULER_OPTIMIZATION
