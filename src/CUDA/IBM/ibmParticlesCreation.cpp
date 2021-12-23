@@ -2,10 +2,14 @@
 
 #ifdef IBM
 
-void createParticles(Particle particles[NUM_PARTICLES])
+void createParticles(Particle *particles)
 {
-    dfloat3 center[NUM_PARTICLES];
+
+    dfloat3 *center;
+    center = (dfloat3*) malloc(sizeof(dfloat3) * NUM_PARTICLES);
+
     dfloat3 vel, w;
+
     unsigned int totalIbmNodes = 0;
 
     // STAGGERED POSITION
