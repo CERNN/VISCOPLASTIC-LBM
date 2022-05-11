@@ -193,6 +193,472 @@ void ParticlesSoA::freeNodesAndCenters(){
     this->pCenterArray = nullptr;
 }
 
+void Particle::makeSphereIco(dfloat diameter, dfloat3 center, bool move,
+        dfloat density = PARTICLE_DENSITY, dfloat3 vel = dfloat3(0, 0, 0), dfloat3 w = dfloat3(0, 0, 0))
+{
+
+    constexpr dfloat golden = 1.618033988749895;     // golden number - CONSTANT
+    constexpr dfloat nref = 5;    // IBM mesh refinment
+    constexpr unsigned int Faces = 20 * (1 + 2 * nref + (nref*nref));
+    constexpr unsigned int Edges = 30 * (nref + 1) + 10 * 3 * (nref + nref * nref);
+    constexpr unsigned int Vert = 2 + Edges - Faces;
+
+    constexpr unsigned int IT_REF = 0;
+    
+    // Define the properties of the particle
+    unsigned int i, l, r;
+    dfloat radius = diameter/2;
+    dfloat scale;
+    dfloat rc = radius - BREUGEM_PARAMETER;
+    dfloat dA = 4*M_PI*(((rc + 0.5)*(rc + 0.5)*(rc + 0.5)) - ((rc - 0.5)*(rc - 0.5)*(rc - 0.5)))/(3*Vert);
+
+    this->pCenter.radius = radius;
+
+    this->pCenter.volume = radius*radius*radius*4*M_PI/3;
+    // Particle area
+    this->pCenter.S = 4.0 * M_PI * radius * radius;
+    // Particle density
+    this->pCenter.density = density;
+
+    // Particle center position
+    this->pCenter.pos = center;
+    this->pCenter.pos_old = center;
+
+    // Particle velocity
+    this->pCenter.vel = vel;
+    this->pCenter.vel_old = vel;
+
+    // Particle rotation
+    this->pCenter.w = w;
+    this->pCenter.w_avg = w;
+    this->pCenter.w_old = w;
+
+    // Innertia momentum
+    this->pCenter.I.x = 1.0 * this->pCenter.volume * this->pCenter.density * ((B_AXIS * B_AXIS) + (C_AXIS * C_AXIS)) / 5.0;
+    this->pCenter.I.y = 1.0 * this->pCenter.volume * this->pCenter.density * ((A_AXIS * A_AXIS) + (C_AXIS * C_AXIS)) / 5.0;
+    this->pCenter.I.z = 1.0 * this->pCenter.volume * this->pCenter.density * ((A_AXIS * A_AXIS) + (B_AXIS * B_AXIS)) / 5.0;
+
+    this->pCenter.movable = move;
+
+    this->nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * Vert);
+    this->numNodes = Vert;
+
+    i = 1;
+    scale = radius/sqrt(1 + (golden*golden));
+
+    ParticleNode* first_node = &(this->nodes[0]);
+
+    //  Icosahedron vertices:
+    // Node 0:
+    first_node->pos.x = -1.0*scale;
+    first_node->pos.y = golden*scale;
+    first_node->pos.z = 0.0*scale;
+    first_node->S = dA;
+    // Define node velocity
+    first_node->vel.x = vel.x + w.y * first_node->pos.z - w.z * first_node->pos.y;
+    first_node->vel.y = vel.y + w.z * first_node->pos.x - w.x * first_node->pos.z;
+    first_node->vel.z = vel.z + w.x * first_node->pos.y - w.y * first_node->pos.x;
+
+    first_node->vel_old.x = vel.x + w.y * first_node->pos.z - w.z * first_node->pos.y;
+    first_node->vel_old.y = vel.y + w.z * first_node->pos.x - w.x * first_node->pos.z;
+    first_node->vel_old.z = vel.z + w.x * first_node->pos.y - w.y * first_node->pos.x;
+    //  Node 1:
+    this->nodes[i].pos.x = 1.0*scale;
+	this->nodes[i].pos.y = golden*scale;
+    this->nodes[i].pos.z = 0.0*scale;
+    i++;
+    //  Node 2:
+    this->nodes[i].pos.x = -1.0*scale;
+	this->nodes[i].pos.y = -golden*scale;
+    this->nodes[i].pos.z = 0.0*scale;
+    i++;
+    //  Node 3:
+    this->nodes[i].pos.x = 1.0*scale;
+	this->nodes[i].pos.y = -golden*scale;
+    this->nodes[i].pos.z = 0.0*scale;
+    i++;
+    //  Node 4:
+    this->nodes[i].pos.x = 0.0*scale;
+	this->nodes[i].pos.y = -1.0*scale;
+    this->nodes[i].pos.z = golden*scale;
+    i++;
+    //  Node 5:
+    this->nodes[i].pos.x = 0.0*scale;
+	this->nodes[i].pos.y = 1.0*scale;
+    this->nodes[i].pos.z = golden*scale;
+    i++;
+	//  Node 6:
+    this->nodes[i].pos.x = 0.0*scale;
+	this->nodes[i].pos.y = -1.0*scale;
+    this->nodes[i].pos.z = -golden*scale;
+    i++;
+	//  Node 7:
+    this->nodes[i].pos.x = 0.0*scale;
+	this->nodes[i].pos.y = 1.0*scale;
+    this->nodes[i].pos.z = -golden*scale;
+    i++;
+    //  Node 8:
+    this->nodes[i].pos.x = golden*scale;
+	this->nodes[i].pos.y = 0.0*scale;
+    this->nodes[i].pos.z = -1.0*scale;
+    i++;
+    //  Node 9:
+    this->nodes[i].pos.x = golden*scale;
+	this->nodes[i].pos.y = 0.0*scale;
+    this->nodes[i].pos.z = 1.0*scale;
+    i++;
+    //  Node 10:
+    this->nodes[i].pos.x = -golden*scale;
+	this->nodes[i].pos.y = 0.0*scale;
+    this->nodes[i].pos.z = -1.0*scale;
+    i++;
+    //  Node 11:
+    this->nodes[i].pos.x = -golden*scale;
+	this->nodes[i].pos.y = 0.0*scale;
+    this->nodes[i].pos.z = 1.0*scale;
+    i++;
+    //  Edges Nodes:
+    for (r = 1; r < nref + 1; r++) // Edge 0 - 5
+	{
+		this->nodes[i].pos.x = -1.0 + (r*(0.0 - (-1.0)) / (1 + nref));
+		this->nodes[i].pos.y = golden + (r*(1.0 - golden) / (1 + nref));
+        this->nodes[i].pos.z = 0.0 + (r*(golden - 0.0) / (1 + nref));
+
+        scale = radius / sqrt((this->nodes[i].pos.x * this->nodes[i].pos.x) + (this->nodes[i].pos.y * this->nodes[i].pos.y) + (this->nodes[i].pos.z * this->nodes[i].pos.z));
+
+        this->nodes[i].pos.x =   this->nodes[i].pos.x * scale;
+        this->nodes[i].pos.y =   this->nodes[i].pos.y * scale;
+        this->nodes[i].pos.z =   this->nodes[i].pos.z * scale;
+        i++;
+        this->nodes[i].pos.x = - this->nodes[i - 1].pos.x;
+	    this->nodes[i].pos.y =   this->nodes[i - 1].pos.y;
+        this->nodes[i].pos.z =   this->nodes[i - 1].pos.z;
+        i++;
+        this->nodes[i].pos.x =   this->nodes[i - 2].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 2].pos.y;
+        this->nodes[i].pos.z =   this->nodes[i - 2].pos.z;
+        i++;
+        this->nodes[i].pos.x =   this->nodes[i - 3].pos.x;
+	    this->nodes[i].pos.y =   this->nodes[i - 3].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 3].pos.z;
+        i++;
+        this->nodes[i].pos.x = - this->nodes[i - 4].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 4].pos.y;
+        this->nodes[i].pos.z =   this->nodes[i - 4].pos.z;
+        i++;
+        this->nodes[i].pos.x = - this->nodes[i - 5].pos.x;
+	    this->nodes[i].pos.y =   this->nodes[i - 5].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 5].pos.z;
+        i++;
+        this->nodes[i].pos.x =   this->nodes[i - 6].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 6].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 6].pos.z;
+        i++;
+        this->nodes[i].pos.x = - this->nodes[i - 7].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 7].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 7].pos.z;
+		i++;
+    }
+    for (l = 1; l < nref + 1; l++) // Edge 0 - 11
+	{
+        this->nodes[i].pos.x = -1.0 + (l*(-golden - (-1.0)) / (1 + nref));
+		this->nodes[i].pos.y = golden + (l*(0.0 - golden) / (1 + nref));
+        this->nodes[i].pos.z = 0.0 + (l*(1.0 - 0.0) / (1 + nref));
+
+        scale = radius / sqrt((this->nodes[i].pos.x * this->nodes[i].pos.x) + (this->nodes[i].pos.y * this->nodes[i].pos.y) + (this->nodes[i].pos.z * this->nodes[i].pos.z));
+
+        this->nodes[i].pos.x =   this->nodes[i].pos.x * scale;
+        this->nodes[i].pos.y =   this->nodes[i].pos.y * scale;
+        this->nodes[i].pos.z =   this->nodes[i].pos.z * scale;
+		i++;
+		this->nodes[i].pos.x = - this->nodes[i - 1].pos.x;
+	    this->nodes[i].pos.y =   this->nodes[i - 1].pos.y;
+        this->nodes[i].pos.z =   this->nodes[i - 1].pos.z;
+        i++;
+        this->nodes[i].pos.x =   this->nodes[i - 2].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 2].pos.y;
+        this->nodes[i].pos.z =   this->nodes[i - 2].pos.z;
+        i++;
+        this->nodes[i].pos.x =   this->nodes[i - 3].pos.x;
+	    this->nodes[i].pos.y =   this->nodes[i - 3].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 3].pos.z;
+        i++;
+        this->nodes[i].pos.x = - this->nodes[i - 4].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 4].pos.y;
+        this->nodes[i].pos.z =   this->nodes[i - 4].pos.z;
+        i++;
+        this->nodes[i].pos.x = - this->nodes[i - 5].pos.x;
+	    this->nodes[i].pos.y =   this->nodes[i - 5].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 5].pos.z;
+        i++;
+        this->nodes[i].pos.x =   this->nodes[i - 6].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 6].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 6].pos.z;
+        i++;
+        this->nodes[i].pos.x = - this->nodes[i - 7].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 7].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 7].pos.z;
+		i++;
+    }
+    for (r = 1; r < nref + 1; r++) // Edge 11 - 5
+	{
+        this->nodes[i].pos.x = -golden + (r*(0.0 - (-golden)) / (1 + nref));
+		this->nodes[i].pos.y = 0.0 + (r*(1.0 - 0.0) / (1 + nref));
+        this->nodes[i].pos.z = 1.0 + (r*(golden - 1.0) / (1 + nref));
+
+        scale = radius / sqrt((this->nodes[i].pos.x * this->nodes[i].pos.x) + (this->nodes[i].pos.y * this->nodes[i].pos.y) + (this->nodes[i].pos.z * this->nodes[i].pos.z));
+
+        this->nodes[i].pos.x =   this->nodes[i].pos.x * scale;
+        this->nodes[i].pos.y =   this->nodes[i].pos.y * scale;
+        this->nodes[i].pos.z =   this->nodes[i].pos.z * scale;
+		i++;
+		this->nodes[i].pos.x = - this->nodes[i - 1].pos.x;
+	    this->nodes[i].pos.y =   this->nodes[i - 1].pos.y;
+        this->nodes[i].pos.z =   this->nodes[i - 1].pos.z;
+        i++;
+        this->nodes[i].pos.x =   this->nodes[i - 2].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 2].pos.y;
+        this->nodes[i].pos.z =   this->nodes[i - 2].pos.z;
+        i++;
+        this->nodes[i].pos.x =   this->nodes[i - 3].pos.x;
+	    this->nodes[i].pos.y =   this->nodes[i - 3].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 3].pos.z;
+        i++;
+        this->nodes[i].pos.x = - this->nodes[i - 4].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 4].pos.y;
+        this->nodes[i].pos.z =   this->nodes[i - 4].pos.z;
+        i++;
+        this->nodes[i].pos.x = - this->nodes[i - 5].pos.x;
+	    this->nodes[i].pos.y =   this->nodes[i - 5].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 5].pos.z;
+        i++;
+        this->nodes[i].pos.x =   this->nodes[i - 6].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 6].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 6].pos.z;
+        i++;
+        this->nodes[i].pos.x = - this->nodes[i - 7].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 7].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 7].pos.z;
+		i++;
+    }
+    for (r = 1; r < nref + 1; r++) // Edge 10 - 11
+	{
+        this->nodes[i].pos.x = -golden + (r*(-golden - (-golden)) / (1 + nref));
+		this->nodes[i].pos.y = 0.0 + (r*(0.0 - 0.0) / (1 + nref));
+        this->nodes[i].pos.z = -1.0 + (r*(1.0 - (-1.0)) / (1 + nref));
+
+        scale = radius / sqrt((this->nodes[i].pos.x * this->nodes[i].pos.x) + (this->nodes[i].pos.y * this->nodes[i].pos.y) + (this->nodes[i].pos.z * this->nodes[i].pos.z));
+
+        this->nodes[i].pos.x =   this->nodes[i].pos.x * scale;
+        this->nodes[i].pos.y =   this->nodes[i].pos.y * scale;
+        this->nodes[i].pos.z =   this->nodes[i].pos.z * scale;
+		i++;
+		this->nodes[i].pos.x = - this->nodes[i - 1].pos.x;
+	    this->nodes[i].pos.y =   this->nodes[i - 1].pos.y;
+        this->nodes[i].pos.z =   this->nodes[i - 1].pos.z;
+        i++;
+    }
+    for (r = 1; r < nref + 1; r++) // Edge 0 - 1
+	{
+        this->nodes[i].pos.x = -1.0 + (r*(1.0 - (-1.0)) / (1 + nref));
+		this->nodes[i].pos.y = golden + (r*(golden - golden) / (1 + nref));
+        this->nodes[i].pos.z = 0.0 + (r*(0.0 - 0.0) / (1 + nref));
+
+        scale = radius / sqrt((this->nodes[i].pos.x * this->nodes[i].pos.x) + (this->nodes[i].pos.y * this->nodes[i].pos.y) + (this->nodes[i].pos.z * this->nodes[i].pos.z));
+
+        this->nodes[i].pos.x =   this->nodes[i].pos.x * scale;
+        this->nodes[i].pos.y =   this->nodes[i].pos.y * scale;
+        this->nodes[i].pos.z =   this->nodes[i].pos.z * scale;
+        i++;
+        this->nodes[i].pos.x =   this->nodes[i - 1].pos.x;
+	    this->nodes[i].pos.y = - this->nodes[i - 1].pos.y;
+        this->nodes[i].pos.z =   this->nodes[i - 1].pos.z;
+		i++;
+    }
+    for (r = 1; r < nref + 1; r++) // Edge 4 - 5
+	{
+        this->nodes[i].pos.x = 0.0 + (r*(0.0 - (0.0)) / (1 + nref));
+		this->nodes[i].pos.y = -1.0 + (r*(1.0 - (-1.0)) / (1 + nref));
+        this->nodes[i].pos.z = golden + (r*(golden - golden) / (1 + nref));
+
+        scale = radius / sqrt((this->nodes[i].pos.x * this->nodes[i].pos.x) + (this->nodes[i].pos.y * this->nodes[i].pos.y) + (this->nodes[i].pos.z * this->nodes[i].pos.z));
+
+        this->nodes[i].pos.x =   this->nodes[i].pos.x * scale;
+        this->nodes[i].pos.y =   this->nodes[i].pos.y * scale;
+        this->nodes[i].pos.z =   this->nodes[i].pos.z * scale;
+        i++;
+        this->nodes[i].pos.x =   this->nodes[i - 1].pos.x;
+	    this->nodes[i].pos.y =   this->nodes[i - 1].pos.y;
+        this->nodes[i].pos.z = - this->nodes[i - 1].pos.z;
+		i++;
+    }
+    //  Internal Nodes
+    for (r = 1; r < nref; r++) // Triangle 0 - 5 - 11
+	{
+		for (l = 1; l < nref + 1 - r; l++)
+		{
+            this->nodes[i].pos.x = -1.0 + (r*(0.0 - (-1.0)) / (1 + nref)) + (l*(-golden - (-1.0)) / (1 + nref));
+		    this->nodes[i].pos.y = golden + (r*(1.0 - golden) / (1 + nref)) + (l*(0.0 - golden) / (1 + nref));
+            this->nodes[i].pos.z = 0.0 + (r*(golden - 0.0) / (1 + nref)) + (l*(1.0 - 0.0) / (1 + nref));
+
+            scale = radius / sqrt((this->nodes[i].pos.x * this->nodes[i].pos.x) + (this->nodes[i].pos.y * this->nodes[i].pos.y) + (this->nodes[i].pos.z * this->nodes[i].pos.z));
+
+            this->nodes[i].pos.x =   this->nodes[i].pos.x * scale;
+            this->nodes[i].pos.y =   this->nodes[i].pos.y * scale;
+            this->nodes[i].pos.z =   this->nodes[i].pos.z * scale;
+			i++;
+			this->nodes[i].pos.x = - this->nodes[i - 1].pos.x;
+	        this->nodes[i].pos.y =   this->nodes[i - 1].pos.y;
+            this->nodes[i].pos.z =   this->nodes[i - 1].pos.z;
+            i++;
+            this->nodes[i].pos.x =   this->nodes[i - 2].pos.x;
+	        this->nodes[i].pos.y = - this->nodes[i - 2].pos.y;
+            this->nodes[i].pos.z =   this->nodes[i - 2].pos.z;
+            i++;
+            this->nodes[i].pos.x =   this->nodes[i - 3].pos.x;
+	        this->nodes[i].pos.y =   this->nodes[i - 3].pos.y;
+            this->nodes[i].pos.z = - this->nodes[i - 3].pos.z;
+            i++;
+            this->nodes[i].pos.x = - this->nodes[i - 4].pos.x;
+	        this->nodes[i].pos.y = - this->nodes[i - 4].pos.y;
+            this->nodes[i].pos.z =   this->nodes[i - 4].pos.z;
+            i++;
+            this->nodes[i].pos.x = - this->nodes[i - 5].pos.x;
+	        this->nodes[i].pos.y =   this->nodes[i - 5].pos.y;
+            this->nodes[i].pos.z = - this->nodes[i - 5].pos.z;
+            i++;
+            this->nodes[i].pos.x =   this->nodes[i - 6].pos.x;
+	        this->nodes[i].pos.y = - this->nodes[i - 6].pos.y;
+            this->nodes[i].pos.z = - this->nodes[i - 6].pos.z;
+            i++;
+            this->nodes[i].pos.x = - this->nodes[i - 7].pos.x;
+	        this->nodes[i].pos.y = - this->nodes[i - 7].pos.y;
+            this->nodes[i].pos.z = - this->nodes[i - 7].pos.z;
+            i++;
+		}
+    }
+    for (r = 1; r < nref; r++) // Triangle 0 - 11 - 10
+	{
+		for (l = 1; l < nref + 1 - r; l++)
+		{
+            this->nodes[i].pos.x = -1.0 + (r*(-golden - (-1.0)) / (1 + nref)) + (l*(-golden - (-1.0)) / (1 + nref));
+		    this->nodes[i].pos.y = golden + (r*(0.0 - golden) / (1 + nref)) + (l*(0.0 - golden) / (1 + nref));
+            this->nodes[i].pos.z = 0.0 + (r*(1.0 - 0.0) / (1 + nref)) + (l*(-1.0 - (0.0)) / (1 + nref));
+
+            scale = radius / sqrt((this->nodes[i].pos.x * this->nodes[i].pos.x) + (this->nodes[i].pos.y * this->nodes[i].pos.y) + (this->nodes[i].pos.z * this->nodes[i].pos.z));
+
+            this->nodes[i].pos.x =   this->nodes[i].pos.x * scale;
+            this->nodes[i].pos.y =   this->nodes[i].pos.y * scale;
+            this->nodes[i].pos.z =   this->nodes[i].pos.z * scale;
+            i++;
+            this->nodes[i].pos.x = - this->nodes[i - 1].pos.x;
+	        this->nodes[i].pos.y =   this->nodes[i - 1].pos.y;
+            this->nodes[i].pos.z =   this->nodes[i - 1].pos.z;
+            i++;
+            this->nodes[i].pos.x =   this->nodes[i - 2].pos.x;
+	        this->nodes[i].pos.y = - this->nodes[i - 2].pos.y;
+            this->nodes[i].pos.z =   this->nodes[i - 2].pos.z;
+            i++;
+            this->nodes[i].pos.x = - this->nodes[i - 3].pos.x;
+	        this->nodes[i].pos.y = - this->nodes[i - 3].pos.y;
+            this->nodes[i].pos.z =   this->nodes[i - 3].pos.z;
+			i++;
+		}
+	}
+	for (r = 1; r < nref; r++) // Triangle 0 - 5 - 1
+	{
+		for (l = 1; l < nref + 1 - r; l++)
+		{
+            this->nodes[i].pos.x = -1.0 + (r*(1.0 - (-1.0)) / (1 + nref)) + (l*(0.0 - (-1.0)) / (1 + nref));
+		    this->nodes[i].pos.y = golden + (r*(golden - golden) / (1 + nref)) + (l*(1.0 - golden) / (1 + nref));
+            this->nodes[i].pos.z = 0.0 + (r*(0.0 - 0.0) / (1 + nref)) + (l*(golden - (0.0)) / (1 + nref));
+
+            scale = radius / sqrt((this->nodes[i].pos.x * this->nodes[i].pos.x) + (this->nodes[i].pos.y * this->nodes[i].pos.y) + (this->nodes[i].pos.z * this->nodes[i].pos.z));
+
+            this->nodes[i].pos.x =   this->nodes[i].pos.x * scale;
+            this->nodes[i].pos.y =   this->nodes[i].pos.y * scale;
+            this->nodes[i].pos.z =   this->nodes[i].pos.z * scale;
+            i++;
+            this->nodes[i].pos.x =   this->nodes[i - 1].pos.x;
+	        this->nodes[i].pos.y = - this->nodes[i - 1].pos.y;
+            this->nodes[i].pos.z =   this->nodes[i - 1].pos.z;
+            i++;
+            this->nodes[i].pos.x =   this->nodes[i - 2].pos.x;
+	        this->nodes[i].pos.y =   this->nodes[i - 2].pos.y;
+            this->nodes[i].pos.z = - this->nodes[i - 2].pos.z;
+            i++;
+            this->nodes[i].pos.x =   this->nodes[i - 3].pos.x;
+	        this->nodes[i].pos.y = - this->nodes[i - 3].pos.y;
+            this->nodes[i].pos.z = - this->nodes[i - 3].pos.z;
+			i++;
+		}
+	}
+	for (r = 1; r < nref; r++) // Triangle 5 - 4 - 11
+	{
+		for (l = 1; l < nref + 1 - r; l++)
+		{
+            this->nodes[i].pos.x = 0.0 + (r*(0.0 - (0.0)) / (1 + nref)) + (l*(-golden - (0.0)) / (1 + nref));
+		    this->nodes[i].pos.y = 1.0 + (r*(-1.0 - 1.0) / (1 + nref)) + (l*(0.0 - 1.0) / (1 + nref));
+            this->nodes[i].pos.z = golden + (r*(golden - golden) / (1 + nref)) + (l*(1.0 - golden) / (1 + nref));
+
+            scale = radius / sqrt((this->nodes[i].pos.x * this->nodes[i].pos.x) + (this->nodes[i].pos.y * this->nodes[i].pos.y) + (this->nodes[i].pos.z * this->nodes[i].pos.z));
+
+            this->nodes[i].pos.x =   this->nodes[i].pos.x * scale;
+            this->nodes[i].pos.y =   this->nodes[i].pos.y * scale;
+            this->nodes[i].pos.z =   this->nodes[i].pos.z * scale;
+            i++;
+            this->nodes[i].pos.x = - this->nodes[i - 1].pos.x;
+	        this->nodes[i].pos.y =   this->nodes[i - 1].pos.y;
+            this->nodes[i].pos.z =   this->nodes[i - 1].pos.z;
+            i++;
+            this->nodes[i].pos.x =   this->nodes[i - 2].pos.x;
+	        this->nodes[i].pos.y =   this->nodes[i - 2].pos.y;
+            this->nodes[i].pos.z = - this->nodes[i - 2].pos.z;
+            i++;
+            if (r > nref - 2)
+            {
+                ParticleNode* last_node = &(this->nodes[this->numNodes-1]);
+                last_node->pos.x = - this->nodes[i - 3].pos.x;
+                last_node->pos.y =   this->nodes[i - 3].pos.y;
+                last_node->pos.z = - this->nodes[i - 3].pos.z;
+                last_node->S = dA;
+                // define last node velocity
+                last_node->vel.x = vel.x + w.y * last_node->pos.z - w.z * last_node->pos.y;
+                last_node->vel.y = vel.y + w.z * last_node->pos.x - w.x * last_node->pos.z;
+                last_node->vel.z = vel.z + w.x * last_node->pos.y - w.y * last_node->pos.x;
+
+                last_node->vel_old.x = vel.x + w.y * last_node->pos.z  - w.z * last_node->pos.y;
+                last_node->vel_old.y = vel.y + w.z * last_node->pos.x  - w.x * last_node->pos.z;
+                last_node->vel_old.z = vel.z + w.x * last_node->pos.y  - w.y * last_node->pos.x;
+                i++;
+            }
+            else
+            {
+                this->nodes[i].pos.x = - this->nodes[i - 3].pos.x;
+	            this->nodes[i].pos.y =   this->nodes[i - 3].pos.y;
+                this->nodes[i].pos.z = - this->nodes[i - 3].pos.z;
+			    i++;
+            }
+		}
+    }
+    
+    ParticleNode* node_i;
+    for (int i = 0; i < this->numNodes; i++) 
+    {
+        node_i = &(this->nodes[i]);
+        node_i->pos.x += center.x;
+        node_i->pos.y += center.y;
+        node_i->pos.z += center.z;
+    }
+    // Update old position value
+    this->pCenter.pos_old = this->pCenter.pos;
+
+    for(int ii = 0;ii<this->numNodes;ii++){
+        ParticleNode* node_j = &(this->nodes[ii]);
+        printf("%f %f %f \n",node_j->pos.x,node_j->pos.y,node_j->pos.z );
+    }
+}
+
 
 void Particle::makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move,
     dfloat density, dfloat3 vel, dfloat3 w)
