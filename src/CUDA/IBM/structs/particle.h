@@ -72,6 +72,10 @@ typedef struct particle {
     */
     __host__
     void makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern);
+
+    __host__
+    void makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec, dfloat angleMag, bool move,dfloat density, dfloat3 vel, dfloat3 w);
+
 } Particle;
 
 
