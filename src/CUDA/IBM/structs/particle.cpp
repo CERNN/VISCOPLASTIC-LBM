@@ -1147,7 +1147,7 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec,
 
     for (i = 1; i <= nLayer; i++) {
         dist = 0;
-        while (dist <= distBetweenLayers-0.002*scale) {
+        while (dist <= distBetweenLayers-0.00001*scale) {
             angle += angleStep;
             x = auxAxis * cos(angle);
             y = c * sin(angle);
@@ -1178,8 +1178,8 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec,
         h = (pa[i] - pb[i]) * (pa[i] - pb[i]) / ((pa[i] + pb[i]) * (pa[i] + pb[i]));
         perimeter = (1 + 3*h / (10.0 + sqrt(4 - 3*h)));
         perimeter = perimeter * M_PI * (pa[i] + pb[i]);
-
-        nNodesLayer[i] = (unsigned int)perimeter;
+//        nNodesLayer[i] = (unsigned int)(1.5 + cos(theta[i]) * nLayer * sqrt(3)); 
+        nNodesLayer[i] = (unsigned int)round(perimeter/scale);
         if (i == 0 || i == nLayer) {
             nNodesLayer[i] = 1;
         }
@@ -1238,15 +1238,15 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec,
     //south node - define all properties
     first_node->pos.x = 0.0;
     first_node->pos.y = 0.0;
-    first_node->pos.z = 0.0 + c * sin(theta[0]);
+    first_node->pos.z = 0.0 - c;
 
-    first_node->vel.x = 0.0;
-    first_node->vel.y = 0.0;
-    first_node->vel.z = 0.0;
+    first_node->vel.x = vel.x + w.y * first_node->pos.z - w.z * first_node->pos.y;
+    first_node->vel.y = vel.y + w.z * first_node->pos.x - w.x * first_node->pos.z;
+    first_node->vel.z = vel.z + w.x * first_node->pos.y - w.y * first_node->pos.x;
 
-    first_node->vel_old.x = 0.0;
-    first_node->vel_old.y = 0.0;
-    first_node->vel_old.z = 0.0;
+    first_node->vel_old.x = vel.x + w.y * first_node->pos.z - w.z * first_node->pos.y;
+    first_node->vel_old.y = vel.y + w.z * first_node->pos.x - w.x * first_node->pos.z;
+    first_node->vel_old.z = vel.z + w.x * first_node->pos.y - w.y * first_node->pos.x;
 
     first_node->S = S[0];
     this->pCenter.S += first_node->S;
@@ -1263,7 +1263,7 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec,
         perimeter = (1 + 3*h / (10.0 + sqrt(4 - 3*h)));
         perimeter = perimeter * M_PI * (pa[i] + pb[i]);
 
-        distBetweenNodes = perimeter / (nNodesLayer[i]+0.5) ;
+        distBetweenNodes = perimeter / (nNodesLayer[i]) ;
         angle = 0;
         angleStep = 0.00001;
 
@@ -1297,17 +1297,19 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec,
             yy = b * cos(theta[i]) * sin((dfloat)j * 2.0 * M_PI / nNodesLayer[i]);
             zz = c * sin(theta[i]);
 
-            this->nodes[nodeIndex].pos.x = a * cos(theta[i]) * cos(sigma);
-            this->nodes[nodeIndex].pos.y = b * cos(theta[i]) * sin(sigma);
-            this->nodes[nodeIndex].pos.z = c * sin(theta[i]);
+            this->nodes[nodeIndex].pos.x = xx; //a * cos(theta[i]) * cos(sigma);
+            this->nodes[nodeIndex].pos.y = yy; //b * cos(theta[i]) * sin(sigma);
+            this->nodes[nodeIndex].pos.z = zz; //c * sin(theta[i]);
 
 
-            this->nodes[nodeIndex].vel.x = 0.0;
-            this->nodes[nodeIndex].vel.y = 0.0;
-            this->nodes[nodeIndex].vel.z = 0.0;
-            this->nodes[nodeIndex].vel_old.x = 0.0;
-            this->nodes[nodeIndex].vel_old.y = 0.0;
-            this->nodes[nodeIndex].vel_old.z = 0.0;
+            this->nodes[nodeIndex].vel.x = vel.x + w.y * this->nodes[nodeIndex].pos.z - w.z * this->nodes[nodeIndex].pos.y;
+            this->nodes[nodeIndex].vel.y = vel.y + w.z * this->nodes[nodeIndex].pos.x - w.x * this->nodes[nodeIndex].pos.z;
+            this->nodes[nodeIndex].vel.z = vel.z + w.x * this->nodes[nodeIndex].pos.y - w.y * this->nodes[nodeIndex].pos.x;
+
+            this->nodes[nodeIndex].vel_old.x = vel.x + w.y * this->nodes[nodeIndex].pos.z - w.z * this->nodes[nodeIndex].pos.y;
+            this->nodes[nodeIndex].vel_old.y = vel.y + w.z * this->nodes[nodeIndex].pos.x - w.x * this->nodes[nodeIndex].pos.z;
+            this->nodes[nodeIndex].vel_old.z = vel.z + w.x * this->nodes[nodeIndex].pos.y - w.y * this->nodes[nodeIndex].pos.x;
+
 
             // the area of sphere segment is divided by the number of node in the layer, so all nodes have the same area
             this->nodes[nodeIndex].S = S[i] / nNodesLayer[i];
@@ -1324,13 +1326,15 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec,
 
     last_node->pos.x = 0.0;
     last_node->pos.y = 0.0;
-    last_node->pos.z = 0.0 + c * sin(theta[nLayer]);
-    last_node->vel.x = 0.0;
-    last_node->vel.y = 0.0;
-    last_node->vel.z = 0.0;
-    last_node->vel_old.x = 0.0;
-    last_node->vel_old.y = 0.0;
-    last_node->vel_old.z = 0.0;
+    last_node->pos.z = 0.0 + c;
+
+    last_node->vel.x = vel.x + w.y * last_node->pos.z - w.z * last_node->pos.y;
+    last_node->vel.y = vel.y + w.z * last_node->pos.x - w.x * last_node->pos.z;
+    last_node->vel.z = vel.z + w.x * last_node->pos.y - w.y * last_node->pos.x;
+
+    last_node->vel_old.x = vel.x + w.y * last_node->pos.z  - w.z * last_node->pos.y;
+    last_node->vel_old.y = vel.y + w.z * last_node->pos.x  - w.x * last_node->pos.z;
+    last_node->vel_old.z = vel.z + w.x * last_node->pos.y  - w.y * last_node->pos.x;
     last_node->S = S[nLayer];
 
     //unsigned int last_node = nodeIndex;
