@@ -495,6 +495,7 @@ void gpuForceInterpolationSpread(
                     atomicAdd(&(macr.pbound[idx]), aux);
                     // }
                 }
+                #endif
                 #ifndef EXTERNAL_DUCT_BC
                 atomicAdd(&(ibmMacrsAux.fAux[n_gpu].x[idx]), -deltaF.x * aux);
                 atomicAdd(&(ibmMacrsAux.fAux[n_gpu].y[idx]), -deltaF.y * aux);
