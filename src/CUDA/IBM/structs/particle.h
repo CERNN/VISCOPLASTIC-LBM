@@ -31,6 +31,22 @@ typedef struct particle {
         numNodes = 0;
         nodes = nullptr;
     }
+
+    /*
+    *   @brief Create the particle in the shape of a sphere with given diameter and center
+    *   @param part: particle object to override values
+    *   @param axes: sphere diameter in dfloat
+    *   @param center : sphere center position
+    *   @param iterations: number of interations for remeshing
+    *   @param move: particle is movable or not
+    *   @param density: particle density
+    *   @param vel: particle velocity
+    *   @param w: particle rotation velocity
+    */
+    __host__
+    void makeSphereIco(dfloat diameter, dfloat3 center, bool move,
+        dfloat density = PARTICLE_DENSITY, dfloat3 vel = dfloat3(0, 0, 0), dfloat3 w = dfloat3(0, 0, 0));
+
     /*
     *   @brief Create the particle in the shape of a sphere with given diameter and center
     *   @param part: particle object to override values
@@ -42,6 +58,7 @@ typedef struct particle {
     *   @param vel: particle velocity
     *   @param w: particle rotation velocity
     */
+
     __host__
     void makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int coulomb, bool move,
         dfloat density = PARTICLE_DENSITY, dfloat3 vel = dfloat3(0, 0, 0), dfloat3 w = dfloat3(0, 0, 0));
@@ -55,6 +72,10 @@ typedef struct particle {
     */
     __host__
     void makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern);
+
+    __host__
+    void makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec, dfloat angleMag, bool move,dfloat density, dfloat3 vel, dfloat3 w);
+
 } Particle;
 
 

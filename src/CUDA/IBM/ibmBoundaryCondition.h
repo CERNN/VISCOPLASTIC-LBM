@@ -73,7 +73,7 @@
 //#define INTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack
 
 #ifdef EXTERNAL_DUCT_BC // same as in circularDuctInterpBounceBack
-    #define EXTERNAL_DUCT_BC_RADIUS (NY/2.0-0.5)
+    #define EXTERNAL_DUCT_BC_RADIUS (NY/2.0 - 0.5)
 #endif //EXTERNAL_DUCT_BC
 
 #ifdef INTERNAL_DUCT_BC // same as in annularDuctInterpBounceBack

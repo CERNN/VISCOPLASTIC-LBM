@@ -270,8 +270,8 @@ void gpuParticlesCollision(
         //   --------------- DUCT BOUNDARY CONDITIONS -----------------------
         #if defined(EXTERNAL_DUCT_BC) || defined(INTERNAL_DUCT_BC)
             // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
-            dfloat xCenter = (NX/2.0);
-            dfloat yCenter = (NY/2.0); 
+            dfloat xCenter = (NX/2.0) - 0.5;
+            dfloat yCenter = (NY/2.0) - 0.5; 
 
 
 
@@ -282,6 +282,7 @@ void gpuParticlesCollision(
 
         #ifdef EXTERNAL_DUCT_BC
             dfloat R = EXTERNAL_DUCT_BC_RADIUS;
+            // pos_mirror = R + pos_r_i;
             pos_mirror = 2 * R - pos_r_i;
             dist_abs = abs(pos_r_i - pos_mirror);
             
@@ -305,8 +306,8 @@ void gpuParticlesCollision(
                 if (dist_abs <= min_dist) {
                     displacement = (2.0 * r_i - dist_abs)/2.0;
 
-                    normalVector.x = (pos_i.x-xCenter)/pos_r_i;
-                    normalVector.y = (pos_i.y-yCenter)/pos_r_i;
+                    normalVector.x = -w(pos_i.x-xCenter)/pos_r_i;
+                    normalVector.y = -w(pos_i.y-yCenter)/pos_r_i;
                     normalVector.z = 0.0;
                     gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                 }

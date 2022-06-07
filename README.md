@@ -24,6 +24,16 @@ The LBM features supported are:
 * Velocity Sets
     * D3Q19
     * D3Q27
+* Non-Newtonian Fluid Model
+    * Power-Law
+    * Bingham
+
+The IBM features supported are:
+* Geometries
+    * Movable Spheres
+    * Fixed Cylinders
+* Collision
+    *  Hertz-Mindlin
 
 Other features can be implemented or changed. The file [updating.md](./doc/updating.md) gives more details on that.
 

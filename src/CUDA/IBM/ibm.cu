@@ -299,7 +299,10 @@ void gpuForceInterpolationSpread(
     if(minIdx[0] >= P_DIST*2 || minIdx[1] >= P_DIST*2 || minIdx[2] >= P_DIST*2)
         return;
 
-        
+    #ifdef EXTERNAL_DUCT_BC
+        if (dfloat((xIBM - 0.5*NX + 0.5)*(xIBM - 0.5*NX + 0.5)+(yIBM - 0.5*NY + 0.5)*(yIBM - 0.5*NY + 0.5))>= dfloat((EXTERNAL_DUCT_BC_RADIUS)*(EXTERNAL_DUCT_BC_RADIUS)))
+            return;       
+    #endif    
 
 
     for(int i = 0; i < 3; i++){
@@ -467,6 +470,33 @@ void gpuForceInterpolationSpread(
                     #endif //IBM_BC_Z_PERIODIC
                 );
 
+                #ifdef EXTERNAL_DUCT_BC
+                dfloat xCenter = (NX/2.0) - 0.5;
+                dfloat yCenter = (NY/2.0) - 0.5; 
+
+                // int n_gpu2 = ((int)((posBase[2]+zk)/NZ) + 100*N_GPUS)%N_GPUS;
+
+                dfloat pos_r_i = sqrt((posBase[0] + xi - xCenter)*(posBase[0] + xi - xCenter) + (posBase[1] + yj - yCenter)*(posBase[1] + yj - yCenter));
+                //if point is outside of the duct is not computed
+                if (pos_r_i < EXTERNAL_DUCT_BC_RADIUS)
+                {
+                    atomicAdd(&(ibmMacrsAux.fAux[n_gpu].x[idx]), -deltaF.x * aux);
+                    atomicAdd(&(ibmMacrsAux.fAux[n_gpu].y[idx]), -deltaF.y * aux);
+                    atomicAdd(&(ibmMacrsAux.fAux[n_gpu].z[idx]), -deltaF.z * aux);
+
+                    // Update velocities field
+                    const dfloat inv_rho = 1 / macr.rho[idx];
+                    atomicAdd(&(ibmMacrsAux.velAux[n_gpu].x[idx]), 0.5 * -deltaF.x * aux * inv_rho);
+                    atomicAdd(&(ibmMacrsAux.velAux[n_gpu].y[idx]), 0.5 * -deltaF.y * aux * inv_rho);
+                    atomicAdd(&(ibmMacrsAux.velAux[n_gpu].z[idx]), 0.5 * -deltaF.z * aux * inv_rho);
+
+                    // if (posBase[2]+zk < NZ)
+                    // {
+                    atomicAdd(&(macr.pbound[idx]), aux);
+                    // }
+                }
+                #endif
+                #ifndef EXTERNAL_DUCT_BC
                 atomicAdd(&(ibmMacrsAux.fAux[n_gpu].x[idx]), -deltaF.x * aux);
                 atomicAdd(&(ibmMacrsAux.fAux[n_gpu].y[idx]), -deltaF.y * aux);
                 atomicAdd(&(ibmMacrsAux.fAux[n_gpu].z[idx]), -deltaF.z * aux);
@@ -476,6 +506,8 @@ void gpuForceInterpolationSpread(
                 atomicAdd(&(ibmMacrsAux.velAux[n_gpu].x[idx]), 0.5 * -deltaF.x * aux * inv_rho);
                 atomicAdd(&(ibmMacrsAux.velAux[n_gpu].y[idx]), 0.5 * -deltaF.y * aux * inv_rho);
                 atomicAdd(&(ibmMacrsAux.velAux[n_gpu].z[idx]), 0.5 * -deltaF.z * aux * inv_rho);
+            #endif 
+
             }
         }
     }
