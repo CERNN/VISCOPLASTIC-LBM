@@ -108,7 +108,11 @@ void gpuMacrInitValue(
     macr->f.z[idxScalarWBorder(x, y, z)] = FZ;
     #endif
     #ifdef NON_NEWTONIAN_FLUID
-    macr->omega[idxScalar(x, y, z)] = 0;
+    macr->omega[idxScalar(x, y, z)] = 0.0;
+    #endif
+
+    #ifdef LES_MODEL
+    macr->visc_turb[idxScalar(x, y, z)] = INIT_VISC_TURB;
     #endif
 
     // Example of usage of random numbers for turbulence in parallel plates flow in z

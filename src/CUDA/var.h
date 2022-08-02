@@ -27,6 +27,13 @@
 // #define BINGHAM
 /* -------------------------------------------------------------------------- */
 
+/* ------------------------ LES DEFINITIONS TYPE ------------------------ */
+// Uncomment the one to use. Comment all to simulate newtonian fluid
+#define LES_MODEL
+
+
+/* -------------------------------------------------------------------------- */
+
 #ifdef SINGLE_PRECISION
     typedef float dfloat;      // single precision
 #endif

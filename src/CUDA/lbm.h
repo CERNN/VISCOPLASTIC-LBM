@@ -11,12 +11,13 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <cmath>
 
 #include "structs/macroscopics.h"
 #include "structs/macrProc.h"
 #include "boundaryConditionsHandler.h"
 #include "NNF/nnf.h"
-
+#include "LES/lesVar.h"
 
 /*
 *   @brief Updates macroscopics and then performs collision and streaming

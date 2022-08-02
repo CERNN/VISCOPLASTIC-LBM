@@ -19,6 +19,8 @@
 #include "structs/macroscopics.h"
 #include "structs/populations.h"
 #include "NNF/nnf.h"
+#include "LES/lesVar.h"
+
 
 
 /*
