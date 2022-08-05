@@ -119,7 +119,12 @@ void gpuMacrInitValue(
 
     /*
     dfloat y_visc = 6.59, ub_f = 15.6, uc_f = 18.2;
-​
+
+    //const dfloat R = NY/2.0-1.5;
+    //dfloat xCenter = (NX/2.0)-0.5;
+    //dfloat yCenter = (NY/2.0)-0.5;
+    //dfloat r = R - sqrt((dfloat)((x-xCenter)*(x-xCenter)+(y-yCenter)*(y-yCenter)));
+
     // logaritimic velocity profile
     dfloat uz_log, pos = (y < NY/2 ? y + 0.5 : NY - (y + 0.5));
     uz_log = (uc_f*U_TAU)*(pos/del)*(pos/del);
@@ -135,5 +140,11 @@ void gpuMacrInitValue(
     macr->u.z[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NZ - Nt*((l + NZ) / Nt)];
     macr->u.x[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NX - Nt*((l + NX) / Nt)];
     macr->u.y[idxScalar(x, y, z)] += (ub_f*U_TAU)*pert*randomNumbers[l + NY - Nt*((l + NY) / Nt)];
+
+    //if(r<= 0){
+    //    macr->u.z[idxScalar(x, y, z)] = 0;
+    //    macr->u.x[idxScalar(x, y, z)] = 0;
+    //    macr->u.y[idxScalar(x, y, z)] = 0;
+    //}
     */
 }

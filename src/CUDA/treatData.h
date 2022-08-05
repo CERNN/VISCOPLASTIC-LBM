@@ -18,7 +18,7 @@
 *   @brief Treat data required by the struct MacrProc
 *   @param processing: struct to be updated with treated values
 */
-void treatData(MacrProc* processing);
+void treatData(MacrProc* processing, int step);
 
 
 /*

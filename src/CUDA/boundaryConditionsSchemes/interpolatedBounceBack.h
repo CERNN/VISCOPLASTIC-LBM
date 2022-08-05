@@ -15,6 +15,7 @@
 #include "./../globalFunctions.h"
 #include "./../structs/nodeTypeMap.h"
 #include <cuda_runtime.h>
+#include <cmath>
 
 
 /*
@@ -44,14 +45,16 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
 *   @param fBound: population from boundary node
 *   @param fAdj: population from adjacent node
 *   @param q: distance between the boundary node and the wall
+*   @param df: additional term for wall velocity
 */
 __device__ 
 dfloat __inline__ gpuInterpolatedBounceBackLowerQ( 
     dfloat fBound,
     dfloat fAdj,
-    dfloat q)
+    dfloat q,
+    dfloat df)
 {
-    return (2*q*fBound + (1-2*q)*fAdj);
+    return (2*q*fBound + (1-2*q)*fAdj + 2*a_s_2*df);
 }
 
 
@@ -61,14 +64,16 @@ dfloat __inline__ gpuInterpolatedBounceBackLowerQ(
 *   @param fBoundI: population i from boundary node
 *   @param fBoundJ: population j (opposite of i) from boundary node
 *   @param q: distance between the boundary node and the wall
+*   @param df: additional term for wall velocity
 */
 __device__ 
 dfloat __inline__ gpuInterpolatedBounceBackHigherQ( 
     dfloat fBoundI,
     dfloat fBoundJ,
-    dfloat q)
+    dfloat q,
+    dfloat df)
 {
-    return ((0.5/q)*fBoundI + ((q-0.5)/(q))*fBoundJ);
+    return ((0.5/q)*fBoundI + ((q-0.5)/(q))*fBoundJ + a_s_2*df/q);
 }
 
 

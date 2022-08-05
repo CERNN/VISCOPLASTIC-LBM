@@ -41,6 +41,7 @@ constexpr dfloat W0 = 8.0 / 27;        // weight dist 0 population (0, 0, 0)
 constexpr dfloat W1 = 2.0 / 27;        // weight dist 1 populations (1, 0, 0)
 constexpr dfloat W2 = 1.0 / 54;        // weight dist 2 populations (1, 1, 0)
 constexpr dfloat W3 = 1.0 / 216;       // weight dist 3 populations (1, 1, 1)
+constexpr dfloat a_s_2 = 3.0; //inverse of c_s^2
 
 // velocities weight vector
 __device__ const dfloat w[Q] = { W0,
