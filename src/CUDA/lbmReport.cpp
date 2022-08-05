@@ -163,6 +163,12 @@ void saveAllMacrBin(
 
     saveVarBin(strFileOmega, macr->omega, TOTAL_MEM_SIZE_SCALAR, false);
     #endif
+
+    #ifdef LES_MODEL
+    std::string strFileViscTurb = getVarFilename("visc_turb", nSteps, ".bin");
+
+    saveVarBin(strFileViscTurb, macr->visc_turb, TOTAL_MEM_SIZE_SCALAR, false);
+    #endif
 }
 
 std::string getSimInfoString(SimInfo* info)
@@ -336,6 +342,10 @@ std::string getSimInfoString(SimInfo* info)
 
     strSimInfo << "--------------------------------------------------------------------------------\n";
     #endif // IBM
+
+    #ifdef LES_MODEL
+    strSimInfo << "\t Smagorisky Constant:" << CONST_SMAGORINSKY <<"\n";
+    #endif //LES
 
     strSimInfo << "\n------------------------------- CUDA INFORMATION -------------------------------\n";
     for(int i = 0; i < info->numDevices; i++)

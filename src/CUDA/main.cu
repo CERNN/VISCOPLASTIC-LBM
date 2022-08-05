@@ -37,6 +37,12 @@
 #include "IBM/ibmTreatData.h"
 
 
+#ifdef LES_MODEL
+#include "LES/les.h"
+#endif
+
+
+
 int main()
 {
     // Variables declaration
@@ -421,7 +427,7 @@ int main()
         // Report data
         if(rep)
         {
-            treatData(&processData);
+            treatData(&processData,step);
             printTreatData(&processData); 
             fflush(stdout);
             if(DATA_SAVE)

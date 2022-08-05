@@ -34,7 +34,10 @@ public:
     #ifdef NON_NEWTONIAN_FLUID
     dfloat* omega;
     #endif
-
+    
+    #ifdef LES_MODEL
+    dfloat* visc_turb;
+    #endif
     /* Constructor */
     __host__
     macroscopics()
@@ -43,6 +46,9 @@ public:
 
         #ifdef NON_NEWTONIAN_FLUID
         this->omega = nullptr;
+        #endif
+        #ifdef LES_MODEL
+        this->visc_turb = nullptr;
         #endif
     }
 
@@ -54,6 +60,10 @@ public:
 
         #ifdef NON_NEWTONIAN_FLUID
         this->omega = nullptr;
+        #endif
+
+        #ifdef LES_MODEL
+        this->visc_turb = nullptr;
         #endif
     }
 
@@ -74,6 +84,9 @@ public:
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaMallocHost((void**)&(this->omega), TOTAL_MEM_SIZE_SCALAR));
             #endif
+            #ifdef LES_MODEL
+            checkCudaErrors(cudaMallocHost((void**)&(this->visc_turb), TOTAL_MEM_SIZE_SCALAR));
+            #endif
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaMallocManaged((void**)&(this->rho), MEM_SIZE_IBM_SCALAR));
@@ -83,6 +96,9 @@ public:
             #endif
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaMallocManaged((void**)&(this->omega), MEM_SIZE_SCALAR));
+            #endif
+            #ifdef LES_MODEL
+            checkCudaErrors(cudaMallocManaged((void**)&(this->visc_turb),MEM_SIZE_SCALAR));
             #endif
             break;
         default:
@@ -105,6 +121,9 @@ public:
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaFreeHost(this->omega));
             #endif
+            #ifdef LES_MODEL
+            checkCudaErrors(cudaFreeHost(this->visc_turb));
+            #endif
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaFree(this->rho));
@@ -114,6 +133,9 @@ public:
             #endif
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaFree(this->omega));
+            #endif
+            #ifdef LES_MODEL
+            checkCudaErrors(cudaFree(this->visc_turb));
             #endif
             break;
         default:
@@ -139,6 +161,10 @@ public:
         // Constants base index, to use for macroscopics that do not have ghost nodes (omega)
         size_t cteBaseIdx = baseIdx, cteBaseIdxRef = baseIdxRef;
         #endif
+        #ifdef LES_MODEL
+        cudaStream_t stream_visc_turb;
+        #endif
+
 
         // Sum ghost index of ghost nodes, to not consider it
         if(this->varLocation == IN_VIRTUAL)
@@ -158,6 +184,9 @@ public:
 
         #ifdef NON_NEWTONIAN_FLUID
         checkCudaErrors(cudaStreamCreate(&(streamOmega)));
+        #endif
+        #ifdef LES_MODEL
+        checkCudaErrors(cudaStreamCreate(&(stream_visc_turb)));
         #endif
 
         checkCudaErrors(cudaMemcpyAsync(this->rho+baseIdx, macrRef->rho+baseIdxRef, 
@@ -182,6 +211,10 @@ public:
         checkCudaErrors(cudaMemcpyAsync(this->omega+cteBaseIdx, macrRef->omega+cteBaseIdxRef,
             memSize, cudaMemcpyDefault, streamOmega));
         #endif
+        #ifdef LES_MODEL
+        checkCudaErrors(cudaMemcpyAsync(this->visc_turb+baseIdxRef, macrRef->visc_turb+baseIdxRef,
+            memSize, cudaMemcpyDefault, stream_visc_turb));
+        #endif
 
         checkCudaErrors(cudaStreamSynchronize(streamRho));
         checkCudaErrors(cudaStreamSynchronize(streamUx));
@@ -200,6 +233,10 @@ public:
 
         #ifdef NON_NEWTONIAN_FLUID
         checkCudaErrors(cudaStreamDestroy(streamOmega));
+        #endif
+
+        #ifdef LES_MODEL
+        checkCudaErrors(cudaStreamDestroy(stream_visc_turb));
         #endif
 
     }
