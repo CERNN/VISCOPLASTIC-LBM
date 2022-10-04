@@ -492,7 +492,7 @@ void gpuForceInterpolationSpread(
 
                     // if (posBase[2]+zk < NZ)
                     // {
-                    atomicAdd(&(macr.pbound[idx]), aux);
+                    //atomicAdd(&(macr.pbound[idx]), aux);
                     // }
                 }
                 #endif
