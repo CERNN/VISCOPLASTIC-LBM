@@ -164,7 +164,7 @@ void saveAllMacrBin(
     saveVarBin(strFileOmega, macr->omega, TOTAL_MEM_SIZE_SCALAR, false);
     #endif
 
-    #ifdef LES_MODEL
+    #ifdef LES_EXPORT_VISC_TURBULENT
     std::string strFileViscTurb = getVarFilename("visc_turb", nSteps, ".bin");
 
     saveVarBin(strFileViscTurb, macr->visc_turb, TOTAL_MEM_SIZE_SCALAR, false);

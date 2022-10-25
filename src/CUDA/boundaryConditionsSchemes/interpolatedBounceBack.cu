@@ -25,15 +25,15 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
     dfloat w_i, uz_i;
     dfloat w_o, uz_o;
 
-    w_o = 0.001;
-    w_i = -0.005;
+    w_o = 0.0;
+    w_i = 0.0;
     
     uz_o = 0.0;
     uz_i = 0.0;
 
     // Dislocate coordinates to get x^2+y^2=R^2
-    xNode = x - (NX-1)/2.0+0.5;
-    yNode = y - (NY-1)/2.0+0.5;
+    xNode = x - (NX-1)/2.0;
+    yNode = y - (NY-1)/2.0;
     
     dfloat rr =  sqrt(xNode*xNode+yNode*yNode);
     dfloat c = xNode / (rr);
@@ -51,7 +51,6 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
         ux = - w_o * R * s;
         uy =   w_o * R * c;
         uz = uz_o;
-
     }
 
     if(unknownPops & UNKNOWN_POP_1)

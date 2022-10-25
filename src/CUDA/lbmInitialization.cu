@@ -111,7 +111,7 @@ void gpuMacrInitValue(
     macr->omega[idxScalar(x, y, z)] = 0.0;
     #endif
 
-    #ifdef LES_MODEL
+    #ifdef LES_EXPORT_VISC_TURBULENT
     macr->visc_turb[idxScalar(x, y, z)] = INIT_VISC_TURB;
     #endif
 

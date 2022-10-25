@@ -17,8 +17,8 @@
 /* -------------------------- BOUNDARY CONDITIONS -------------------------- */
 
 // --- X direction ---
-#define IBM_BC_X_WALL
-//#define IBM_BC_X_PERIODIC
+//#define IBM_BC_X_WALL
+#define IBM_BC_X_PERIODIC
 
 #ifdef IBM_BC_X_WALL
     // TODO: not implemented yet
@@ -51,8 +51,8 @@
 
 
 // --- Z direction ---
-#define IBM_BC_Z_WALL
-//#define IBM_BC_Z_PERIODIC
+//#define IBM_BC_Z_WALL
+#define IBM_BC_Z_PERIODIC
 
 #ifdef IBM_BC_Z_WALL
     // TODO: not implemented yet
@@ -73,7 +73,7 @@
 //#define INTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack
 
 #ifdef EXTERNAL_DUCT_BC // same as in circularDuctInterpBounceBack
-    #define EXTERNAL_DUCT_BC_RADIUS (NY/2.0 - 0.5)
+    #define EXTERNAL_DUCT_BC_RADIUS (NY/2.0 - 1.5)
 #endif //EXTERNAL_DUCT_BC
 
 #ifdef INTERNAL_DUCT_BC // same as in annularDuctInterpBounceBack

@@ -13,11 +13,11 @@
 #define MODEL_CONST_SMAGORINSKY
 
 
-
+//#define LES_EXPORT_VISC_TURBULENT
 
 //MODEL DEFINITIONS
 #ifdef MODEL_CONST_SMAGORINSKY
-constexpr dfloat CONST_SMAGORINSKY = 0.173;
+constexpr dfloat CONST_SMAGORINSKY = 0.1;
 constexpr dfloat INIT_VISC_TURB = 0.0;
 
 

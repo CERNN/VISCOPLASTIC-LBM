@@ -1043,6 +1043,7 @@ void Particle::makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 
 
 void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec, dfloat angleMag, bool move,dfloat density, dfloat3 vel, dfloat3 w)
 {
+    /*
     dfloat a, b, c;  // principal radius
     dfloat epsilon;
     
@@ -1169,8 +1170,8 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec,
     for (i = 0; i <= nLayer; i++) {
 
         //TODO FIX THETA
-        pa[i] = abs(cos(theta[i])) * a;
-        pb[i] = abs(cos(theta[i])) * b;
+        pa[i] = abs((dfloat)cos(theta[i])) * a;
+        pb[i] = abs((dfloat)cos(theta[i])) * b;
         epsilon = sqrt(1 - (pb[i] * pb[i] / (pa[i] * pa[i])));
 
         //perimeter calc
@@ -1399,6 +1400,7 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec,
     }
 
         //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        */
 }
 
 
