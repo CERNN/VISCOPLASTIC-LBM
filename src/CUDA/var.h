@@ -133,6 +133,29 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
 #define COMP_VEL_BOUNCE_BACK false      // Compile velocityr bounce back
 #define COMP_INTERP_BOUNCE_BACK false   // Compile interpolated bounce back
 /* ------------------------------------------------------------------------- */
+/* ------------------ DUCT BOUNDARY CONDITIONS DEFINES --------------------- */
+#define EXTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack or annularDuctInterpBounceBack
+//#define INTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack
+
+#define DUCT_CENTER_X (((NX-1)/2.0)+0.5)
+#define DUCT_CENTER_Y (((NY-1)/2.0)+0.5)
+
+#ifdef EXTERNAL_DUCT_BC 
+    #define OUTER_RADIUS (NY/2.0-1.5)
+    #define EXTERNAL_DUCT_BC_RADIUS OUTER_RADIUS
+    #define OUTER_VELOCITY 0.0
+    #define OUTER_ROTATION (U_MAX/OUTER_RADIUS)    
+#endif //EXTERNAL_DUCT_BC
+
+#ifdef INTERNAL_DUCT_BC 
+    #define INNER_RADIUS (OUTER_RADIUS/4.0)
+    #define INTERNAL_DUCT_BC_RADIUS INNER_RADIUS
+    #define INNER_VELOCITY 0.0
+    #define INNER_ROTATION 0.0
+#endif //INTERNAL_DUCT_BC
+
+
+
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */

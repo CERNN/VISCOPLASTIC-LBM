@@ -16,20 +16,22 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
     const unsigned short int zp1 = (z + 1) % NZ;
     const unsigned short int zm1 = (NZ + z - 1) % NZ;
     // THIS RADIUS MUST BE THE SAME AS IN THE BOUNDARY CONDITION BUILDER
-    R = NY/2.0-1.5;
-    r = R/4.0;
-
+    R = OUTER_RADIUS;
     // q = R - distPoints2D(x+0.5, y+0.5, NX/2.0, NY/2.0);
 
     //wall velocity
     dfloat w_i, uz_i;
     dfloat w_o, uz_o;
 
-    w_o = 0.0;
-    w_i = 0.0;
-    
-    uz_o = 0.0;
-    uz_i = 0.0;
+    w_o = OUTER_ROTATION;//*((dfloat)z/(dfloat)NZ_TOTAL);
+    uz_o = OUTER_VELOCITY;
+
+    #ifdef INTERNAL_DUCT_BC 
+        r = INNER_RADIUS;
+        w_i = INNER_ROTATION;//0.0;
+        uz_i = INNER_VELOCITY;
+    #endif
+
 
     // Dislocate coordinates to get x^2+y^2=R^2
     xNode = x - (NX-1)/2.0;
@@ -42,10 +44,12 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
     dfloat ux,uy,uz;
 
     if(is_inside){
-        radius = r;
-        ux = - w_i * r * s;
-        uy =   w_i * r * c;
-        uz = uz_i;
+        #ifdef INTERNAL_DUCT_BC
+            radius = r;
+            ux = - w_i * r * s;
+            uy =   w_i * r * c;
+            uz = uz_i;
+        #endif
     }else{
         radius = R;
         ux = - w_o * R * s;

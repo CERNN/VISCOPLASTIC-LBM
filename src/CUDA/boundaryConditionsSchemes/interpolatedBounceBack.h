@@ -5,6 +5,7 @@
 *          cilinders and 2D curved surfaces. Some assumptions are made for 
 *          faster processing, as the shape being a cilinder with center
 *          in (NX/2, NY/2) and axial direction in Z.
+*           https://doi.org/10.1063/1.1399290 
 *   @version 0.3.0
 *   @date 16/12/2019
 */

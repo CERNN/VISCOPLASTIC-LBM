@@ -270,8 +270,8 @@ void gpuParticlesCollision(
         //   --------------- DUCT BOUNDARY CONDITIONS -----------------------
         #if defined(EXTERNAL_DUCT_BC) || defined(INTERNAL_DUCT_BC)
             // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
-            dfloat xCenter = (NX/2.0) - 1.5;
-            dfloat yCenter = (NY/2.0) - 1.5; 
+            dfloat xCenter = DUCT_CENTER_X;
+            dfloat yCenter = DUCT_CENTER_Y; 
 
 
 
@@ -457,6 +457,7 @@ void gpuSoftSphereWallCollision(
 
     const dfloat3 v_i = pc_i->vel;
     const dfloat3 w_i = pc_i->w;
+    const dfloat3 pos_i = pc_i->pos;
     const dfloat effective_radius = r_i;
     const dfloat effective_mass = m_i;
 
@@ -471,9 +472,37 @@ void gpuSoftSphereWallCollision(
     n.z = -n.z;
 
     // relative velocity vector
-    G.x = v_i.x;
-    G.y = v_i.y;
-    G.z = v_i.z;
+    dfloat3 wall_speed = dfloat3(0,0,0);
+
+
+    dfloat xNode = pos_i.x - DUCT_CENTER_X;
+    dfloat yNode = pos_i.y - DUCT_CENTER_Y;
+    
+    dfloat rr =  sqrt(xNode*xNode+yNode*yNode);
+    dfloat c = xNode / (rr);
+    dfloat s = yNode / (rr);
+
+
+    #ifdef EXTERNAL_DUCT_BC 
+        wall_speed.x = - OUTER_ROTATION * OUTER_RADIUS * s;
+        wall_speed.y =   OUTER_ROTATION * OUTER_RADIUS * c;
+        wall_speed.z = OUTER_VELOCITY;
+        #ifdef INTERNAL_DUCT_BC 
+            //TODO: needs a better detection system to define if is inner cilynder or outer.
+            if (rr/(OUTER_RADIUS-INNER_RADIUS)< 0.5){
+                wall_speed.x = - INNER_ROTATION * INNER_RADIUS * s;
+                wall_speed.y =   INNER_ROTATION * INNER_RADIUS * c;
+                wall_speed.z = INNER_VELOCITY;
+            }
+        #endif //INTERNAL_DUCT_BC
+    #endif //EXTERNAL_DUCT_BC
+
+
+
+
+    G.x = v_i.x - wall_speed.x;
+    G.y = v_i.y - wall_speed.y;
+    G.z = v_i.z - wall_speed.z;
 
     const dfloat STIFFNESS_NORMAL = PW_STIFFNESS_NORMAL_CONST * sqrt(abs(effective_radius));
     const dfloat STIFFNESS_TANGENTIAL = PW_STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (abs(displacement));

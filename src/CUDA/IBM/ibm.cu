@@ -471,8 +471,8 @@ void gpuForceInterpolationSpread(
                 );
 
                 #ifdef EXTERNAL_DUCT_BC
-                dfloat xCenter = (NX/2.0) - 0.5;
-                dfloat yCenter = (NY/2.0) - 0.5; 
+                dfloat xCenter = DUCT_CENTER_X;
+                dfloat yCenter = DUCT_CENTER_Y;
 
                 // int n_gpu2 = ((int)((posBase[2]+zk)/NZ) + 100*N_GPUS)%N_GPUS;
 
