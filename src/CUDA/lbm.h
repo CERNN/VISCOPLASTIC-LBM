@@ -35,6 +35,9 @@ void gpuMacrCollisionStream(
     NodeTypeMap* const mapBC,
     Macroscopics const macr,
     bool const save,
+    #ifdef DENSITY_CORRECTION
+    dfloat *d_mean_rho,
+    #endif
     int const step
 );
 

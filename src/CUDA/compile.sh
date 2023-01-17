@@ -17,6 +17,7 @@ then
         ./IBM/*.cu ./IBM/*.cpp \
         ./IBM/structs/*.cpp ./IBM/structs/*.cu \
         ./IBM/collision/*.cu \
+        ./AuxFunctions/*.cu \
         *.cu *.cpp \
         ./boundaryConditionsSchemes/*.cu \
         -lcudadevrt -lcurand -o ./../../bin/$2sim_$1_sm${CC}

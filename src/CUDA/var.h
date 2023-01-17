@@ -27,9 +27,13 @@
 // #define BINGHAM
 /* -------------------------------------------------------------------------- */
 
-/* ------------------------ LES DEFINITIONS TYPE ------------------------ */
+/* --------------------------- LES DEFINITIONS TYPE ------------------------- */
 // Uncomment the one to use. Comment all to simulate newtonian fluid
-#define LES_MODEL
+// #define LES_MODEL
+
+/* ---------------------------- OTHER DEFINITIONS --------------------------- */
+
+// #define DENSITY_CORRECTION // correct the rho field so that the mean will be RHO_0
 
 
 /* -------------------------------------------------------------------------- */
@@ -186,6 +190,12 @@ constexpr size_t BYTES_PER_MB = (1<<20);
 
 #define SQRT_2 (1.41421356237309504880168872420969807856967187537)
 /* ------------------------------------------------------------------------- */
+
+const size_t NUM_BLOCK_X = ((NX % N_THREADS) ? (NX / N_THREADS + 1) : (NX / N_THREADS));
+const size_t NUM_BLOCK_Y = NY;
+const size_t NUM_BLOCK_Z = NZ;
+const size_t NUM_BLOCK = NUM_BLOCK_X * NUM_BLOCK_Y * NUM_BLOCK_Z;
+const size_t BLOCK_LBM_SIZE = N_THREADS * 1 * 1;
 
 /* ------------------------------ MEMORY SIZE ------------------------------ */ 
 // Values for each GPU

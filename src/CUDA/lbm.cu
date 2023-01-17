@@ -7,6 +7,9 @@ void gpuMacrCollisionStream(
     NodeTypeMap* const mapBC,
     Macroscopics const macr,
     bool const save,
+    #ifdef DENSITY_CORRECTION
+    dfloat *d_mean_rho,
+    #endif
     int const step)
 {
     const short unsigned int x = threadIdx.x + blockDim.x * blockIdx.x;
@@ -62,6 +65,12 @@ void gpuMacrCollisionStream(
     const dfloat fzVar_D3 = FZ / 3;
     #endif
 
+    #ifdef DENSITY_CORRECTION
+    //printf("%f ",d_mean_rho[0]) ;
+    #pragma unroll
+    for (int i = 0; i<Q ;  i++)
+        fNode[i]-= d_mean_rho[0] * w[i];
+    #endif
     // Calculate macroscopics
     // rho = sum(f[i])
     // ux = (sum(f[i]*cx[i])+0.5*fxVar) / rho
