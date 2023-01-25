@@ -56,9 +56,9 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
     // Cilinder values
     // THIS RADIUS MUST BE THE SAME AS IN 
     // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
-    dfloat R = NY/2.0-1.5;
-    dfloat xCenter = ((NX-1)/2.0)+0.5;
-    dfloat yCenter = ((NY-1)/2.0)+0.5;
+    dfloat R = OUTER_RADIUS;
+    dfloat xCenter = DUCT_CENTER_X;
+    dfloat yCenter = DUCT_CENTER_Y;
 
     // Node values
     dfloat xNode = x+0.5;
@@ -67,14 +67,27 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
     dfloat distNode = distPoints2D(xNode, yNode, xCenter, yCenter);
 
     // if the point is out of the cilinder
-    if(distNode > R)
+    if(distNode > R ||zDomain == 0 || zDomain == NZ_TOTAL-1)
     {
         gpuMapBC[idxScalar(x, y, z)].setIsUsed(false);
         return;
     }
     else
-    {
-        // if the point is a boundary node
+    {   
+        if(BC_RHEOMETER){
+            if(zDomain == 1) // B
+            {
+                gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_SPECIAL);
+                gpuMapBC[idxScalar(x, y, z)].setDirection(BACK);
+            }
+            //front side z= (NZ_TOTAL-1)
+            else if(zDomain == (NZ_TOTAL-2)) // F
+            {
+                gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_SPECIAL);
+                gpuMapBC[idxScalar(x, y, z)].setDirection(FRONT);
+            }
+        }
+        // if the point is a boundary node (outside of the cylinder)
         if(distNode > (R-sqrt((float)2)))
         {
             gpuMapBC[idxScalar(x, y, z)].setSchemeBC(BC_SCHEME_INTERP_BOUNCE_BACK);
@@ -118,6 +131,7 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
             gpuMapBC[idxScalar(x, y, z)].setUnknowPopInterpBB(i);
         }
     }
+
 }
 
 
@@ -129,8 +143,60 @@ void gpuSchSpecial(NodeTypeMap* gpuNT,
     const short unsigned int y, 
     const short unsigned int z)
 {
+   dfloat R = OUTER_RADIUS;
+
+    dfloat w_f = OUTER_ROTATION;
+    dfloat w_b = 0.0;
+
+
+
+    // Dislocate coordinates to get x^2+y^2=R^2
+    dfloat xNode = x - (NX-1)/2.0;
+    dfloat yNode = y - (NY-1)/2.0;
+    
+    dfloat rr =  sqrt(xNode*xNode+yNode*yNode);
+    dfloat c = xNode / (rr);
+    dfloat s = yNode / (rr);
+
+    dfloat ux_w,uy_w,uz_w;
+    dfloat* f = fPostStream;
+    dfloat rho_w;
     switch(gpuNT->getDirection())
     {
+    case FRONT:
+        ux_w = - w_f * rr * s;
+        uy_w =   w_f * rr * c;
+        uz_w = 0;
+        // uses node's rho as the wall's rho
+        rho_w = f[idxPop(x, y, z, 0)] + f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)] +
+            f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] +
+            f[idxPop(x, y, z, 7)] + f[idxPop(x, y, z, 8)] + f[idxPop(x, y, z, 9)] + f[idxPop(x, y, z, 10)] +
+            f[idxPop(x, y, z, 11)] + f[idxPop(x, y, z, 12)] + f[idxPop(x, y, z, 13)] + f[idxPop(x, y, z, 14)] +
+            f[idxPop(x, y, z, 15)] + f[idxPop(x, y, z, 16)] + f[idxPop(x, y, z, 17)] + f[idxPop(x, y, z, 18)];
+
+            f[idxPop(x, y, z, 6)] = f[idxPop(x, y, z, 5)] - 6 * rho_w*W1*(uz_w);
+            f[idxPop(x, y, z, 10)] = f[idxPop(x, y, z, 9)] - 6 * rho_w*W2*(uz_w + ux_w);
+            f[idxPop(x, y, z, 12)] = f[idxPop(x, y, z, 11)] - 6 * rho_w*W2*(uz_w + uy_w);
+            f[idxPop(x, y, z, 15)] = f[idxPop(x, y, z, 16)] - 6 * rho_w*W2*(uz_w - ux_w);
+            f[idxPop(x, y, z, 17)] = f[idxPop(x, y, z, 18)] - 6 * rho_w*W2*(uz_w - uy_w);
+            break;
+    case BACK:
+        ux_w = - w_b * rr * s;
+        uy_w =   w_b * rr * c;
+        uz_w = 0;
+        // uses node's rho as the wall's rho
+        rho_w = f[idxPop(x, y, z, 0)] + f[idxPop(x, y, z, 1)] + f[idxPop(x, y, z, 2)] +
+            f[idxPop(x, y, z, 3)] + f[idxPop(x, y, z, 4)] + f[idxPop(x, y, z, 5)] + f[idxPop(x, y, z, 6)] +
+            f[idxPop(x, y, z, 7)] + f[idxPop(x, y, z, 8)] + f[idxPop(x, y, z, 9)] + f[idxPop(x, y, z, 10)] +
+            f[idxPop(x, y, z, 11)] + f[idxPop(x, y, z, 12)] + f[idxPop(x, y, z, 13)] + f[idxPop(x, y, z, 14)] +
+            f[idxPop(x, y, z, 15)] + f[idxPop(x, y, z, 16)] + f[idxPop(x, y, z, 17)] + f[idxPop(x, y, z, 18)];
+
+            f[idxPop(x, y, z, 5)] = f[idxPop(x, y, z, 6)] - 6 * rho_w*W1*(-uz_w);
+            f[idxPop(x, y, z, 9)] = f[idxPop(x, y, z, 10)] - 6 * rho_w*W2*(-uz_w - ux_w);
+            f[idxPop(x, y, z, 11)] = f[idxPop(x, y, z, 12)] - 6 * rho_w*W2*(-uz_w - uy_w);
+            f[idxPop(x, y, z, 16)] = f[idxPop(x, y, z, 15)] - 6 * rho_w*W2*(-uz_w + ux_w);
+            f[idxPop(x, y, z, 18)] = f[idxPop(x, y, z, 17)] - 6 * rho_w*W2*(-uz_w + uy_w);
+            break;
     case NORTH_WEST:
         // SPECIAL TREATMENT FOR NW
         break;

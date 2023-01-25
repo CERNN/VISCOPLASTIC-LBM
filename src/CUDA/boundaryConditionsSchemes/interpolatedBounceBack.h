@@ -29,6 +29,7 @@
 *   @param x: node's x value
 *   @param y: node's y value
 *   @param z: node's z value
+*   @param n_gpu: current gpu processing
 */
 __device__ 
 void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
@@ -37,7 +38,8 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
     dfloat* fPostCol,
     const short unsigned int x,
     const short unsigned int y,
-    const short unsigned int z);
+    const short unsigned int z,
+    const int n_gpu);
 
 
 /*

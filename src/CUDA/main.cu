@@ -354,7 +354,7 @@ int main()
             if(bcInfos[i].totalBCNodes > 0){
                 gpuApplyBC<<<gridsBC[i], threadsBC>>>
                     (pop[i].mapBC, pop[i].popAux, pop[i].pop, 
-                    bcInfos[i].idxBCNodes, bcInfos[i].totalBCNodes);
+                    bcInfos[i].idxBCNodes, bcInfos[i].totalBCNodes, i);
             }
             getLastCudaError("BC kernel error\n");
         }

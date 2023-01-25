@@ -486,6 +486,10 @@ void gpuSoftSphereWallCollision(
     #ifdef EXTERNAL_DUCT_BC 
         wall_speed.x = - OUTER_ROTATION * OUTER_RADIUS * s;
         wall_speed.y =   OUTER_ROTATION * OUTER_RADIUS * c;
+        #ifdef BC_RHEOMETER
+            wall_speed.x *= (pos_i.z/NZ_TOTAL);
+            wall_speed.y *= (pos_i.z/NZ_TOTAL);
+        #endif
         wall_speed.z = OUTER_VELOCITY;
         #ifdef INTERNAL_DUCT_BC 
             //TODO: needs a better detection system to define if is inner cilynder or outer.

@@ -581,7 +581,8 @@ void gpuApplyBC(NodeTypeMap* mapBC,
     dfloat* popPostStream,
     dfloat* popPostCol,
     size_t* idxsBCNodes,
-    size_t totalBCNodes)
+    size_t totalBCNodes,
+    const int n_gpu)
 {
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -593,7 +594,7 @@ void gpuApplyBC(NodeTypeMap* mapBC,
     const unsigned int y = (idx/NX) % NY;
     const unsigned int z = idx/(NX*NY);
 
-    gpuBoundaryConditions(&(mapBC[idx]), popPostStream, popPostCol, x, y, z);
+    gpuBoundaryConditions(&(mapBC[idx]), popPostStream, popPostCol, x, y, z,n_gpu);
 }
 
 __global__

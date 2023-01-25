@@ -10,11 +10,13 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
     dfloat* fPostCol, 
     const short unsigned int x, 
     const short unsigned int y,
-    const short unsigned int z)
+    const short unsigned int z,
+    const int n_gpu)
 {
     dfloat q, r, R, xNode, yNode, radius;
     const unsigned short int zp1 = (z + 1) % NZ;
     const unsigned short int zm1 = (NZ + z - 1) % NZ;
+    const unsigned int zDomain = z + NZ*n_gpu;
     // THIS RADIUS MUST BE THE SAME AS IN THE BOUNDARY CONDITION BUILDER
     R = OUTER_RADIUS;
     // q = R - distPoints2D(x+0.5, y+0.5, NX/2.0, NY/2.0);
@@ -23,7 +25,7 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
     dfloat w_i, uz_i;
     dfloat w_o, uz_o;
 
-    w_o = OUTER_ROTATION;//*((dfloat)z/(dfloat)NZ_TOTAL);
+    w_o = OUTER_ROTATION*((dfloat)zDomain/(dfloat)NZ_TOTAL);
     uz_o = OUTER_VELOCITY;
 
     #ifdef INTERNAL_DUCT_BC 
@@ -57,6 +59,16 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
         uz = uz_o;
     }
 
+
+    dfloat rho_w=RHO_0;
+    if (zDomain ==  0 || z == (NZ_TOTAL-1)){
+        rho_w = fPostCol[idxPop(x, y, z, 0)] + fPostCol[idxPop(x, y, z, 1)] + fPostCol[idxPop(x, y, z, 2)] +
+            fPostCol[idxPop(x, y, z, 3)] + fPostCol[idxPop(x, y, z, 4)] + fPostCol[idxPop(x, y, z, 5)] + fPostCol[idxPop(x, y, z, 6)] +
+            fPostCol[idxPop(x, y, z, 7)] + fPostCol[idxPop(x, y, z, 8)] + fPostCol[idxPop(x, y, z, 9)] + fPostCol[idxPop(x, y, z, 10)] +
+            fPostCol[idxPop(x, y, z, 11)] + fPostCol[idxPop(x, y, z, 12)] + fPostCol[idxPop(x, y, z, 13)] + fPostCol[idxPop(x, y, z, 14)] +
+            fPostCol[idxPop(x, y, z, 15)] + fPostCol[idxPop(x, y, z, 16)] + fPostCol[idxPop(x, y, z, 17)] + fPostCol[idxPop(x, y, z, 18)];
+    }
+
     if(unknownPops & UNKNOWN_POP_1)
     {
         // Populations with cx=1, cy=0
@@ -72,6 +84,12 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
 
             fPostStream[idxPop(x, y, z, 15)] = gpuInterpolatedBounceBackHigherQ(
                 fPostCol[idxPop(x, y, z, 16)], fPostCol[idxPop(x, y, z, 15)], q, W2*(ux-uz));
+            if (zDomain ==  0 && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)] - 6 * rho_w*W2*(-0.0 - ux);
+            }
+            if (zDomain == (NZ_TOTAL-1) && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)] - 6 * rho_w*W2*(0.0 - ux);
+            }
         }
         else
         {
@@ -83,6 +101,12 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
 
             fPostStream[idxPop(x, y, z, 15)] = gpuInterpolatedBounceBackLowerQ(
                 fPostCol[idxPop(x, y, z, 16)], fPostCol[idxPop(x+1, y, zm1, 16)], q, W2*(ux-uz));
+            if (zDomain ==  0 && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 9)] = fPostCol[idxPop(x, y, z, 10)] - 6 * rho_w*W2*(-0.0 - ux);
+            }
+            if (zDomain == (NZ_TOTAL-1) && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 15)] = fPostCol[idxPop(x, y, z, 16)] - 6 * rho_w*W2*(0.0 - ux);
+            }                
         }
     }
     if(unknownPops & UNKNOWN_POP_2)
@@ -100,6 +124,12 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
 
             fPostStream[idxPop(x, y, z, 17)] = gpuInterpolatedBounceBackHigherQ(
                 fPostCol[idxPop(x, y, z, 18)], fPostCol[idxPop(x, y, z, 17)], q, W2*(uy-uz));
+            if (zDomain ==  0 && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)] - 6 * rho_w*W2*(-0.0 - uy);
+            }
+            if (zDomain == (NZ_TOTAL-1) && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)] - 6 * rho_w*W2*(0.0 - uy);
+            }
         }
         else
         {
@@ -111,6 +141,12 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
 
             fPostStream[idxPop(x, y, z, 17)] = gpuInterpolatedBounceBackLowerQ(
                 fPostCol[idxPop(x, y, z, 18)], fPostCol[idxPop(x, y+1, zm1, 18)], q, W2*(uy-uz));
+            if (zDomain ==  0 && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 11)] = fPostCol[idxPop(x, y, z, 12)] - 6 * rho_w*W2*(-0.0 - uy);
+            }
+            if (zDomain == (NZ_TOTAL-1) && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 17)] = fPostCol[idxPop(x, y, z, 18)] - 6 * rho_w*W2*(0.0 - uy);
+            }
         }
     }
     if(unknownPops & UNKNOWN_POP_3)
@@ -128,6 +164,12 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
 
             fPostStream[idxPop(x, y, z, 16)] = gpuInterpolatedBounceBackHigherQ(
                 fPostCol[idxPop(x, y, z, 15)], fPostCol[idxPop(x, y, z, 16)], q, W2*(-ux+uz));
+            if (zDomain ==  0 && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)] - 6 * rho_w*W2*(-0.0 + ux);
+            }
+            if (zDomain == (NZ_TOTAL-1) && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)] - 6 * rho_w*W2*(0.0 + ux);
+            }
         }
         else
         {
@@ -139,6 +181,12 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
 
             fPostStream[idxPop(x, y, z, 16)] = gpuInterpolatedBounceBackLowerQ(
                 fPostCol[idxPop(x, y, z, 15)], fPostCol[idxPop(x-1, y, zp1, 15)], q, W2*(-ux+uz));
+            if (zDomain ==  0 && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 16)] = fPostCol[idxPop(x, y, z, 15)] - 6 * rho_w*W2*(-0.0 + ux);
+            }
+            if (zDomain== (NZ_TOTAL-1) && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 10)] = fPostCol[idxPop(x, y, z, 9)] - 6 * rho_w*W2*(0.0 + ux);
+            }
         }
     }
     if(unknownPops & UNKNOWN_POP_4)
@@ -156,6 +204,12 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
 
             fPostStream[idxPop(x, y, z, 18)] = gpuInterpolatedBounceBackHigherQ(
                 fPostCol[idxPop(x, y, z, 17)], fPostCol[idxPop(x, y, z, 18)], q, W2*(-uy+uz));
+            if (zDomain ==  0 && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)] - 6 * rho_w*W2*(-0.0 + uy);
+            }
+            if (zDomain == (NZ_TOTAL-1) && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)] - 6 * rho_w*W2*(0.0 + uy);
+            }
         }
         else
         {
@@ -167,6 +221,12 @@ void gpuBCInterpolatedBounceBack(const unsigned char unknownPops,
 
             fPostStream[idxPop(x, y, z, 18)] = gpuInterpolatedBounceBackLowerQ(
                 fPostCol[idxPop(x, y, z, 17)], fPostCol[idxPop(x, y-1, zp1, 17)], q, W2*(-uy+uz));
+            if (zDomain ==  0 && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 18)] = fPostCol[idxPop(x, y, z, 17)] - 6 * rho_w*W2*(-0.0 + uy);
+            }
+            if (zDomain == (NZ_TOTAL-1) && BC_RHEOMETER){
+                fPostStream[idxPop(x, y, z, 12)] = fPostCol[idxPop(x, y, z, 11)] - 6 * rho_w*W2*(0.0 + uy);
+            }
         }
     }
     if(unknownPops & UNKNOWN_POP_5)

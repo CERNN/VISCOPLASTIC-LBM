@@ -61,13 +61,15 @@ void gpuUpdateMacr(
 *   @param popPostCol: populations post collision to use
 *   @param idxsBCNodes: vector of scalar indexes of boundary conditions
 *   @param totalBCNodes: total number of nodes boundary conditions
+*   @param n_gpu: current gpu processing
 */
 __global__
 void gpuApplyBC(NodeTypeMap* mapBC, 
     dfloat* popPostStream,
     dfloat* popPostCol,
     size_t* idxsBCNodes,
-    size_t totalBCNodes
+    size_t totalBCNodes,
+    const int n_gpu
 );
 
 /*
