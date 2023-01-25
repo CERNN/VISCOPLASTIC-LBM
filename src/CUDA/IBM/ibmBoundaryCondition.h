@@ -67,18 +67,6 @@
 #endif //IBM_BC_Z_PERIODIC
 
 
-// ----------- DUCT BOUNDARY CONDITION ----------- 
-
-//#define EXTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack or annularDuctInterpBounceBack
-//#define INTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack
-
-#ifdef EXTERNAL_DUCT_BC // same as in circularDuctInterpBounceBack
-    #define EXTERNAL_DUCT_BC_RADIUS (NY/2.0 - 1.5)
-#endif //EXTERNAL_DUCT_BC
-
-#ifdef INTERNAL_DUCT_BC // same as in annularDuctInterpBounceBack
-    #define INTERNAL_DUCT_BC_RADIUS (R/4.0)
-#endif //INTERNAL_DUCT_BC
 
 /* -------------------------------------------------------------------------- */
 

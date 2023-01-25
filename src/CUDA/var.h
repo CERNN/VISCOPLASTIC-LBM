@@ -27,9 +27,13 @@
 // #define BINGHAM
 /* -------------------------------------------------------------------------- */
 
-/* ------------------------ LES DEFINITIONS TYPE ------------------------ */
+/* --------------------------- LES DEFINITIONS TYPE ------------------------- */
 // Uncomment the one to use. Comment all to simulate newtonian fluid
-#define LES_MODEL
+// #define LES_MODEL
+
+/* ---------------------------- OTHER DEFINITIONS --------------------------- */
+
+// #define DENSITY_CORRECTION // correct the rho field so that the mean will be RHO_0
 
 
 /* -------------------------------------------------------------------------- */
@@ -133,6 +137,29 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
 #define COMP_VEL_BOUNCE_BACK false      // Compile velocityr bounce back
 #define COMP_INTERP_BOUNCE_BACK false   // Compile interpolated bounce back
 /* ------------------------------------------------------------------------- */
+/* ------------------ DUCT BOUNDARY CONDITIONS DEFINES --------------------- */
+#define EXTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack or annularDuctInterpBounceBack
+//#define INTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack
+
+#define DUCT_CENTER_X (((NX-1)/2.0)+0.5)
+#define DUCT_CENTER_Y (((NY-1)/2.0)+0.5)
+
+#ifdef EXTERNAL_DUCT_BC 
+    #define OUTER_RADIUS (NY/2.0-1.5)
+    #define EXTERNAL_DUCT_BC_RADIUS OUTER_RADIUS
+    #define OUTER_VELOCITY 0.0
+    #define OUTER_ROTATION (U_MAX/OUTER_RADIUS)    
+#endif //EXTERNAL_DUCT_BC
+
+#ifdef INTERNAL_DUCT_BC 
+    #define INNER_RADIUS (OUTER_RADIUS/4.0)
+    #define INTERNAL_DUCT_BC_RADIUS INNER_RADIUS
+    #define INNER_VELOCITY 0.0
+    #define INNER_ROTATION 0.0
+#endif //INTERNAL_DUCT_BC
+
+
+
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -163,6 +190,12 @@ constexpr size_t BYTES_PER_MB = (1<<20);
 
 #define SQRT_2 (1.41421356237309504880168872420969807856967187537)
 /* ------------------------------------------------------------------------- */
+
+const size_t NUM_BLOCK_X = ((NX % N_THREADS) ? (NX / N_THREADS + 1) : (NX / N_THREADS));
+const size_t NUM_BLOCK_Y = NY;
+const size_t NUM_BLOCK_Z = NZ;
+const size_t NUM_BLOCK = NUM_BLOCK_X * NUM_BLOCK_Y * NUM_BLOCK_Z;
+const size_t BLOCK_LBM_SIZE = N_THREADS * 1 * 1;
 
 /* ------------------------------ MEMORY SIZE ------------------------------ */ 
 // Values for each GPU

@@ -36,6 +36,7 @@
 #include "IBM/ibmParticlesCreation.h"
 #include "IBM/ibmTreatData.h"
 
+#include "AuxFunctions/auxFunction.cuh"
 
 #ifdef LES_MODEL
 #include "LES/les.h"
@@ -67,6 +68,11 @@ int main()
     IBMMacrsAux ibmMacrsAux;
     #ifdef IBM
     allocateIBMProc(&ibmProcessData);
+    #endif
+
+    #ifdef DENSITY_CORRECTION
+    dfloat h_mean_rho[N_GPUS];
+    dfloat* d_mean_rho;
     #endif
 
     // Setup saving folder
@@ -113,6 +119,9 @@ int main()
         checkCudaErrors(cudaStreamCreate(&streamsLBM[i]));
         #ifdef IBM
         checkCudaErrors(cudaStreamCreate(&streamsIBM[i]));
+        #endif
+        #ifdef DENSITY_CORRECTION
+        cudaMalloc((void**)&d_mean_rho, sizeof(dfloat));  
         #endif
 
         pop[i].popAllocation();
@@ -207,6 +216,14 @@ int main()
     }
     int first_step = step;
     /* ---------------------------------------------------------------------- */
+    #ifdef DENSITY_CORRECTION
+    for(int i = 0; i < N_GPUS; i++){
+        checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
+        h_mean_rho[i] = 0.0;
+        checkCudaErrors(cudaMemcpy(d_mean_rho, h_mean_rho, sizeof(dfloat), cudaMemcpyHostToDevice)); 
+        checkCudaErrors(cudaDeviceSynchronize());
+    }
+    #endif
 
     // Initialize Euler nodes for optimization
     #if IBM_EULER_OPTIMIZATION
@@ -254,7 +271,7 @@ int main()
     {
         int aux = step-INI_STEP;
         // WHAT NEEDS TO BE DONE IN THIS TIME STEP
-        bool save = false, rep = false, repIBM = false, checkpoint = false;
+        bool save = false, rep = false, repIBM = false, checkpoint = false, densityCorrection = false;
         if(aux != 0)
         {
             if(MACR_SAVE)
@@ -267,13 +284,16 @@ int main()
             if(IBM_DATA_REPORT)
                 repIBM = !(aux % IBM_DATA_REPORT);
             #endif
+            #ifdef DENSITY_CORRECTION
+                densityCorrection = true;
+            #endif
         }
         // Save macroscopics to array in LBM kernel
         bool save_macr_to_array;
         #if defined(IBM) && !(IBM_EULER_OPTIMIZATION)
         save_macr_to_array = false;
         #else
-        save_macr_to_array = rep || save || repIBM || ((step+1)>=(int)N_STEPS);
+        save_macr_to_array = rep || save || repIBM || ((step+1)>=(int)N_STEPS) || densityCorrection;
         #endif
 
         // LBM solver
@@ -281,10 +301,30 @@ int main()
             checkCudaErrors(cudaSetDevice(GPUS_TO_USE[i]));
             gpuMacrCollisionStream<<<grid, threads>>>
                 (pop[i].pop, pop[i].popAux, pop[i].mapBC, macr[i],
-                save_macr_to_array, step);
+                save_macr_to_array,
+                #ifdef DENSITY_CORRECTION
+                d_mean_rho,
+                #endif              
+                step);
             //checkCudaErrors(cudaDeviceSynchronize());
             getLastCudaError("LBM kernel error\n");
+
+            #ifdef DENSITY_CORRECTION
+                h_mean_rho[i] = mean_macro(macr[i], 0,step);
+                checkCudaErrors(cudaDeviceSynchronize());
+            #endif
         }
+        #ifdef DENSITY_CORRECTION
+            if(N_GPUS > 1){
+                for(int i = 1; i < N_GPUS; i++)
+                    h_mean_rho[0] +=  h_mean_rho[i];   
+            }
+            h_mean_rho[0] = (h_mean_rho[0])/((dfloat)NUMBER_LBM_NODES*N_GPUS) - RHO_0;
+            //printf("step %d rho_m %e \n ",step, h_mean_rho[0]);
+            for(int i = 0; i < N_GPUS; i++){
+                checkCudaErrors(cudaMemcpy(d_mean_rho, &h_mean_rho, sizeof(dfloat), cudaMemcpyHostToDevice)); 
+            }
+        #endif
 
         /*
         // While running kernel code, organize IBM Euler nodes
@@ -314,7 +354,7 @@ int main()
             if(bcInfos[i].totalBCNodes > 0){
                 gpuApplyBC<<<gridsBC[i], threadsBC>>>
                     (pop[i].mapBC, pop[i].popAux, pop[i].pop, 
-                    bcInfos[i].idxBCNodes, bcInfos[i].totalBCNodes);
+                    bcInfos[i].idxBCNodes, bcInfos[i].totalBCNodes, i);
             }
             getLastCudaError("BC kernel error\n");
         }
@@ -530,6 +570,11 @@ int main()
         pop[i].popFree();
         macr[i].macrFree();
         bcInfos[i].freeIdxBC();
+        
+        #ifdef DENSITY_CORRECTION
+        cudaFree(d_mean_rho);
+        #endif
+
     }
 
     // Free CPU variables
