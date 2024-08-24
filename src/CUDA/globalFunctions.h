@@ -161,6 +161,37 @@ dfloat __forceinline__ distPoints2D(const dfloat x1, const dfloat y1, const dflo
     return sqrt((float)(x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
 
+__host__ __device__
+dfloat3 cross_product(dfloat3 v1, dfloat3 v2);
+__host__ __device__
+dfloat dot_product(dfloat3 v1, dfloat3 v2);
+__host__ __device__
+dfloat4 quart_multiplication(dfloat4 q1, dfloat4 q2);
+__host__ __device__
+dfloat4 quart_normalize(dfloat4 q);
+__host__ __device__
+dfloat3 vector_normalize(dfloat3 v);
+__host__ __device__
+dfloat4 quart_addition(dfloat4 q1, dfloat4 q2);
+__host__ __device__
+dfloat4 vector_to_quart(dfloat3 v);
+__host__ __device__
+void quaternion_to_rotation_matrix(dfloat4 q, dfloat R[3][3]);
+__host__ __device__
+dfloat3 rotate_vector_by_matrix(dfloat3 v, dfloat R[3][3]);
+__host__ __device__
+dfloat3 rotate_vector_by_quart_R(dfloat3 v, dfloat4 q);
+__host__ __device__
+dfloat4 quart_conjugate(dfloat4 q);
+__host__ __device__
+dfloat3 rotate_vector_by_quart(dfloat3 v, dfloat4 q);
+__host__ __device__
+dfloat4 compute_rotation_quart(dfloat3 v1, dfloat3 v2);
+__host__ __device__
+dfloat4 axis_angle_to_quart(dfloat3 axis, dfloat angle);
+
+
+
 /**
 *   @brief Copy values from src to dst (shape [NZ, NY, NX])
 *
