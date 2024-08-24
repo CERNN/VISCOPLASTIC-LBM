@@ -197,3 +197,43 @@ dfloat4 axis_angle_to_quart(dfloat3 axis, dfloat angle) {
     
     return q;
 }
+
+__host__ __device__
+dfloat4 euler_to_quart(dfloat roll, dfloat pitch, dfloat yaw){
+    dfloat cr = cos(roll * 0.5);
+    dfloat sr = sin(roll * 0.5);
+    dfloat cp = cos(pitch * 0.5);
+    dfloat sp = sin(pitch * 0.5);
+    dfloat cy = cos(yaw * 0.5);
+    dfloat sy = sin(yaw * 0.5);
+
+    dfloat4 q;
+    q.w = cr * cp * cy + sr * sp * sy;
+    q.x = sr * cp * cy - cr * sp * sy;
+    q.y = cr * sp * cy + sr * cp * sy;
+    q.z = cr * cp * sy - sr * sp * cy;
+
+    return q;
+}
+
+__host__ __device__
+dfloat3 quart_to_euler(dfloat4 q){
+    dfloat3 angles;
+
+    // roll (x-axis rotation)
+    double sinr_cosp = 2 * (q.w * q.x + q.y * q.z);
+    double cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y);
+    angles.x = std::atan2(sinr_cosp, cosr_cosp);
+
+    // pitch (y-axis rotation)
+    double sinp = std::sqrt(1 + 2 * (q.w * q.y - q.x * q.z));
+    double cosp = std::sqrt(1 - 2 * (q.w * q.y - q.x * q.z));
+    angles.y = 2 * std::atan2(sinp, cosp) - M_PI / 2;
+
+    // yaw (z-axis rotation)
+    double siny_cosp = 2 * (q.w * q.z + q.x * q.y);
+    double cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
+    angles.z = std::atan2(siny_cosp, cosy_cosp);
+
+    return angles;
+}

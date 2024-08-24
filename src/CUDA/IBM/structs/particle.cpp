@@ -237,6 +237,16 @@ void Particle::makeSphereIco(dfloat diameter, dfloat3 center, bool move,
     this->pCenter.w_avg = w;
     this->pCenter.w_old = w;
 
+    this->pCenter.q_pos.w = 0;
+    this->pCenter.q_pos.x = 1;
+    this->pCenter.q_pos.y = 0;
+    this->pCenter.q_pos.z = 0;
+
+    this->pCenter.q_pos_old.w = 0.0;
+    this->pCenter.q_pos_old.x = 1.0;
+    this->pCenter.q_pos_old.y = 0.0;
+    this->pCenter.q_pos_old.z = 0.0;
+
     // Innertia momentum
     this->pCenter.I.x = 1.0 * this->pCenter.volume * this->pCenter.density * ((B_AXIS * B_AXIS) + (C_AXIS * C_AXIS)) / 5.0;
     this->pCenter.I.y = 1.0 * this->pCenter.volume * this->pCenter.density * ((A_AXIS * A_AXIS) + (C_AXIS * C_AXIS)) / 5.0;
@@ -704,10 +714,23 @@ void Particle::makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int cou
     this->pCenter.w_avg = w;
     this->pCenter.w_old = w;
 
+    this->pCenter.q_pos.w = 0;
+    this->pCenter.q_pos.x = 1;
+    this->pCenter.q_pos.y = 0;
+    this->pCenter.q_pos.z = 0;
+
+    this->pCenter.q_pos_old.w = 0.0;
+    this->pCenter.q_pos_old.x = 1.0;
+    this->pCenter.q_pos_old.y = 0.0;
+    this->pCenter.q_pos_old.z = 0.0;
+
     // Innertia momentum
     this->pCenter.I.x = 2.0 * volume * this->pCenter.density * r * r / 5.0;
     this->pCenter.I.y = 2.0 * volume * this->pCenter.density * r * r / 5.0;
     this->pCenter.I.z = 2.0 * volume * this->pCenter.density * r * r / 5.0;
+    this->pCenter.IP.x = 0.0;
+    this->pCenter.IP.y = 0.0;
+    this->pCenter.IP.z = 0.0;
 
     this->pCenter.movable = move;
 
@@ -1041,18 +1064,248 @@ void Particle::makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 
 }
 
 
-void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec, dfloat angleMag, bool move,dfloat density, dfloat3 vel, dfloat3 w)
-{
-    /*
-    dfloat a, b, c;  // principal radius
-    dfloat epsilon;
-    
-    dfloat perimeter, gamma, dSa, dSb;
+void Particle::makeCapsule(dfloat diameter, dfloat3 point1, dfloat3 point2, bool move, dfloat density, dfloat3 vel, dfloat3 w){
 
-    unsigned int maxNumLayers = 5000;
-    unsigned int nLayer;
-    unsigned int* nNodesLayer;
-    dfloat* theta, * zeta, * S, *pa, *pb, *dS;
+    //radius
+    dfloat r = diameter/2.00;
+    //length cylinder
+    dfloat length = sqrt((point2.x - point1.x)*(point2.x - point1.x) + 
+                         (point2.y - point1.y)*(point2.y - point1.y) + 
+                         (point2.z - point1.z)*(point2.z - point1.z));
+    //unit vector of capsule direction
+    dfloat3 vec = dfloat3((point2.x - point1.x)/length,
+                          (point2.y - point1.y)/length,
+                          (point2.z - point1.z)/length);
+    //number of slices
+    int nSlices = (int)(length/MESH_SCALE);
+    //array location of height of slices
+    dfloat* z_cylinder = (dfloat*)malloc(nSlices * sizeof(dfloat));
+    for (int i = 0; i < nSlices; i++)
+        z_cylinder[i] = length * i / (nSlices - 1);
+
+    // Calculate the number of nodes in each circle
+    int nCirclePoints = (int)(2 * M_PI * r / MESH_SCALE);
+    //array location of theta
+    dfloat* theta = (dfloat*)malloc(nCirclePoints * sizeof(dfloat));
+    for (int i = 0; i < nCirclePoints; i++)
+        theta[i] = 2 * M_PI * i / (nCirclePoints - 1);
+
+    // Cylinder surface nodes
+    dfloat3* cylinder = (dfloat3*)malloc(nSlices * nCirclePoints * sizeof(dfloat3));
+
+    for (int i = 0; i < nSlices; i++) {
+        for (int j = 0; j < nCirclePoints; j++) {
+            cylinder[i * nCirclePoints + j].x = r * cos(theta[j]);
+            cylinder[i * nCirclePoints + j].y = r * sin(theta[j]);
+            cylinder[i * nCirclePoints + j].z = z_cylinder[i];
+        }
+    }
+
+    //spherical caps
+    //calculate the number of slices and the angle of the slices
+    int nSlices_sphere = (int)(M_PI * r / (2 * MESH_SCALE));
+    dfloat* phi = (dfloat*)malloc(nSlices_sphere * sizeof(dfloat));
+    for (int i = 0; i < nSlices_sphere; i++)
+        phi[i] = (M_PI / 2) * i / (nSlices_sphere - 1);
+
+    //calculate the number of nodes in the cap
+    int cap_count = 0;
+    for (int i = 0; i < nSlices_sphere; i++) {
+        dfloat rSlice = r * cos(phi[i]);
+        int nCirclePoints_sphere = (int)(2 * M_PI * rSlice / MESH_SCALE);
+        for (int j = 0; j < nCirclePoints_sphere; j++) 
+            cap_count++;
+    }
+
+    dfloat3* cap1 = (dfloat3*)malloc(cap_count * sizeof(dfloat3));
+    dfloat3* cap2 = (dfloat3*)malloc(cap_count * sizeof(dfloat3));
+
+    cap_count = 0;
+    dfloat Xs, Ys, Zs;
+    for (int i = 0; i < nSlices_sphere; i++) {
+        double rSlice = r * cos(phi[i]);
+        int nCirclePoints_sphere = floor(2 * M_PI * rSlice / MESH_SCALE);
+        
+        for (int j = 0; j < nCirclePoints_sphere; j++)
+            theta[j] = 2 * M_PI * j / (nCirclePoints_sphere - 1);
+
+
+        for (int j = 0; j < nCirclePoints_sphere; j++) {
+            Xs = rSlice * cos(theta[j]);
+            Ys = rSlice * sin(theta[j]);
+            Zs = r * sin(phi[i]);
+
+            cap1[cap_count].x = Xs;
+            cap1[cap_count].y = Ys;
+            cap1[cap_count].z = -Zs;
+
+            cap2[cap_count].x = Xs;
+            cap2[cap_count].y = Ys;
+            cap2[cap_count].z = Zs + length;
+            cap_count++;
+        }
+    }
+
+    dfloat3* cap1_filtered = (dfloat3*)malloc(cap_count * sizeof(dfloat3));
+    dfloat3* cap2_filtered = (dfloat3*)malloc(cap_count * sizeof(dfloat3));
+
+    //remove the nodes from inside, if necessary
+
+    int cap_filtered_count = 0;
+    for (int i = 0; i < cap_count; i++) {
+        if (!(cap1[i].z >= 0 && cap1[i].z <= length)) {
+            cap1_filtered[cap_filtered_count].x = cap1[i].x;
+            cap1_filtered[cap_filtered_count].y = cap1[i].y;
+            cap1_filtered[cap_filtered_count].z = cap1[i].z;
+            cap_filtered_count++;
+        }
+    }
+
+    cap_filtered_count = 0;
+    for (int i = 0; i < cap_count; i++) {
+        if (!(cap2[i].z >= 0 && cap2[i].z <= length)) {
+            cap2_filtered[cap_filtered_count].x = cap2[i].x;
+            cap2_filtered[cap_filtered_count].y = cap2[i].y;
+            cap2_filtered[cap_filtered_count].z = cap2[i].z;
+            cap_filtered_count++;
+        }
+    }
+
+    //combine caps and cylinder
+    int nCylinderPoints = nSlices * nCirclePoints;
+    int nTotalPoints = nCylinderPoints + 2*cap_filtered_count;
+
+    dfloat3* nodesTotal = (dfloat3*)malloc(nTotalPoints * sizeof(dfloat3));
+    for (int i = 0; i < nCylinderPoints; i++) {
+        nodesTotal[i].x = cylinder[i].x;
+        nodesTotal[i].y = cylinder[i].y;
+        nodesTotal[i].z = cylinder[i].z;
+    }
+    for (int i = 0; i < cap_filtered_count; i++) {
+        nodesTotal[nCylinderPoints + i].x = cap1_filtered[i].x;
+        nodesTotal[nCylinderPoints + i].y = cap1_filtered[i].y;
+        nodesTotal[nCylinderPoints + i].z = cap1_filtered[i].z;
+    }
+    for (int i = 0; i < cap_filtered_count; i++) {
+        nodesTotal[nCylinderPoints + cap_filtered_count + i].x = cap2_filtered[i].x;
+        nodesTotal[nCylinderPoints + cap_filtered_count + i].y = cap2_filtered[i].y;
+        nodesTotal[nCylinderPoints + cap_filtered_count + i].z = cap2_filtered[i].z;
+    }
+
+    //rotation
+    //determine the quartetion which has to be used to rotate the vector (0,0,1) to vec
+    //calculate dot product
+    dfloat4 qf = compute_rotation_quart(dfloat3(0,0,1),vec);
+
+    dfloat3 new_pos;
+    for (int i = 0; i < nTotalPoints; i++) {
+        new_pos = dfloat3(nodesTotal[i].x,nodesTotal[i].y,nodesTotal[i].z);
+        
+        new_pos = rotate_vector_by_quart_R(new_pos,qf);
+
+        nodesTotal[i].x = new_pos.x + point1.x;
+        nodesTotal[i].y = new_pos.y + point1.y;
+        nodesTotal[i].z = new_pos.z + point1.z;
+
+    }
+
+
+    //DEFINITIONS
+    
+    dfloat volume = r*r*r*4*M_PI/3 + M_PI*r*r*length;
+    dfloat sphereVol = r*r*r*4*M_PI/3;
+    dfloat cylinderVol = M_PI*r*r*length;
+    dfloat3 center = dfloat3(point2.x-point1.x,point2.y-point1.y,point2.z-point1.z);
+
+    this->pCenter.radius = r;
+    this->pCenter.volume = sphereVol + cylinderVol;
+    // Particle area
+    this->pCenter.S = 4.0 * M_PI * r * r + 2*M_PI*r*length;
+    // Particle density
+    this->pCenter.density = density;
+
+    // Particle center position
+    this->pCenter.pos = center;
+    this->pCenter.pos_old = center;
+
+    // Particle velocity
+    this->pCenter.vel = vel;
+    this->pCenter.vel_old = vel;
+
+    // Particle rotation
+    this->pCenter.w = w;
+    this->pCenter.w_avg = w;
+    this->pCenter.w_old = w;
+
+    this->pCenter.q_pos.w = qf.w;
+    this->pCenter.q_pos.x = qf.x;
+    this->pCenter.q_pos.y = qf.y;
+    this->pCenter.q_pos.z = qf.z;
+
+    this->pCenter.q_pos_old.w = this->pCenter.q_pos.w;
+    this->pCenter.q_pos_old.x = this->pCenter.q_pos.x;
+    this->pCenter.q_pos_old.y = this->pCenter.q_pos.y;
+    this->pCenter.q_pos_old.z = this->pCenter.q_pos.z;
+
+    // Innertia momentum
+    this->pCenter.I.x = this->pCenter.density * (cylinderVol*(r*r/2) + sphereVol * (2*r*r/5));
+    this->pCenter.I.y = this->pCenter.density * (cylinderVol*(length*length/12 + r*r/4 ) + sphereVol * (2*r*r/5 + length*length/2 + 3*length*r/8));
+    this->pCenter.I.z = this->pCenter.density * (cylinderVol*(length*length/12 + r*r/4 ) + sphereVol * (2*r*r/5 + length*length/2 + 3*length*r/8));
+    this->pCenter.IP.x = 0.0;
+    this->pCenter.IP.y = 0.0;
+    this->pCenter.IP.z = 0.0;
+    this->pCenter.movable = move;
+    
+    this->numNodes = nTotalPoints;
+
+    this->nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * this->numNodes);
+
+    //convert nodes info
+
+    for (int nodeIndex = 0; nodeIndex < nTotalPoints; nodeIndex++) {
+        this->nodes[nodeIndex].pos.x = nodesTotal[nodeIndex].x ;
+        this->nodes[nodeIndex].pos.y = nodesTotal[nodeIndex].y ;
+        this->nodes[nodeIndex].pos.z = nodesTotal[nodeIndex].z ;
+
+        this->nodes[nodeIndex].vel.x = vel.x + w.y * this->nodes[nodeIndex].pos.z - w.z * this->nodes[nodeIndex].pos.y;
+        this->nodes[nodeIndex].vel.y = vel.y + w.z * this->nodes[nodeIndex].pos.x - w.x * this->nodes[nodeIndex].pos.z;
+        this->nodes[nodeIndex].vel.z = vel.z + w.x * this->nodes[nodeIndex].pos.y - w.y * this->nodes[nodeIndex].pos.x;
+
+        this->nodes[nodeIndex].vel_old.x = vel.x + w.y * this->nodes[nodeIndex].pos.z - w.z * this->nodes[nodeIndex].pos.y;
+        this->nodes[nodeIndex].vel_old.y = vel.y + w.z * this->nodes[nodeIndex].pos.x - w.x * this->nodes[nodeIndex].pos.z;
+        this->nodes[nodeIndex].vel_old.z = vel.z + w.x * this->nodes[nodeIndex].pos.y - w.y * this->nodes[nodeIndex].pos.x;
+
+        if(nodeIndex < nCylinderPoints)
+            this->nodes[nodeIndex].S = (length*2*M_PI*r)/nCylinderPoints;
+        else
+            this->nodes[nodeIndex].S = (4*M_PI*r*r)/(2*cap_filtered_count);
+    }
+
+    //free
+    free(z_cylinder);
+    free(theta);
+    free(cylinder);
+    free(phi);
+    free(cap1);
+    free(cap2);
+    free(cap1_filtered);
+    free(cap2_filtered);
+    free(nodesTotal);
+ 
+     // Update old position value
+     this->pCenter.pos_old = this->pCenter.pos;   
+
+    for(int ii = 0;ii<nTotalPoints;ii++){
+         ParticleNode* node_j = &(this->nodes[ii]);
+         printf("%f,%f,%f \n",node_j->pos.x,node_j->pos.y,node_j->pos.z );
+    }
+
+}
+
+void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 vec, dfloat angleMag, bool move, dfloat density, dfloat3 vel, dfloat3 w)
+{
+    
+    dfloat a, b, c;  // principal radius
 
     unsigned int i, j;
 
@@ -1060,12 +1313,9 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec,
     b = diameter.y / 2.0;
     c = diameter.z / 2.0;
 
-    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     this->pCenter.radius = POW_FUNCTION(a*b*c,1.0/3.0);
     this->pCenter.volume = a*b*c*4*M_PI/3;
 
-    // Particle area
-    this->pCenter.S = 
     // Particle density
     this->pCenter.density = density;
 
@@ -1089,318 +1339,206 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec,
 
     this->pCenter.movable = move;
 
-//#############################################################################
-    nNodesLayer = (unsigned int*)malloc(maxNumLayers * sizeof(unsigned int));
-    theta = (dfloat*)malloc(maxNumLayers * sizeof(dfloat));
-    zeta = (dfloat*)malloc(maxNumLayers * sizeof(dfloat));
-    pa = (dfloat*)malloc(maxNumLayers * sizeof(dfloat));
-    pb = (dfloat*)malloc(maxNumLayers * sizeof(dfloat));
-    dS = (dfloat*)malloc(maxNumLayers * sizeof(dfloat));
-    S = (dfloat*)malloc(maxNumLayers * sizeof(dfloat));
+    //printf("%f %f %f %f %f \n", this->pCenter.radius,this->pCenter.volume,this->pCenter.I.x ,this->pCenter.I.y,this->pCenter.I.z);
 
-    dfloat scale = MESH_SCALE; // min distance between each node
+    // Particle area
+    dfloat p = 1.6075; //aproximation
+    dfloat ab = POW_FUNCTION(a*b,p); 
+    dfloat ac = POW_FUNCTION(a*c,p); 
+    dfloat bc = POW_FUNCTION(b*c,p); 
 
+    this->pCenter.S = 4*M_PI*POW_FUNCTION((ab + ac + bc)/3,1.0/p);
+
+
+
+    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+    dfloat scaling = myMin(myMin(a, b), c);
+    
+    a /= scaling;
+    b /= scaling;
+    c /= scaling;
+    ab = POW_FUNCTION(a*b,p); 
+    ac = POW_FUNCTION(a*c,p); 
+    bc = POW_FUNCTION(b*c,p); 
+
+    dfloat SS =  4*M_PI*POW_FUNCTION((ab + ac + bc)/3.0,1.0/p);
+    int numberNodes = (int)(SS * POW_FUNCTION(scaling, 3.0) /(4*M_PI/MESH_SCALE));
+
+    // Particle num nodes
+    this->numNodes = numberNodes;
+
+    //#############################################################################
+
+    // Allocate memory for positions and forces
+    dfloat *phi = (dfloat *)malloc(numberNodes * sizeof(dfloat));
+    dfloat *theta = (dfloat *)malloc(numberNodes * sizeof(dfloat));
+    dfloat* posx = (dfloat *)malloc(numberNodes * sizeof(dfloat));
+    dfloat* posy = (dfloat *)malloc(numberNodes* sizeof(dfloat));
+    dfloat* posz = (dfloat *)malloc(numberNodes * sizeof(dfloat));
+    dfloat* fx = (dfloat *)malloc(numberNodes* sizeof(dfloat));
+    dfloat* fy = (dfloat *)malloc(numberNodes* sizeof(dfloat));
+    dfloat* fz = (dfloat *)malloc(numberNodes * sizeof(dfloat));
+    
     
 
-    //Bessel solution for perimeter
-    dfloat aLateralPerimeter = 0.0;
-    dfloat h = (a - c) * (a - c) / ((a + c) * (a + c));
-    aLateralPerimeter = (1 + 3*h / (10.0 + sqrt(4 - 3*h)));
-    aLateralPerimeter = aLateralPerimeter * M_PI * (a + c)/2.0; // the division by 2 is because is just half elipse
+    // Initialize random positions of charges on the ellipsoid surface
+    for (int i = 0; i < numberNodes; i++) {
+        phi[i] = 2 * M_PI * ((dfloat)rand() / (dfloat)RAND_MAX);   // Angle in XY plane
+        theta[i] = M_PI * ((dfloat)rand() / (dfloat)RAND_MAX);     // Angle from Z axis
+
+        posx[i] = 1 * sin(theta[i]) * cos(phi[i]); // x coordinate
+        posy[i] = 1 * sin(theta[i]) * sin(phi[i]); // y coordinate
+        posz[i] = 1 * cos(theta[i]);               // z coordinate
+    }
+
+
+    // Constants
+    dfloat base_k = 1.0; // Base Coulomb's constant (assuming unit charge)
+    dfloat rij[3];
+    dfloat r;
+    dfloat F;
+    dfloat unit_rij[3];
+    dfloat force_scale_factor;
+
     
+    for (int iter = 0; iter < 300; iter++) {
+        // Initialize force accumulator
+        for (int i = 0; i < numberNodes; i++) {
+            fx[i] = 0.0;
+            fy[i] = 0.0;
+            fz[i] = 0.0;
+        }
+
+        // Compute pairwise forces and update positions
+        for (int i = 0; i < numberNodes; i++) {
+            for (int j = 0; j < numberNodes; j++) {
+                if (i != j) { // not the same node
+                    // Vector from node j to node i
+
+                    rij[0] = posx[i] - posx[j];
+                    rij[1] = posy[i] - posy[j];
+                    rij[2] = posz[i] - posz[j];
+
+                    // Distance between node i and node j
+                    r = sqrt(rij[0] * rij[0] + rij[1] * rij[1] + rij[2] * rij[2]);
+
+                    // Coulomb's force magnitude
+                    F = base_k / (r * r);
+
+                    // Direction of force
+                    unit_rij[0] = rij[0] / r;
+                    unit_rij[1] = rij[1] / r;
+                    unit_rij[2] = rij[2] / r;
+
+                    // Accumulate force on nodes i
+                    fx[i] += F * unit_rij[0];
+                    fy[i] += F * unit_rij[1];
+                    fz[i] += F * unit_rij[2];
+                }
+            }
+        }
+        // Update positions of nodes
+        for (int i = 0; i < numberNodes; i++) {
+            posx[i] += 10 * fx[i] / (numberNodes * numberNodes);
+            posy[i] += 10 * fy[i] / (numberNodes * numberNodes);
+            posz[i] += 10 * fz[i] / (numberNodes * numberNodes);
+        }
+
+        // Project updated positions back onto the ellipsoid surface
+        for (int i = 0; i < numberNodes; i++) {
+            // Calculate the current point's distance to the center along each axis
+            force_scale_factor = sqrt(posx[i]*posx[i] +
+                                posy[i]*posy[i] +
+                                posz[i]*posz[i]);
+            // Rescale to ensure it lies on the ellipsoid surface
+            posx[i] /= force_scale_factor;
+            posy[i] /= force_scale_factor;
+            posz[i] /= force_scale_factor;
+        }
+    }
+    //convert into elipsoid 
+    for (int i = 0; i < numberNodes; i++) {
+    posx[i] *= a*scaling;
+    posy[i] *= b*scaling;
+    posz[i] *= c*scaling;
+    }
     
-
-    dfloat bLateralPerimeter = 0.0;
-    h = (b - c) * (b - c) / ((b + c) * (b + c));
-    bLateralPerimeter = (1 + 3*h / (10.0 + sqrt(4 - 3*h)));
-    bLateralPerimeter = bLateralPerimeter * M_PI * (b + c)/2.0;// the division by 2 is because is just half elipse
-
-    dfloat distBetweenLayers;
-    dfloat dist,angle,angleStep;
-    dfloat x, y, x0, y0;
-
-    dfloat LateralPerimeter;
-    dfloat auxAxis;
-
-    // define principal and secondary planes
-    if (a > b) {
-        LateralPerimeter = aLateralPerimeter;
-        auxAxis = a;
-    }
-    else {
-        LateralPerimeter = bLateralPerimeter;
-        auxAxis = b;
-    }
-
-    nLayer = (unsigned int)(LateralPerimeter / scale+1);
-
-    distBetweenLayers = LateralPerimeter / (nLayer-1);
-
-
-    //the distance is given in cartesian coordinates, now is necessary to convert
-    //this distance to relative angles. for that based on the max distance of the layer
-    //is calculate
-
-    angle = 0;
-    angleStep = 1e-6;
-    x0 = 0;
-    y0 = c;
-
-    for (i = 1; i <= nLayer; i++) {
-        dist = 0;
-        while (dist <= distBetweenLayers-0.00001*scale) {
-            angle += angleStep;
-            x = auxAxis * cos(angle);
-            y = c * sin(angle);
-            dist += sqrt((x0 - x) * (x0 - x) + (y0 - y) * (y0 - y));
-            x0 = x;
-            y0 = y;
-        }
-        //TODO FIX THETA
-        theta[i] = angle-M_PI/2.0; // angle of each layer
-    }
-    theta[0] = -M_PI/2.0;
-    theta[nLayer] = M_PI / 2.0;
-
-
-   // nLayer = (unsigned int)(3.0 * sqrt(2) * c / scale + 1.0); //number of layers in the sphere
-
-    /// calculate the number of nodes and the relative "height" between the layers
-    this->numNodes = 0;
-    for (i = 0; i <= nLayer; i++) {
-
-        //TODO FIX THETA
-        pa[i] = abs((dfloat)cos(theta[i])) * a;
-        pb[i] = abs((dfloat)cos(theta[i])) * b;
-        epsilon = sqrt(1 - (pb[i] * pb[i] / (pa[i] * pa[i])));
-
-        //perimeter calc
-        perimeter = 0.0;
-        h = (pa[i] - pb[i]) * (pa[i] - pb[i]) / ((pa[i] + pb[i]) * (pa[i] + pb[i]));
-        perimeter = (1 + 3*h / (10.0 + sqrt(4 - 3*h)));
-        perimeter = perimeter * M_PI * (pa[i] + pb[i]);
-//        nNodesLayer[i] = (unsigned int)(1.5 + cos(theta[i]) * nLayer * sqrt(3)); 
-        nNodesLayer[i] = (unsigned int)round(perimeter/scale);
-        if (i == 0 || i == nLayer) {
-            nNodesLayer[i] = 1;
-        }
-        this->numNodes = this->numNodes + nNodesLayer[i]; //total number of notes on the sphere
-        zeta[i] = c * sin(theta[i]); //height of each layer
-    }
-
-    //calculate the area of each layer
-    for (i = 0; i < nLayer; i++) {
-        S[i] = (zeta[i] + zeta[i + 1]) / 2.0 - zeta[0];
-
-        gamma = atan2(S[i] , c);
-        pa[i] = cos(gamma) * a;
-        pb[i] = cos(gamma) * b;
-
-        if (i == 0 || i == nLayer) {
-            dSa = sqrt((pa[i]-a) * (pa[i]-a) + S[i] * S[i]);
-            dSb = sqrt((pb[i]-b) * (pb[i]-b) + S[i] * S[i]);
-        }
-        else {
-            dSa = sqrt((pa[i] - pa[i - 1]) * (pa[i] - pa[i - 1]) + (S[i] - S[i - 1]) * (S[i] - S[i - 1]));
-            dSb = sqrt((pb[i] - pb[i - 1]) * (pb[i] - pb[i - 1]) + (S[i] - S[i - 1]) * (S[i] - S[i - 1]));
-        }
-        dS[i] = (dSa + dSb) / 2.0;
-    }
-
-
-    for (i = 1; i < nLayer; i++) {
-
-        epsilon = sqrt(1 - (pb[i] * pb[i] / (pa[i] * pa[i])));
-
-        //perimeter calc
-        perimeter = 0.0;
-        h = (pa[i] - pb[i]) * (pa[i] - pb[i]) / ((pa[i] + pb[i]) * (pa[i] + pb[i]));
-        perimeter = (1 + 3*h / (10.0 + sqrt(4 - 3*h)));
-        perimeter = perimeter * M_PI * (pa[i] + pb[i]);
-
-        S[i] = dS[i] * perimeter;
-        perimeter = 0.0;
-    }
-
-    gamma = asin(-zeta[0] / (c * 2.0));
-    //gamma = asin(((zeta[0]) / 2.0 - zeta[0]))/c);
-    h = (cos(gamma) * a - cos(gamma) * b) * (cos(gamma) * a - cos(gamma) * b) / ((cos(gamma) * a + cos(gamma) * b) * (cos(gamma) * a + cos(gamma) * b));
-    perimeter = 0.0;
-    perimeter = (1 + 3*h / (10.0 + sqrt(4 - 3*h)));
-    perimeter = perimeter * M_PI * (cos(gamma) * a + cos(gamma) * b);
-    S[0] = dS[0] * perimeter;
-    S[nLayer] = S[0];
-
+ 
+    /*
+    for(int ii = 0;ii<N;ii++){
+         printf("%f %f %f \n",posx[ii],posy[ii],posz[ii] );
+     }*/
+   
 
     this->nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * this->numNodes);
 
-    ParticleNode* first_node = &(this->nodes[0]);
+    for (int nodeIndex = 0; nodeIndex < numberNodes; nodeIndex++) {
+        this->nodes[nodeIndex].pos.x = posx[nodeIndex];
+        this->nodes[nodeIndex].pos.y = posy[nodeIndex];
+        this->nodes[nodeIndex].pos.z = posz[nodeIndex];
 
-    //south node - define all properties
-    first_node->pos.x = 0.0;
-    first_node->pos.y = 0.0;
-    first_node->pos.z = 0.0 - c;
+        this->nodes[nodeIndex].vel.x = vel.x + w.y * this->nodes[nodeIndex].pos.z - w.z * this->nodes[nodeIndex].pos.y;
+        this->nodes[nodeIndex].vel.y = vel.y + w.z * this->nodes[nodeIndex].pos.x - w.x * this->nodes[nodeIndex].pos.z;
+        this->nodes[nodeIndex].vel.z = vel.z + w.x * this->nodes[nodeIndex].pos.y - w.y * this->nodes[nodeIndex].pos.x;
 
-    first_node->vel.x = vel.x + w.y * first_node->pos.z - w.z * first_node->pos.y;
-    first_node->vel.y = vel.y + w.z * first_node->pos.x - w.x * first_node->pos.z;
-    first_node->vel.z = vel.z + w.x * first_node->pos.y - w.y * first_node->pos.x;
-
-    first_node->vel_old.x = vel.x + w.y * first_node->pos.z - w.z * first_node->pos.y;
-    first_node->vel_old.y = vel.y + w.z * first_node->pos.x - w.x * first_node->pos.z;
-    first_node->vel_old.z = vel.z + w.x * first_node->pos.y - w.y * first_node->pos.x;
-
-    first_node->S = S[0];
-    this->pCenter.S += first_node->S;
-
-    dfloat xx, yy, zz;
-    int nodeIndex = 0;
-    dfloat sigma = 0.0;
-    dfloat distBetweenNodes;
-
-    for (i = 1; i < nLayer; i++) {
-
-        perimeter = 0.0;
-        h = (pa[i] - pb[i]) * (pa[i] - pb[i]) / ((pa[i] + pb[i]) * (pa[i] + pb[i]));
-        perimeter = (1 + 3*h / (10.0 + sqrt(4 - 3*h)));
-        perimeter = perimeter * M_PI * (pa[i] + pb[i]);
-
-        distBetweenNodes = perimeter / (nNodesLayer[i]) ;
-        angle = 0;
-        angleStep = 0.00001;
-
-        x0 = pa[i];
-        y0 = 0;
-
-        for (j = 0; j < nNodesLayer[i]; j++) {
-
-            dist = 0;
-
-            if (j == 0) {
-                sigma = 0.0;
-            }
-            else {
-                while (dist <= distBetweenNodes - 0.00001 * scale) {
-                    angle += angleStep;
-                    x = abs(pa[i]) * cos(angle);
-                    y = abs(pb[i]) * sin(angle);
-                    dist += sqrt((x0 - x) * (x0 - x) + (y0 - y) * (y0 - y));
-                    x0 = x;
-                    y0 = y;
-                }
-                //TODO FIX THETA
-                sigma = angle;
-            }
-
-            // determine the properties of each node in the mid layers
-            nodeIndex = nodeIndex + 1;
-
-            xx = a * cos(theta[i]) * cos((dfloat)j * 2.0 * M_PI / nNodesLayer[i]);
-            yy = b * cos(theta[i]) * sin((dfloat)j * 2.0 * M_PI / nNodesLayer[i]);
-            zz = c * sin(theta[i]);
-
-            this->nodes[nodeIndex].pos.x = xx; //a * cos(theta[i]) * cos(sigma);
-            this->nodes[nodeIndex].pos.y = yy; //b * cos(theta[i]) * sin(sigma);
-            this->nodes[nodeIndex].pos.z = zz; //c * sin(theta[i]);
+        this->nodes[nodeIndex].vel_old.x = vel.x + w.y * this->nodes[nodeIndex].pos.z - w.z * this->nodes[nodeIndex].pos.y;
+        this->nodes[nodeIndex].vel_old.y = vel.y + w.z * this->nodes[nodeIndex].pos.x - w.x * this->nodes[nodeIndex].pos.z;
+        this->nodes[nodeIndex].vel_old.z = vel.z + w.x * this->nodes[nodeIndex].pos.y - w.y * this->nodes[nodeIndex].pos.x;
 
 
-            this->nodes[nodeIndex].vel.x = vel.x + w.y * this->nodes[nodeIndex].pos.z - w.z * this->nodes[nodeIndex].pos.y;
-            this->nodes[nodeIndex].vel.y = vel.y + w.z * this->nodes[nodeIndex].pos.x - w.x * this->nodes[nodeIndex].pos.z;
-            this->nodes[nodeIndex].vel.z = vel.z + w.x * this->nodes[nodeIndex].pos.y - w.y * this->nodes[nodeIndex].pos.x;
-
-            this->nodes[nodeIndex].vel_old.x = vel.x + w.y * this->nodes[nodeIndex].pos.z - w.z * this->nodes[nodeIndex].pos.y;
-            this->nodes[nodeIndex].vel_old.y = vel.y + w.z * this->nodes[nodeIndex].pos.x - w.x * this->nodes[nodeIndex].pos.z;
-            this->nodes[nodeIndex].vel_old.z = vel.z + w.x * this->nodes[nodeIndex].pos.y - w.y * this->nodes[nodeIndex].pos.x;
-
-
-            // the area of sphere segment is divided by the number of node in the layer, so all nodes have the same area
-            this->nodes[nodeIndex].S = S[i] / nNodesLayer[i];
-
-            this->pCenter.S += this->nodes[nodeIndex].S;
-        }
+        // the area of sphere segment is divided by the number of node in the layer, so all nodes have the same area
+        this->nodes[nodeIndex].S = this->pCenter.S / numberNodes;
     }
-
-    nodeIndex = nodeIndex + 1;
-    //north pole -define all properties
-
-        ParticleNode* last_node = &(this->nodes[this->numNodes-1]);
-
-
-    last_node->pos.x = 0.0;
-    last_node->pos.y = 0.0;
-    last_node->pos.z = 0.0 + c;
-
-    last_node->vel.x = vel.x + w.y * last_node->pos.z - w.z * last_node->pos.y;
-    last_node->vel.y = vel.y + w.z * last_node->pos.x - w.x * last_node->pos.z;
-    last_node->vel.z = vel.z + w.x * last_node->pos.y - w.y * last_node->pos.x;
-
-    last_node->vel_old.x = vel.x + w.y * last_node->pos.z  - w.z * last_node->pos.y;
-    last_node->vel_old.y = vel.y + w.z * last_node->pos.x  - w.x * last_node->pos.z;
-    last_node->vel_old.z = vel.z + w.x * last_node->pos.y  - w.y * last_node->pos.x;
-    last_node->S = S[nLayer];
-
-    //unsigned int last_node = nodeIndex;
-
-    this->pCenter.S += last_node->S;
-
 
     //%%%%%%%% ROTATION 
-    //normalize angle vector
+    //current state rotation quartenion (STANDARD ROTATION OF 90º IN THE Z - AXIS)
 
-    dfloat mag;
-    dfloat3 vv,ww;
+    dfloat4 q1 = compute_rotation_quart(dfloat3(0,0,1),vec);
+    dfloat4 q2 = axis_angle_to_quart(vec,angleMag);
+    dfloat4 qf = quart_multiplication(q1,q2);
 
-    mag = sqrt(angleVec.x* angleVec.x + angleVec.y* angleVec.y + angleVec.z * angleVec.z);
+    dfloat3 new_pos;
+    for (i = 0; i < numberNodes; i++) {
 
-    const dfloat q0 = cos(0.5*angleMag);
-    const dfloat qi = (angleVec.x / mag) * sin (0.5*angleMag);
-    const dfloat qj = (angleVec.y / mag) * sin (0.5*angleMag);
-    const dfloat qk = (angleVec.z / mag) * sin (0.5*angleMag);
+        new_pos = dfloat3(this->nodes[i].pos.x,this->nodes[i].pos.y,this->nodes[i].pos.z);
+        new_pos = rotate_vector_by_quart_R(new_pos,qf);
 
-    const dfloat tq0m1 = (q0*q0) - 0.5;
-
-    for (i = 0; i < numNodes; i++) {
-
-        vv.x = this->nodes[i].pos.x;
-        vv.y = this->nodes[i].pos.y;
-        vv.z = this->nodes[i].pos.z;
-
-        dfloat v_x = 2 * (   (tq0m1 + (qi*qi))*vv.x + ((qi*qj) - (q0*qk))*vv.y + ((qi*qk) + (q0*qj))*vv.z);
-        dfloat v_y = 2 * ( ((qi*qj) + (q0*qk))*vv.x +   (tq0m1 + (qj*qj))*vv.y + ((qj*qk) - (q0*qi))*vv.z);
-        dfloat v_z = 2 * ( ((qi*qj) - (q0*qj))*vv.x + ((qj*qk) + (q0*qi))*vv.y +   (tq0m1 + (qk*qk))*vv.z);
-        
-        this->nodes[i].pos.x = v_x + center.x;
-        this->nodes[i].pos.y = v_y + center.y;
-        this->nodes[i].pos.z = v_z + center.z;
-
-
-
-        //printf(" %f %f %f \n", result.node[i].pos.x, result.node[i].pos.y, result.node[i].pos.z);
-
+        this->nodes[i].pos.x = new_pos.x + center.x;
+        this->nodes[i].pos.y = new_pos.y + center.y;
+        this->nodes[i].pos.z = new_pos.z + center.z;
     }
 
+    this->pCenter.q_pos.w = qf.w;
+    this->pCenter.q_pos.x = qf.x;
+    this->pCenter.q_pos.y = qf.y;
+    this->pCenter.q_pos.z = qf.z;
 
+    this->pCenter.q_pos_old.w = this->pCenter.q_pos.w;
+    this->pCenter.q_pos_old.x = this->pCenter.q_pos.x;
+    this->pCenter.q_pos_old.y = this->pCenter.q_pos.y;
+    this->pCenter.q_pos_old.z = this->pCenter.q_pos.z;
+/**/
+    for(int ii = 0;ii<numberNodes;ii++){
+         ParticleNode* node_j = &(this->nodes[ii]);
+         printf("%f,%f,%f \n",node_j->pos.x,node_j->pos.y,node_j->pos.z );
+     }
+   /**/
+    // Free allocated memory
 
-   
-
-    free(nNodesLayer);
+    free(phi);
     free(theta);
-    free(zeta);
-    free(pa);
-    free(pb);
-    free(dS);
-    free(S);
+    free(posx);
+    free(posy);
+    free(posz);
+    free(fx);
+    free(fy);
+    free(fz);
 
-    this->numNodes = nodeIndex;
      // Update old position value
     this->pCenter.pos_old = this->pCenter.pos;
-
-    for(int ii = 0;ii<numNodes;ii++){
-        ParticleNode* node_j = &(this->nodes[ii]);
-        printf("%f;%f;%f \n",node_j->pos.x,node_j->pos.y,node_j->pos.z );
-    }
-
         //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        */
 }
 
 

@@ -31,6 +31,25 @@ typedef struct dfloat3 {
 } dfloat3;
 
 /*
+*   Struct for dfloat in x, y, z, w (quartenion)
+*/
+typedef struct dfloat4{
+    dfloat x;
+    dfloat y;
+    dfloat z;
+    dfloat w;
+
+    __host__ __device__
+    dfloat4(dfloat x = 0, dfloat y = 0, dfloat z = 0, dfloat w = 0)
+    {
+        this->x = x;
+        this->y = y;
+        this->z = z;
+        this->w = w;
+    }
+} dfloat4;
+
+/*
 *   Struct for dfloat in x, y, z as structure of arrays (SoA)
 */
 typedef struct dfloat3SoA {

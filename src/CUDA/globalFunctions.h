@@ -190,6 +190,13 @@ dfloat4 compute_rotation_quart(dfloat3 v1, dfloat3 v2);
 __host__ __device__
 dfloat4 axis_angle_to_quart(dfloat3 axis, dfloat angle);
 
+//https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+// roll = x-axis, pitch =  y-axis, yaw = z-axis
+__host__ __device__
+dfloat4 euler_to_quart(dfloat roll, dfloat pitch, dfloat yaw);
+__host__ __device__
+dfloat3 quart_to_euler(dfloat4 q);
+
 
 
 /**
