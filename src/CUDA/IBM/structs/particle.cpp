@@ -252,6 +252,24 @@ void Particle::makeSphereIco(dfloat diameter, dfloat3 center, bool move,
     this->pCenter.I.y = 1.0 * this->pCenter.volume * this->pCenter.density * ((A_AXIS * A_AXIS) + (C_AXIS * C_AXIS)) / 5.0;
     this->pCenter.I.z = 1.0 * this->pCenter.volume * this->pCenter.density * ((A_AXIS * A_AXIS) + (B_AXIS * B_AXIS)) / 5.0;
 
+    
+    this->pCenter.f.x = 0.0;
+    this->pCenter.f.y = 0.0;
+    this->pCenter.f.z = 0.0;
+
+    this->pCenter.f_old.x = 0.0;
+    this->pCenter.f_old.y = 0.0;
+    this->pCenter.f_old.z = 0.0;
+
+    this->pCenter.M.x = 0.0;
+    this->pCenter.M.y = 0.0;
+    this->pCenter.M.z = 0.0;
+
+    this->pCenter.M_old.x = 0.0;
+    this->pCenter.M_old.y = 0.0;
+    this->pCenter.M_old.z = 0.0;
+
+
     this->pCenter.movable = move;
 
     this->nodes = (ParticleNode*) malloc(sizeof(ParticleNode) * Vert);
@@ -728,9 +746,27 @@ void Particle::makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int cou
     this->pCenter.I.x = 2.0 * volume * this->pCenter.density * r * r / 5.0;
     this->pCenter.I.y = 2.0 * volume * this->pCenter.density * r * r / 5.0;
     this->pCenter.I.z = 2.0 * volume * this->pCenter.density * r * r / 5.0;
+
     this->pCenter.IP.x = 0.0;
     this->pCenter.IP.y = 0.0;
     this->pCenter.IP.z = 0.0;
+
+    this->pCenter.f.x = 0.0;
+    this->pCenter.f.y = 0.0;
+    this->pCenter.f.z = 0.0;
+
+    this->pCenter.f_old.x = 0.0;
+    this->pCenter.f_old.y = 0.0;
+    this->pCenter.f_old.z = 0.0;
+
+    this->pCenter.M.x = 0.0;
+    this->pCenter.M.y = 0.0;
+    this->pCenter.M.z = 0.0;
+
+    this->pCenter.M_old.x = 0.0;
+    this->pCenter.M_old.y = 0.0;
+    this->pCenter.M_old.z = 0.0;
+
 
     this->pCenter.movable = move;
 
@@ -1254,6 +1290,24 @@ void Particle::makeCapsule(dfloat diameter, dfloat3 point1, dfloat3 point2, bool
     this->pCenter.IP.x = 0.0;
     this->pCenter.IP.y = 0.0;
     this->pCenter.IP.z = 0.0;
+
+    this->pCenter.f.x = 0.0;
+    this->pCenter.f.y = 0.0;
+    this->pCenter.f.z = 0.0;
+
+    this->pCenter.f_old.x = 0.0;
+    this->pCenter.f_old.y = 0.0;
+    this->pCenter.f_old.z = 0.0;
+
+    this->pCenter.M.x = 0.0;
+    this->pCenter.M.y = 0.0;
+    this->pCenter.M.z = 0.0;
+
+    this->pCenter.M_old.x = 0.0;
+    this->pCenter.M_old.y = 0.0;
+    this->pCenter.M_old.z = 0.0;
+
+
     this->pCenter.movable = move;
     
     this->numNodes = nTotalPoints;
@@ -1336,6 +1390,23 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 vec, dflo
     this->pCenter.I.x = 0.2 * this->pCenter.volume * this->pCenter.density * (b*b + c*c);
     this->pCenter.I.y = 0.2 * this->pCenter.volume * this->pCenter.density * (a*a + c*c);
     this->pCenter.I.z = 0.2 * this->pCenter.volume * this->pCenter.density * (a*a + b*b);
+
+    this->pCenter.f.x = 0.0;
+    this->pCenter.f.y = 0.0;
+    this->pCenter.f.z = 0.0;
+
+    this->pCenter.f_old.x = 0.0;
+    this->pCenter.f_old.y = 0.0;
+    this->pCenter.f_old.z = 0.0;
+
+    this->pCenter.M.x = 0.0;
+    this->pCenter.M.y = 0.0;
+    this->pCenter.M.z = 0.0;
+
+    this->pCenter.M_old.x = 0.0;
+    this->pCenter.M_old.y = 0.0;
+    this->pCenter.M_old.z = 0.0;
+
 
     this->pCenter.movable = move;
 

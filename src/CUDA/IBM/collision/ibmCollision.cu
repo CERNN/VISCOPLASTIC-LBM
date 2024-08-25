@@ -55,6 +55,10 @@ void gpuParticlesCollision(
 
     // Particle from column
     ParticleCenter* pc_i = &particleCenters[column];
+    
+    #ifdef IBM_DEBUG
+    printf("collision step %d x: %f \n",step,pc_i->pos.x);
+    #endif
 
     //Collision against walls
     if(row == NUM_PARTICLES){

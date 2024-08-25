@@ -143,7 +143,7 @@ constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------------------------------------------------------- */
 
 // Some prints to test IBM
-#define IBM_DEBUG false
+//#define IBM_DEBUG
 
 #ifdef IBM
 // Border size is the number of ghost nodes in one size of z for each GPU. 

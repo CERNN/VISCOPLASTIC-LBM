@@ -762,6 +762,15 @@ void gpuUpdateParticleCenterVelocityAndRotation(
 
     ParticleCenter *pc = &(particleCenters[p]);
 
+    #ifdef IBM_DEBUG
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 pos  x: %f y: %f z: %f\n",pc->pos.x,pc->pos.y,pc->pos.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 vel  x: %f y: %f z: %f\n",pc->vel.x,pc->vel.y,pc->vel.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 w  x: %f y: %f z: %f\n",pc->w.x,pc->w.y,pc->w.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 f  x: %f y: %f z: %f\n",pc->f.x,pc->f.y,pc->f.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 f_old  x: %f y: %f z: %f\n",pc->f_old.x,pc->f_old.y,pc->f_old.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 dP_internal  x: %f y: %f z: %f\n",pc->dP_internal.x,pc->dP_internal.y,pc->dP_internal.z);
+    #endif
+
     if(!pc->movable)
         return;
 
@@ -785,6 +794,9 @@ void gpuUpdateParticleCenterVelocityAndRotation(
     const dfloat3 M_old = pc->M_old;
     const dfloat3 w_old = pc->w_old;
     const dfloat3 I = pc->I;
+    const dfloat Ixy = pc->IP.x;
+    const dfloat Iyz = pc->IP.y;
+    const dfloat Ixz = pc->IP.z;
 
     wAux.x = w_old.x;
     wAux.y = w_old.y;
@@ -817,6 +829,12 @@ void gpuUpdateParticleCenterVelocityAndRotation(
     pc->w.x = wNew.x;
     pc->w.y = wNew.y;
     pc->w.z = wNew.z;
+
+    #ifdef IBM_DEBUG
+    printf("gpuUpdateParticleCenterVelocityAndRotation 2 pos  x: %f y: %f z: %f\n",pc->pos.x,pc->pos.y,pc->pos.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 2 vel  x: %f y: %f z: %f\n",pc->vel.x,pc->vel.y,pc->vel.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 2 w  x: %f y: %f z: %f\n",pc->w.x,pc->w.y,pc->w.z);
+    #endif
 }
 
 __global__
@@ -829,6 +847,14 @@ void gpuParticleMovement(
         return;
 
     ParticleCenter *pc = &(particleCenters[p]);
+
+    #ifdef IBM_DEBUG
+    printf("gpuParticleMovement 1 pos  x: %f y: %f z: %f\n",pc->pos.x,pc->pos.y,pc->pos.z);
+    printf("gpuParticleMovement 1 vel  x: %f y: %f z: %f\n",pc->vel.x,pc->vel.y,pc->vel.z);
+    printf("gpuParticleMovement 1 w  x: %f y: %f z: %f\n",pc->w.x,pc->w.y,pc->w.z);
+    #endif
+    
+    
     if(!pc->movable)
         return;
 
@@ -862,8 +888,13 @@ void gpuParticleMovement(
     pc->w_pos.x += pc->w_avg.x;
     pc->w_pos.y += pc->w_avg.y;
     pc->w_pos.z += pc->w_avg.z;
-}
 
+    #ifdef IBM_DEBUG
+    printf("gpuParticleMovement 2 pos  x: %f y: %f z: %f\n",pc->pos.x,pc->pos.y,pc->pos.z);
+    printf("gpuParticleMovement 2 vel  x: %f y: %f z: %f\n",pc->vel.x,pc->vel.y,pc->vel.z);
+    printf("gpuParticleMovement 2 w  x: %f y: %f z: %f\n",pc->w.x,pc->w.y,pc->w.z);
+    #endif
+}
 
 __global__
 void gpuUpdateParticleOldValues(
