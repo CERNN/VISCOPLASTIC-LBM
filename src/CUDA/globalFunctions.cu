@@ -237,3 +237,120 @@ dfloat3 quart_to_euler(dfloat4 q){
 
     return angles;
 }
+
+__host__ __device__
+void quart_transpose(dfloat matrix[4][4], dfloat result[4][4]) {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            result[j][i] = matrix[i][j];
+        }
+    }
+}
+
+__host__ __device__
+void quart_left_mult(dfloat4 q, dfloat J[4][4], dfloat result[4][4]) {
+    dfloat4 col;
+    for (int j = 0; j < 4; j++) {
+        col.w = J[0][j];
+        col.x = J[1][j];
+        col.y = J[2][j];
+        col.z = J[3][j];
+        dfloat4 temp = quart_multiplication(q, col);
+        result[0][j] = temp.w;
+        result[1][j] = temp.x;
+        result[2][j] = temp.y;
+        result[3][j] = temp.z;
+    }
+}
+
+__host__ __device__
+void quart_right_mult(dfloat J[4][4], dfloat4 q, dfloat result[4][4]) {
+    dfloat4 row;
+    for (int i = 0; i < 4; i++) {
+        row.w = J[i][0];
+        row.x = J[i][1];
+        row.y = J[i][2];
+        row.z = J[i][3];
+        dfloat4 temp = quart_multiplication(row, q);
+        result[i][0] = temp.w;
+        result[i][1] = temp.x;
+        result[i][2] = temp.y;
+        result[i][3] = temp.z;
+    }
+}
+
+__host__ __device__
+void inertiaMatrix_3_to_4(const dfloat M[3][3], dfloat N[4][4]) {
+
+    N[0][0] = 1.0;
+    N[0][1] = 0.0;
+    N[0][2] = 0.0;
+    N[0][3] = 0.0;
+    
+    N[1][0] = 0.0;
+    N[1][1] = M[0][0];
+    N[1][2] = M[0][1];
+    N[1][3] = M[0][2];
+    
+    N[2][0] = 0.0;
+    N[2][1] = M[1][0];
+    N[2][2] = M[1][1];
+    N[2][3] = M[1][2];
+    
+    N[3][0] = 0.0;
+    N[3][1] = M[2][0];
+    N[3][2] = M[2][1];
+    N[3][3] = M[2][2];
+}
+
+void inertiaMatrix_4_to_3(const dfloat N[4][4], dfloat M[3][3]) {
+    // Extract the 3x3 submatrix from N
+    M[0][0] = N[1][1];
+    M[0][1] = N[1][2];
+    M[0][2] = N[1][3];
+    
+    M[1][0] = N[2][1];
+    M[1][1] = N[2][2];
+    M[1][2] = N[2][3];
+    
+    M[2][0] = N[3][1];
+    M[2][1] = N[3][2];
+    M[2][2] = N[3][3];
+}
+
+
+
+// Function to compute the final result matrix given a rotation quaternion and a matrix J
+// https://people.dsv.su.se/~miko1432/rb/Rotations%20of%20Tensors%20using%20Quaternions%20v0.3.pdf
+__host__ __device__
+void rotate_matrix_by_quart(dfloat4 q, dfloat I[3][3], dfloat I_new[3][3]) {
+    dfloat left_mult_result[4][4];
+    dfloat right_mult_result[4][4];
+    dfloat qJq_conj[4][4];
+    dfloat qJq_conj_T[4][4];
+
+    dfloat J[4][4];
+    dfloat temp[4][4];
+
+    //convert inertia matrix from 3x3 to 4x4
+    inertiaMatrix_3_to_4(I,J);
+
+    // Define the quaternion conjugate q*
+    dfloat4 q_conj = dfloat4(q.w, -q.x, -q.y, -q.z);
+
+    // Compute q * J
+    quart_left_mult(q, J, left_mult_result);
+    
+    // Compute (q * J) * q_conj
+    quart_right_mult(left_mult_result, q_conj, qJq_conj);
+
+    // Transpose qJq_conj
+    quart_transpose(qJq_conj, qJq_conj_T);
+
+    // Compute q * (qJq_conj_T) * q_conj
+    quart_left_mult(q, qJq_conj_T, left_mult_result);
+    quart_right_mult(left_mult_result, q_conj, temp);
+
+    //convert inertia matrix from 4x4 to 3x3
+    inertiaMatrix_4_to_3(temp,I_new);
+}

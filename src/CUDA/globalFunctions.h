@@ -197,7 +197,18 @@ dfloat4 euler_to_quart(dfloat roll, dfloat pitch, dfloat yaw);
 __host__ __device__
 dfloat3 quart_to_euler(dfloat4 q);
 
-
+__host__ __device__
+void quart_transpose(dfloat matrix[4][4], dfloat result[4][4]);
+__host__ __device__
+void quart_left_mult(dfloat4 q, dfloat J[4][4], dfloat result[4][4]);
+__host__ __device__
+void quart_right_mult(dfloat J[4][4], dfloat q, dfloat result[4][4]);
+__host__ __device__
+void inertiaMatrix_3_to_4(const dfloat M[3][3], dfloat N[4][4]);
+__host__ __device__
+void inertiaMatrix_4_to_4(const dfloat N[4][4], dfloat M[3][3]);
+__host__ __device__
+void rotate_matrix_by_quart(dfloat4 q, dfloat I[3][3], dfloat I_new[3][3]);
 
 /**
 *   @brief Copy values from src to dst (shape [NZ, NY, NX])
