@@ -49,6 +49,27 @@ typedef struct dfloat4{
     }
 } dfloat4;
 
+typedef struct dfloat6{
+    dfloat xx;
+    dfloat yy;
+    dfloat zz;
+    dfloat xy;
+    dfloat xz;
+    dfloat yz;
+
+    __host__ __device__
+    dfloat6(dfloat xx = 0, dfloat yy = 0, dfloat zz = 0, dfloat xy = 0, dfloat xz = 0, dfloat yz = 0)
+    {
+        this->xx = xx;
+        this->yy = yy;
+        this->zz = zz;
+        this->xy = xy;
+        this->xz = xz;
+        this->yz = yz;
+    }
+} dfloat6;
+
+
 /*
 *   Struct for dfloat in x, y, z as structure of arrays (SoA)
 */

@@ -7,6 +7,13 @@ std::string getStrDfloat3(dfloat3 val, std::string sep){
     return strValues.str();
 }
 
+std::string getStrDfloat6(dfloat6 val, std::string sep){
+    std::ostringstream strValues("");
+    strValues << std::scientific;
+    strValues << val.xx << sep << val.yy << sep << val.zz<< sep << val.xy << sep << val.xz << sep << val.yz;
+    return strValues.str();
+}
+
 
 void saveParticlesInfo(ParticlesSoA particles, unsigned int step, bool saveNodes){
     // Names of file to save particle info
@@ -28,7 +35,7 @@ void saveParticlesInfo(ParticlesSoA particles, unsigned int step, bool saveNodes
     strColumnNames += "w_x" + sep  + "w_y" + sep  + "w_z" + sep;
     strColumnNames += "f_x" + sep  + "f_y" + sep  + "f_z" + sep;
     strColumnNames += "M_x" + sep  + "M_y" + sep  + "M_z" + sep;
-    strColumnNames += "I_x" + sep  + "I_y" + sep  + "I_z" + sep;
+    strColumnNames += "I_xx" + sep  + "I_yy" + sep  + "I_zz" + sep + "I_xy" + sep  + "I_xz" + sep  + "I_yz" + sep;
     strColumnNames += "S" + sep;
     strColumnNames += "radius" + sep;
     strColumnNames += "volume" + sep;
@@ -43,7 +50,7 @@ void saveParticlesInfo(ParticlesSoA particles, unsigned int step, bool saveNodes
         strValuesParticles << getStrDfloat3(pc.w, sep) << sep;
         strValuesParticles << getStrDfloat3(pc.f, sep) << sep;
         strValuesParticles << getStrDfloat3(pc.M, sep) << sep;
-        strValuesParticles << getStrDfloat3(pc.I, sep) << sep;
+        strValuesParticles << getStrDfloat6(pc.I, sep) << sep;
         strValuesParticles << pc.S << sep;
         strValuesParticles << pc.radius << sep;
         strValuesParticles << pc.volume << sep;

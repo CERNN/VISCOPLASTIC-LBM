@@ -161,54 +161,215 @@ dfloat __forceinline__ distPoints2D(const dfloat x1, const dfloat y1, const dflo
     return sqrt((float)(x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
 
+/*
+*   @brief Compute the cross product of two vectors.
+*   @param v1: First vector.
+*   @param v2: Second vector.
+*   @return The cross product vector of v1 and v2.
+*/
 __host__ __device__
 dfloat3 cross_product(dfloat3 v1, dfloat3 v2);
+/*
+*   @brief Compute the dot product of two vectors.
+*   @param v1: First vector.
+*   @param v2: Second vector.
+*   @return The dot product of v1 and v2.
+*/
 __host__ __device__
 dfloat dot_product(dfloat3 v1, dfloat3 v2);
+
+/*
+*   @brief Compute the cross product of two vectors.
+*   @param v1: First vector.
+*   @param v2: Second vector.
+*   @return The cross product vector of v1 and v2.
+*/
+__host__ __device__
+dfloat3 cross_product(dfloat3 v1, dfloat3 v2);
+
+/*
+*   @brief Compute the dot product of two vectors.
+*   @param v1: First vector.
+*   @param v2: Second vector.
+*   @return The dot product of v1 and v2.
+*/
+__host__ __device__
+dfloat dot_product(dfloat3 v1, dfloat3 v2);
+
+/*
+*   @brief Perform quaternion multiplication.
+*   @param q1: First quaternion.
+*   @param q2: Second quaternion.
+*   @return The product of q1 and q2.
+*/
 __host__ __device__
 dfloat4 quart_multiplication(dfloat4 q1, dfloat4 q2);
+/*
+*   @brief Normalize a quaternion.
+*   @param q: Quaternion to be normalized.
+*   @return The normalized quaternion.
+*/
 __host__ __device__
 dfloat4 quart_normalize(dfloat4 q);
+
+/*
+*   @brief Normalize a vector.
+*   @param v: Vector to be normalized.
+*   @return The normalized vector.
+*/
 __host__ __device__
 dfloat3 vector_normalize(dfloat3 v);
+
+/*
+*   @brief Add two quaternions.
+*   @param q1: First quaternion.
+*   @param q2: Second quaternion.
+*   @return The sum of q1 and q2.
+*/
 __host__ __device__
 dfloat4 quart_addition(dfloat4 q1, dfloat4 q2);
+
+/*
+*   @brief Convert a vector to a quaternion.
+*   @param v: Vector to be converted.
+*   @return The quaternion representation of the vector.
+*/
 __host__ __device__
 dfloat4 vector_to_quart(dfloat3 v);
+
+/*
+*   @brief Convert a quaternion to a rotation matrix.
+*   @param q: Quaternion to be converted.
+*   @param R: Output rotation matrix.
+*/
 __host__ __device__
 void quaternion_to_rotation_matrix(dfloat4 q, dfloat R[3][3]);
+
+/*
+*   @brief Rotate a vector by a rotation matrix.
+*   @param v: Vector to be rotated.
+*   @param R: Rotation matrix.
+*   @return The rotated vector.
+*/
 __host__ __device__
 dfloat3 rotate_vector_by_matrix(dfloat3 v, dfloat R[3][3]);
+
+/*
+*   @brief Rotate a vector by a quaternion (using rotation matrix).
+*   @param v: Vector to be rotated.
+*   @param q: Quaternion representing rotation.
+*   @return The rotated vector.
+*/
 __host__ __device__
 dfloat3 rotate_vector_by_quart_R(dfloat3 v, dfloat4 q);
+
+/*
+*   @brief Compute the conjugate of a quaternion.
+*   @param q: Quaternion to be conjugated.
+*   @return The conjugate of q.
+*/
 __host__ __device__
 dfloat4 quart_conjugate(dfloat4 q);
+
+/*
+*   @brief Rotate a vector by a quaternion.
+*   @param v: Vector to be rotated.
+*   @param q: Quaternion representing rotation.
+*   @return The rotated vector.
+*/
 __host__ __device__
 dfloat3 rotate_vector_by_quart(dfloat3 v, dfloat4 q);
+
+/*
+*   @brief Compute the rotation quaternion that aligns two vectors.
+*   @param v1: First vector.
+*   @param v2: Second vector.
+*   @return Quaternion representing the rotation from v1 to v2.
+*/
 __host__ __device__
 dfloat4 compute_rotation_quart(dfloat3 v1, dfloat3 v2);
+
+/*
+*   @brief Convert an axis-angle representation to a quaternion.
+*   @param axis: Rotation axis.
+*   @param angle: Rotation angle.
+*   @return The quaternion representation of the axis-angle rotation.
+*/
 __host__ __device__
 dfloat4 axis_angle_to_quart(dfloat3 axis, dfloat angle);
 
-//https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-// roll = x-axis, pitch =  y-axis, yaw = z-axis
+/*
+*   @brief Convert Euler angles to a quaternion.
+*   source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+*   @param roll: Rotation angle around x-axis.
+*   @param pitch: Rotation angle around y-axis.
+*   @param yaw: Rotation angle around z-axis.
+*   @return The quaternion representation of the Euler angles.
+*/
 __host__ __device__
 dfloat4 euler_to_quart(dfloat roll, dfloat pitch, dfloat yaw);
+
+/*
+*   @brief Convert a quaternion to Euler angles.
+*   @param q: Quaternion to be converted.
+*   @return Euler angles representing the rotation of q.
+*/
 __host__ __device__
 dfloat3 quart_to_euler(dfloat4 q);
 
+/*
+*   @brief Transpose a 4x4 matrix.
+*   @param matrix: Matrix to be transposed.
+*   @param result: Transposed matrix.
+*/
 __host__ __device__
 void quart_transpose(dfloat matrix[4][4], dfloat result[4][4]);
+
+/*
+*   @brief Perform left multiplication of a quaternion by a 4x4 matrix.
+*   source: https://people.dsv.su.se/~miko1432/rb/Rotations%20of%20Tensors%20using%20Quaternions%20v0.3.pdf
+*   @param q: Quaternion to be multiplied.
+*   @param J: 4x4 matrix to multiply with q.
+*   @param result: Resulting 4x4 matrix after multiplication.
+*/
 __host__ __device__
 void quart_left_mult(dfloat4 q, dfloat J[4][4], dfloat result[4][4]);
+
+/*
+*   @brief Perform right multiplication of a 4x4 matrix by a quaternion.
+*   source: https://people.dsv.su.se/~miko1432/rb/Rotations%20of%20Tensors%20using%20Quaternions%20v0.3.pdf
+*   @param J: 4x4 matrix to be multiplied.
+*   @param q: Quaternion to multiply with J.
+*   @param result: Resulting 4x4 matrix after multiplication.
+*/
 __host__ __device__
 void quart_right_mult(dfloat J[4][4], dfloat q, dfloat result[4][4]);
+
+/*
+*   @brief Convert a 3x3 inertia matrix to a 4x4 matrix.
+*   @param M: 3x3 inertia matrix.
+*   @param N: Output 4x4 inertia matrix.
+*/
 __host__ __device__
 void inertiaMatrix_3_to_4(const dfloat M[3][3], dfloat N[4][4]);
+
+/*
+*   @brief Convert a 4x4 inertia matrix to a 3x3 matrix.
+*   @param N: 4x4 inertia matrix.
+*   @param M: Output 3x3 inertia matrix.
+*/
 __host__ __device__
 void inertiaMatrix_4_to_4(const dfloat N[4][4], dfloat M[3][3]);
+
+/*
+*   @brief Rotate a 3x3 matrix by a quaternion.
+*   @param q: Quaternion representing rotation.
+*   @param I: 3x3 matrix to be rotated.
+*   @param I_new: Output rotated 3x3 matrix.
+*/
 __host__ __device__
 void rotate_matrix_by_quart(dfloat4 q, dfloat I[3][3], dfloat I_new[3][3]);
+
 
 /**
 *   @brief Copy values from src to dst (shape [NZ, NY, NX])

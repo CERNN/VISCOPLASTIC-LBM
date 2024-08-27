@@ -248,10 +248,13 @@ void Particle::makeSphereIco(dfloat diameter, dfloat3 center, bool move,
     this->pCenter.q_pos_old.z = 0.0;
 
     // Innertia momentum
-    this->pCenter.I.x = 1.0 * this->pCenter.volume * this->pCenter.density * ((B_AXIS * B_AXIS) + (C_AXIS * C_AXIS)) / 5.0;
-    this->pCenter.I.y = 1.0 * this->pCenter.volume * this->pCenter.density * ((A_AXIS * A_AXIS) + (C_AXIS * C_AXIS)) / 5.0;
-    this->pCenter.I.z = 1.0 * this->pCenter.volume * this->pCenter.density * ((A_AXIS * A_AXIS) + (B_AXIS * B_AXIS)) / 5.0;
+    this->pCenter.I.xx = 1.0 * this->pCenter.volume * this->pCenter.density * ((B_AXIS * B_AXIS) + (C_AXIS * C_AXIS)) / 5.0;
+    this->pCenter.I.yy = 1.0 * this->pCenter.volume * this->pCenter.density * ((A_AXIS * A_AXIS) + (C_AXIS * C_AXIS)) / 5.0;
+    this->pCenter.I.zz = 1.0 * this->pCenter.volume * this->pCenter.density * ((A_AXIS * A_AXIS) + (B_AXIS * B_AXIS)) / 5.0;
 
+    this->pCenter.I.xy = 0.0;
+    this->pCenter.I.xz = 0.0;
+    this->pCenter.I.yz = 0.0;
     
     this->pCenter.f.x = 0.0;
     this->pCenter.f.y = 0.0;
@@ -743,13 +746,13 @@ void Particle::makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int cou
     this->pCenter.q_pos_old.z = 0.0;
 
     // Innertia momentum
-    this->pCenter.I.x = 2.0 * volume * this->pCenter.density * r * r / 5.0;
-    this->pCenter.I.y = 2.0 * volume * this->pCenter.density * r * r / 5.0;
-    this->pCenter.I.z = 2.0 * volume * this->pCenter.density * r * r / 5.0;
+    this->pCenter.I.xx = 2.0 * volume * this->pCenter.density * r * r / 5.0;
+    this->pCenter.I.yy = 2.0 * volume * this->pCenter.density * r * r / 5.0;
+    this->pCenter.I.zz = 2.0 * volume * this->pCenter.density * r * r / 5.0;
 
-    this->pCenter.IP.x = 0.0;
-    this->pCenter.IP.y = 0.0;
-    this->pCenter.IP.z = 0.0;
+    this->pCenter.I.xy = 0.0;
+    this->pCenter.I.xz = 0.0;
+    this->pCenter.I.yz = 0.0;
 
     this->pCenter.f.x = 0.0;
     this->pCenter.f.y = 0.0;
@@ -1284,12 +1287,12 @@ void Particle::makeCapsule(dfloat diameter, dfloat3 point1, dfloat3 point2, bool
     this->pCenter.q_pos_old.z = this->pCenter.q_pos.z;
 
     // Innertia momentum
-    this->pCenter.I.x = this->pCenter.density * (cylinderVol*(r*r/2) + sphereVol * (2*r*r/5));
-    this->pCenter.I.y = this->pCenter.density * (cylinderVol*(length*length/12 + r*r/4 ) + sphereVol * (2*r*r/5 + length*length/2 + 3*length*r/8));
-    this->pCenter.I.z = this->pCenter.density * (cylinderVol*(length*length/12 + r*r/4 ) + sphereVol * (2*r*r/5 + length*length/2 + 3*length*r/8));
-    this->pCenter.IP.x = 0.0;
-    this->pCenter.IP.y = 0.0;
-    this->pCenter.IP.z = 0.0;
+    this->pCenter.I.xx = this->pCenter.density * (cylinderVol*(r*r/2) + sphereVol * (2*r*r/5));
+    this->pCenter.I.yy = this->pCenter.density * (cylinderVol*(length*length/12 + r*r/4 ) + sphereVol * (2*r*r/5 + length*length/2 + 3*length*r/8));
+    this->pCenter.I.zz = this->pCenter.density * (cylinderVol*(length*length/12 + r*r/4 ) + sphereVol * (2*r*r/5 + length*length/2 + 3*length*r/8));
+    this->pCenter.I.xy = 0.0;
+    this->pCenter.I.xz = 0.0;
+    this->pCenter.I.yz = 0.0;
 
     this->pCenter.f.x = 0.0;
     this->pCenter.f.y = 0.0;
@@ -1387,9 +1390,13 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 vec, dflo
     this->pCenter.w_old = w;
 
     // Innertia momentum
-    this->pCenter.I.x = 0.2 * this->pCenter.volume * this->pCenter.density * (b*b + c*c);
-    this->pCenter.I.y = 0.2 * this->pCenter.volume * this->pCenter.density * (a*a + c*c);
-    this->pCenter.I.z = 0.2 * this->pCenter.volume * this->pCenter.density * (a*a + b*b);
+    this->pCenter.I.xx = 0.2 * this->pCenter.volume * this->pCenter.density * (b*b + c*c);
+    this->pCenter.I.yy = 0.2 * this->pCenter.volume * this->pCenter.density * (a*a + c*c);
+    this->pCenter.I.zz = 0.2 * this->pCenter.volume * this->pCenter.density * (a*a + b*b);
+
+    this->pCenter.I.xy = 0.0;
+    this->pCenter.I.xz = 0.0;
+    this->pCenter.I.yz = 0.0;
 
     this->pCenter.f.x = 0.0;
     this->pCenter.f.y = 0.0;
@@ -1410,7 +1417,7 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 vec, dflo
 
     this->pCenter.movable = move;
 
-    //printf("%f %f %f %f %f \n", this->pCenter.radius,this->pCenter.volume,this->pCenter.I.x ,this->pCenter.I.y,this->pCenter.I.z);
+    //printf("%f %f %f %f %f \n", this->pCenter.radius,this->pCenter.volume,this->pCenter.I.xx ,this->pCenter.I.yy,this->pCenter.I.zz);
 
     // Particle area
     dfloat p = 1.6075; //aproximation

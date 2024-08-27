@@ -793,10 +793,7 @@ void gpuUpdateParticleCenterVelocityAndRotation(
     const dfloat3 M = pc->M;
     const dfloat3 M_old = pc->M_old;
     const dfloat3 w_old = pc->w_old;
-    const dfloat3 I = pc->I;
-    const dfloat Ixy = pc->IP.x;
-    const dfloat Iyz = pc->IP.y;
-    const dfloat Ixz = pc->IP.z;
+    const dfloat6 I = pc->I;
 
     wAux.x = w_old.x;
     wAux.y = w_old.y;
@@ -808,14 +805,14 @@ void gpuUpdateParticleCenterVelocityAndRotation(
     {
         //TODO the last term should be present in dL equation, but since it does not affect spheres, it will stay for now.
         wNew.x = pc->w_old.x + (((M.x * IBM_MOVEMENT_DISCRETIZATION + M_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION)) + pc->dL_internal.x) 
-                - (I.z - I.y)*(w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION ) 
-                * (w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION))/I.x;
+                - (I.zz - I.yy)*(w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION ) 
+                * (w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION))/I.xx;
         wNew.y = pc->w_old.y + (((M.y * IBM_MOVEMENT_DISCRETIZATION + M_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION)) + pc->dL_internal.y) 
-                - (I.x - I.z)*(w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION ) 
-                * (w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION))/I.y;
+                - (I.xx - I.zz)*(w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION ) 
+                * (w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION))/I.yy;
         wNew.z = pc->w_old.z + (((M.z * IBM_MOVEMENT_DISCRETIZATION + M_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION)) + pc->dL_internal.z) 
-                - (I.y - I.x)*(w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION ) 
-                * (w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION))/I.z;
+                - (I.yy - I.xx)*(w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION ) 
+                * (w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION))/I.zz;
 
         error =  (wNew.x - wAux.x)*(wNew.x - wAux.x)/(wNew.x*wNew.x);
         error += (wNew.y - wAux.y)*(wNew.y - wAux.y)/(wNew.y*wNew.y);
@@ -915,9 +912,9 @@ void gpuUpdateParticleOldValues(
 
     // Internal angular momentum delta = (rho_f/rho_p)*I*delta(omega)/delta(t)
     // https://doi.org/10.1016/j.compfluid.2011.05.011
-    pc->dL_internal.x = 0.0; //(RHO_0 / pc->density) * pc->I.x * (pc->w.x - pc->w_old.x);
-    pc->dL_internal.y = 0.0; //(RHO_0 / pc->density) * pc->I.y * (pc->w.y - pc->w_old.y);
-    pc->dL_internal.z = 0.0; //(RHO_0 / pc->density) * pc->I.z * (pc->w.z - pc->w_old.z);
+    pc->dL_internal.x = 0.0; //(RHO_0 / pc->density) * pc->I.xx * (pc->w.x - pc->w_old.x);
+    pc->dL_internal.y = 0.0; //(RHO_0 / pc->density) * pc->I.yy * (pc->w.y - pc->w_old.y);
+    pc->dL_internal.z = 0.0; //(RHO_0 / pc->density) * pc->I.zz * (pc->w.z - pc->w_old.z);
 
     pc->pos_old.x = pc->pos.x;
     pc->pos_old.y = pc->pos.y;

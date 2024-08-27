@@ -110,8 +110,6 @@ void quart_to_rotation_matrix(dfloat4 q, dfloat R[3][3]){
     R[2][2] = 1 - 2 * (qx2 + qy2);
 }
 
-
-// Rotate a vector using a rotation matrix
 __host__ __device__
 dfloat3 rotate_vector_by_matrix(dfloat3 v, dfloat R[3][3]) {
     dfloat3 v_rot;
@@ -128,7 +126,6 @@ dfloat3 rotate_vector_by_quart_R(dfloat3 v, dfloat4 q){
     return rotate_vector_by_matrix(v, R);
 }
 
-// Quaternion conjugate: q_conj = q^*
 __host__ __device__
 dfloat4 quart_conjugate(dfloat4 q) {
     dfloat4 q_conj;
@@ -318,12 +315,9 @@ void inertiaMatrix_4_to_3(const dfloat N[4][4], dfloat M[3][3]) {
     M[2][2] = N[3][3];
 }
 
-
-
-// Function to compute the final result matrix given a rotation quaternion and a matrix J
-// https://people.dsv.su.se/~miko1432/rb/Rotations%20of%20Tensors%20using%20Quaternions%20v0.3.pdf
 __host__ __device__
 void rotate_matrix_by_quart(dfloat4 q, dfloat I[3][3], dfloat I_new[3][3]) {
+    // https://people.dsv.su.se/~miko1432/rb/Rotations%20of%20Tensors%20using%20Quaternions%20v0.3.pdf
     dfloat left_mult_result[4][4];
     dfloat right_mult_result[4][4];
     dfloat qJq_conj[4][4];
