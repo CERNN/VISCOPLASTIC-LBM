@@ -370,6 +370,31 @@ void inertiaMatrix_4_to_4(const dfloat N[4][4], dfloat M[3][3]);
 __host__ __device__
 void rotate_matrix_by_quart(dfloat4 q, dfloat I[3][3], dfloat I_new[3][3]);
 
+/*
+*   @brief Compute the inverse of a 3x3 matrix.
+*   @param A: Input 3x3 matrix to be inverted.
+*   @param invA: Output inverted 3x3 matrix.
+*/
+__host__ __device__
+void inverse_3x3(dfloat A[3][3], dfloat invA[3][3]);
+
+/*
+*   @brief Convert a dfloat6 structure to a 3x3 matrix.
+*   @param I: Pointer to the dfloat6 structure containing inertia tensor components.
+*   @param M: Output 3x3 matrix.
+*/
+__host__ __device__
+void dfloat6_to_matrix(dfloat6* I, dfloat M[3][3]);
+
+/*
+*   @brief Convert a 3x3 matrix to a dfloat6 structure.
+*   @param M: Input 3x3 matrix.
+*   @param I: Pointer to the dfloat6 structure to store the inertia tensor components.
+*/
+__host__ __device__
+void matrix_to_dfloat6(dfloat M[3][3], dfloat6 *I);
+
+
 
 /**
 *   @brief Copy values from src to dst (shape [NZ, NY, NX])

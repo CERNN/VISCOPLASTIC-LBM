@@ -348,3 +348,47 @@ void rotate_matrix_by_quart(dfloat4 q, dfloat I[3][3], dfloat I_new[3][3]) {
     //convert inertia matrix from 4x4 to 3x3
     inertiaMatrix_4_to_3(temp,I_new);
 }
+
+__host__ __device__
+void inverse_3x3(dfloat A[3][3], dfloat invA[3][3]) {
+    // Calculate the determinant of A
+    dfloat detA = A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) -
+                  A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) +
+                  A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]);
+    dfloat invDetA = 1.0/detA;
+
+    // Calculate the cofactor matrix, inverse then divide
+    invA[0][0] = (A[1][1] * A[2][2] - A[1][2] * A[2][1]) * invDetA;
+    invA[0][1] = (-(A[0][1] * A[2][2] - A[0][2] * A[2][1])) * invDetA;
+    invA[0][2] = (A[0][1] * A[1][2] - A[0][2] * A[1][1]) * invDetA;
+    invA[1][0] = (-(A[1][0] * A[2][2] - A[1][2] * A[2][0])) * invDetA;
+    invA[1][1] = (A[0][0] * A[2][2] - A[0][2] * A[2][0]) * invDetA;
+    invA[1][2] = (-(A[0][0] * A[1][2] - A[0][2] * A[1][0])) * invDetA;
+    invA[2][0] = (A[1][0] * A[2][1] - A[1][1] * A[2][0]) * invDetA;
+    invA[2][1] = (-(A[0][0] * A[2][1] - A[0][1] * A[2][0])) * invDetA;
+    invA[2][2] = (A[0][0] * A[1][1] - A[0][1] * A[1][0]) * invDetA;
+
+}
+
+__host__ __device__
+void dfloat6_to_matrix(dfloat6* I, dfloat M[3][3]) {
+    M[0][0] = I->xx;
+    M[0][1] = I->xy;
+    M[0][2] = I->xz;
+    M[1][0] = I->xy;
+    M[1][1] = I->yy;
+    M[1][2] = I->yz;
+    M[2][0] = I->xz;
+    M[2][1] = I->yz;
+    M[2][2] = I->zz;
+}
+
+__host__ __device__
+void matrix_to_dfloat6(dfloat M[3][3], dfloat6 *I) {
+    I->xx = M[0][0];
+    I->xy = M[0][1];
+    I->xz = M[0][2];    
+    I->yy = M[1][1];
+    I->yz = M[1][2];    
+    I->zz = M[2][2];
+}
