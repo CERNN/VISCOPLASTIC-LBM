@@ -1390,13 +1390,13 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 vec, dflo
     this->pCenter.w_old = w;
 
     // Innertia momentum
-    this->pCenter.I.xx = 0.2 * this->pCenter.volume * this->pCenter.density * (b*b + c*c);
-    this->pCenter.I.yy = 0.2 * this->pCenter.volume * this->pCenter.density * (a*a + c*c);
-    this->pCenter.I.zz = 0.2 * this->pCenter.volume * this->pCenter.density * (a*a + b*b);
-
-    this->pCenter.I.xy = 0.0;
-    this->pCenter.I.xz = 0.0;
-    this->pCenter.I.yz = 0.0;
+    dfloat6 In;
+    In.xx = 0.2 * this->pCenter.volume * this->pCenter.density * (b*b + c*c);
+    In.yy = 0.2 * this->pCenter.volume * this->pCenter.density * (a*a + c*c);
+    In.zz = 0.2 * this->pCenter.volume * this->pCenter.density * (a*a + b*b);
+    In.xy = 0.0;
+    In.xz = 0.0;
+    In.yz = 0.0;
 
     this->pCenter.f.x = 0.0;
     this->pCenter.f.y = 0.0;
@@ -1576,6 +1576,9 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 vec, dflo
     dfloat4 q1 = compute_rotation_quart(dfloat3(0,0,1),vec);
     dfloat4 q2 = axis_angle_to_quart(vec,angleMag);
     dfloat4 qf = quart_multiplication(q1,q2);
+
+    //rotate inertia 
+    this->pCenter.I = rotate_inertia_by_quart(qf,In);
 
     dfloat3 new_pos;
     for (i = 0; i < numberNodes; i++) {
