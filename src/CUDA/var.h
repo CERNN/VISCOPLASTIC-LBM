@@ -158,7 +158,9 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
     #define INNER_ROTATION 0.0
 #endif //INTERNAL_DUCT_BC
 
+
 #define BC_RHEOMETER false
+
 
 
 
