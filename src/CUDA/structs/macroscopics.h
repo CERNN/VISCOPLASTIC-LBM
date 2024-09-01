@@ -38,6 +38,11 @@ public:
     #ifdef LES_EXPORT_VISC_TURBULENT
     dfloat* visc_turb;
     #endif
+
+    #if BC_RHEOMETER
+    dfloat* sigma_tz;
+    #endif
+
     /* Constructor */
     __host__
     macroscopics()
@@ -49,6 +54,9 @@ public:
         #endif
         #ifdef LES_EXPORT_VISC_TURBULENT
         this->visc_turb = nullptr;
+        #endif
+        #if BC_RHEOMETER
+        this->sigma_tz = nullptr;
         #endif
     }
 
@@ -64,6 +72,9 @@ public:
 
         #ifdef LES_EXPORT_VISC_TURBULENT
         this->visc_turb = nullptr;
+        #endif
+        #if BC_RHEOMETER
+        this->sigma_tz = nullptr;
         #endif
     }
 
@@ -87,6 +98,9 @@ public:
             #ifdef LES_EXPORT_VISC_TURBULENT
             checkCudaErrors(cudaMallocHost((void**)&(this->visc_turb), TOTAL_MEM_SIZE_SCALAR));
             #endif
+            #if BC_RHEOMETER
+            checkCudaErrors(cudaMallocHost((void**)&(this->sigma_tz), TOTAL_MEM_SIZE_SCALAR));
+            #endif
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaMallocManaged((void**)&(this->rho), MEM_SIZE_IBM_SCALAR));
@@ -99,6 +113,9 @@ public:
             #endif
             #ifdef LES_EXPORT_VISC_TURBULENT
             checkCudaErrors(cudaMallocManaged((void**)&(this->visc_turb),MEM_SIZE_SCALAR));
+            #endif
+            #if BC_RHEOMETER
+            checkCudaErrors(cudaMallocManaged((void**)&(this->sigma_tz), MEM_SIZE_SCALAR));
             #endif
             break;
         default:
@@ -124,6 +141,9 @@ public:
             #ifdef LES_EXPORT_VISC_TURBULENT
             checkCudaErrors(cudaFreeHost(this->visc_turb));
             #endif
+            #if BC_RHEOMETER
+            checkCudaErrors(cudaFreeHost(this->sigma_tz));
+            #endif
             break;
         case IN_VIRTUAL:
             checkCudaErrors(cudaFree(this->rho));
@@ -136,6 +156,9 @@ public:
             #endif
             #ifdef LES_EXPORT_VISC_TURBULENT
             checkCudaErrors(cudaFree(this->visc_turb));
+            #endif
+            #if BC_RHEOMETER
+            checkCudaErrors(cudaFree(this->sigma_tz));
             #endif
             break;
         default:
@@ -166,6 +189,9 @@ public:
                 #ifdef LES_EXPORT_VISC_TURBULENT 
                     cudaStream_t stream_visc_turb;
                 #endif
+                #if BC_RHEOMETER
+                    cudaStream_t stream_sigma_tz;
+                #endif
         #endif
 
 
@@ -191,6 +217,10 @@ public:
         #ifdef LES_EXPORT_VISC_TURBULENT
         checkCudaErrors(cudaStreamCreate(&(stream_visc_turb)));
         #endif
+        #if BC_RHEOMETER
+        checkCudaErrors(cudaStreamCreate(&(stream_sigma_tz)));
+        #endif
+
 
         checkCudaErrors(cudaMemcpyAsync(this->rho+baseIdx, macrRef->rho+baseIdxRef, 
             memSize, cudaMemcpyDefault, streamRho));
@@ -218,6 +248,10 @@ public:
         checkCudaErrors(cudaMemcpyAsync(this->visc_turb+cteBaseIdx, macrRef->visc_turb+cteBaseIdxRef,
             memSize, cudaMemcpyDefault, stream_visc_turb));
         #endif
+        #if BC_RHEOMETER
+            checkCudaErrors(cudaMemcpyAsync(this->sigma_tz+cteBaseIdx, macrRef->sigma_tz+cteBaseIdxRef,
+            memSize, cudaMemcpyDefault, stream_sigma_tz));
+        #endif
 
         checkCudaErrors(cudaStreamSynchronize(streamRho));
         checkCudaErrors(cudaStreamSynchronize(streamUx));
@@ -240,6 +274,10 @@ public:
 
         #ifdef LES_EXPORT_VISC_TURBULENT
         checkCudaErrors(cudaStreamDestroy(stream_visc_turb));
+        #endif
+
+        #if BC_RHEOMETER
+            checkCudaErrors(cudaStreamDestroy(stream_sigma_tz));
         #endif
 
     }

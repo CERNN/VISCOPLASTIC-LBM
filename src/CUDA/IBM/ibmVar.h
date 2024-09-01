@@ -113,7 +113,7 @@
 #define IBM_DATA_STOP false                 // stop condition by IBM treated data
 #define IBM_DATA_SAVE false                 // save reported IBM data to file
 
-#define IBM_PARTICLES_NODES_SAVE false      // Saves particles nodes data
+#define IBM_PARTICLES_NODES_SAVE true      // Saves particles nodes data
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------- FORCES AND DENSITIES --------------------------- */
@@ -123,7 +123,7 @@ constexpr dfloat FLUID_DENSITY = 1.0;
 // Gravity accelaration on particle (Lattice units)
 constexpr dfloat GX = 0.0;
 constexpr dfloat GY = 0.0;
-constexpr dfloat GZ = 0.0; //-1.179430e-03/SCALE/SCALE/SCALE;
+constexpr dfloat GZ = -5e-5; //-1.179430e-03/SCALE/SCALE/SCALE;
 /* -------------------------------------------------------------------------- */
 
 

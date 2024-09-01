@@ -15,10 +15,10 @@
 
 
 /* ------------------------ GENERAL SIMULATION DEFINES ---------------------- */
-#define DOUBLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
+#define SINGLE_PRECISION    // SINGLE_PRECISION (float) or DOUBLE_PRECISION (double)
 #define D3Q19               // velocity set to use (D3Q19 OR D3Q27)
 // Comment to disable IBM. Uncomment to enable IBM
-// #define IBM
+#define IBM
 /* -------------------------------------------------------------------------- */
 
 /* ------------------------ NON NEWTONIAN FLUID TYPE ------------------------ */
@@ -58,8 +58,8 @@
 /* ------------------------- TIME CONSTANTS DEFINES ------------------------ */
 
 constexpr unsigned int SCALE = 1;
-constexpr int N_STEPS = 1000;          // maximum number of time steps
-#define MACR_SAVE (100)                  // saves macroscopics every MACR_SAVE steps
+constexpr int N_STEPS = 25000;          // maximum number of time steps
+#define MACR_SAVE (false)                  // saves macroscopics every MACR_SAVE steps
 #define DATA_REPORT (false)                // report every DATA_REPORT steps
 
  
@@ -92,14 +92,14 @@ constexpr unsigned int GPUS_TO_USE[N_GPUS] = {0};    // Which GPUs to use
 
 
 
-constexpr int N = 64*SCALE;
-constexpr int NX = N*SCALE;        // size x of the grid 
+constexpr int N = 128*SCALE;
+constexpr int NX = N;        // size x of the grid 
                                       // (32 multiple for better performance)
-constexpr int NY = N*SCALE;        // size y of the grid
-constexpr int NZ = N*SCALE/N_GPUS;        // size z of the grid in one GPU
+constexpr int NY = N;        // size y of the grid
+constexpr int NZ = 3*N/N_GPUS;        // size z of the grid in one GPU 
 constexpr int NZ_TOTAL = NZ*N_GPUS;       // size z of the grid
 
-constexpr dfloat U_MAX = 0;           // max velocity
+constexpr dfloat U_MAX = 0.1;           // max velocity
 
 constexpr dfloat TAU = 0.6;     // relaxation time
 constexpr dfloat OMEGA = 1.0/TAU;        // (tau)^-1
@@ -108,7 +108,7 @@ constexpr dfloat RHO_0 = 1;         // initial rho
 
 constexpr dfloat FX = 0.0;        // force in x
 constexpr dfloat FY = 0.0;        // force in y
-constexpr dfloat FZ = 1.0e-4;        // force in z (flow direction in most cases)
+constexpr dfloat FZ = 0.0;//1e-5;        // force in z (flow direction in most cases) //multiply by 2 when cylinder
 
 // values options for boundary conditions
 __device__ const dfloat UX_BC[8] = { 0, U_MAX, 0, 0, 0, 0, 0, 0 };
@@ -138,7 +138,7 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
 #define COMP_INTERP_BOUNCE_BACK false   // Compile interpolated bounce back
 /* ------------------------------------------------------------------------- */
 /* ------------------ DUCT BOUNDARY CONDITIONS DEFINES --------------------- */
-#define EXTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack or annularDuctInterpBounceBack
+//#define EXTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack or annularDuctInterpBounceBack
 //#define INTERNAL_DUCT_BC //necessary if using annularDuctInterpBounceBack
 
 #define DUCT_CENTER_X (((NX-1)/2.0)+0.5)
@@ -148,7 +148,7 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
     #define OUTER_RADIUS (NY/2.0-1.5)
     #define EXTERNAL_DUCT_BC_RADIUS OUTER_RADIUS
     #define OUTER_VELOCITY 0.0
-    #define OUTER_ROTATION (U_MAX/OUTER_RADIUS)    
+    #define OUTER_ROTATION 0.0 //(U_MAX/OUTER_RADIUS)    
 #endif //EXTERNAL_DUCT_BC
 
 #ifdef INTERNAL_DUCT_BC 
@@ -158,6 +158,7 @@ constexpr float CURAND_STD_DEV = 0.5; // standard deviation for random numbers
     #define INNER_ROTATION 0.0
 #endif //INTERNAL_DUCT_BC
 
+#define BC_RHEOMETER false
 
 
 
