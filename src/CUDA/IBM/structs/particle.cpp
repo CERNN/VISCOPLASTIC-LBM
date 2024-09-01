@@ -1162,7 +1162,7 @@ void Particle::makeCapsule(dfloat diameter, dfloat3 point1, dfloat3 point2, bool
     cap_count = 0;
     dfloat Xs, Ys, Zs;
     for (int i = 0; i < nSlices_sphere; i++) {
-        double rSlice = r * cos(phi[i]);
+        dfloat rSlice = r * cos(phi[i]);
         int nCirclePoints_sphere = floor(2 * M_PI * rSlice / MESH_SCALE);
         
         for (int j = 0; j < nCirclePoints_sphere; j++)
@@ -1287,12 +1287,29 @@ void Particle::makeCapsule(dfloat diameter, dfloat3 point1, dfloat3 point2, bool
     this->pCenter.q_pos_old.z = this->pCenter.q_pos.z;
 
     // Innertia momentum
-    this->pCenter.I.xx = this->pCenter.density * (cylinderVol*(r*r/2) + sphereVol * (2*r*r/5));
-    this->pCenter.I.yy = this->pCenter.density * (cylinderVol*(length*length/12 + r*r/4 ) + sphereVol * (2*r*r/5 + length*length/2 + 3*length*r/8));
-    this->pCenter.I.zz = this->pCenter.density * (cylinderVol*(length*length/12 + r*r/4 ) + sphereVol * (2*r*r/5 + length*length/2 + 3*length*r/8));
-    this->pCenter.I.xy = 0.0;
-    this->pCenter.I.xz = 0.0;
-    this->pCenter.I.yz = 0.0;
+    dfloat6 In;
+    In.xx = this->pCenter.density * (cylinderVol*(r*r/2) + sphereVol * (2*r*r/5));
+    In.yy = this->pCenter.density * (cylinderVol*(length*length/12 + r*r/4 ) + sphereVol * (2*r*r/5 + length*length/2 + 3*length*r/8));
+    In.zz = this->pCenter.density * (cylinderVol*(length*length/12 + r*r/4 ) + sphereVol * (2*r*r/5 + length*length/2 + 3*length*r/8));
+    In.xy = 0.0;
+    In.xz = 0.0;
+    In.yz = 0.0;
+
+    dfloat4 q1 = compute_rotation_quart(dfloat3(1,0,0),vec);
+    //rotate inertia 
+    this->pCenter.I = rotate_inertia_by_quart(q1,In);
+
+    this->pCenter.q_pos.w = qf.w;
+    this->pCenter.q_pos.x = qf.x;
+    this->pCenter.q_pos.y = qf.y;
+    this->pCenter.q_pos.z = qf.z;
+
+    this->pCenter.q_pos_old.w = this->pCenter.q_pos.w;
+    this->pCenter.q_pos_old.x = this->pCenter.q_pos.x;
+    this->pCenter.q_pos_old.y = this->pCenter.q_pos.y;
+    this->pCenter.q_pos_old.z = this->pCenter.q_pos.z; 
+
+
 
     this->pCenter.f.x = 0.0;
     this->pCenter.f.y = 0.0;
