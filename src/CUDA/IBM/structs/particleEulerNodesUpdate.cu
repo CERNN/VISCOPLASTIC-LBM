@@ -130,7 +130,7 @@ void ParticleEulerNodesUpdate::checkParticlesMovement(){
             (pos.z-posOld.z)*(pos.z-posOld.z));
         // Maximum rotation
         distSq += radius*radius*((w_posDiff.x*w_posDiff.x+w_posDiff.y*w_posDiff.y+w_posDiff.z*w_posDiff.z));
-        #if IBM_DEBUG
+        #ifdef IBM_DEBUG
         // printf("pos %d: %f %f %f. Old: %f %f %f\n", i, pos.x, pos.y, pos.z, posOld.x, posOld.y, posOld.z);
         // printf("dist %d: %f. Min: %f\n", i, distSq, IBM_EULER_UPDATE_DIST*IBM_EULER_UPDATE_DIST);
         #endif
@@ -178,7 +178,7 @@ void ParticleEulerNodesUpdate::removeUnneededEulerNodes(uint32_t maskRemove, int
 
     unsigned int idxLeft = 0;
     unsigned int newCurrEulerNodes = (int)this->currEulerNodes[n_gpu];
-    #if IBM_DEBUG
+    #ifdef IBM_DEBUG
     int idxsUpdated = 0;
     #endif
     // Start after fixed nodes
@@ -198,7 +198,7 @@ void ParticleEulerNodesUpdate::removeUnneededEulerNodes(uint32_t maskRemove, int
         else {
             // Check if it is required to write back
             if(idxLeft > 0 || val != valWithMask) {
-                #if IBM_DEBUG
+                #ifdef IBM_DEBUG
                 idxsUpdated += 1;
                 #endif
                 this->eulerIndexesUpdate[n_gpu][i-idxLeft] = valWithMask;
@@ -206,7 +206,7 @@ void ParticleEulerNodesUpdate::removeUnneededEulerNodes(uint32_t maskRemove, int
         }
     }
 
-    #if IBM_DEBUG
+    #ifdef IBM_DEBUG
     printf("For mask %x, Idx removed: %d; Updated: %d\n", maskRemove, 
         this->currEulerNodes - newCurrEulerNodes, idxsUpdated);
     #endif
@@ -243,7 +243,7 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
     const dfloat minDistSq = (radius-sphereShellThick)*(radius-sphereShellThick);
     unsigned int oldCurrNodes = this->currEulerNodes[n_gpu];
 
-    #if IBM_DEBUG
+    #ifdef IBM_DEBUG
     unsigned int hit = 0;
     const int totalNodes = max(1, (maxZ-minZ+1)*(maxY-minY+1)*(maxX-minX+1));
     printf("Mask %x pos %f %f %f min %d %d %d max %d %d %d total nodes %d\n", mask, 
@@ -265,14 +265,14 @@ unsigned int ParticleEulerNodesUpdate::updateEulerNodes(ParticleCenter* pc, uint
                     this->eulerMaskArray[n_gpu][idx] |= mask;
                     // Add one to current number of nodes
                     this->currEulerNodes[n_gpu] += 1;
-                    #if IBM_DEBUG
+                    #ifdef IBM_DEBUG
                     hit += 1;
                     #endif
                 }
             }
         }
     }
-    #if IBM_DEBUG
+    #ifdef IBM_DEBUG
     printf("Hit ratio for mask %x with %d nodes: %%%.2f\n", mask, totalNodes, 100.0*(dfloat)hit/totalNodes);
     printf("Max nodes: %d. Curr nodes: %d \n", this->maxEulerNodes, this->currEulerNodes);
     #endif

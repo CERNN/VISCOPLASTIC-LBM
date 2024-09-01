@@ -35,7 +35,7 @@ public:
     dfloat* omega;
     #endif
     
-    #ifdef LES_MODEL
+    #ifdef LES_EXPORT_VISC_TURBULENT
     dfloat* visc_turb;
     #endif
     /* Constructor */
@@ -47,7 +47,7 @@ public:
         #ifdef NON_NEWTONIAN_FLUID
         this->omega = nullptr;
         #endif
-        #ifdef LES_MODEL
+        #ifdef LES_EXPORT_VISC_TURBULENT
         this->visc_turb = nullptr;
         #endif
     }
@@ -62,7 +62,7 @@ public:
         this->omega = nullptr;
         #endif
 
-        #ifdef LES_MODEL
+        #ifdef LES_EXPORT_VISC_TURBULENT
         this->visc_turb = nullptr;
         #endif
     }
@@ -84,7 +84,7 @@ public:
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaMallocHost((void**)&(this->omega), TOTAL_MEM_SIZE_SCALAR));
             #endif
-            #ifdef LES_MODEL
+            #ifdef LES_EXPORT_VISC_TURBULENT
             checkCudaErrors(cudaMallocHost((void**)&(this->visc_turb), TOTAL_MEM_SIZE_SCALAR));
             #endif
             break;
@@ -97,7 +97,7 @@ public:
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaMallocManaged((void**)&(this->omega), MEM_SIZE_SCALAR));
             #endif
-            #ifdef LES_MODEL
+            #ifdef LES_EXPORT_VISC_TURBULENT
             checkCudaErrors(cudaMallocManaged((void**)&(this->visc_turb),MEM_SIZE_SCALAR));
             #endif
             break;
@@ -121,7 +121,7 @@ public:
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaFreeHost(this->omega));
             #endif
-            #ifdef LES_MODEL
+            #ifdef LES_EXPORT_VISC_TURBULENT
             checkCudaErrors(cudaFreeHost(this->visc_turb));
             #endif
             break;
@@ -134,7 +134,7 @@ public:
             #ifdef NON_NEWTONIAN_FLUID
             checkCudaErrors(cudaFree(this->omega));
             #endif
-            #ifdef LES_MODEL
+            #ifdef LES_EXPORT_VISC_TURBULENT
             checkCudaErrors(cudaFree(this->visc_turb));
             #endif
             break;
@@ -156,13 +156,16 @@ public:
         #if defined(IBM) && EXPORT_FORCES
         cudaStream_t streamFx, streamFy, streamFz;
         #endif
-        #ifdef NON_NEWTONIAN_FLUID
-        cudaStream_t streamOmega;
-        // Constants base index, to use for macroscopics that do not have ghost nodes (omega)
-        size_t cteBaseIdx = baseIdx, cteBaseIdxRef = baseIdxRef;
-        #endif
-        #ifdef LES_MODEL
-        cudaStream_t stream_visc_turb;
+        #if defined(NON_NEWTONIAN_FLUID) || defined(LES_EXPORT_VISC_TURBULENT)
+        
+                // Constants base index, to use for macroscopics that do not have ghost nodes (omega)
+                size_t cteBaseIdx = baseIdx, cteBaseIdxRef = baseIdxRef;
+                #ifdef NON_NEWTONIAN_FLUID 
+                    cudaStream_t streamOmega;
+                #endif
+                #ifdef LES_EXPORT_VISC_TURBULENT 
+                    cudaStream_t stream_visc_turb;
+                #endif
         #endif
 
 
@@ -185,7 +188,7 @@ public:
         #ifdef NON_NEWTONIAN_FLUID
         checkCudaErrors(cudaStreamCreate(&(streamOmega)));
         #endif
-        #ifdef LES_MODEL
+        #ifdef LES_EXPORT_VISC_TURBULENT
         checkCudaErrors(cudaStreamCreate(&(stream_visc_turb)));
         #endif
 
@@ -211,8 +214,8 @@ public:
         checkCudaErrors(cudaMemcpyAsync(this->omega+cteBaseIdx, macrRef->omega+cteBaseIdxRef,
             memSize, cudaMemcpyDefault, streamOmega));
         #endif
-        #ifdef LES_MODEL
-        checkCudaErrors(cudaMemcpyAsync(this->visc_turb+baseIdxRef, macrRef->visc_turb+baseIdxRef,
+        #ifdef LES_EXPORT_VISC_TURBULENT
+        checkCudaErrors(cudaMemcpyAsync(this->visc_turb+cteBaseIdx, macrRef->visc_turb+cteBaseIdxRef,
             memSize, cudaMemcpyDefault, stream_visc_turb));
         #endif
 
@@ -235,7 +238,7 @@ public:
         checkCudaErrors(cudaStreamDestroy(streamOmega));
         #endif
 
-        #ifdef LES_MODEL
+        #ifdef LES_EXPORT_VISC_TURBULENT
         checkCudaErrors(cudaStreamDestroy(stream_visc_turb));
         #endif
 

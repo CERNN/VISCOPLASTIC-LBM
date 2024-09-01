@@ -471,8 +471,8 @@ void gpuForceInterpolationSpread(
                 );
 
                 #ifdef EXTERNAL_DUCT_BC
-                dfloat xCenter = (NX/2.0) - 0.5;
-                dfloat yCenter = (NY/2.0) - 0.5; 
+                dfloat xCenter = DUCT_CENTER_X;
+                dfloat yCenter = DUCT_CENTER_Y;
 
                 // int n_gpu2 = ((int)((posBase[2]+zk)/NZ) + 100*N_GPUS)%N_GPUS;
 
@@ -762,6 +762,15 @@ void gpuUpdateParticleCenterVelocityAndRotation(
 
     ParticleCenter *pc = &(particleCenters[p]);
 
+    #ifdef IBM_DEBUG
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 pos  x: %f y: %f z: %f\n",pc->pos.x,pc->pos.y,pc->pos.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 vel  x: %f y: %f z: %f\n",pc->vel.x,pc->vel.y,pc->vel.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 w  x: %f y: %f z: %f\n",pc->w.x,pc->w.y,pc->w.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 f  x: %f y: %f z: %f\n",pc->f.x,pc->f.y,pc->f.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 f_old  x: %f y: %f z: %f\n",pc->f_old.x,pc->f_old.y,pc->f_old.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 1 dP_internal  x: %f y: %f z: %f\n",pc->dP_internal.x,pc->dP_internal.y,pc->dP_internal.z);
+    #endif
+
     if(!pc->movable)
         return;
 
@@ -784,39 +793,106 @@ void gpuUpdateParticleCenterVelocityAndRotation(
     const dfloat3 M = pc->M;
     const dfloat3 M_old = pc->M_old;
     const dfloat3 w_old = pc->w_old;
-    const dfloat3 I = pc->I;
+    dfloat6 I = pc->I;
+
+    dfloat6 Iaux6;
+    dfloat4 q_rot;
 
     wAux.x = w_old.x;
     wAux.y = w_old.y;
     wAux.z = w_old.z;
 
+    dfloat I_det_neg = (I.zz*I.xy*I.xy + I.yy*I.xz*I.xz + I.xx*I.yz*I.yz - I.xx*I.yy*I.zz - 2*I.xy*I.xz*I.yz);
+    dfloat inv_I_det_neg = 1.0/(I.zz*I.xy*I.xy + I.yy*I.xz*I.xz + I.xx*I.yz*I.yz - I.xx*I.yy*I.zz - 2*I.xy*I.xz*I.yz);
+    dfloat3 wAvg, LM_avg, M_avg;
+
+    wAvg.x = (w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION);
+    wAvg.y = (w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION);
+    wAvg.z = (w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION);
+
+    LM_avg.x = pc->dL_internal.x + (M.x * IBM_MOVEMENT_DISCRETIZATION + M_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
+    LM_avg.y = pc->dL_internal.y + (M.y * IBM_MOVEMENT_DISCRETIZATION + M_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
+    LM_avg.z = pc->dL_internal.z + (M.z * IBM_MOVEMENT_DISCRETIZATION + M_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION));
+
+    //OLD CODE
     // Iteration process to upadate angular velocity 
     // (Crank-Nicolson implicit scheme)
-    for (int i = 0; error > 1e-6; i++)
+    //for (int i = 0; error > 1e-4; i++)
     {
         //TODO the last term should be present in dL equation, but since it does not affect spheres, it will stay for now.
+        /*
         wNew.x = pc->w_old.x + (((M.x * IBM_MOVEMENT_DISCRETIZATION + M_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION)) + pc->dL_internal.x) 
-                - (I.z - I.y)*(w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION ) 
-                * (w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION))/I.x;
+                - (I.zz - I.yy)*(w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION ) 
+                               *(w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION))/I.xx;
         wNew.y = pc->w_old.y + (((M.y * IBM_MOVEMENT_DISCRETIZATION + M_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION)) + pc->dL_internal.y) 
-                - (I.x - I.z)*(w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION ) 
-                * (w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION))/I.y;
+                - (I.xx - I.zz)*(w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION ) 
+                               *(w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION))/I.yy;
         wNew.z = pc->w_old.z + (((M.z * IBM_MOVEMENT_DISCRETIZATION + M_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION)) + pc->dL_internal.z) 
-                - (I.y - I.x)*(w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION ) 
-                * (w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION))/I.z;
+                - (I.yy - I.xx)*(w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION ) 
+                               *(w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION))/I.zz;
+        */
 
-        error =  (wNew.x - wAux.x)*(wNew.x - wAux.x)/(wNew.x*wNew.x);
-        error += (wNew.y - wAux.y)*(wNew.y - wAux.y)/(wNew.y*wNew.y);
-        error += (wNew.z - wAux.z)*(wNew.z - wAux.z)/(wNew.z*wNew.z);
+
+        wNew.x = pc->w_old.x + ((I.yz*I.yz - I.yy*I.zz)*(LM_avg.x + (wAvg.z)*(I.xy*wAvg.x + I.yy*wAvg.y + I.yz*wAvg.z) - (wAvg.y)*(I.xz*wAvg.x + I.yz*wAvg.y + I.zz*wAvg.z))
+                              - (I.xy*I.yz - I.xz*I.yy)*(LM_avg.z + (wAvg.y)*(I.xx*wAvg.x + I.xy*wAvg.y + I.xz*wAvg.z) - (wAvg.x)*(I.xy*wAvg.x + I.yy*wAvg.y + I.yz*wAvg.z))
+                              - (I.xz*I.yz - I.xy*I.zz)*(LM_avg.y + (wAvg.x)*(I.xz*wAvg.x + I.yz*wAvg.y + I.zz*wAvg.z) - (wAvg.z)*(I.xx*wAvg.x + I.xy*wAvg.y + I.xz*wAvg.z)))*inv_I_det_neg;
+        wNew.y = pc->w_old.y + ((I.xz*I.xz - I.xx*I.zz)*(LM_avg.y + (wAvg.x)*(I.xz*wAvg.x + I.yz*wAvg.y + I.zz*wAvg.z) - (wAvg.z)*(I.xx*wAvg.x + I.xy*wAvg.y + I.xz*wAvg.z))
+                              - (I.xy*I.xz - I.xx*I.yz)*(LM_avg.z + (wAvg.y)*(I.xx*wAvg.x + I.xy*wAvg.y + I.xz*wAvg.z) - (wAvg.x)*(I.xy*wAvg.x + I.yy*wAvg.y + I.yz*wAvg.z))
+                              - (I.xz*I.yz - I.xy*I.zz)*(LM_avg.x + (wAvg.z)*(I.xy*wAvg.x + I.yy*wAvg.y + I.yz*wAvg.z) - (wAvg.y)*(I.xz*wAvg.x + I.yz*wAvg.y + I.zz*wAvg.z)))*inv_I_det_neg;
+        wNew.z = pc->w_old.z + ((I.xy*I.xy - I.xx*I.yy)*(LM_avg.z + (wAvg.y)*(I.xx*wAvg.x + I.xy*wAvg.y + I.xz*wAvg.z) - (wAvg.x)*(I.xy*wAvg.x + I.yy*wAvg.y + I.yz*wAvg.z))
+                              - (I.xy*I.xz - I.xx*I.yz)*(LM_avg.y + (wAvg.x)*(I.xz*wAvg.x + I.yz*wAvg.y + I.zz*wAvg.z) - (wAvg.z)*(I.xx*wAvg.x + I.xy*wAvg.y + I.xz*wAvg.z))
+                              - (I.xy*I.yz - I.xz*I.yy)*(LM_avg.x + (wAvg.z)*(I.xy*wAvg.x + I.yy*wAvg.y + I.yz*wAvg.z) - (wAvg.y)*(I.xz*wAvg.x + I.yz*wAvg.y + I.zz*wAvg.z)))*inv_I_det_neg;
+                              
+        //inertia update
+        wAvg.x = (w_old.x * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.x * IBM_MOVEMENT_DISCRETIZATION);
+        wAvg.y = (w_old.y * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.y * IBM_MOVEMENT_DISCRETIZATION);
+        wAvg.z = (w_old.z * (1.0 - IBM_MOVEMENT_DISCRETIZATION) + wAux.z * IBM_MOVEMENT_DISCRETIZATION);
+
+        //calculate rotation quartention
+        q_rot = axis_angle_to_quart(wAvg,vector_length(wAvg));
+
+        //compute new moment of inertia       
+        Iaux6 = rotate_inertia_by_quart(q_rot,I);
+
+        error =  (Iaux6.xx-I.xx)*(Iaux6.xx-I.xx)/(Iaux6.xx*Iaux6.xx);
+        error += (Iaux6.yy-I.yy)*(Iaux6.yy-I.yy)/(Iaux6.yy*Iaux6.yy);
+        error += (Iaux6.zz-I.zz)*(Iaux6.zz-I.zz)/(Iaux6.zz*Iaux6.zz);
+        error += (Iaux6.xy-I.xy)*(Iaux6.xy-I.xy)/(Iaux6.xy*Iaux6.xy);
+        error += (Iaux6.xz-I.xz)*(Iaux6.xz-I.xz)/(Iaux6.xz*Iaux6.xz);
+        error += (Iaux6.yz-I.yz)*(Iaux6.yz-I.yz)/(Iaux6.yz*Iaux6.yz);
+
+        //printf("error: %e \n",error);
 
         wAux.x = wNew.x;
         wAux.y = wNew.y;
         wAux.z = wNew.z;
-    }
+
+        I.xx = Iaux6.xx;
+        I.yy = Iaux6.yy;
+        I.zz = Iaux6.zz;
+        I.xy = Iaux6.xy;
+        I.xz = Iaux6.xz;
+        I.yz = Iaux6.yz;
+    
+       }
+
     // Store new velocities in particle center
     pc->w.x = wNew.x;
     pc->w.y = wNew.y;
     pc->w.z = wNew.z;
+
+    pc->I.xx = Iaux6.xx;
+    pc->I.yy = Iaux6.yy;
+    pc->I.zz = Iaux6.zz;
+    pc->I.xy = Iaux6.xy;
+    pc->I.xz = Iaux6.xz;
+    pc->I.yz = Iaux6.yz;
+
+    #ifdef IBM_DEBUG
+    printf("gpuUpdateParticleCenterVelocityAndRotation 2 pos  x: %f y: %f z: %f\n",pc->pos.x,pc->pos.y,pc->pos.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 2 vel  x: %f y: %f z: %f\n",pc->vel.x,pc->vel.y,pc->vel.z);
+    printf("gpuUpdateParticleCenterVelocityAndRotation 2 w  x: %f y: %f z: %f\n",pc->w.x,pc->w.y,pc->w.z);
+    #endif
 }
 
 __global__
@@ -829,6 +905,14 @@ void gpuParticleMovement(
         return;
 
     ParticleCenter *pc = &(particleCenters[p]);
+
+    #ifdef IBM_DEBUG
+    printf("gpuParticleMovement 1 pos  x: %f y: %f z: %f\n",pc->pos.x,pc->pos.y,pc->pos.z);
+    printf("gpuParticleMovement 1 vel  x: %f y: %f z: %f\n",pc->vel.x,pc->vel.y,pc->vel.z);
+    printf("gpuParticleMovement 1 w  x: %f y: %f z: %f\n",pc->w.x,pc->w.y,pc->w.z);
+    #endif
+    
+    
     if(!pc->movable)
         return;
 
@@ -862,8 +946,13 @@ void gpuParticleMovement(
     pc->w_pos.x += pc->w_avg.x;
     pc->w_pos.y += pc->w_avg.y;
     pc->w_pos.z += pc->w_avg.z;
-}
 
+    #ifdef IBM_DEBUG
+    printf("gpuParticleMovement 2 pos  x: %f y: %f z: %f\n",pc->pos.x,pc->pos.y,pc->pos.z);
+    printf("gpuParticleMovement 2 vel  x: %f y: %f z: %f\n",pc->vel.x,pc->vel.y,pc->vel.z);
+    printf("gpuParticleMovement 2 w  x: %f y: %f z: %f\n",pc->w.x,pc->w.y,pc->w.z);
+    #endif
+}
 
 __global__
 void gpuUpdateParticleOldValues(
@@ -884,9 +973,9 @@ void gpuUpdateParticleOldValues(
 
     // Internal angular momentum delta = (rho_f/rho_p)*I*delta(omega)/delta(t)
     // https://doi.org/10.1016/j.compfluid.2011.05.011
-    pc->dL_internal.x = 0.0; //(RHO_0 / pc->density) * pc->I.x * (pc->w.x - pc->w_old.x);
-    pc->dL_internal.y = 0.0; //(RHO_0 / pc->density) * pc->I.y * (pc->w.y - pc->w_old.y);
-    pc->dL_internal.z = 0.0; //(RHO_0 / pc->density) * pc->I.z * (pc->w.z - pc->w_old.z);
+    pc->dL_internal.x = 0.0; //(RHO_0 / pc->density) * pc->I.xx * (pc->w.x - pc->w_old.x);
+    pc->dL_internal.y = 0.0; //(RHO_0 / pc->density) * pc->I.yy * (pc->w.y - pc->w_old.y);
+    pc->dL_internal.z = 0.0; //(RHO_0 / pc->density) * pc->I.zz * (pc->w.z - pc->w_old.z);
 
     pc->pos_old.x = pc->pos.x;
     pc->pos_old.y = pc->pos.y;

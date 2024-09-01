@@ -55,6 +55,10 @@ void gpuParticlesCollision(
 
     // Particle from column
     ParticleCenter* pc_i = &particleCenters[column];
+    
+    #ifdef IBM_DEBUG
+    printf("collision step %d x: %f \n",step,pc_i->pos.x);
+    #endif
 
     //Collision against walls
     if(row == NUM_PARTICLES){
@@ -270,8 +274,8 @@ void gpuParticlesCollision(
         //   --------------- DUCT BOUNDARY CONDITIONS -----------------------
         #if defined(EXTERNAL_DUCT_BC) || defined(INTERNAL_DUCT_BC)
             // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
-            dfloat xCenter = (NX/2.0) - 0.5;
-            dfloat yCenter = (NY/2.0) - 0.5; 
+            dfloat xCenter = DUCT_CENTER_X;
+            dfloat yCenter = DUCT_CENTER_Y; 
 
 
 
@@ -306,8 +310,8 @@ void gpuParticlesCollision(
                 if (dist_abs <= min_dist) {
                     displacement = (2.0 * r_i - dist_abs)/2.0;
 
-                    normalVector.x = -w(pos_i.x-xCenter)/pos_r_i;
-                    normalVector.y = -w(pos_i.y-yCenter)/pos_r_i;
+                    normalVector.x = - (pos_i.x-xCenter)/pos_r_i;
+                    normalVector.y = - (pos_i.y-yCenter)/pos_r_i;
                     normalVector.z = 0.0;
                     gpuSoftSphereWallCollision(displacement,normalVector,pc_i,step);
                 }
@@ -457,6 +461,7 @@ void gpuSoftSphereWallCollision(
 
     const dfloat3 v_i = pc_i->vel;
     const dfloat3 w_i = pc_i->w;
+    const dfloat3 pos_i = pc_i->pos;
     const dfloat effective_radius = r_i;
     const dfloat effective_mass = m_i;
 
@@ -471,9 +476,41 @@ void gpuSoftSphereWallCollision(
     n.z = -n.z;
 
     // relative velocity vector
-    G.x = v_i.x;
-    G.y = v_i.y;
-    G.z = v_i.z;
+    dfloat3 wall_speed = dfloat3(0,0,0);
+
+
+    dfloat xNode = pos_i.x - DUCT_CENTER_X;
+    dfloat yNode = pos_i.y - DUCT_CENTER_Y;
+    
+    dfloat rr =  sqrt(xNode*xNode+yNode*yNode);
+    dfloat c = xNode / (rr);
+    dfloat s = yNode / (rr);
+
+
+    #ifdef EXTERNAL_DUCT_BC 
+        wall_speed.x = - OUTER_ROTATION * OUTER_RADIUS * s;
+        wall_speed.y =   OUTER_ROTATION * OUTER_RADIUS * c;
+        #ifdef BC_RHEOMETER
+            wall_speed.x *= (pos_i.z/NZ_TOTAL);
+            wall_speed.y *= (pos_i.z/NZ_TOTAL);
+        #endif
+        wall_speed.z = OUTER_VELOCITY;
+        #ifdef INTERNAL_DUCT_BC 
+            //TODO: needs a better detection system to define if is inner cilynder or outer.
+            if (rr/(OUTER_RADIUS-INNER_RADIUS)< 0.5){
+                wall_speed.x = - INNER_ROTATION * INNER_RADIUS * s;
+                wall_speed.y =   INNER_ROTATION * INNER_RADIUS * c;
+                wall_speed.z = INNER_VELOCITY;
+            }
+        #endif //INTERNAL_DUCT_BC
+    #endif //EXTERNAL_DUCT_BC
+
+
+
+
+    G.x = v_i.x - wall_speed.x;
+    G.y = v_i.y - wall_speed.y;
+    G.z = v_i.z - wall_speed.z;
 
     const dfloat STIFFNESS_NORMAL = PW_STIFFNESS_NORMAL_CONST * sqrt(abs(effective_radius));
     const dfloat STIFFNESS_TANGENTIAL = PW_STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (abs(displacement));

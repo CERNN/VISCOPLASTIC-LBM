@@ -170,4 +170,151 @@ dfloat __forceinline__ distPoints2D(const dfloat x1, const dfloat y1, const dflo
 __global__
 void copyFromArray(dfloat3SoA dst, dfloat3SoA src);
 
+
+/*
+*   @brief Compute the cross product of two vectors.
+*   @param v1: First vector.
+*   @param v2: Second vector.
+*   @return The cross product vector of v1 and v2.
+*/
+__host__ __device__
+dfloat3 cross_product(dfloat3 v1, dfloat3 v2);
+/*
+*   @brief Compute the dot product of two vectors.
+*   @param v1: First vector.
+*   @param v2: Second vector.
+*   @return The dot product of v1 and v2.
+*/
+__host__ __device__
+dfloat dot_product(dfloat3 v1, dfloat3 v2);
+
+/*
+*   @brief Determine the length of a vector
+*   @param v: Vector to be computed.
+*   @return The vector length.
+*/
+__host__ __device__
+dfloat vector_length(dfloat3 v);
+
+/*
+*   @brief Normalize a vector.
+*   @param v: Vector to be normalized.
+*   @return The normalized vector.
+*/
+__host__ __device__
+dfloat3 vector_normalize(dfloat3 v);
+
+
+__host__ __device__
+void transpose_matrix_3x3(dfloat matrix[3][3], dfloat result[3][3]);
+
+__host__ __device__
+void multiply_matrices_3x3(dfloat A[3][3], dfloat B[3][3], dfloat result[3][3]);
+
+/*
+*   @brief Perform quaternion multiplication.
+*   @param q1: First quaternion.
+*   @param q2: Second quaternion.
+*   @return The product of q1 and q2.
+*/
+__host__ __device__
+dfloat4 quart_multiplication(dfloat4 q1, dfloat4 q2);
+/*
+*   @brief Compute the conjugate of a quaternion.
+*   @param q: Quaternion to be conjugated.
+*   @return The conjugate of q.
+*/
+__host__ __device__
+dfloat4 quart_conjugate(dfloat4 q);
+/*
+*   @brief Convert a quaternion to a rotation matrix.
+*   @param q: Quaternion to be converted.
+*   @param R: Output rotation matrix.
+*/
+__host__ __device__
+void quart_to_rotation_matrix(dfloat4 q, dfloat R[3][3]);
+
+/*
+*   @brief Rotate a vector by a rotation matrix.
+*   @param v: Vector to be rotated.
+*   @param R: Rotation matrix.
+*   @return The rotated vector.
+*/
+__host__ __device__
+dfloat3 rotate_vector_by_matrix(dfloat R[3][3],dfloat3 v);
+
+/*
+*   @brief Rotate a vector by a quaternion (using rotation matrix).
+*   @param v: Vector to be rotated.
+*   @param q: Quaternion representing rotation.
+*   @return The rotated vector.
+*/
+__host__ __device__
+dfloat3 rotate_vector_by_quart_R(dfloat3 v, dfloat4 q);
+
+
+/*
+*   @brief Compute the rotation quaternion that aligns two vectors.
+*   @param v1: First vector.
+*   @param v2: Second vector.
+*   @return Quaternion representing the rotation from v1 to v2.
+*/
+__host__ __device__
+dfloat4 compute_rotation_quart(dfloat3 v1, dfloat3 v2);
+
+/*
+*   @brief Convert an axis-angle representation to a quaternion.
+*   @param axis: Rotation axis.
+*   @param angle: Rotation angle.
+*   @return The quaternion representation of the axis-angle rotation.
+*/
+__host__ __device__
+dfloat4 axis_angle_to_quart(dfloat3 axis, dfloat angle);
+
+/*
+*   @brief Convert Euler angles to a quaternion.
+*   source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+*   @param roll: Rotation angle around x-axis.
+*   @param pitch: Rotation angle around y-axis.
+*   @param yaw: Rotation angle around z-axis.
+*   @return The quaternion representation of the Euler angles.
+*/
+__host__ __device__
+dfloat4 euler_to_quart(dfloat roll, dfloat pitch, dfloat yaw);
+
+/*
+*   @brief Convert a quaternion to Euler angles.
+*   @param q: Quaternion to be converted.
+*   @return Euler angles representing the rotation of q.
+*/
+__host__ __device__
+dfloat3 quart_to_euler(dfloat4 q);
+
+__host__ __device__
+void rotate_matrix_by_R_w_quart(dfloat4 q, dfloat I[3][3]);
+
+
+__host__ __device__
+dfloat6 rotate_inertia_by_quart(dfloat4 q, dfloat6 I6);
+
+
+/*
+*   @brief Convert a dfloat6 structure to a 3x3 matrix.
+*   @param I: dfloat6 structure containing inertia tensor components.
+*   @param invA: Output 3x3 matrix.
+*/
+__host__ __device__
+void dfloat6_to_matrix(dfloat6 I, dfloat M[3][3]);
+
+/*
+*   @brief Convert a 3x3 matrix to a dfloat6 structure.
+*   @param M: Input 3x3 matrix.
+*   @return I: dfloat6 structure to store the inertia tensor components.
+*/
+
+__host__ __device__
+dfloat6 matrix_to_dfloat6(dfloat M[3][3]);
+
+
+
 #endif // !__GLOBAL_FUNCTIONS_H

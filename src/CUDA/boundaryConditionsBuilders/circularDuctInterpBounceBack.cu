@@ -56,9 +56,9 @@ void gpuBuildBoundaryConditions(NodeTypeMap* const gpuMapBC, int gpuNumber)
     // Cilinder values
     // THIS RADIUS MUST BE THE SAME AS IN 
     // "boundaryConditionsSchemes/interpolatedBounceBack.cu"
-    dfloat R = NY/2.0-1.5;
-    dfloat xCenter = ((NX-1)/2.0);
-    dfloat yCenter = ((NY-1)/2.0);
+    dfloat R = OUTER_RADIUS;
+    dfloat xCenter = DUCT_CENTER_X;
+    dfloat yCenter = DUCT_CENTER_Y;
 
     // Node values
     dfloat xNode = x+0.5;

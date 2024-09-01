@@ -28,7 +28,8 @@ void gpuBoundaryConditions(NodeTypeMap* gpuNT,
     dfloat* fPostCol,
     const short unsigned int x, 
     const short unsigned int y, 
-    const short unsigned int z)
+    const short unsigned int z,
+    const int n_gpu)
 {
     /*
     -> BC_SCHEME
@@ -66,7 +67,7 @@ void gpuBoundaryConditions(NodeTypeMap* gpuNT,
     case BC_SCHEME_INTERP_BOUNCE_BACK:
         gpuBCInterpolatedBounceBack((unsigned char)(gpuNT->getBitsUnknownPopsInterpBB()), 
             (bool)(gpuNT->getIsInsideNodeInterpoBB()),
-            fPostStream, fPostCol, x, y, z);
+            fPostStream, fPostCol, x, y, z, n_gpu);
         break;
     #endif
     case BC_SCHEME_SPECIAL:

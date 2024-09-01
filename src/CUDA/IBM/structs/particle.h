@@ -73,8 +73,33 @@ typedef struct particle {
     __host__
     void makeOpenCylinder(dfloat diameter, dfloat3 baseOneCenter, dfloat3 baseTwoCenter, bool pattern);
 
+    /*
+    *   @brief Create the particle in the shape of a capsule with given diameter and center and length between semisphere centers
+    *   @param diameter: sphere diameter in dfloat
+    *   @param point1: location of the center of the 1st hemisphere cap
+    *   @param point2: location of the center of the 2nd hemisphere cap
+    *   @param move: particle is movable or not
+    *   @param density: particle density
+    *   @param vel: particle velocity
+    *   @param w: particle rotation velocity
+    */
     __host__
-    void makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 angleVec, dfloat angleMag, bool move,dfloat density, dfloat3 vel, dfloat3 w);
+    void makeCapsule(dfloat diameter, dfloat3 point1, dfloat3 point2, bool move,
+        dfloat density = PARTICLE_DENSITY, dfloat3 vel = dfloat3(0, 0, 0), dfloat3 w = dfloat3(0, 0, 0));
+
+    /*
+    *   @brief Create the particle in the shape of an elipsoid
+    *   @param diameter: semiaxis a,b,c times 2
+    *   @param center : elipsoid center
+    *   @param vec : axis of rotation of which the particle will be turned that the local (0,0,1) axis will face in global coordinate
+    *   @param angleMag : angle of rotation of which the particle will be turned
+    *   @param move: particle is movable or not
+    *   @param density: particle density
+    *   @param vel: particle velocity
+    *   @param w: particle rotation velocity
+    */
+    __host__
+    void makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 vec, dfloat angleMag, bool move,dfloat density, dfloat3 vel, dfloat3 w);
 
 } Particle;
 

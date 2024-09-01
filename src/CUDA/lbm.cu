@@ -7,6 +7,9 @@ void gpuMacrCollisionStream(
     NodeTypeMap* const mapBC,
     Macroscopics const macr,
     bool const save,
+    #ifdef DENSITY_CORRECTION
+    dfloat *d_mean_rho,
+    #endif
     int const step)
 {
     const short unsigned int x = threadIdx.x + blockDim.x * blockIdx.x;
@@ -62,6 +65,12 @@ void gpuMacrCollisionStream(
     const dfloat fzVar_D3 = FZ / 3;
     #endif
 
+    #ifdef DENSITY_CORRECTION
+    //printf("%f ",d_mean_rho[0]) ;
+    #pragma unroll
+    for (int i = 0; i<Q ;  i++)
+        fNode[i]-= d_mean_rho[0] * w[i];
+    #endif
     // Calculate macroscopics
     // rho = sum(f[i])
     // ux = (sum(f[i]*cx[i])+0.5*fxVar) / rho
@@ -101,10 +110,6 @@ void gpuMacrCollisionStream(
         + fNode[21] + fNode[24] + fNode[26]) + 0.5*fzVar) * invRho;
     #endif // !D3Q27
 
-
-    #ifdef LES_MODEL
-        dfloat visc_turb_var = macr.visc_turb[idxScalar(x, y, z)];
-    #endif //LES
 
     // Calculate temporary variables
     const dfloat p1_muu15 = 1 - 1.5 * (uxVar * uxVar + 
@@ -184,7 +189,7 @@ void gpuMacrCollisionStream(
     const dfloat momNeqYZt2 = (sumPopYZ - rhoVar*uyVar*uzVar) * 2;
     #endif // !D3Q27
 
-    #ifdef NON_NEWTONIAN_FLUID
+    #if defined(NON_NEWTONIAN_FLUID) || defined(LES_MODEL)
     const dfloat uFxxd2 = uxVar*fxVar; // d2 = uFxx Divided by two
     const dfloat uFyyd2 = uyVar*fyVar;
     const dfloat uFzzd2 = uzVar*fzVar;
@@ -200,7 +205,8 @@ void gpuMacrCollisionStream(
         2 * ((momNeqXYt2/2 + uFxyd2) * (momNeqXYt2/2 + uFxyd2) +
         (momNeqXZt2/2 + uFxzd2) * (momNeqXZt2/2 + uFxzd2) + 
         (momNeqYZt2/2 + uFyzd2) * (momNeqYZt2/2 + uFyzd2))));
-
+    #endif
+    #ifdef NON_NEWTONIAN_FLUID
     // Update omega (related to fluid viscosity) locally for non newtonian fluid
     #if defined(BINGHAM)
     const dfloat omegaVar = calcOmega(OMEGA_P, auxStressMag);
@@ -218,48 +224,19 @@ void gpuMacrCollisionStream(
     
 
     #ifdef LES_MODEL
-            dfloat Qxx = ( (fNode[1] + fNode[2] + fNode[7] + fNode[8] + fNode[9] + fNode[10] + fNode[13] + fNode[14] + fNode[15] + fNode[16]) );
-            dfloat Qxy = (((fNode[7] + fNode[ 8]) - (fNode[13] + fNode[14])));
-            dfloat Qxz = (((fNode[9] + fNode[10]) - (fNode[15] + fNode[16])));
-            dfloat Qyy = ( (fNode[3] + fNode[4] + fNode[7] + fNode[8] + fNode[11] + fNode[12] + fNode[13] + fNode[14] + fNode[17] + fNode[18]));
-            dfloat Qyz = (((fNode[11]+fNode[12])-(fNode[17]+fNode[18])));
-            dfloat Qzz = ( (fNode[5] + fNode[6] + fNode[9] + fNode[10] + fNode[11] + fNode[12] + fNode[15] + fNode[16] + fNode[17] + fNode[18]));
 
-            dfloat uu = uxVar*uxVar + uyVar*uyVar + uzVar*uzVar;
-
-            const dfloat uFxxd2 = uxVar*fxVar; // d2 = uFxx Divided by two
-            const dfloat uFyyd2 = uyVar*fyVar;
-            const dfloat uFzzd2 = uzVar*fzVar;
-            const dfloat uFxyd2 = (uxVar*fyVar + uyVar*fxVar) / 2;
-            const dfloat uFxzd2 = (uxVar*fzVar + uzVar*fxVar) / 2;
-            const dfloat uFyzd2 = (uyVar*fzVar + uzVar*fyVar) / 2;
-
-            Qxx = Qxx - rhoVar*(uxVar*uxVar + cs2) + uFxxd2;
-            Qxy = Qxy - rhoVar*uxVar*uyVar + uFxyd2;
-            Qxz = Qxz - rhoVar*uxVar*uzVar + uFxzd2;
-            Qyy = Qyy - rhoVar*(uyVar*uyVar + cs2) + uFyyd2;
-            Qyz = Qyz - rhoVar*uyVar*uzVar + uFyzd2;
-            Qzz = Qzz - rhoVar*(uzVar*uzVar + cs2) + uFzzd2;
-
-            dfloat QQ  = sqrt(2*(Qxx*Qxx + Qyy*Qyy + Qzz*Qzz + 2*(Qxy*Qxy+Qxz*Qxz+Qyz*Qyz)));
-
-            /*dfloat tau_t = 3*visc_turb_var;
-
-            dfloat SS = 3* QQ / (2*RHO_0 * (tau_t+TAU));
-            visc_turb_var = CONST_SMAGORINSKY * CONST_SMAGORINSKY  * SS;
-
-            tau_t = 3*visc_turb_var;*/
-          
-            dfloat tau_t = 0.5*sqrt(TAU*TAU+Implicit_const*QQ)-0.5*TAU;
-            visc_turb_var = tau_t/3.0;
+            dfloat tau_t = 0.5*sqrt(TAU*TAU+Implicit_const*auxStressMag)-0.5*TAU;
+            dfloat visc_turb_var = tau_t/3.0;
 
             /*dfloat tau_tt;
             tau_tt = 0.5 * sqrt((TAU*TAU)+25.45584412*CONST_SMAGORINSKY*CONST_SMAGORINSKY*QQ)-0.5*TAU;
             visc_turb_var = tau_tt/9.0;*/
 
+            //omegaVar = 2.0/(TAU+sqrt(sq(tau0*tau0)+0.76421222*sqrt(Q)/rhon));
 
+            #ifdef LES_EXPORT_VISC_TURBULENT
             macr.visc_turb[idxScalar(x, y, z)] = visc_turb_var;
-
+            #endif
 
             omegaVar = 1.0/(TAU + tau_t);
     #endif 
@@ -604,7 +581,8 @@ void gpuApplyBC(NodeTypeMap* mapBC,
     dfloat* popPostStream,
     dfloat* popPostCol,
     size_t* idxsBCNodes,
-    size_t totalBCNodes)
+    size_t totalBCNodes,
+    const int n_gpu)
 {
     const unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -616,7 +594,7 @@ void gpuApplyBC(NodeTypeMap* mapBC,
     const unsigned int y = (idx/NX) % NY;
     const unsigned int z = idx/(NX*NY);
 
-    gpuBoundaryConditions(&(mapBC[idx]), popPostStream, popPostCol, x, y, z);
+    gpuBoundaryConditions(&(mapBC[idx]), popPostStream, popPostCol, x, y, z,n_gpu);
 }
 
 __global__

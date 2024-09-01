@@ -55,11 +55,13 @@ typedef struct particleCenter {
     dfloat3 w_avg;      // Average particle rotation (used by nodes in movement)
     dfloat3 w_old;      // Old particle center rotation velocity
     dfloat3 w_pos;      // Particle angular position
+    dfloat4 q_pos; // Particle angular poistion defined by a quartenion
+    dfloat4 q_pos_old; // Particle angular poistion defined by a quartenion
     dfloat3 f;          // Sum of the forces acting on particle
     dfloat3 f_old;      // Old sum of the forces acting on particle
     dfloat3 M;          // Total momentum acting on particle
     dfloat3 M_old;      // Old total momentum acting on particle
-    dfloat3 I;          // I innertia moment I.x = Ixx
+    dfloat6 I;          // I innertia moment I.x = Ixx
     dfloat3 dP_internal; // Linear momentum of fluid mass inside IBM particle mesh (delta - backward Euler)
     dfloat3 dL_internal; // Angular momentum of fluid mass inside IBM particle mesh (delta - backward Euler)
     dfloat S;           // Total area of the particle
@@ -86,7 +88,7 @@ typedef struct particleCenter {
         f_old = dfloat3();
         M = dfloat3();
         M_old = dfloat3();
-        I = dfloat3();
+        I = dfloat6();
         dP_internal = dfloat3();
         dL_internal = dfloat3();
 
