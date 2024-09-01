@@ -90,7 +90,7 @@ constexpr dfloat PW_REST_COEF = 0.9; // restitution coeficient particle wall
 
 
 //material properties
-constexpr dfloat PARTICLE_YOUNG_MODULUS = 10.0;
+constexpr dfloat PARTICLE_YOUNG_MODULUS = 0.5;
 constexpr dfloat PARTICLE_POISSON_RATIO = 0.3;
 constexpr dfloat PARTICLE_SHEAR_MODULUS = PARTICLE_YOUNG_MODULUS / (2.0+2.0*PARTICLE_POISSON_RATIO);
 
