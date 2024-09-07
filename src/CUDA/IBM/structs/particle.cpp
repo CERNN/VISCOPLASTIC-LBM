@@ -773,6 +773,15 @@ void Particle::makeSpherePolar(dfloat diameter, dfloat3 center, unsigned int cou
 
     this->pCenter.movable = move;
 
+
+    this->pCenter.collision.shape = SPHERE;
+    this->pCenter.collision.semiAxis = dfloat3(r,r,r);
+    for(int i = 0; i <MAX_ACTIVE_COLLISIONS;i++){
+        this->pCenter.collision.collisionPartnerIDs[i] = -1;
+        this->pCenter.collision.tangentialDisplacements[i] = dfloat3(0,0,0);
+        this->pCenter.collision.lastCollisionStep[i] = -1;
+    }
+
     //breugem correction
     r -= BREUGEM_PARAMETER;
 

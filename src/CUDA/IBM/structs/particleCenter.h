@@ -12,6 +12,20 @@
 
 #include "../../structs/globalStructs.h"
 #include "../ibmVar.h"
+enum ParticleType { SPHERE, CAPSULE, ELLIPSOID };
+
+typedef struct collisionData {
+        ParticleType shape;
+        dfloat3 semiAxis;
+
+        // Arrays to store active collisions and their displacements
+        int collisionPartnerIDs[MAX_ACTIVE_COLLISIONS];
+        dfloat3 tangentialDisplacements[MAX_ACTIVE_COLLISIONS];
+        int lastCollisionStep[MAX_ACTIVE_COLLISIONS];// last time step of collision
+}CollisionData;
+
+
+
 
 typedef struct tangentialCollisionTracker {
     
@@ -69,8 +83,9 @@ typedef struct particleCenter {
     dfloat volume;      // Particle volume
     dfloat density;     // Particle density
     bool movable;       // If the particle can move
+    CollisionData collision;
 
-    tangentialCollisionTracker tCT[trackerCollisionSize];
+    //tangentialCollisionTracker tCT[MAX_ACTIVE_COLLISIONS];
 
     /* Constructor */
     particleCenter()

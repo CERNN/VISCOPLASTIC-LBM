@@ -2,7 +2,644 @@
 
 #ifdef __IBM_COLLISION_H
 
+__device__ 
+int calculateWallIndex(const dfloat3 &n) {
+    // Calculate the index based on the normal vector
+    return 7 + (1 - (int)n.x) - 2 * (1 - (int)n.y) - 3 * (1 - (int)n.z);
+}
+__device__ 
+int getCollisionIndexByPartnerID(const CollisionData &collisionData, int partnerID, int currentTimeStep) {
+    for (int i = 6; i < MAX_ACTIVE_COLLISIONS ; i++) {
+        if (collisionData.collisionPartnerIDs[i] == partnerID &&
+            currentTimeStep - collisionData.lastCollisionStep[i] <= 1) {
+            return i; // Found the collision index for a particle
+        }
+    }
 
+    // If no match is found, return -1
+    return -1;
+}
+__device__ 
+int startCollision(CollisionData &collisionData, int partnerID, bool isWall, const dfloat3 &wallNormal, int currentTimeStep) {
+    int index = -1;
+    if (isWall) {
+        index = calculateWallIndex(wallNormal);
+        // Initialize wall collision data
+        collisionData.tangentialDisplacements[index] = {0.0, 0.0, 0.0};
+        collisionData.lastCollisionStep[index] = currentTimeStep;
+    } else {
+        for (int i = 6; i < MAX_ACTIVE_COLLISIONS + 6; i++) {
+            if (collisionData.lastCollisionStep[i] == -1) { // Check for an unused slot
+                collisionData.collisionPartnerIDs[i] = partnerID;
+                collisionData.tangentialDisplacements[i] = {0.0, 0.0, 0.0};
+                collisionData.lastCollisionStep[i] = currentTimeStep;
+                index = i;
+                break;
+            }
+        }
+    }
+
+    return index;
+}
+__device__ 
+dfloat3 updateTangentialDisplacement(CollisionData &collisionData, int index, const dfloat3 &displacement, int currentTimeStep) {
+        collisionData.tangentialDisplacements[index] = collisionData.tangentialDisplacements[index] + displacement;
+        collisionData.lastCollisionStep[index] = currentTimeStep;
+
+    return collisionData.tangentialDisplacements[index];
+}
+__device__ 
+void endCollision(CollisionData &collisionData, int index, int currentTimeStep) {
+    // Check if index is valid for wall collisions (0 to 5)
+    if (index >= 0 && index < 6) {
+        collisionData.lastCollisionStep[index] = -1;
+    }
+    // Check if index is valid for particle collisions 
+    else if (index >= 6 && index < MAX_ACTIVE_COLLISIONS ) {
+        if (currentTimeStep - collisionData.lastCollisionStep[index] > 1) {
+            collisionData.tangentialDisplacements[index] = {0.0, 0.0, 0.0};
+            collisionData.lastCollisionStep[index] = -1; // Indicate the slot is available
+            collisionData.collisionPartnerIDs[index] = -1; // Optionally reset partnerID
+        }
+    }
+}
+
+
+
+
+
+
+
+
+__device__
+void checkCollisionWalls(
+    ParticleCenter* pc_i,
+    unsigned int step
+){
+    //printf("checking particle shape for walls \n");
+    switch (pc_i->collision.shape) {
+        case SPHERE:
+            //printf("its a sphere \n");
+            checkCollisionWallsSphere(pc_i,step);
+            break;
+        case CAPSULE:
+            //printf("its a capsule \n");
+            checkCollisionWallsCapsule(pc_i,step);
+            break;
+        case ELLIPSOID:
+            //printf("its a ellipsoid \n");
+            checkCollisionWallsElipsoid(pc_i,step);
+            break;
+        default:
+            // Handle unknown particle types
+            break;
+    }
+}
+__device__
+void checkCollisionWallsSphere(
+    ParticleCenter* pc_i,
+    unsigned int step
+){
+    const dfloat3 pos_i = pc_i->pos;
+    //printf("checking collision with wall as sphere \n");
+    //printf("particle position is x = %f y = %f z = %f \n ",pos_i.x,pos_i.y,pos_i.z);
+    Wall wallData = wall(dfloat3( 0,0,0),0);
+    dfloat distanceWall = 0;
+    #ifdef IBM_BC_X_WALL
+        wallData = wall(dfloat3( 1,0,0),0);
+        distanceWall = dot_product(pos_i,wallData.normal) - wallData.distance;
+       // printf("distance to x = 0 is %f \n",distanceWall);
+        if (distanceWall < pc_i->collision.semiAxis.x){
+            //printf("colliding with x = 0 with a deformation of %f \n",pc_i->collision.semiAxis.x - distanceWall);
+            //printf("particle position is x = %f y = %f z = %f \n ",pos_i.x,pos_i.y,pos_i.z);
+            sphereWallCollision(pc_i,wallData,pc_i->collision.semiAxis.x - distanceWall,step);
+
+        }
+        wallData = wall(dfloat3( -1,0,0),(NX - 1));
+        //for this case the dot product will be always negative, while the first term will be always better, hence we have to invert and use + signal
+        distanceWall = wallData.distance + dot_product(pos_i,wallData.normal);
+        //printf("distance to x = 1 is %f \n",distanceWall);
+        if (distanceWall < pc_i->collision.semiAxis.x){
+            //printf("colliding with x = 1 with a deformation of %f \n",pc_i->collision.semiAxis.x - distanceWall);
+            //printf("particle position is x = %f y = %f z = %f \n ",pos_i.x,pos_i.y,pos_i.z);
+            sphereWallCollision(pc_i,wallData,pc_i->collision.semiAxis.x - distanceWall,step);
+        }
+    #endif
+    #ifdef IBM_BC_Y_WALL
+        wallData = wall(dfloat3(0,1,0),0);
+        distanceWall = dot_product(pos_i,wallData.normal) - wallData.distance;
+        //printf("distance to y = 0 is %f \n",distanceWall);
+        if (distanceWall < pc_i->collision.semiAxis.x){
+            //printf("colliding with y = 0 with a deformation of %f \n",pc_i->collision.semiAxis.x - distanceWall);
+            //printf("particle position is x = %f y = %f z = %f \n ",pos_i.x,pos_i.y,pos_i.z);
+            sphereWallCollision(pc_i,wallData,pc_i->collision.semiAxis.x - distanceWall,step);
+        }
+        wallData = wall(dfloat3( 0,-1,0),(NY - 1));
+        distanceWall = wallData.distance + dot_product(pos_i,wallData.normal);
+        //printf("distance to y = 1 is %f \n",distanceWall);
+        if (distanceWall < pc_i->collision.semiAxis.x){
+            //printf("colliding with y = 1 with a deformation of %f \n",pc_i->collision.semiAxis.x - distanceWall);
+            //printf("particle position is x = %f y = %f z = %f \n ",pos_i.x,pos_i.y,pos_i.z);
+            sphereWallCollision(pc_i,wallData,pc_i->collision.semiAxis.x - distanceWall,step);
+        }
+    #endif
+    #ifdef IBM_BC_Z_WALL
+        wallData = wall(dfloat3(0,0,1),0);
+        distanceWall = dot_product(pos_i,wallData.normal) - wallData.distance;
+        //printf("distance to z = 0 is %f \n",distanceWall);
+        if (distanceWall < pc_i->collision.semiAxis.x){
+            //printf("colliding with z = 0  with a deformation of %f \n",pc_i->collision.semiAxis.x -distanceWall);
+            //printf("particle position is x = %f y = %f z = %f \n ",pos_i.x,pos_i.y,pos_i.z);
+            sphereWallCollision(pc_i,wallData,pc_i->collision.semiAxis.x -  distanceWall,step);
+        }
+        wallData = wall(dfloat3( 0,0,-1),(NZ_TOTAL - 1));
+        distanceWall = wallData.distance + dot_product(pos_i,wallData.normal); 
+        //printf("distance to z = 1 is %f \n",distanceWall);
+        if (distanceWall < pc_i->collision.semiAxis.x){
+            //printf("colliding with z = 1 with a deformation of %f \n",pc_i->collision.semiAxis.x - distanceWall);
+            //printf("particle position is x = %f y = %f z = %f \n ",pos_i.x,pos_i.y,pos_i.z);
+            sphereWallCollision(pc_i,wallData,pc_i->collision.semiAxis.x - distanceWall,step);
+        }
+    #endif
+
+} 
+//collision mechanics with walls
+
+__device__
+void sphereWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displacement,int step){
+
+    //particle information
+    const dfloat m_i = pc_i ->volume * pc_i ->density;
+    const dfloat r_i = pc_i->radius;
+
+    const dfloat3 v_i = pc_i->vel;
+    const dfloat3 w_i = pc_i->w;
+
+    //wall information        
+    dfloat3 wall_speed = dfloat3(0,0,0); // relative velocity vector
+    dfloat3 n = wallData.normal;
+
+    //invert collision direction since is from sphere to wall
+    n.x = -n.x;
+    n.y = -n.y;
+    n.z = -n.z;
+
+    //relative velocity
+    dfloat3 G = v_i - wall_speed;
+
+    //constants 
+    //effective radius and mass
+    const dfloat effective_radius = r_i; //wall is r = infinity
+    const dfloat effective_mass = m_i; //wall has infinite mass
+    //collision constants
+    const dfloat STIFFNESS_NORMAL = SPHERE_WALL_STIFFNESS_NORMAL_CONST * sqrt(abs(effective_radius));
+    const dfloat STIFFNESS_TANGENTIAL = SPHERE_WALL_STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (abs(displacement));
+    const dfloat damping_const = (- 2.0 * log(PW_REST_COEF)  / (sqrt(M_PI*M_PI + log(PW_REST_COEF)*log(PW_REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+    const dfloat DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
+    const dfloat DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+
+    //normal force
+    dfloat f_kn = -STIFFNESS_NORMAL * sqrt(abs(displacement*displacement*displacement));
+    dfloat3 f_normal;
+    f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x * POW_FUNCTION(abs(displacement),0.25);
+    f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y * POW_FUNCTION(abs(displacement),0.25); 
+    f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z * POW_FUNCTION(abs(displacement),0.25); 
+    dfloat f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
+
+    //tangential force
+    dfloat3 G_ct; //relative tangential velocity
+    G_ct.x = G.x + r_i*(w_i.y*n.z - w_i.z*n.y) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.x;
+    G_ct.y = G.y + r_i*(w_i.z*n.x - w_i.x*n.z) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.y;
+    G_ct.z = G.z + r_i*(w_i.x*n.y - w_i.y*n.x) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.z;
+    
+    dfloat mag = G_ct.x*G_ct.x+G_ct.y*G_ct.y+G_ct.z*G_ct.z;
+    mag=sqrt(mag);
+
+    dfloat3 t;//tangential velocity vector
+    if (mag != 0){
+        //tangential vector
+        t.x = G_ct.x/mag;
+        t.y = G_ct.y/mag;
+        t.z = G_ct.z/mag;
+    }else{
+        t.x = 0.0;
+        t.y = 0.0;
+        t.z = 0.0;
+    }
+
+    //retrive stored displacedment 
+    int tang_index = calculateWallIndex(n); //wall can be directly computed
+    dfloat3 tang_disp; //total tangential displacement
+
+    int last_step = pc_i->collision.lastCollisionStep[tang_index];
+    if(step - last_step > 1){ //there is no prior collision
+        //first need to erase previous collision
+        endCollision(pc_i->collision,tang_index,step);
+        //now we start the new collision tracking
+        startCollision(pc_i->collision,tang_index,true,n,step);
+        tang_disp = G_ct;
+    }else{//there is already a collision in progress
+        tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,G_ct,step);
+    }
+    
+
+    //tangential force
+    dfloat3 f_tang;
+    f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x* POW_FUNCTION(abs(tang_disp.x) ,0.25);
+    f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y* POW_FUNCTION(abs(tang_disp.y) ,0.25);
+    f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z* POW_FUNCTION(abs(tang_disp.z) ,0.25);
+
+    mag = sqrt(f_tang.x*f_tang.x + f_tang.y*f_tang.y + f_tang.z*f_tang.z);
+
+    //determine if slip or not
+    if(  mag > PW_FRICTION_COEF * fabsf(f_n) ){
+        f_tang.x = - PW_FRICTION_COEF * f_n * t.x;
+        f_tang.y = - PW_FRICTION_COEF * f_n * t.y;
+        f_tang.z = - PW_FRICTION_COEF * f_n * t.z;
+    }
+
+    //sum the forces
+    dfloat3 f_dirs = dfloat3(
+        f_normal.x + f_tang.x,
+        f_normal.y + f_tang.y,
+        f_normal.z + f_tang.z
+    );
+
+    //calculate moments
+    dfloat3 m_dirs = dfloat3(
+        r_i * (n.y*f_tang.z - n.z*f_tang.y),
+        r_i * (n.z*f_tang.x - n.x*f_tang.z),
+        r_i * (n.x*f_tang.y - n.y*f_tang.x)
+    );
+
+    //save data in the particle information
+    atomicAdd(&(pc_i->f.x), f_dirs.x);
+    atomicAdd(&(pc_i->f.y), f_dirs.y);
+    atomicAdd(&(pc_i->f.z), f_dirs.z);
+
+    atomicAdd(&(pc_i->M.x), m_dirs.x);
+    atomicAdd(&(pc_i->M.y), m_dirs.y);
+    atomicAdd(&(pc_i->M.z), m_dirs.z);
+}
+
+//sphere functions
+__device__
+dfloat sphereSphereGap(ParticleCenter*  pc_i, ParticleCenter*  pc_j) {
+    dfloat3 p1 = pc_i->pos;
+    dfloat3 p2 = pc_j->pos;
+
+    dfloat r1 = pc_i->collision.semiAxis.x;
+    dfloat r2 = pc_j->collision.semiAxis.x;
+
+    dfloat dist = sqrtf((p1.x - p2.x) * (p1.x - p2.x) +
+                    (p1.y - p2.y) * (p1.y - p2.y) +
+                    (p1.z - p2.z) * (p1.z - p2.z));
+    
+    return dist - (r1 + r2);
+}
+
+
+//cylinder functions
+// ------------------------------------------------------------------------ 
+// -------------------- COLLISION BETWEEN PARTICLES -----------------------
+// ------------------------------------------------------------------------ 
+
+__device__
+void checkCollisionBetweenParticles(
+    unsigned int column,
+    unsigned int row,
+    ParticleCenter* pc_i, 
+    ParticleCenter* pc_j,
+    int step){
+
+    int collisionType = 0;
+
+    switch (pc_i->collision.shape) {
+        case SPHERE:
+            switch (pc_j->collision.shape) {
+            case SPHERE:
+                //printf("collision between spheres \n");
+                if(sphereSphereGap( pc_i, pc_j)<0)
+                    sphereSphereCollision(column,row, pc_i, pc_j,step);
+                break;
+            case CAPSULE:
+                //collision sphere-capsule
+                break;
+            case ELLIPSOID:
+                //collision sphere-ellipsoid
+                break;
+            default:
+                // Handle unknown particle types
+                break;
+            }
+            break;
+        case CAPSULE:
+            switch (pc_j->collision.shape) {
+            case SPHERE:
+                //collision capsule-sphere
+                break;
+            case CAPSULE:
+
+                break;
+            case ELLIPSOID:
+                //collision capsule-ellipsoid
+                break;
+            default:
+                // Handle unknown particle types
+                break;
+            }
+            break;
+        case ELLIPSOID:
+            switch (pc_j->collision.shape) {
+            case SPHERE:
+                //collision ellipsoid-sphere
+                break;
+            case CAPSULE:
+                //collision ellipsoid-capsule
+                break;
+            case ELLIPSOID:
+                //collision ellipsoid-ellipsoid
+                break;
+            default:
+                // Handle unknown particle types
+                break;
+            }
+            break;
+        default:
+            // Handle unknown particle types
+            break;
+    }
+}
+
+
+__device__
+void sphereSphereCollision(    
+    unsigned int column,
+    unsigned int row,
+    ParticleCenter* pc_i, 
+    ParticleCenter* pc_j,
+    int step)
+{
+    // Particle i info (column)
+    const dfloat3 pos_i = pc_i->pos;
+    const dfloat r_i = pc_i->radius;
+    const dfloat m_i = pc_i ->volume * pc_i ->density;
+    const dfloat3 v_i = pc_i->vel;
+    const dfloat3 w_i = pc_i->w;
+   
+    // Particle j info (row)
+    const dfloat3 pos_j = pc_j->pos;
+    const dfloat r_j = pc_j->radius;
+    const dfloat m_j = pc_j ->volume * pc_j ->density;
+    const dfloat3 v_j = pc_j->vel;
+    const dfloat3 w_j = pc_j->w;
+
+
+
+    //first check if they will collide
+    const dfloat3 diff_pos = dfloat3(
+        #ifdef IBM_BC_X_WALL
+            pos_i.x - pos_j.x
+        #endif //IBM_BC_X_WALL
+        #ifdef IBM_BC_X_PERIODIC 
+        abs(pos_i.x - pos_j.x) > ((IBM_BC_X_E - IBM_BC_X_0) / 2.0) ? 
+        (pos_i.x < pos_j.x ?
+            (pos_i.x + (IBM_BC_X_E - IBM_BC_X_0) - pos_j.x)
+            : 
+            (pos_i.x - (IBM_BC_X_E - IBM_BC_X_0) - pos_j.x)
+        )
+        : pos_i.x - pos_j.x
+        #endif //IBM_BC_X_PERIODIC
+        ,
+        #ifdef IBM_BC_Y_WALL
+            pos_i.y - pos_j.y
+        #endif //IBM_BC_Y_WALL
+        #ifdef IBM_BC_Y_PERIODIC
+        abs(pos_i.y - pos_j.y) > ((IBM_BC_Y_E - IBM_BC_Y_0) / 2.0) ? 
+        (pos_i.y < pos_j.y ?
+            (pos_i.y + (IBM_BC_Y_E - IBM_BC_Y_0) - pos_j.y)
+            : 
+            (pos_i.y - (IBM_BC_Y_E - IBM_BC_Y_0) - pos_j.y)
+        )
+        : pos_i.y - pos_j.y
+        #endif //IBM_BC_Y_PERIODIC
+        ,
+        #ifdef IBM_BC_Z_WALL
+            pos_i.z - pos_j.z
+        #endif //IBM_BC_Z_WALL
+        #ifdef IBM_BC_Z_PERIODIC
+            abs(pos_i.z - pos_j.z) > ((IBM_BC_Z_E - IBM_BC_Z_0) / 2.0) ? 
+            (pos_i.z < pos_j.z ?
+                (pos_i.z + (IBM_BC_Z_E - IBM_BC_Z_0) - pos_j.z)
+                : 
+                (pos_i.z - (IBM_BC_Z_E - IBM_BC_Z_0) - pos_j.z)
+            )
+            : pos_i.z - pos_j.z
+        #endif //IBM_BC_Z_PERIODIC
+    );
+
+    const dfloat mag_dist = sqrt(
+        diff_pos.x*diff_pos.x
+        + diff_pos.y*diff_pos.y
+        + diff_pos.z*diff_pos.z);
+
+    if(mag_dist > r_i+r_j) //they dont collide
+        return;
+
+    //but if they collide, we can do some calculations
+
+    //normal collision vector
+    const dfloat3 n = dfloat3(diff_pos.x/mag_dist,diff_pos.y/mag_dist,diff_pos.z/mag_dist);
+
+    //normal deformation
+    dfloat displacement = r_i + r_j - mag_dist;
+    // relative velocity vector
+    dfloat3 G = v_i-v_j;
+
+    //HERTZ CONTACT THEORY
+
+    dfloat effective_radius = 1.0/((r_i +r_j)/(r_i*r_j));
+    dfloat effective_mass = 1.0/((m_i +m_j)/(m_i*m_j));
+
+    const dfloat STIFFNESS_NORMAL = SPHERE_SPHERE_STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
+    const dfloat STIFFNESS_TANGENTIAL = SPHERE_SPHERE_STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (abs(displacement));
+    const dfloat damping_const = (- 2.0 * log(PP_REST_COEF)  / (sqrt(M_PI*M_PI + log(PP_REST_COEF)*log(PP_REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+    const dfloat DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
+    const dfloat DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+
+    //normal force
+    dfloat f_kn = -STIFFNESS_NORMAL * sqrt(abs(displacement*displacement*displacement));
+    dfloat3 f_normal;
+    f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x * POW_FUNCTION(abs(displacement),0.25);
+    f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y * POW_FUNCTION(abs(displacement),0.25);
+    f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z * POW_FUNCTION(abs(displacement),0.25);
+    dfloat f_n;
+    f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
+
+    //tangential force
+    dfloat3 G_ct;       
+    G_ct.x = G.x + r_i*(w_i.y*n.z - w_i.z*n.y) + r_j*(w_j.y*n.z - w_j.z*n.y) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.x;
+    G_ct.y = G.y + r_i*(w_i.z*n.x - w_i.x*n.z) + r_j*(w_j.z*n.x - w_j.x*n.z) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.y;
+    G_ct.z = G.z + r_i*(w_i.x*n.y - w_i.y*n.x) + r_j*(w_j.x*n.y - w_j.y*n.x) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.z;
+
+    dfloat mag = G_ct.x*G_ct.x+G_ct.y*G_ct.y+G_ct.z*G_ct.z;
+    mag=sqrt(mag);
+
+    //calculate tangential vector
+    dfloat3 t;
+    if (mag != 0){
+        //tangential vector
+        t.x = G_ct.x/mag;
+        t.y = G_ct.y/mag;
+        t.z = G_ct.z/mag;
+    }else{
+        t.x = 0.0;
+        t.y = 0.0;
+        t.z = 0.0;
+    }
+
+    //retrive stored displacedment 
+    dfloat3 tang_disp; //total tangential displacement
+    int tang_index = getCollisionIndexByPartnerID(pc_i->collision,row,step);
+    if(tang_index == -1){ //no previous collision was detected
+        tang_index = startCollision(pc_i->collision,row,false,dfloat3(0,0,0),step);
+        tang_disp = G_ct;
+    }else{
+        //check if the collision already exited in the past
+        if(step - pc_i->collision.lastCollisionStep[tang_index] > 1){ //already existed but ended
+            endCollision(pc_i->collision,tang_index,step); //end current one
+            tang_index = startCollision(pc_i->collision,row,false,dfloat3(0,0,0),step);
+            tang_disp = G_ct;
+        }else{ //collision is still ongoing
+            tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,G,step);
+        }
+    }
+
+    dfloat3 f_tang;
+    f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x* POW_FUNCTION(abs(tang_disp.x) ,0.25);
+    f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y* POW_FUNCTION(abs(tang_disp.y) ,0.25);
+    f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z* POW_FUNCTION(abs(tang_disp.z) ,0.25);
+
+    mag = sqrt(f_tang.x*f_tang.x + f_tang.y*f_tang.y + f_tang.z*f_tang.z);
+
+    //calculate if will slip
+    if(  mag > PP_FRICTION_COEF * abs(f_n) ){
+        f_tang.x = - PP_FRICTION_COEF * f_n * t.x;
+        f_tang.y = - PP_FRICTION_COEF * f_n * t.y;
+        f_tang.z = - PP_FRICTION_COEF * f_n * t.z;
+    }
+    //FINAL FORCE RESULTS
+
+
+    // Force in each direction
+    dfloat3 f_dirs = dfloat3(
+        f_normal.x + f_tang.x,
+        f_normal.y + f_tang.y,
+        f_normal.z + f_tang.z
+    );
+    //Torque in each direction
+    dfloat3 m_dirs_i = dfloat3(
+        r_i * (n.y*f_tang.z - n.z*f_tang.y),
+        r_i * (n.z*f_tang.x - n.x*f_tang.z),
+        r_i * (n.x*f_tang.y - n.y*f_tang.x)
+    );
+    dfloat3 m_dirs_j = dfloat3(
+        r_j * (n.y*f_tang.z - n.z*f_tang.y),
+        r_j * (n.z*f_tang.x - n.x*f_tang.z),
+        r_j * (n.x*f_tang.y - n.y*f_tang.x)
+    );
+
+    // Force positive in particle i (column)
+    atomicAdd(&(pc_i->f.x), -f_dirs.x);
+    atomicAdd(&(pc_i->f.y), -f_dirs.y);
+    atomicAdd(&(pc_i->f.z), -f_dirs.z);
+
+    atomicAdd(&(pc_i->M.x), m_dirs_i.x);
+    atomicAdd(&(pc_i->M.y), m_dirs_i.y);
+    atomicAdd(&(pc_i->M.z), m_dirs_i.z);
+
+    // Force negative in particle j (row)
+    atomicAdd(&(pc_j->f.x), f_dirs.x);
+    atomicAdd(&(pc_j->f.y), f_dirs.y);
+    atomicAdd(&(pc_j->f.z), f_dirs.z);
+
+    atomicAdd(&(pc_j->M.x), m_dirs_j.x); //normal vector takes care of negative sign
+    atomicAdd(&(pc_j->M.y), m_dirs_j.y);
+    atomicAdd(&(pc_j->M.z), m_dirs_j.z); 
+
+
+}
+
+
+
+//collision
+__global__
+void gpuParticlesCollisionHandler(ParticleCenter particleCenters[NUM_PARTICLES], unsigned int step){
+    /* Maps a 1D array to a Floyd triangle, where the last row is for checking
+    collision against the wall and the other ones to check collision between 
+    particles, with index given by row/column. Example for 7 particles:
+
+    FLOYD TRIANGLE
+        c0  c1  c2  c3  c4  c5  c6
+    r0  0
+    r1  1   2
+    r2  3   4   5
+    r3  6   7   8   9
+    r4  10  11  12  13  14
+    r5  15  16  17  18  19  20
+    r6  21  22  23  24  25  26  27
+
+    Index 7 is in r3, c1. It will compare p[1] (particle in index 1), from column,
+    with p[4], from row (this is because for all rows one is added to its index)
+
+    Index 0 will compare p[0] (column) and p[1] (row)
+    Index 13 will compare p[3] (column) and p[5] (row)
+    Index 20 will compare p[5] (column) and p[6] (row)
+
+    For the last column, the particles check collision against the wall.
+    Index 21 will check p[0] (column) collision against the wall
+    Index 27 will check p[6] (column) collision against the wall
+    Index 24 will check p[3] (column) collision against the wall
+
+    FROM INDEX TO ROW/COLUMN
+    Starting column/row from 1, the n'th row always ends (n)*(n+1)/2+1. So:
+
+    k = (n)*(n+1)/2+1
+    n^2 + n - (2k+1) = 0
+
+    (with k=particle index)
+    n_row = ceil((-1 + Sqrt(1 + 8(k+1))) / 2)
+    n_column = k - n_row * (n_row - 1) / 2
+    */
+    const unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if(idx > TOTAL_PCOLLISION_IBM_THREADS)
+        return;
+    
+    const unsigned int row = ceil((-1.0+sqrt((float)1+8*(idx+1)))/2);
+    const unsigned int column = idx - ((row-1)*row)/2;
+
+    ParticleCenter* pc_i = &particleCenters[column];
+    #ifdef IBM_DEBUG
+    printf("collision step %d x: %f \n",step,pc_i->pos.x);
+    #endif
+    //collision against walls
+    if(row == NUM_PARTICLES){
+        if(!pc_i->movable)
+            return;
+        //printf("checking collision with wall  \n");
+        checkCollisionWalls(pc_i,step);
+    }else{    //Collision between particles
+        ParticleCenter* pc_j = &particleCenters[row];
+        if(!pc_i->movable && !pc_j->movable)
+            return;
+
+        checkCollisionBetweenParticles(column,row,pc_i,pc_j,step);
+    }
+}
+
+#endif //__IBM_COLLISION_H
+/*
 __global__
 void gpuParticlesCollision(
     ParticleCenter particleCenters[NUM_PARTICLES],
@@ -43,7 +680,7 @@ void gpuParticlesCollision(
     (with k=particle index)
     n_row = ceil((-1 + Sqrt(1 + 8(k+1))) / 2)
     n_column = k - n_row * (n_row - 1) / 2
-    */
+    
 
     const unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -512,8 +1149,8 @@ void gpuSoftSphereWallCollision(
     G.y = v_i.y - wall_speed.y;
     G.z = v_i.z - wall_speed.z;
 
-    const dfloat STIFFNESS_NORMAL = PW_STIFFNESS_NORMAL_CONST * sqrt(abs(effective_radius));
-    const dfloat STIFFNESS_TANGENTIAL = PW_STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (abs(displacement));
+    const dfloat STIFFNESS_NORMAL = SPHERE_WALL_STIFFNESS_NORMAL_CONST * sqrt(abs(effective_radius));
+    const dfloat STIFFNESS_TANGENTIAL = SPHERE_WALL_STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (abs(displacement));
     const dfloat damping_const = (- 2.0 * log(PW_REST_COEF)  / (sqrt(M_PI*M_PI + log(PW_REST_COEF)*log(PW_REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
     const dfloat DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
     const dfloat DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
@@ -692,8 +1329,8 @@ void gpuSoftSphereParticleCollision(
     dfloat effective_radius = 1.0/((r_i +r_j)/(r_i*r_j));
     dfloat effective_mass = 1.0/((m_i +m_j)/(m_i*m_j));
 
-    const dfloat STIFFNESS_NORMAL = PP_STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
-    const dfloat STIFFNESS_TANGENTIAL = PP_STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (abs(displacement));
+    const dfloat STIFFNESS_NORMAL = SPHERE_SPHERE_STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
+    const dfloat STIFFNESS_TANGENTIAL = SPHERE_SPHERE_STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (abs(displacement));
     const dfloat damping_const = (- 2.0 * log(PP_REST_COEF)  / (sqrt(M_PI*M_PI + log(PP_REST_COEF)*log(PP_REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
     const dfloat DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
     const dfloat DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
@@ -795,13 +1432,13 @@ int gpuTangentialDisplacementTrackerWall(
     int wallIndex = (1-(int)n.x) - 2*(1-(int)n.y) - 3 *(1-(int)n.z);
     int trackerId = 0;
 
-    tangentialCollisionTracker trackInfo_i[trackerCollisionSize];
-    for(int i = 0; i < trackerCollisionSize; i++){
+    tangentialCollisionTracker trackInfo_i[MAX_ACTIVE_COLLISIONS];
+    for(int i = 0; i < MAX_ACTIVE_COLLISIONS; i++){
         trackInfo_i[i] = pc_i->tCT[i];
     }
     
 
-    for(int i = 0; i < trackerCollisionSize; i++){
+    for(int i = 0; i < MAX_ACTIVE_COLLISIONS; i++){
         if (trackInfo_i[i].collisionIndex == -8){
             trackerId = i;
             trackInfo_i[trackerId].collisionIndex = wallIndex;
@@ -815,8 +1452,8 @@ int gpuTangentialDisplacementTrackerWall(
 
                 //not a valid tracker
                 // check if next is valid, if i
-                for (int j = i+1; j < trackerCollisionSize; j++){
-                    if(trackInfo_i[j].collisionIndex == -8 || j == trackerCollisionSize-1){
+                for (int j = i+1; j < MAX_ACTIVE_COLLISIONS; j++){
+                    if(trackInfo_i[j].collisionIndex == -8 || j == MAX_ACTIVE_COLLISIONS-1){
                         trackInfo_i[j].collisionIndex = -8;
 
                         trackerId = j;
@@ -848,7 +1485,7 @@ int gpuTangentialDisplacementTrackerWall(
     }
     endloop:
     // update tracker info
-    for(int i = 0; i < trackerCollisionSize; i++){
+    for(int i = 0; i < MAX_ACTIVE_COLLISIONS; i++){
         pc_i->tCT[i] = trackInfo_i[i];
     }
 
@@ -874,18 +1511,18 @@ int gpuTangentialDisplacementTrackerParticle(
 
     
 
-    tangentialCollisionTracker trackInfo_i[trackerCollisionSize];
-    tangentialCollisionTracker trackInfo_j[trackerCollisionSize];
+    tangentialCollisionTracker trackInfo_i[MAX_ACTIVE_COLLISIONS];
+    tangentialCollisionTracker trackInfo_j[MAX_ACTIVE_COLLISIONS];
 
     //retrive tracking info
-    for(int i = 0; i < trackerCollisionSize; i++){
+    for(int i = 0; i < MAX_ACTIVE_COLLISIONS; i++){
         trackInfo_i[i] = pc_i->tCT[i];
         trackInfo_j[i] = pc_j->tCT[i];
     }
     
     
     //check tracking for particle i
-    for(int i = 0; i < trackerCollisionSize; i++){
+    for(int i = 0; i < MAX_ACTIVE_COLLISIONS; i++){
         if (trackInfo_i[i].collisionIndex == -8){
             trackerId = i;
             trackInfo_i[trackerId].collisionIndex = pc_j_index;
@@ -898,8 +1535,8 @@ int gpuTangentialDisplacementTrackerParticle(
 
                 //not a valid tracker
                 // check if next is valid, if i
-                for (int j = i+1; j < trackerCollisionSize; j++){
-                    if(trackInfo_i[j].collisionIndex == -8 || j == trackerCollisionSize-1){
+                for (int j = i+1; j < MAX_ACTIVE_COLLISIONS; j++){
+                    if(trackInfo_i[j].collisionIndex == -8 || j == MAX_ACTIVE_COLLISIONS-1){
                         trackInfo_i[j].collisionIndex = -8;
 
                         trackerId = j;
@@ -930,7 +1567,7 @@ int gpuTangentialDisplacementTrackerParticle(
     /* Its not necessary, removing also prevents race condition
     //TODO: Evaluate if is really necessary track information in both particles.
     //check tracking for particle j
-    for(int i = 0; i < trackerCollisionSize; i++){
+    for(int i = 0; i < MAX_ACTIVE_COLLISIONS; i++){
         if (trackInfo_j[i].collisionIndex == -8){
             trackerId = i;
             trackInfo_j[trackerId].collisionIndex = pc_i_index;
@@ -943,8 +1580,8 @@ int gpuTangentialDisplacementTrackerParticle(
 
                 //not a valid tracker
                 // check if next is valid, if i
-                for (int j = i+1; j < trackerCollisionSize; j++){
-                    if(trackInfo_j[j].collisionIndex == -8 || j == trackerCollisionSize-1){
+                for (int j = i+1; j < MAX_ACTIVE_COLLISIONS; j++){
+                    if(trackInfo_j[j].collisionIndex == -8 || j == MAX_ACTIVE_COLLISIONS-1){
                         trackInfo_j[j].collisionIndex = -8;
 
                         trackerId = j;
@@ -971,12 +1608,12 @@ int gpuTangentialDisplacementTrackerParticle(
             }
         }
     }
-    endloop_j:*/
+    endloop_j:
 
 
     // update tracker info
     //TODO THIS NEEDS TO BE ATOMIC
-    for(int i = 0; i < trackerCollisionSize; i++){
+    for(int i = 0; i < MAX_ACTIVE_COLLISIONS; i++){
         pc_i->tCT[i] = trackInfo_i[i];
         //pc_j->tCT[i] = trackInfo_j[i];
     }
@@ -1062,5 +1699,4 @@ void gpuLubricationParticle(
 #endif //LUBRICATION_FORCE
 
 
-
-#endif //__IBM_COLLISION_H
+*/
