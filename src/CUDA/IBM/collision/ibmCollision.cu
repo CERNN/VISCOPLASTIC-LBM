@@ -526,13 +526,13 @@ dfloat sphereSphereGap(ParticleCenter*  pc_i, ParticleCenter*  pc_j) {
 
 // Distance from a point to a line segment (capsule cylinder)
 __device__
-dfloat point_to_segment_distance(dfloat3 p, dfloat3 segA, dfloat3 segB) {
+dfloat point_to_segment_distance(dfloat3 p, dfloat3 segA, dfloat3 segB, dfloat3 closestOnAB[1]) {
     dfloat3 ab = segB - segA;
     dfloat3 ap = p - segA;
     dfloat t = dot_product(ap, ab) / dot_product(ab, ab);
     t = myMax(0, myMin(1, t));  // Clamp t to [0, 1]
-    dfloat3 closest = segA + ab*t;
-    return vector_length(p - closest);
+    closestOnAB[0] = segA + ab*t;
+    return vector_length(p - closestOnAB[0]);
 }
 
 // Project a point onto a segment and constrain it within the segment
@@ -642,6 +642,27 @@ void capsuleCapsuleCollisionCheck(    unsigned int column,    unsigned int row,P
 
 
 
+__device__
+void capsuleSphereCollisionCheck(
+    unsigned int column,
+    unsigned int row,
+    ParticleCenter* pc_i, 
+    ParticleCenter* pc_j, 
+    int step){
+
+    dfloat3 closestOnAB[1];
+
+    if(pc_i->collision.shape == SPHERE){
+        if(point_to_segment_distance(pc_i->pos, pc_j->pos + pc_j->collision.semiAxis, pc_j->pos - pc_j->collision.semiAxis,closestOnAB) < pc_i->radius + pc_j->radius)
+            capsuleCapsuleCollision(column,row,pc_i,pc_j,&pc_i->pos,closestOnAB,step);
+    }else{
+        if(point_to_segment_distance(pc_j->pos, pc_i->pos + pc_i->collision.semiAxis, pc_i->pos - pc_i->collision.semiAxis,closestOnAB) < pc_i->radius + pc_j->radius)
+            capsuleCapsuleCollision(column,row,pc_i,pc_j,&pc_j->pos,closestOnAB,step);
+    }
+    
+
+    return;
+}
 
 
 // ------------------------------------------------------------------------ 
@@ -667,7 +688,7 @@ void checkCollisionBetweenParticles(
                     sphereSphereCollision(column,row, pc_i, pc_j,step);
                 break;
             case CAPSULE:
-                //collision sphere-capsule
+                capsuleSphereCollisionCheck(column,row,pc_i,pc_j,step);
                 break;
             case ELLIPSOID:
                 //collision sphere-ellipsoid
@@ -680,7 +701,7 @@ void checkCollisionBetweenParticles(
         case CAPSULE:
             switch (pc_j->collision.shape) {
             case SPHERE:
-                //collision capsule-sphere
+                capsuleSphereCollisionCheck(column,row,pc_i,pc_j,step);
                 break;
             case CAPSULE:
                 capsuleCapsuleCollisionCheck(column,row,pc_i,pc_j, step, pc_i->pos + pc_i->collision.semiAxis, pc_i->pos - pc_i->collision.semiAxis, pc_i->radius, pc_j->pos + pc_j->collision.semiAxis, pc_j->pos - pc_j->collision.semiAxis, pc_j->radius);

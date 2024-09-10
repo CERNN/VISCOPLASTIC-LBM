@@ -246,6 +246,20 @@ void capsuleCapsuleCollision(unsigned int column, unsigned int row, ParticleCent
 __device__
 void capsuleCapsuleCollisionCheck(unsigned int column,    unsigned int row, ParticleCenter* pc_i, ParticleCenter* pc_j, int step, dfloat3 capA1, dfloat3 capA2,dfloat radiusA, dfloat3 capB1, dfloat3 capB2,dfloat radiusB);
 
+
+/**
+*   @brief Handle collision mechanics between a capsule and an ellipsoid.
+*   @param column: The column index in a grid or matrix representing the particles' positions.
+*   @param row: The row index in a grid or matrix representing the particles' positions.
+*   @param pc_i: Pointer to the `ParticleCenter` structure containing information about the capsule.
+*   @param pc_j: Pointer to the `ParticleCenter` structure containing information about the ellipsoid.
+*   @param step: The current time step for collision processing.
+*   This function calculates and processes collisions between a capsule and an ellipsoid based on their positions, radii, and properties.
+*/
+__device__
+void capsuleSphereCollisionCheck( unsigned int column, unsigned int row, ParticleCenter* pc_i,  ParticleCenter* pc_j, int step);
+
+
 //collission 
 
 /**
