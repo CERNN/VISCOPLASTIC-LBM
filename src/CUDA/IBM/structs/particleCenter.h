@@ -17,6 +17,7 @@ enum ParticleType { SPHERE, CAPSULE, ELLIPSOID };
 typedef struct collisionData {
         ParticleType shape;
         dfloat3 semiAxis;
+        dfloat3 semiAxis2;
 
         // Arrays to store active collisions and their displacements
         int collisionPartnerIDs[MAX_ACTIVE_COLLISIONS];

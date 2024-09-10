@@ -953,6 +953,36 @@ void gpuParticleMovement(
     printf("gpuParticleMovement 2 vel  x: %f y: %f z: %f\n",pc->vel.x,pc->vel.y,pc->vel.z);
     printf("gpuParticleMovement 2 w  x: %f y: %f z: %f\n",pc->w.x,pc->w.y,pc->w.z);
     #endif
+
+
+    //update orientation vector
+    const dfloat w_norm = sqrt((pc->w_avg.x * pc->w_avg.x) 
+                             + (pc->w_avg.y * pc->w_avg.y) 
+                             + (pc->w_avg.z * pc->w_avg.z));
+    const dfloat q0 = cos(0.5*w_norm);
+    const dfloat qi = (pc->w_avg.x/w_norm) * sin (0.5*w_norm);
+    const dfloat qj = (pc->w_avg.y/w_norm) * sin (0.5*w_norm);
+    const dfloat qk = (pc->w_avg.z/w_norm) * sin (0.5*w_norm);
+
+    const dfloat tq0m1 = (q0*q0) - 0.5;
+
+    dfloat x_vec = pc->collision.semiAxis.x;
+    dfloat y_vec = pc->collision.semiAxis.y;
+    dfloat z_vec = pc->collision.semiAxis.z;
+
+    
+    pc->collision.semiAxis.x =  2 * (   (tq0m1 + (qi*qi))*x_vec + ((qi*qj) - (q0*qk))*y_vec + ((qi*qk) + (q0*qj))*z_vec);
+    pc->collision.semiAxis.y =  2 * ( ((qi*qj) + (q0*qk))*x_vec +   (tq0m1 + (qj*qj))*y_vec + ((qj*qk) - (q0*qi))*z_vec);
+    pc->collision.semiAxis.z =  2 * ( ((qi*qj) - (q0*qj))*x_vec + ((qj*qk) + (q0*qi))*y_vec +   (tq0m1 + (qk*qk))*z_vec);
+
+    x_vec = pc->collision.semiAxis2.x;
+    y_vec = pc->collision.semiAxis2.y;
+    z_vec = pc->collision.semiAxis2.z;
+
+    pc->collision.semiAxis2.x =  2 * (   (tq0m1 + (qi*qi))*x_vec + ((qi*qj) - (q0*qk))*y_vec + ((qi*qk) + (q0*qj))*z_vec);
+    pc->collision.semiAxis2.y =  2 * ( ((qi*qj) + (q0*qk))*x_vec +   (tq0m1 + (qj*qj))*y_vec + ((qj*qk) - (q0*qi))*z_vec);
+    pc->collision.semiAxis2.z =  2 * ( ((qi*qj) - (q0*qj))*x_vec + ((qj*qk) + (q0*qi))*y_vec +   (tq0m1 + (qk*qk))*z_vec);
+
 }
 
 __global__

@@ -192,6 +192,7 @@ constexpr size_t BYTES_PER_GB = (1<<30);
 constexpr size_t BYTES_PER_MB = (1<<20);
 
 #define SQRT_2 (1.41421356237309504880168872420969807856967187537)
+#define EULER (2.71828182845904523536)
 /* ------------------------------------------------------------------------- */
 
 const size_t NUM_BLOCK_X = ((NX % N_THREADS) ? (NX / N_THREADS + 1) : (NX / N_THREADS));

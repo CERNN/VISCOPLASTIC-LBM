@@ -1263,7 +1263,7 @@ void Particle::makeCapsule(dfloat diameter, dfloat3 point1, dfloat3 point2, bool
     dfloat volume = r*r*r*4*M_PI/3 + M_PI*r*r*length;
     dfloat sphereVol = r*r*r*4*M_PI/3;
     dfloat cylinderVol = M_PI*r*r*length;
-    dfloat3 center = dfloat3(point2.x-point1.x,point2.y-point1.y,point2.z-point1.z);
+    dfloat3 center = (point2 + point1)/2.0;
 
     this->pCenter.radius = r;
     this->pCenter.volume = sphereVol + cylinderVol;
@@ -1274,6 +1274,7 @@ void Particle::makeCapsule(dfloat diameter, dfloat3 point1, dfloat3 point2, bool
 
     // Particle center position
     this->pCenter.pos = center;
+    //printf("pos center x %f y %f z %f \n",center.x,center.y,center.z);
     this->pCenter.pos_old = center;
 
     // Particle velocity
@@ -1338,6 +1339,16 @@ void Particle::makeCapsule(dfloat diameter, dfloat3 point1, dfloat3 point2, bool
 
 
     this->pCenter.movable = move;
+
+
+    this->pCenter.collision.shape = CAPSULE;
+    this->pCenter.collision.semiAxis = point1 - center;
+    for(int i = 0; i <MAX_ACTIVE_COLLISIONS;i++){
+        this->pCenter.collision.collisionPartnerIDs[i] = -1;
+        this->pCenter.collision.tangentialDisplacements[i] = dfloat3(0,0,0);
+        this->pCenter.collision.lastCollisionStep[i] = -1;
+    }
+
     
     this->numNodes = nTotalPoints;
 

@@ -7,6 +7,14 @@ std::string getStrDfloat3(dfloat3 val, std::string sep){
     return strValues.str();
 }
 
+std::string getStrDfloat4(dfloat4 val, std::string sep){
+    std::ostringstream strValues("");
+    strValues << std::scientific;
+    strValues << val.x << sep << val.y << sep << val.z << sep << val.w;
+    return strValues.str();
+}
+
+
 std::string getStrDfloat6(dfloat6 val, std::string sep){
     std::ostringstream strValues("");
     strValues << std::scientific;
@@ -39,7 +47,9 @@ void saveParticlesInfo(ParticlesSoA particles, unsigned int step, bool saveNodes
     strColumnNames += "S" + sep;
     strColumnNames += "radius" + sep;
     strColumnNames += "volume" + sep;
-    strColumnNames += "movable\n";
+    strColumnNames += "movable" + sep;
+    strColumnNames += "semi1x" + sep  + "semi1y" + sep  + "semi1z" + sep;
+    strColumnNames += "semi2x" + sep  + "semi2y" + sep  + "semi2z\n";
 
     for(int p = 0; p < NUM_PARTICLES; p++){
         ParticleCenter pc = particles.pCenterArray[p];
@@ -54,7 +64,9 @@ void saveParticlesInfo(ParticlesSoA particles, unsigned int step, bool saveNodes
         strValuesParticles << pc.S << sep;
         strValuesParticles << pc.radius << sep;
         strValuesParticles << pc.volume << sep;
-        strValuesParticles << pc.movable << "\n";
+        strValuesParticles << pc.movable << sep;
+        strValuesParticles << getStrDfloat3(pc.collision.semiAxis, sep) << sep;
+        strValuesParticles << getStrDfloat3(pc.collision.semiAxis2, sep) << "\n";
     }
 
     outFilePCenter << strColumnNames << strValuesParticles.str();

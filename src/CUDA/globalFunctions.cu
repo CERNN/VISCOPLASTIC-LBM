@@ -15,6 +15,42 @@ void copyFromArray(dfloat3SoA dst, dfloat3SoA src){
     dst.z[i] = src.z[i];
 }
 
+        
+__host__ __device__
+void apply_periodic_BC(dfloat3& p1, dfloat3& p2){
+    #ifdef IBM_BC_X_WALL
+    if (fabs(p1.x - p2.x) > (NX-1) / 2) {
+        if (p1.x > p2.x) {
+            p1.x -= NX-1;
+        } else {
+            p2.x -= NX-1;
+        }
+    }
+    #endif
+    #ifdef IBM_BC_Y_WALL
+    if (fabs(p1.y - p2.y) > (NY-1) / 2.0) {
+        if (p1.y > p2.y) {
+            p1.y -= NY-1;
+        } else {
+            p2.y -= NY-1;
+        }
+    }
+    #endif
+    #ifdef IBM_BC_Y_WALL
+    if (fabs(p1.z - p2.z) > (NZ-1) / 2) {
+        if (p1.z > p2.z) {
+            p1.z -= NZ-1;
+        } else {
+            p2.z -= NZ-1;
+        }
+    }
+    #endif 
+}
+
+
+
+
+
 __host__ __device__
 dfloat clamp01(dfloat value) {
     if (value < 0.0) return 0.0;

@@ -173,8 +173,6 @@ void copyFromArray(dfloat3SoA dst, dfloat3SoA src);
 /**
 *   @brief Clamp a value to a given range.
 *   @param value: The value to be clamped.
-*   @param minVal: The minimum allowable value.
-*   @param maxVal: The maximum allowable value.
 *   @return The clamped value.
 */
 __host__ __device__

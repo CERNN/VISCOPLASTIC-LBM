@@ -89,6 +89,16 @@ void checkCollisionWalls(ParticleCenter* pc_i, unsigned int step);
 __device__
 void checkCollisionWallsSphere(ParticleCenter* pc_i, unsigned int step);
 
+/**
+*   @brief Check for collisions between a capsule and walls.
+*   @param pc_i: Pointer to the `ParticleCenter` structure containing capsule information.
+*   @param step: The current time step for collision checking.
+*   This function checks for collisions between a capsule and walls. It uses the particle's
+*   properties (such as the radius and endpoints of the capsule) to determine if there is an intersection with any walls.
+*/
+__device__
+void checkCollisionWallsCapsule(ParticleCenter* pc_i, unsigned int step);
+
 
 
 //collision mechanics with walls
@@ -105,6 +115,19 @@ void checkCollisionWallsSphere(ParticleCenter* pc_i, unsigned int step);
 __device__
 void sphereWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displacement,int step);
 
+/**
+*   @brief Handle collision mechanics between a capsule's end cap and a wall.
+*   @param pc_i: Pointer to the `ParticleCenter` structure containing capsule information.
+*   @param wallData: The data structure representing the wall.
+*   @param displacement: The displacement value for the capsule's end cap.
+*   @param endpoint: The endpoint of the capsule's end cap.
+*   @param step: The current time step for collision processing.
+*   This function calculates and processes the collision between a capsule's end cap and a wall.
+*   It uses the end cap's position and displacement to determine and handle the interaction with the wall.
+*/
+__device__
+void capsuleWallCollisionCap(ParticleCenter* pc_i,Wall wallData,dfloat displacement,dfloat3 endpoint, int step);
+
 //sphere functions
 /**
 *   @brief Compute the gap between two spheres.
@@ -118,6 +141,54 @@ __device__
 dfloat sphereSphereGap(ParticleCenter*  pc_i, ParticleCenter*  pc_j);
 
 //capsule functions
+/**
+*   @brief Compute the shortest distance from a point to a segment.
+*   @param point: The point in 3D space.
+*   @param segStart: The start point of the segment.
+*   @param segEnd: The end point of the segment.
+*   @param closestPoint: Output for the closest point on the segment.
+*   @return The shortest distance between the point and the segment.
+*/
+__device__
+dfloat point_to_segment_distance(dfloat3 point, dfloat3 segStart, dfloat3 segEnd, dfloat3* closestPoint);
+
+/**
+*   @brief Constrain a point to lie within a given segment.
+*   @param point: The point to be constrained.
+*   @param segStart: The start point of the segment.
+*   @param segEnd: The end point of the segment.
+*   @return The constrained point that lies on the segment.
+*/
+__device__
+dfloat3 constrain_to_segment(dfloat3 point, dfloat3 segStart, dfloat3 segEnd);
+
+
+/**
+*   @brief Compute the closest points and distance between two line segments in 3D.
+*   @param p1: Start point of the first segment.
+*   @param q1: End point of the first segment.
+*   @param p2: Start point of the second segment.
+*   @param q2: End point of the second segment.
+*   @param closestOnAB: Output for the closest point on the first segment.
+*   @param closestOnCD: Output for the closest point on the second segment.
+*   @return The shortest distance between the two segments.
+*   @obs: https://zalo.github.io/blog/closest-point-between-segments/
+*/
+__device__
+dfloat segment_segment_closest_points(dfloat3 p1, dfloat3 q1, dfloat3 p2, dfloat3 q2, dfloat3 closestOnAB[1], dfloat3 closestOnCD[1]);
+/**
+*   @brief Compute the closest points and distance between two line segments in 3D considering periodic conditions.
+*   @param p1: Start point of the first segment.
+*   @param q1: End point of the first segment.
+*   @param p2: Start point of the second segment.
+*   @param q2: End point of the second segment.
+*   @param closestOnAB: Output for the closest point on the first segment.
+*   @param closestOnCD: Output for the closest point on the second segment.
+*   @return The shortest distance between the two segments.
+*/
+__device__
+dfloat segment_segment_closest_points_periodic(dfloat3 p1, dfloat3 q1, dfloat3 p2, dfloat3 q2, dfloat3 closestOnAB[1], dfloat3 closestOnCD);
+
 
 //ellipsoid functions
 // collision between particles themselves
@@ -144,6 +215,36 @@ void checkCollisionBetweenParticles(unsigned int column, unsigned int row, Parti
 */
 __device__
 void sphereSphereCollision(unsigned int column, unsigned int row, ParticleCenter* pc_i, ParticleCenter* pc_j, int step);
+
+
+/**
+*   @brief Handle collision mechanics between two spheres.
+*   @param column: The column index in a grid or matrix representing the particles' positions.
+*   @param row: The row index in a grid or matrix representing the particles' positions.
+*   @param pc_i: Pointer to the `ParticleCenter` structure containing information about the first sphere.
+*   @param pc_j: Pointer to the `ParticleCenter` structure containing information about the second sphere.
+*   @param closestOnA: Closest point in the axis of particle i.
+*   @param closestOnB: Closest point in the axis of particle j.
+*   @param step: The current time step for collision processing.
+*   This function calculates and processes collisions between two spheres based on their positions, radii, and properties.
+*/
+__device__
+void capsuleCapsuleCollision(unsigned int column, unsigned int row, ParticleCenter* pc_i, ParticleCenter* pc_j, dfloat3* closestOnA, dfloat3* closestOnB, int step);
+/**
+*   @brief Handle collision type between two capsules.
+*   @param pc_i: Pointer to the `ParticleCenter` structure containing information about the first capsule.
+*   @param pc_j: Pointer to the `ParticleCenter` structure containing information about the second capsule.
+*   @param step: The current time step for collision processing.
+*   @param capA1: Center of the cap1 of particle i
+*   @param capA2: Center of the cap2 of particle i
+*   @param radiusA: Radius of particle i
+*   @param capB1: Center of the cap1 of particle j
+*   @param capB2: Center of the cap2 of particle j
+*   @param radiusB: Radius of particle j
+*   This function calculates and processes collisions between two capsules based on their positions, radii, and endpoints.
+*/
+__device__
+void capsuleCapsuleCollisionCheck(unsigned int column,    unsigned int row, ParticleCenter* pc_i, ParticleCenter* pc_j, int step, dfloat3 capA1, dfloat3 capA2,dfloat radiusA, dfloat3 capB1, dfloat3 capB2,dfloat radiusB);
 
 //collission 
 

@@ -98,7 +98,11 @@ typedef struct dfloat3 {
     friend dfloat3 operator/(const dfloat scalar, const dfloat3& vec) {
         return dfloat3(scalar / vec.x, scalar / vec.y, scalar / vec.z);
     }
-
+    // Overload the unary - operator
+    __host__ __device__
+    friend dfloat3 operator-(const dfloat3& vec) {
+        return dfloat3{-vec.x, -vec.y, -vec.z};
+    }
     
 } dfloat3;
 
