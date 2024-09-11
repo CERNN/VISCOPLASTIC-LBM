@@ -64,11 +64,21 @@ void endCollision(CollisionData &collisionData, int index, int currentTimeStep) 
     }
 }
 
+__device__
+Wall determineCircularWall(dfloat3 pos_i, dfloat R, dfloat dir){
+    Wall tempWall;
 
+    dfloat3 center = dfloat3(DUCT_CENTER_X,DUCT_CENTER_Y,0.0);
 
+    tempWall.normal = dfloat3( dir* (pos_i.x-DUCT_CENTER_X), dir * (pos_i.y-DUCT_CENTER_Y),0.0);
+    tempWall.normal = vector_normalize(tempWall.normal);
 
+    dfloat3 contactPoint = dfloat3(center - R * tempWall.normal);
 
+    tempWall.distance = fabsf(dot_product(pos_i,tempWall.normal));
 
+    return tempWall;
+}
 
 
 __device__
@@ -94,6 +104,56 @@ void checkCollisionWalls(
             // Handle unknown particle types
             break;
     }
+    #if defined(EXTERNAL_DUCT_BC) || defined(INTERNAL_DUCT_BC) //NOT VALIDATED YET
+        #ifdef EXTERNAL_DUCT_BC
+            dfloat dist;
+            switch (pc_i->collision.shape) {
+            case SPHERE:
+                dist = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x,pc_i->pos.y);
+                if(dist < EXTERNAL_DUCT_BC_RADIUS + pc_i->radius)
+                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos,EXTERNAL_DUCT_BC_RADIUS,-1),pc_i->radius - dist,step);
+                break;
+            case CAPSULE:
+                dfloat distanceWall1 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x + pc_i->collision.semiAxis.x,pc_i->pos.y + pc_i->collision.semiAxis.y);
+                dfloat distanceWall2 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x - pc_i->collision.semiAxis.x,pc_i->pos.y - pc_i->collision.semiAxis.y);
+                if(distanceWall1 < EXTERNAL_DUCT_BC_RADIUS + pc_i->radius)
+                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos + pc_i->collision.semiAxis,EXTERNAL_DUCT_BC_RADIUS,-1),pc_i->radius - distanceWall1,step);
+                if(distanceWall2 < EXTERNAL_DUCT_BC_RADIUS + pc_i->radius)
+                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos + pc_i->collision.semiAxis,EXTERNAL_DUCT_BC_RADIUS,-1),pc_i->radius - distanceWall2,step);
+                break;
+            case ELLIPSOID:
+                //printf("its a ellipsoid \n");
+                break;
+            default:
+                // Handle unknown particle types
+                break;
+        }
+        #endif
+        #ifdef INTERNAL_DUCT_BC
+            dfloat dist;
+            switch (pc_i->collision.shape) {
+            case SPHERE:
+                dist = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x,pc_i->pos.y);
+                if(dist < INTERNAL_DUCT_BC + pc_i->radius)
+                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos,INTERNAL_DUCT_BC,1),pc_i->radius - dist,step);
+                break;
+            case CAPSULE:
+                dfloat distanceWall1 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x + pc_i->collision.semiAxis.x,pc_i->pos.y + pc_i->collision.semiAxis.y);
+                dfloat distanceWall2 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x - pc_i->collision.semiAxis.x,pc_i->pos.y - pc_i->collision.semiAxis.y);
+                if(distanceWall1 < INTERNAL_DUCT_BC + pc_i->radius)
+                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos + pc_i->collision.semiAxis,INTERNAL_DUCT_BC,1),pc_i->radius - distanceWall1,step);
+                if(distanceWall2 < INTERNAL_DUCT_BC + pc_i->radius)
+                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos + pc_i->collision.semiAxis,INTERNAL_DUCT_BC,1),pc_i->radius - distanceWall2,step);
+                break;
+            case ELLIPSOID:
+                //printf("its a ellipsoid \n");
+                break;
+            default:
+                // Handle unknown particle types
+                break;
+            }
+        #endif
+    #endif
 }
 __device__
 void checkCollisionWallsSphere(

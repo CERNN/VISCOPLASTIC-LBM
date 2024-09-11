@@ -68,7 +68,14 @@ void endCollision(CollisionData &collisionData, int index, int currentTimeStep);
 
 
 //collision with wall
-
+/**
+*   @brief determine wall properties for duct, based on contact position and radius
+*   @param pos_i: coordinates of the collision point in the body center .
+*   @param R: Radius of the duct
+*   @param dir: direction of the duct, -1 for internal collision and +1 for external collision
+*/
+__device__
+Wall determineCircularWall(dfloat3 pos_i, dfloat R, dfloat dir);
 /**
 *   @brief Check for collisions between a particle and walls based on the particle's shape.
 *   @param pc_i: Pointer to the `ParticleCenter` structure containing particle information.
