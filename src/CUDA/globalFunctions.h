@@ -351,7 +351,32 @@ void dfloat6_to_matrix(dfloat6 I, dfloat M[3][3]);
 */
 __host__ __device__
 dfloat6 matrix_to_dfloat6(dfloat M[3][3]);
-
+/**
+*   @brief Computes the rotation matrix contructed from vector v1 with vector v2.
+*   @param v1 The initial vector.
+*   @param v2 The target vector to align with.
+*   @param R Output 3x3 rotation matrix.
+*/
+__device__
+void rotationMatrixFromVectors(dfloat3 v1, dfloat3 v2, dfloat R[3][3]);
+/**
+*   @brief Computes the rotation matrix that aligns three orthogonal vectors v1, v2, and v3.
+*   @param v1 The first vector (must be orthogonal to v2 and v3).
+*   @param v2 The second vector (must be orthogonal to v1 and v3).
+*   @param v3 The third vector (must be orthogonal to v1 and v2).
+*   @param R Output 3x3 rotation matrix.
+*/
+__device__
+void rotationMatrixFromVectors(dfloat3 v1, dfloat3 v2, dfloat3 v3, dfloat R[3][3]);
+/**
+*   @brief Projects point P onto a plane defined by its normal vector and distance from the origin.
+*   @param P The point to project.
+*   @param n The normal vector of the plane.
+*   @param d The plane's distance from the origin along the normal vector.
+*   @return The projected point on the plane.
+*/
+__device__
+dfloat3 planeProjection(dfloat3 P, dfloat3 n, dfloat d);
 
 
 #endif // !__GLOBAL_FUNCTIONS_H

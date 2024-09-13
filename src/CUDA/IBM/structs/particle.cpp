@@ -1608,41 +1608,76 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 vec, dflo
     }
 
     //%%%%%%%% ROTATION 
-    //current state rotation quartenion (STANDARD ROTATION OF 90º IN THE Z - AXIS)
+    //current state rotation quartenion (STANDARD ROTATION OF 90º IN THE X - AXIS)
 
-    dfloat4 q1 = compute_rotation_quart(dfloat3(0,0,1),vec);
     dfloat4 q2 = axis_angle_to_quart(vec,angleMag);
-    dfloat4 qf = quart_multiplication(q1,q2);
 
     //rotate inertia 
-    this->pCenter.I = rotate_inertia_by_quart(qf,In);
+    this->pCenter.I = rotate_inertia_by_quart(q2,In);
 
     dfloat3 new_pos;
     for (i = 0; i < numberNodes; i++) {
 
         new_pos = dfloat3(this->nodes[i].pos.x,this->nodes[i].pos.y,this->nodes[i].pos.z);
-        new_pos = rotate_vector_by_quart_R(new_pos,qf);
+        new_pos = rotate_vector_by_quart_R(new_pos,q2);
 
         this->nodes[i].pos.x = new_pos.x + center.x;
         this->nodes[i].pos.y = new_pos.y + center.y;
         this->nodes[i].pos.z = new_pos.z + center.z;
     }
 
-    this->pCenter.q_pos.w = qf.w;
-    this->pCenter.q_pos.x = qf.x;
-    this->pCenter.q_pos.y = qf.y;
-    this->pCenter.q_pos.z = qf.z;
+    this->pCenter.q_pos.w = q2.w;
+    this->pCenter.q_pos.x = q2.x;
+    this->pCenter.q_pos.y = q2.y;
+    this->pCenter.q_pos.z = q2.z;
 
     this->pCenter.q_pos_old.w = this->pCenter.q_pos.w;
     this->pCenter.q_pos_old.x = this->pCenter.q_pos.x;
     this->pCenter.q_pos_old.y = this->pCenter.q_pos.y;
     this->pCenter.q_pos_old.z = this->pCenter.q_pos.z;
-/**/
+
+    
+
+    if(angleMag != 0.0){
+    const dfloat q0 = cos(0.5*angleMag);
+
+    const dfloat qi = (vec.x/angleMag) * sin (0.5*angleMag);
+    const dfloat qj = (vec.y/angleMag) * sin (0.5*angleMag);
+    const dfloat qk = (vec.z/angleMag) * sin (0.5*angleMag);
+
+    const dfloat tq0m1 = (q0*q0) - 0.5;
+
+    this->pCenter.collision.shape = ELLIPSOID;
+    this->pCenter.collision.semiAxis  = center + a*scaling*dfloat3(1,0,0);
+    this->pCenter.collision.semiAxis2 = center + b*scaling*dfloat3(0,1,0);
+    this->pCenter.collision.semiAxis3 = center + c*scaling*dfloat3(0,0,1);
+
+    //printf("seni1 x %f y %f z %f \n", this->pCenter.collision.semiAxis.x,this->pCenter.collision.semiAxis.y,this->pCenter.collision.semiAxis.z);
+    //printf("seni2 x %f y %f z %f \n", this->pCenter.collision.semiAxis2.x,this->pCenter.collision.semiAxis2.y,this->pCenter.collision.semiAxis2.z);
+    //printf("seni3 x %f y %f z %f \n", this->pCenter.collision.semiAxis3.x,this->pCenter.collision.semiAxis3.y,this->pCenter.collision.semiAxis3.z);
+
+
+        this->pCenter.collision.semiAxis  = rotate_vector_by_quart_R(this->pCenter.collision.semiAxis  - center,q2) + center;
+        this->pCenter.collision.semiAxis2 = rotate_vector_by_quart_R(this->pCenter.collision.semiAxis2 - center,q2) + center;
+        this->pCenter.collision.semiAxis3 = rotate_vector_by_quart_R(this->pCenter.collision.semiAxis3 - center,q2) + center;
+    }
+
+
+
+    for(int i = 0; i <MAX_ACTIVE_COLLISIONS;i++){
+        this->pCenter.collision.collisionPartnerIDs[i] = -1;
+        this->pCenter.collision.tangentialDisplacements[i] = dfloat3(0,0,0);
+        this->pCenter.collision.lastCollisionStep[i] = -1;
+    }
+
+
+
+
     for(int ii = 0;ii<numberNodes;ii++){
          ParticleNode* node_j = &(this->nodes[ii]);
          printf("%f,%f,%f \n",node_j->pos.x,node_j->pos.y,node_j->pos.z );
      }
-   /**/
+
     // Free allocated memory
 
     free(phi);

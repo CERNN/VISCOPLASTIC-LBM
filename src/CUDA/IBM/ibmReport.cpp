@@ -49,7 +49,8 @@ void saveParticlesInfo(ParticlesSoA particles, unsigned int step, bool saveNodes
     strColumnNames += "volume" + sep;
     strColumnNames += "movable" + sep;
     strColumnNames += "semi1x" + sep  + "semi1y" + sep  + "semi1z" + sep;
-    strColumnNames += "semi2x" + sep  + "semi2y" + sep  + "semi2z\n";
+    strColumnNames += "semi2x" + sep  + "semi2y" + sep  + "semi2z" + sep;
+    strColumnNames += "semi3x" + sep  + "semi3y" + sep  + "semi3z\n";
 
     for(int p = 0; p < NUM_PARTICLES; p++){
         ParticleCenter pc = particles.pCenterArray[p];
@@ -66,7 +67,8 @@ void saveParticlesInfo(ParticlesSoA particles, unsigned int step, bool saveNodes
         strValuesParticles << pc.volume << sep;
         strValuesParticles << pc.movable << sep;
         strValuesParticles << getStrDfloat3(pc.collision.semiAxis, sep) << sep;
-        strValuesParticles << getStrDfloat3(pc.collision.semiAxis2, sep) << "\n";
+        strValuesParticles << getStrDfloat3(pc.collision.semiAxis2, sep) << sep;
+        strValuesParticles << getStrDfloat3(pc.collision.semiAxis3, sep) << "\n";
     }
 
     outFilePCenter << strColumnNames << strValuesParticles.str();

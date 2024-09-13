@@ -105,8 +105,13 @@ void checkCollisionWallsSphere(ParticleCenter* pc_i, unsigned int step);
 */
 __device__
 void checkCollisionWallsCapsule(ParticleCenter* pc_i, unsigned int step);
-
-
+/**
+*   @brief Check for collisions between an ellipsoid particle and walls.
+*   @param pc_i: Pointer to the ParticleCenter structure representing the ellipsoid particle.
+*   @param step: The current simulation step or time index.
+*/
+__device__
+void checkCollisionWallsElipsoid(ParticleCenter* pc_i, unsigned int step);
 
 //collision mechanics with walls
 
@@ -134,7 +139,16 @@ void sphereWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displacement,
 */
 __device__
 void capsuleWallCollisionCap(ParticleCenter* pc_i,Wall wallData,dfloat displacement,dfloat3 endpoint, int step);
-
+/**
+*   @brief Handle collision mechanics between an ellipsoid particle and a wall.
+*   @param pc_i: Pointer to the ParticleCenter structure representing the ellipsoid particle.
+*   @param wallData: Structure containing information about the wall, such as normal and distance.
+*   @param displacement: The displacement value 
+*   @param endpoint: The point on the ellipsoid's surface where the collision occurs.
+*   @param step: The current simulation step or time index.
+*/
+__device__
+void ellipsoidWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displacement,dfloat3 endpoint, int step);
 //sphere functions
 /**
 *   @brief Compute the gap between two spheres.
@@ -198,6 +212,37 @@ dfloat segment_segment_closest_points_periodic(dfloat3 p1, dfloat3 q1, dfloat3 p
 
 
 //ellipsoid functions
+/**
+*   @brief Compute the normal vector at a given point on the ellipsoid's surface.
+*   @param pc_i: Pointer to the ParticleCenter structure representing the ellipsoid particle.
+*   @param R: 3x3 rotation matrix used to transform the ellipsoid's orientation.
+*   @param point: The point on the ellipsoid's surface where the normal vector is computed.
+*   @return The normal vector at the specified point on the ellipsoid's surface.
+*/
+__device__
+dfloat3 ellipsoid_normal(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 point);
+/**
+*   @brief Compute the intersection point between a line and the ellipsoid.
+*   @param pc_i: Pointer to the ParticleCenter structure representing the ellipsoid particle.
+*   @param R: 3x3 rotation matrix used to transform the ellipsoid's orientation.
+*   @param line_origin: The origin of the line used for intersection calculation.
+*   @param line_dir: The direction of the line used for intersection calculation.
+*   @return The intersection parameter between the line and the ellipsoid on .x and .y; ;.z is trash
+*/
+__device__
+dfloat3 ellipsoid_intersection(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 line_origin, dfloat3 line_dir);
+
+/**
+*   @brief Calculate the distance between an ellipsoid particle and a wall, and find the contact point.
+*   @param pc_i: Pointer to the ParticleCenter structure representing the ellipsoid particle.
+*   @param wallData: Structure containing information about the wall, such as normal and distance.
+*   @param contactPoint2: Pointer to store the contact point between the ellipsoid and the wall.
+*   @param step: The current simulation step or time index.
+*   @return The distance between the ellipsoid and the wall at the point of contact.
+*/
+__device__
+dfloat ellipsoidWallCollisionDistance( ParticleCenter* pc_i, Wall wallData, dfloat3* contactPoint2, unsigned int step);
+
 // collision between particles themselves
 /**
 *   @brief Check for collisions between two particles by comparing the pair types and calling the proper function.

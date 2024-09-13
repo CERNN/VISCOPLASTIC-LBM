@@ -18,6 +18,7 @@ typedef struct collisionData {
         ParticleType shape;
         dfloat3 semiAxis;
         dfloat3 semiAxis2;
+        dfloat3 semiAxis3;
 
         // Arrays to store active collisions and their displacements
         int collisionPartnerIDs[MAX_ACTIVE_COLLISIONS];
