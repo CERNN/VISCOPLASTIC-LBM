@@ -69,12 +69,12 @@ Wall determineCircularWall(dfloat3 pos_i, dfloat R, dfloat dir){
 
     dfloat3 center = dfloat3(DUCT_CENTER_X,DUCT_CENTER_Y,0.0);
 
-    tempWall.normal = dfloat3( dir* (pos_i.x-DUCT_CENTER_X), dir * (pos_i.y-DUCT_CENTER_Y),0.0);
+    tempWall.normal = dfloat3( dir * (pos_i.x-DUCT_CENTER_X), dir * (pos_i.y-DUCT_CENTER_Y),0.0);
     tempWall.normal = vector_normalize(tempWall.normal);
 
     dfloat3 contactPoint = dfloat3(center - R * tempWall.normal);
 
-    tempWall.distance = fabsf(dot_product(pos_i,tempWall.normal));
+    tempWall.distance = vector_length(contactPoint - pos_i);
 
     return tempWall;
 }
@@ -100,13 +100,18 @@ void checkCollisionWalls(ParticleCenter* pc_i, unsigned int step){
             break;
     }
     #if defined(EXTERNAL_DUCT_BC) || defined(INTERNAL_DUCT_BC) //NOT VALIDATED YET
+        Wall wallData;
+        dfloat dist;
+        dfloat distanceWall1;
+        dfloat distanceWall2;
         #ifdef EXTERNAL_DUCT_BC
-            dfloat dist;
             switch (pc_i->collision.shape) {
             case SPHERE:
-                dist = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x,pc_i->pos.y);
-                if(dist < EXTERNAL_DUCT_BC_RADIUS + pc_i->radius)
-                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos,EXTERNAL_DUCT_BC_RADIUS,-1),pc_i->radius - dist,step);
+                 dist = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x,pc_i->pos.y);
+                if(EXTERNAL_DUCT_BC_RADIUS - dist < pc_i->radius){
+                    wallData = determineCircularWall(pc_i->pos,EXTERNAL_DUCT_BC_RADIUS,-1);
+                    sphereWallCollision(pc_i,wallData,EXTERNAL_DUCT_BC_RADIUS - (pc_i->radius + dist),step);
+                }
                 break;
             case CAPSULE:
                 dfloat distanceWall1 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x + pc_i->collision.semiAxis.x,pc_i->pos.y + pc_i->collision.semiAxis.y);
@@ -126,12 +131,13 @@ void checkCollisionWalls(ParticleCenter* pc_i, unsigned int step){
         }
         #endif
         #ifdef INTERNAL_DUCT_BC
-            dfloat dist;
             switch (pc_i->collision.shape) {
             case SPHERE:
                 dist = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x,pc_i->pos.y);
-                if(dist < INTERNAL_DUCT_BC + pc_i->radius)
-                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos,INTERNAL_DUCT_BC,1),pc_i->radius - dist,step);
+                if(dist < INTERNAL_DUCT_BC_RADIUS + pc_i->radius){
+                    wallData = determineCircularWall(pc_i->pos,INTERNAL_DUCT_BC_RADIUS,1);
+                    sphereWallCollision(pc_i,wallData,INTERNAL_DUCT_BC_RADIUS + pc_i->radius - dist,step);
+                }                    
                 break;
             case CAPSULE:
                 dfloat distanceWall1 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x + pc_i->collision.semiAxis.x,pc_i->pos.y + pc_i->collision.semiAxis.y);
