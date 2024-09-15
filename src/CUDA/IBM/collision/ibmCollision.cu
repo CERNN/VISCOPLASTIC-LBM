@@ -319,44 +319,46 @@ void checkCollisionWallsElipsoid(ParticleCenter* pc_i, unsigned int step){
     dfloat3 contactPoint2[1];
     dfloat dist = 0;
     
+    dfloat cr[1];
+
     #ifdef IBM_BC_X_WALL
     wallData = wall(dfloat3(1, 0, 0), 0);
-    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,step);
+    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,cr,step);
     if (distanceWall < 0) {
-        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],step);
+        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],cr,step);
     }
     wallData = wall(dfloat3(-1, 0, 0), NX-1);
-    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,step);
+    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,cr,step);
     if (distanceWall < 0) {
-        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],step);
+        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],cr,step);
     }
     #endif
 
     #ifdef IBM_BC_Y_WALL
     wallData = wall(dfloat3(0, 1, 0), 0);
-    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,step);
+    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,cr,step);
     if (distanceWall < 0) {
-        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],step);
+        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],cr,step);
     }
 
     wallData = wall(dfloat3(0, -1, 0), NY-1);
-    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,step);
+    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,cr,step);
     if (distanceWall < 0) {
-        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],step);
+        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],cr,step);
     }
     #endif
     
     #ifdef IBM_BC_Z_WALL
     wallData = wall(dfloat3(0, 0, 1), 0);
-    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,step);
+    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,cr,step);
     if (distanceWall < 0) {
-        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],step);
+        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],cr,step);
     }
     
     wallData = wall(dfloat3(0, 0, -1), NZ-1);
-    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,step);
+    distanceWall = ellipsoidWallCollisionDistance(pc_i,wallData,contactPoint2,cr,step);
     if (distanceWall < 0) {
-        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],step);
+        ellipsoidWallCollision(pc_i,wallData,-distanceWall,contactPoint2[0],cr,step);
     }
     #endif
 }
@@ -609,7 +611,7 @@ void capsuleWallCollisionMiddle(ParticleCenter* pc_i,Wall wallData,dfloat displa
 */
 
 __device__
-void ellipsoidWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displacement,dfloat3 endpoint, int step){
+void ellipsoidWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displacement,dfloat3 endpoint, dfloat cr[1], int step){
 
     //particle information
     const dfloat3 pos_i = pc_i->pos; //center position
@@ -639,25 +641,8 @@ void ellipsoidWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displaceme
     dfloat3 G = v_i - wall_speed;
 
 
-    //constants 
-    //effective radius and mass 
-    //TODO: find a better way to calculate the radius of impact
-    /*
-    idea:
-    cp = (b*x)/sqrt((b*x)^2 + (a*y)^2)
-    sp = (a*y)/sqrt((b*x)^2 + (a*y)^2)
-    ct = z/c
-    st = (1 - z^2/c^2)^(1/2)
-    d = (a*b*c)/((a^4*c^2*y^2)/(a^2*y^2 + b^2*x^2) + (b^4*c^2*x^2)/(a^2*y^2 + b^2*x^2) + (a^2*b^2*z^2)/c^2 - (a^4*y^2*z^2)/(a^2*y^2 + b^2*x^2) - (b^4*x^2*z^2)/(a^2*y^2 + b^2*x^2))^(1/2)
-    K = d^4/(a*b*c)^2;
-    R = 1/sqrt(K);
-
-    or simply
-    
-    R = abs(a^4*b^2*y^2*z^2 + a^4*c^4*y^2 - a^4*c^2*y^2*z^2 + a^2*b^4*x^2*z^2 + b^4*c^4*x^2 - b^4*c^2*x^2*z^2)/(c^2*abs(a)*abs(b)*abs(c)*(a^2*y^2 + b^2*x^2))
-    */
-
-    const dfloat effective_radius = r_i; //wall is r = infinity
+    //const dfloat effective_radius = r_i; //wall is r = infinity
+    const dfloat effective_radius = cr[0]; //wall is r = infinity
     const dfloat effective_mass = m_i; //wall has infinite mass
     //collision constants
     const dfloat STIFFNESS_NORMAL = SPHERE_WALL_STIFFNESS_NORMAL_CONST * sqrt(abs(effective_radius));
@@ -852,7 +837,7 @@ dfloat segment_segment_closest_points_periodic(dfloat3 p1, dfloat3 q1, dfloat3 p
 
 //ellipsoid functions
 __device__
-dfloat3 ellipsoid_normal(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 point){
+dfloat3 ellipsoid_normal(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 point, dfloat radius[1]){
     dfloat3 local_point;
     dfloat3 grad_local;
     dfloat3 normal;
@@ -869,6 +854,13 @@ dfloat3 ellipsoid_normal(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 point){
     local_point.x = (R[0][0] * (point.x - center.x) + R[0][1] * (point.y - center.y) + R[0][2] * (point.z - center.z));
     local_point.y = (R[1][0] * (point.x - center.x) + R[1][1] * (point.y - center.y) + R[1][2] * (point.z - center.z));
     local_point.z = (R[2][0] * (point.x - center.x) + R[2][1] * (point.y - center.y) + R[2][2] * (point.z - center.z));
+
+    dfloat a4 = a_axis*a_axis*a_axis*a_axis;
+    dfloat b4 = b_axis*b_axis*b_axis*b_axis;
+    dfloat c4 = c_axis*c_axis*c_axis*c_axis;
+
+
+    radius[0] = (a_axis*b_axis*c_axis*(a4*b4*local_point.z*local_point.z + a4*c4*local_point.y*local_point.y+ b4*c4*local_point.x*local_point.x))/(a4*b4*c4);
 
     // Compute the gradient in local coordinates
     grad_local.x = 2 * local_point.x / (a_axis * a_axis);
@@ -932,7 +924,7 @@ dfloat3 ellipsoid_intersection(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 line
     return t;
 }
 __device__
-dfloat ellipsoidWallCollisionDistance( ParticleCenter* pc_i, Wall wallData,dfloat3 contactPoint2[1], unsigned int step){
+dfloat ellipsoidWallCollisionDistance( ParticleCenter* pc_i, Wall wallData,dfloat3 contactPoint2[1], dfloat radius[1], unsigned int step){
     //contruct rotation matrix
     dfloat R[3][3];
     dfloat dist, error;
@@ -963,7 +955,7 @@ dfloat ellipsoidWallCollisionDistance( ParticleCenter* pc_i, Wall wallData,dfloa
     dfloat r = 3; //TODO: FIND A BETTER WAY TI DETERMINE IT
 
     //compute normal vector at intersection
-    dfloat3 normal2 = ellipsoid_normal(pc_i,R,closest_point2);
+    dfloat3 normal2 = ellipsoid_normal(pc_i,R,closest_point2,radius);
 
     //Compute the centers of the spheres in the opposite direction of the normals
     dfloat3 sphere_center2 = closest_point2 - r * normal2;
@@ -986,7 +978,7 @@ dfloat ellipsoidWallCollisionDistance( ParticleCenter* pc_i, Wall wallData,dfloa
             closest_point2 = inter2;
         }    
 
-        normal2 = ellipsoid_normal(pc_i,R,closest_point2);        
+        normal2 = ellipsoid_normal(pc_i,R,closest_point2,radius);        
         new_sphere_center2 = closest_point2 - r * normal2;
 
         error = vector_length(new_sphere_center2 - sphere_center2);
@@ -1086,12 +1078,13 @@ void computeContactPoints(dfloat3 pos_i, dfloat3 dir, dfloat3 t1, dfloat3 t2, df
 }
  
 __device__
-dfloat ellipsoidEllipsoidCollisionDistance( ParticleCenter* pc_i, ParticleCenter* pc_j,dfloat3 contactPoint1[1], dfloat3 contactPoint2[1], unsigned int step){
+dfloat ellipsoidEllipsoidCollisionDistance( ParticleCenter* pc_i, ParticleCenter* pc_j,dfloat3 contactPoint1[1], dfloat3 contactPoint2[1], dfloat cr1[1], dfloat cr2[1], unsigned int step){
     dfloat R1[3][3];
     dfloat R2[3][3];
     dfloat dist, error;
     dfloat3 new_sphere_center1, new_sphere_center2;
     dfloat3 closest_point1, closest_point2;
+
 
 
     //printf("pos1 %f %f %f \n",pc_i->pos.x,pc_i->pos.y,pc_i->pos.z);
@@ -1135,9 +1128,10 @@ dfloat ellipsoidEllipsoidCollisionDistance( ParticleCenter* pc_i, ParticleCenter
 
     dfloat r = 3; //TODO FIND A BETTER WAY TO GET THE BEST RADIUS FOR THIS DETECTION
 
+
     //compute normal vector at intersection
-    dfloat3 normal1 = ellipsoid_normal(pc_i,R1,closest_point1);
-    dfloat3 normal2 = ellipsoid_normal(pc_j,R2,closest_point2);
+    dfloat3 normal1 = ellipsoid_normal(pc_i,R1,closest_point1,cr1);
+    dfloat3 normal2 = ellipsoid_normal(pc_j,R2,closest_point2,cr2);
 
     //printf("normal1 %f %f %f \n",normal1.x,normal1.y,normal1.z);
     //printf("normal2 %f %f %f \n",normal2.x,normal2.y,normal2.z);
@@ -1167,8 +1161,8 @@ dfloat ellipsoidEllipsoidCollisionDistance( ParticleCenter* pc_i, ParticleCenter
         //printf("cp1 %d %f %f %f \n",i,closest_point1.x,closest_point1.y,closest_point1.z);
         //printf("cp2 %d %f %f %f \n",i,closest_point2.x,closest_point2.y,closest_point2.z);
 
-        normal1 = ellipsoid_normal(pc_i,R1,closest_point1);
-        normal2 = ellipsoid_normal(pc_j,R2,closest_point2);
+        normal1 = ellipsoid_normal(pc_i,R1,closest_point1,cr1);
+        normal2 = ellipsoid_normal(pc_j,R2,closest_point2,cr2);
 
         //printf("normal1 %d %f %f %f \n",i,normal1.x,normal1.y,normal1.z);
         //printf("normal2 %d %f %f %f \n",i,normal2.x,normal2.y,normal2.z);
@@ -1664,7 +1658,7 @@ void capsuleCapsuleCollision(unsigned int column, unsigned int row, ParticleCent
 // ------------------------------------------------------------------------ 
 
 __device__
-void ellipsoidEllipsoidCollision(unsigned int column, unsigned int row, ParticleCenter*  pc_i, ParticleCenter*  pc_j,dfloat3 closestOnA[1], dfloat3 closestOnB[1], dfloat dist, int step){
+void ellipsoidEllipsoidCollision(unsigned int column, unsigned int row, ParticleCenter*  pc_i, ParticleCenter*  pc_j,dfloat3 closestOnA[1], dfloat3 closestOnB[1], dfloat dist, dfloat cr1[1], dfloat cr2[1], int step){
     // Particle i info (column)
     const dfloat3 pos_i = closestOnA[0];
     const dfloat3 pos_c_i = pc_i->pos;
@@ -1739,7 +1733,8 @@ void ellipsoidEllipsoidCollision(unsigned int column, unsigned int row, Particle
 
     //HERTZ CONTACT THEORY
 
-    dfloat effective_radius = 1.0/((r_i +r_j)/(r_i*r_j));
+    //dfloat effective_radius = 1.0/((r_i +r_j)/(r_i*r_j));
+    dfloat effective_radius = 1.0/((cr1[0] +cr2[0])/(cr1[0]*cr2[0]));
     dfloat effective_mass = 1.0/((m_i +m_j)/(m_i*m_j));
 
     const dfloat STIFFNESS_NORMAL = SPHERE_SPHERE_STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
@@ -1877,12 +1872,14 @@ void ellipsoidEllipsoidCollisionCheck(unsigned int column, unsigned int row, Par
     dfloat3 closestOnA[1];
     dfloat3 closestOnB[1];
     //printf("checking collision\n");
-    dfloat dist = ellipsoidEllipsoidCollisionDistance(pc_i, pc_j,closestOnA,closestOnB,step);
+    dfloat cr1[1];
+    dfloat cr2[1];
+    dfloat dist = ellipsoidEllipsoidCollisionDistance(pc_i, pc_j,closestOnA,closestOnB,cr1, cr2,step);
 
     //printf("step %d dist %f cA %f %f %f cB %f %f %f \n",step,dist,closestOnA[0].x,closestOnA[0].y,closestOnA[0].z,closestOnB[0].x,closestOnB[0].y,closestOnB[0].z);
 
     if(dist<0){
-        ellipsoidEllipsoidCollision(column, row,pc_i,pc_j,closestOnA,closestOnB,dist,step);
+        ellipsoidEllipsoidCollision(column, row,pc_i,pc_j,closestOnA,closestOnB,dist,cr1, cr2,step);
     }
 
 
