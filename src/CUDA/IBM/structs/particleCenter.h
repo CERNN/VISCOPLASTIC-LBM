@@ -12,7 +12,7 @@
 
 #include "../../structs/globalStructs.h"
 #include "../ibmVar.h"
-enum ParticleType { SPHERE, CAPSULE, ELLIPSOID };
+enum ParticleType { SPHERE = 0 , CAPSULE = 1, ELLIPSOID = 2};
 
 typedef struct collisionData {
         ParticleType shape;

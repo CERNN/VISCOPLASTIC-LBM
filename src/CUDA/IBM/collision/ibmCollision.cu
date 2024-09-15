@@ -1004,8 +1004,200 @@ dfloat ellipsoidWallCollisionDistance( ParticleCenter* pc_i, Wall wallData,dfloa
 
 }
 
+__device__
+void computeContactPoints(dfloat3 pos_i, dfloat3 dir, dfloat3 t1, dfloat3 t2, dfloat3 contactPoint1[1], dfloat3 contactPoint2[1])
+{
 
-// ------------------------------------------------------------------------ 
+
+    dfloat3 inter11 = pos_i + t1.x * dir;
+    dfloat3 inter12 = pos_i + t1.y * dir;
+    dfloat3 inter21 = pos_i + t2.x * dir;
+    dfloat3 inter22 = pos_i + t2.y * dir;
+
+    //printf("inter11 %f %f %f \n",inter11.x,inter11.y,inter11.z);
+    //printf("inter12 %f %f %f \n",inter12.x,inter12.y,inter12.z);
+    //printf("inter21 %f %f %f \n",inter21.x,inter21.y,inter21.z);
+    //printf("inter22 %f %f %f \n",inter22.x,inter22.y,inter22.z);
+
+
+    // compute distances
+    dfloat distances[2][2];
+    distances[0][0] = vector_length(inter11 - inter21);
+    distances[0][1] = vector_length(inter11 - inter22);
+    distances[1][0] = vector_length(inter12 - inter21);
+    distances[1][1] = vector_length(inter12 - inter22);
+
+    //printf("dist11 %f \n",distances[1-1][1-1]);
+    //printf("dist12 %f \n",distances[1-1][2-1]);
+    //printf("dist21 %f \n",distances[2-1][1-1]);
+    //printf("dist22 %f \n",distances[2-1][2-1]);
+
+    // find minimum distances
+    dfloat min_dist = 1e37;
+    int i_min = 0;
+    int j_min = 0;
+    // Manually unroll the loop and compare each element
+    if (distances[0][0] < min_dist)
+    {
+        min_dist = distances[0][0];
+        i_min = 0;
+        j_min = 0;
+    }
+    if (distances[0][1] < min_dist)
+    {
+        min_dist = distances[0][1];
+        i_min = 0;
+        j_min = 1;
+    }
+    if (distances[1][0] < min_dist)
+    {
+        min_dist = distances[1][0];
+        i_min = 1;
+        j_min = 0;
+    }
+    if (distances[1][1] < min_dist)
+    {
+        min_dist = distances[1][1];
+        i_min = 1;
+        j_min = 1;
+    }
+
+    switch (i_min * 2 + j_min)
+    {
+    case 0: // i_min = 0, j_min = 0
+        contactPoint1[0] = inter11;
+        contactPoint2[0] = inter21;
+        break;
+    case 1: // i_min = 0, j_min = 1
+        contactPoint1[0] = inter11;
+        contactPoint2[0] = inter22;
+        break;
+    case 2: // i_min = 1, j_min = 0
+        contactPoint1[0] = inter12;
+        contactPoint2[0] = inter21;
+        break;
+    case 3: // i_min = 1, j_min = 1
+        contactPoint1[0] = inter12;
+        contactPoint2[0] = inter22;
+        break;
+    default:
+        break;
+    }
+}
+ 
+__device__
+dfloat ellipsoidEllipsoidCollisionDistance( ParticleCenter* pc_i, ParticleCenter* pc_j,dfloat3 contactPoint1[1], dfloat3 contactPoint2[1], unsigned int step){
+    dfloat R1[3][3];
+    dfloat R2[3][3];
+    dfloat dist, error;
+    dfloat3 new_sphere_center1, new_sphere_center2;
+    dfloat3 closest_point1, closest_point2;
+
+
+    //printf("pos1 %f %f %f \n",pc_i->pos.x,pc_i->pos.y,pc_i->pos.z);
+    //printf("pos1 %f %f %f \n",pc_j->pos.x,pc_j->pos.y,pc_j->pos.z);
+    //printf("semi1 %f %f %f \n",pc_i->collision.semiAxis.x,pc_i->collision.semiAxis.y,pc_i->collision.semiAxis.z);
+    //printf("semi2 %f %f %f \n",pc_j->collision.semiAxis.x,pc_j->collision.semiAxis.y,pc_j->collision.semiAxis.z);
+
+
+    //obtain semi-axis values
+    dfloat a1 = vector_length(pc_i->collision.semiAxis-pc_i->pos);
+    dfloat b1 = vector_length(pc_i->collision.semiAxis2-pc_i->pos);
+    dfloat c1 = vector_length(pc_i->collision.semiAxis3-pc_i->pos);
+    
+    dfloat a2 = vector_length(pc_j->collision.semiAxis-pc_j->pos);
+    dfloat b2 = vector_length(pc_j->collision.semiAxis2-pc_j->pos);
+    dfloat c2 = vector_length(pc_j->collision.semiAxis3-pc_j->pos);
+
+    //printf("semi1 %f %f %f \n",a1,b1,c1);
+    //printf("semi2 %f %f %f \n",a2,b2,c2);
+     
+
+
+    //obtain rotation matrix
+    rotationMatrixFromVectors((pc_i->collision.semiAxis - pc_i->pos )/a1,(pc_i->collision.semiAxis2 - pc_i->pos )/b1,(pc_i->collision.semiAxis3 - pc_i->pos)/c1,R1);
+    rotationMatrixFromVectors((pc_j->collision.semiAxis - pc_j->pos )/a2,(pc_j->collision.semiAxis2 - pc_j->pos )/b2,(pc_j->collision.semiAxis3 - pc_j->pos)/c2,R2);
+
+    dfloat3 dir = pc_j->pos - pc_i->pos;
+
+    //printf("dir %f %f %f \n",dir.x,dir.y,dir.z);
+
+    dfloat3 t1 = ellipsoid_intersection(pc_i,R1,pc_i->pos,dir);
+    dfloat3 t2 = ellipsoid_intersection(pc_j,R2,pc_i->pos,dir);
+
+    //printf("t1 %f %f %f \n",t1.x,t1.y,t1.z);
+    //printf("t2 %f %f %f \n",t2.x,t2.y,t2.z);
+
+    computeContactPoints(pc_i->pos, dir, t1,  t2, &closest_point1, &closest_point2);
+
+    //printf("cp1 %f %f %f \n",closest_point1.x,closest_point1.y,closest_point1.z);
+    //printf("cp2 %f %f %f \n",closest_point2.x,closest_point2.y,closest_point2.z);
+
+    dfloat r = 3; //TODO FIND A BETTER WAY TO GET THE BEST RADIUS FOR THIS DETECTION
+
+    //compute normal vector at intersection
+    dfloat3 normal1 = ellipsoid_normal(pc_i,R1,closest_point1);
+    dfloat3 normal2 = ellipsoid_normal(pc_j,R2,closest_point2);
+
+    //printf("normal1 %f %f %f \n",normal1.x,normal1.y,normal1.z);
+    //printf("normal2 %f %f %f \n",normal2.x,normal2.y,normal2.z);
+
+    dfloat3 sphere_center1 = closest_point1 - r * normal1;
+    dfloat3 sphere_center2 = closest_point2 - r * normal2;
+
+    //printf("sphere_center1 %f %f %f \n",sphere_center1.x,sphere_center1.y,sphere_center1.z);
+    //printf("sphere_center2 %f %f %f \n",sphere_center2.x,sphere_center2.y,sphere_center2.z);
+
+
+    //Iteration loop
+    dfloat max_iters = 20;
+    dfloat tolerance = 1e-3;
+    for(int i = 0; i< max_iters;i++){
+         dir = sphere_center2 - sphere_center1;
+         
+        //printf("dir %i %f %f %f \n",i,dir.x,dir.y,dir.z);
+        t1 = ellipsoid_intersection(pc_i,R1,sphere_center1,dir);
+        t2 = ellipsoid_intersection(pc_j,R2,sphere_center1,dir);
+
+        //printf("t1 %i %f %f %f \n",i,t1.x,t1.y,t1.z);
+        //printf("t2 %i %f %f %f \n",i,t2.x,t2.y,t2.z);
+
+        computeContactPoints(sphere_center1, dir, t1, t2, &closest_point1, &closest_point2);
+
+        //printf("cp1 %d %f %f %f \n",i,closest_point1.x,closest_point1.y,closest_point1.z);
+        //printf("cp2 %d %f %f %f \n",i,closest_point2.x,closest_point2.y,closest_point2.z);
+
+        normal1 = ellipsoid_normal(pc_i,R1,closest_point1);
+        normal2 = ellipsoid_normal(pc_j,R2,closest_point2);
+
+        //printf("normal1 %d %f %f %f \n",i,normal1.x,normal1.y,normal1.z);
+        //printf("normal2 %d %f %f %f \n",i,normal2.x,normal2.y,normal2.z);
+
+        new_sphere_center1 = closest_point1 - r * normal1;
+        new_sphere_center2 = closest_point2 - r * normal2;
+
+        //printf("sphere_center1 %d %f %f %f \n",i,sphere_center1.x,sphere_center1.y,sphere_center1.z);
+        //printf("sphere_center2 %d %f %f %f \n",i,sphere_center2.x,sphere_center2.y,sphere_center2.z);
+
+        error = vector_length(new_sphere_center2 - sphere_center2) + vector_length(new_sphere_center1 - sphere_center1);
+        //printf("error %d %f \n",error);
+        if (error < tolerance ){
+            break;      
+        }else{
+            //update values
+            sphere_center1 = new_sphere_center1;
+            sphere_center2 = new_sphere_center2;
+        }
+    }
+
+    contactPoint1[0] = closest_point1;
+    contactPoint2[0] = closest_point2;
+    dist = vector_length(sphere_center2 - sphere_center1) - 2*r;
+    return dist;
+
+}
+
+// ------------------------------------------------------------------------
 // -------------------- COLLISION BETWEEN PARTICLES -----------------------
 // ------------------------------------------------------------------------ 
 
@@ -1013,22 +1205,26 @@ __device__
 void checkCollisionBetweenParticles( unsigned int column,unsigned int row,ParticleCenter* pc_i,  ParticleCenter* pc_j,int step){
 
     int collisionType = 0;
-
+    //printf("shape %d %d \n",pc_i->collision.shape,pc_j->collision.shape);
     switch (pc_i->collision.shape) {
         case SPHERE:
             switch (pc_j->collision.shape) {
             case SPHERE:
+            //printf("sph - sph col \n");
                 //printf("collision between spheres \n");
                 if(sphereSphereGap( pc_i, pc_j)<0)
                     sphereSphereCollision(column,row, pc_i, pc_j,step);
                 break;
             case CAPSULE:
+            //printf("sphe - cap col \n");
                 capsuleSphereCollisionCheck(column,row,pc_i,pc_j,step);
                 break;
             case ELLIPSOID:
+            //printf("sph - eli col \n");
                 //collision sphere-ellipsoid
                 break;
             default:
+            //printf("sph - def col \n");
                 // Handle unknown particle types
                 break;
             }
@@ -1036,35 +1232,44 @@ void checkCollisionBetweenParticles( unsigned int column,unsigned int row,Partic
         case CAPSULE:
             switch (pc_j->collision.shape) {
             case SPHERE:
+                //printf("cap - sph col \n");
                 capsuleSphereCollisionCheck(column,row,pc_i,pc_j,step);
                 break;
             case CAPSULE:
+                //printf("cap - cap col \n");
                 capsuleCapsuleCollisionCheck(column,row,pc_i,pc_j, step, pc_i->pos + pc_i->collision.semiAxis, pc_i->pos - pc_i->collision.semiAxis, pc_i->radius, pc_j->pos + pc_j->collision.semiAxis, pc_j->pos - pc_j->collision.semiAxis, pc_j->radius);
             case ELLIPSOID:
+                //printf("cap - eli col \n");
                 //collision capsule-ellipsoid
                 break;
             default:
                 // Handle unknown particle types
+                //printf("cap - def col \n");
                 break;
             }
             break;
         case ELLIPSOID:
             switch (pc_j->collision.shape) {
             case SPHERE:
+                //printf("eli - sphere col \n");
                 //collision ellipsoid-sphere
                 break;
             case CAPSULE:
+                //printf("eli - cap col \n"); 
                 //collision ellipsoid-capsule
                 break;
             case ELLIPSOID:
-                //collision ellipsoid-ellipsoid
+                //printf("eli - eli col \n");
+                ellipsoidEllipsoidCollisionCheck(column,row,pc_i,pc_j, step);
                 break;
             default:
+                //printf("eli - default col \n");
                 // Handle unknown particle types
                 break;
             }
             break;
         default:
+            //printf("default - default col \n");
             // Handle unknown particle types
             break;
     }
@@ -1454,6 +1659,190 @@ void capsuleCapsuleCollision(unsigned int column, unsigned int row, ParticleCent
 }
 
 
+// ------------------------------------------------------------------------ 
+// -------------------- ELLIPSOID COLLISIONS ------------------------------
+// ------------------------------------------------------------------------ 
+
+__device__
+void ellipsoidEllipsoidCollision(unsigned int column, unsigned int row, ParticleCenter*  pc_i, ParticleCenter*  pc_j,dfloat3 closestOnA[1], dfloat3 closestOnB[1], dfloat dist, int step){
+    // Particle i info (column)
+    const dfloat3 pos_i = closestOnA[0];
+    const dfloat3 pos_c_i = pc_i->pos;
+    const dfloat r_i = pc_i->radius;
+    const dfloat m_i = pc_i ->volume * pc_i ->density;
+    const dfloat3 v_i = pc_i->vel;
+    const dfloat3 w_i = pc_i->w;
+   
+    // Particle j info (row)
+    const dfloat3 pos_j =closestOnB[0];
+    const dfloat3 pos_c_j = pc_j->pos;
+    const dfloat r_j = pc_j->radius;
+    const dfloat m_j = pc_j ->volume * pc_j ->density;
+    const dfloat3 v_j = pc_j->vel;
+    const dfloat3 w_j = pc_j->w;
+
+     const dfloat3 diff_pos = dfloat3(
+        #ifdef IBM_BC_X_WALL
+            pos_i.x - pos_j.x
+        #endif //IBM_BC_X_WALL
+        #ifdef IBM_BC_X_PERIODIC 
+        abs(pos_i.x - pos_j.x) > ((IBM_BC_X_E - IBM_BC_X_0) / 2.0) ? 
+        (pos_i.x < pos_j.x ?
+            (pos_i.x + (IBM_BC_X_E - IBM_BC_X_0) - pos_j.x)
+            : 
+            (pos_i.x - (IBM_BC_X_E - IBM_BC_X_0) - pos_j.x)
+        )
+        : pos_i.x - pos_j.x
+        #endif //IBM_BC_X_PERIODIC
+        ,
+        #ifdef IBM_BC_Y_WALL
+            pos_i.y - pos_j.y
+        #endif //IBM_BC_Y_WALL
+        #ifdef IBM_BC_Y_PERIODIC
+        abs(pos_i.y - pos_j.y) > ((IBM_BC_Y_E - IBM_BC_Y_0) / 2.0) ? 
+        (pos_i.y < pos_j.y ?
+            (pos_i.y + (IBM_BC_Y_E - IBM_BC_Y_0) - pos_j.y)
+            : 
+            (pos_i.y - (IBM_BC_Y_E - IBM_BC_Y_0) - pos_j.y)
+        )
+        : pos_i.y - pos_j.y
+        #endif //IBM_BC_Y_PERIODIC
+        ,
+        #ifdef IBM_BC_Z_WALL
+            pos_i.z - pos_j.z
+        #endif //IBM_BC_Z_WALL
+        #ifdef IBM_BC_Z_PERIODIC
+            abs(pos_i.z - pos_j.z) > ((IBM_BC_Z_E - IBM_BC_Z_0) / 2.0) ? 
+            (pos_i.z < pos_j.z ?
+                (pos_i.z + (IBM_BC_Z_E - IBM_BC_Z_0) - pos_j.z)
+                : 
+                (pos_i.z - (IBM_BC_Z_E - IBM_BC_Z_0) - pos_j.z)
+            )
+            : pos_i.z - pos_j.z
+        #endif //IBM_BC_Z_PERIODIC
+    );
+
+    const dfloat mag_dist = abs(dist);
+
+    //normal collision vector
+    const dfloat3 n = dfloat3(diff_pos.x/mag_dist,diff_pos.y/mag_dist,diff_pos.z/mag_dist);
+
+    //normal deformation
+    dfloat displacement = -dist;
+
+    //vector center-> contact 
+    dfloat3 rri = pos_i - pos_c_i;
+    dfloat3 rrj = pos_j - pos_c_j;
+
+    // relative velocity vector
+    dfloat3 G = v_i-v_j;
+
+    //HERTZ CONTACT THEORY
+
+    dfloat effective_radius = 1.0/((r_i +r_j)/(r_i*r_j));
+    dfloat effective_mass = 1.0/((m_i +m_j)/(m_i*m_j));
+
+    const dfloat STIFFNESS_NORMAL = SPHERE_SPHERE_STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
+    const dfloat STIFFNESS_TANGENTIAL = SPHERE_SPHERE_STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (abs(displacement));
+    const dfloat damping_const = (- 2.0 * log(PP_REST_COEF)  / (sqrt(M_PI*M_PI + log(PP_REST_COEF)*log(PP_REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+    const dfloat DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
+    const dfloat DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+
+
+    //normal force
+    dfloat f_kn = -STIFFNESS_NORMAL * sqrt(abs(displacement*displacement*displacement));
+    dfloat3 f_normal = f_kn * n - DAMPING_NORMAL *  dot_product(G,n) * n * POW_FUNCTION(abs(displacement),0.25);
+    dfloat f_n = vector_length(f_normal);
+
+
+    //tangential force
+    dfloat3 G_ct = G + r_i * cross_product(w_i,n+rri) - dot_product(G,n)*n;
+    dfloat mag = vector_length(G_ct);
+
+
+        //calculate tangential vector
+    dfloat3 t;
+    if (mag != 0){
+        //tangential vector
+        t = G_ct / mag;
+    }else{
+        t.x = 0.0;
+        t.y = 0.0;
+        t.z = 0.0;
+    }
+
+    //retrive stored displacedment 
+    dfloat3 tang_disp; //total tangential displacement
+    int tang_index = getCollisionIndexByPartnerID(pc_i->collision,row,step);
+    if(tang_index == -1){ //no previous collision was detected
+        tang_index = startCollision(pc_i->collision,row,false,dfloat3(0,0,0),step);
+        tang_disp = G_ct;
+    }else{
+        //check if the collision already exited in the past
+        if(step - pc_i->collision.lastCollisionStep[tang_index] > 1){ //already existed but ended
+            endCollision(pc_i->collision,tang_index,step); //end current one
+            tang_index = startCollision(pc_i->collision,row,false,dfloat3(0,0,0),step);
+            tang_disp = G_ct;
+        }else{ //collision is still ongoing
+            tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,G,step);
+        }
+    }
+
+
+    dfloat3 f_tang;
+    f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x* POW_FUNCTION(abs(tang_disp.x) ,0.25);
+    f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y* POW_FUNCTION(abs(tang_disp.y) ,0.25);
+    f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z* POW_FUNCTION(abs(tang_disp.z) ,0.25);
+
+    mag = vector_length(f_tang);
+
+    //calculate if will slip
+    if(  mag > PP_FRICTION_COEF * abs(f_n) ){
+        tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,-G,step);
+        f_tang = - PP_FRICTION_COEF * f_n * t;
+    }
+
+    //FINAL FORCE RESULTS
+
+    //printf("pp  step %d fny %f fnt %f fnz %f \n",step,f_normal.x,f_tang.y, f_normal.z);
+
+    // Force in each direction
+    dfloat3 f_dirs = f_normal + f_tang;
+    //Torque in each direction
+    dfloat3 m_dirs_i = cross_product(rri, f_dirs);
+    dfloat3 m_dirs_j = cross_product(rrj, -f_dirs);
+
+    //printf("f_dirs   %f %f %f \n",f_dirs.x,f_dirs.y,f_dirs.z);
+    //printf("m_dirs_i %f %f %f \n",m_dirs_i.x,m_dirs_i.y,m_dirs_i.z);
+    //printf("rri      %f %f %f \n",rri.x,rri.y,rri.z);
+    //printf("m_dirs_j %f %f %f \n",m_dirs_j.x,m_dirs_j.y,m_dirs_j.z);
+    //printf("rrj      %f %f %f \n",rrj.x,rrj.y,rrj.z);
+    
+    // Force positive in particle i (column)
+    atomicAdd(&(pc_i->f.x), f_dirs.x);
+    atomicAdd(&(pc_i->f.y), f_dirs.y);
+    atomicAdd(&(pc_i->f.z), f_dirs.z);
+
+    atomicAdd(&(pc_i->M.x), m_dirs_i.x);
+    atomicAdd(&(pc_i->M.y), m_dirs_i.y);
+    atomicAdd(&(pc_i->M.z), m_dirs_i.z);
+
+    // Force negative in particle j (row)
+    atomicAdd(&(pc_j->f.x), -f_dirs.x);
+    atomicAdd(&(pc_j->f.y), -f_dirs.y);
+    atomicAdd(&(pc_j->f.z), -f_dirs.z);
+
+    atomicAdd(&(pc_j->M.x), m_dirs_j.x); //normal vector takes care of negative sign
+    atomicAdd(&(pc_j->M.y), m_dirs_j.y);
+    atomicAdd(&(pc_j->M.z), m_dirs_j.z); 
+
+
+}
+
+// ------------------------------------------------------------------------ 
+// -------------------- INTER PARTICLE COLLISION CHECK---------------------
+// ------------------------------------------------------------------------ 
+
 __device__
 void capsuleCapsuleCollisionCheck(    unsigned int column,    unsigned int row,ParticleCenter* pc_i, ParticleCenter* pc_j, int step, dfloat3 cylA1, dfloat3 cylA2, dfloat radiusA, dfloat3 cylB1, dfloat3 cylB2, dfloat radiusB) {
     dfloat3 closestOnA[1];
@@ -1483,6 +1872,21 @@ void capsuleSphereCollisionCheck(unsigned int column,unsigned int row, ParticleC
     return;
 }
 
+__device__
+void ellipsoidEllipsoidCollisionCheck(unsigned int column, unsigned int row, ParticleCenter* pc_i,ParticleCenter* pc_j, int step){
+    dfloat3 closestOnA[1];
+    dfloat3 closestOnB[1];
+    //printf("checking collision\n");
+    dfloat dist = ellipsoidEllipsoidCollisionDistance(pc_i, pc_j,closestOnA,closestOnB,step);
+
+    //printf("step %d dist %f cA %f %f %f cB %f %f %f \n",step,dist,closestOnA[0].x,closestOnA[0].y,closestOnA[0].z,closestOnB[0].x,closestOnB[0].y,closestOnB[0].z);
+
+    if(dist<0){
+        ellipsoidEllipsoidCollision(column, row,pc_i,pc_j,closestOnA,closestOnB,dist,step);
+    }
+
+
+}
 
 // ------------------------------------------------------------------------ 
 // -------------------- COLLISION HANDLER --------- -----------------------

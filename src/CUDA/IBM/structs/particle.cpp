@@ -1610,6 +1610,7 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 vec, dflo
     //%%%%%%%% ROTATION 
     //current state rotation quartenion (STANDARD ROTATION OF 90º IN THE X - AXIS)
 
+
     dfloat4 q2 = axis_angle_to_quart(vec,angleMag);
 
     //rotate inertia 
@@ -1636,26 +1637,24 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 vec, dflo
     this->pCenter.q_pos_old.y = this->pCenter.q_pos.y;
     this->pCenter.q_pos_old.z = this->pCenter.q_pos.z;
 
-    
-
-    if(angleMag != 0.0){
-    const dfloat q0 = cos(0.5*angleMag);
-
-    const dfloat qi = (vec.x/angleMag) * sin (0.5*angleMag);
-    const dfloat qj = (vec.y/angleMag) * sin (0.5*angleMag);
-    const dfloat qk = (vec.z/angleMag) * sin (0.5*angleMag);
-
-    const dfloat tq0m1 = (q0*q0) - 0.5;
-
-    this->pCenter.collision.shape = ELLIPSOID;
     this->pCenter.collision.semiAxis  = center + a*scaling*dfloat3(1,0,0);
     this->pCenter.collision.semiAxis2 = center + b*scaling*dfloat3(0,1,0);
     this->pCenter.collision.semiAxis3 = center + c*scaling*dfloat3(0,0,1);
 
-    //printf("seni1 x %f y %f z %f \n", this->pCenter.collision.semiAxis.x,this->pCenter.collision.semiAxis.y,this->pCenter.collision.semiAxis.z);
-    //printf("seni2 x %f y %f z %f \n", this->pCenter.collision.semiAxis2.x,this->pCenter.collision.semiAxis2.y,this->pCenter.collision.semiAxis2.z);
-    //printf("seni3 x %f y %f z %f \n", this->pCenter.collision.semiAxis3.x,this->pCenter.collision.semiAxis3.y,this->pCenter.collision.semiAxis3.z);
+    vec = vector_normalize(vec);
+    if(angleMag != 0.0){
+        const dfloat q0 = cos(0.5*angleMag);
 
+        const dfloat qi = (vec.x/angleMag) * sin (0.5*angleMag);
+        const dfloat qj = (vec.y/angleMag) * sin (0.5*angleMag);
+        const dfloat qk = (vec.z/angleMag) * sin (0.5*angleMag);
+
+        const dfloat tq0m1 = (q0*q0) - 0.5;
+
+
+        this->pCenter.collision.semiAxis  = center + a*scaling*dfloat3(1,0,0);
+        this->pCenter.collision.semiAxis2 = center + b*scaling*dfloat3(0,1,0);
+        this->pCenter.collision.semiAxis3 = center + c*scaling*dfloat3(0,0,1);
 
         this->pCenter.collision.semiAxis  = rotate_vector_by_quart_R(this->pCenter.collision.semiAxis  - center,q2) + center;
         this->pCenter.collision.semiAxis2 = rotate_vector_by_quart_R(this->pCenter.collision.semiAxis2 - center,q2) + center;
@@ -1670,9 +1669,7 @@ void Particle::makeEllipsoid(dfloat3 diameter, dfloat3 center, dfloat3 vec, dflo
         this->pCenter.collision.lastCollisionStep[i] = -1;
     }
 
-
-
-
+    this->pCenter.collision.shape = ELLIPSOID;
     for(int ii = 0;ii<numberNodes;ii++){
          ParticleNode* node_j = &(this->nodes[ii]);
          printf("%f,%f,%f \n",node_j->pos.x,node_j->pos.y,node_j->pos.z );
