@@ -452,6 +452,7 @@ void sphereWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displacement,
 
     //determine if slip or not
     if(  mag > PW_FRICTION_COEF * fabsf(f_n) ){
+         tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,-G_ct,step);
         f_tang.x = - PW_FRICTION_COEF * f_n * t.x;
         f_tang.y = - PW_FRICTION_COEF * f_n * t.y;
         f_tang.z = - PW_FRICTION_COEF * f_n * t.z;
@@ -565,6 +566,7 @@ void capsuleWallCollisionCap(ParticleCenter* pc_i,Wall wallData,dfloat displacem
 
     //determine if slip or not,
     if(  mag > PW_FRICTION_COEF * fabsf(f_n) ){
+         tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,-G_ct,step);
         f_tang = - PW_FRICTION_COEF * f_n * t;
     }
 
@@ -697,6 +699,7 @@ void ellipsoidWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displaceme
     //determine if slip or not,
     if(  mag > PW_FRICTION_COEF * fabsf(f_n) ){
         f_tang = - PW_FRICTION_COEF * f_n * t;
+        tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,-G_ct,step);
     }
 
     //sum the forces
@@ -1419,6 +1422,7 @@ void sphereSphereCollision(unsigned int column,unsigned int row, ParticleCenter*
 
     //calculate if will slip
     if(  mag > PP_FRICTION_COEF * abs(f_n) ){
+        tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,-G_ct,step);
         f_tang.x = - PP_FRICTION_COEF * f_n * t.x;
         f_tang.y = - PP_FRICTION_COEF * f_n * t.y;
         f_tang.z = - PP_FRICTION_COEF * f_n * t.z;
@@ -1617,7 +1621,7 @@ void capsuleCapsuleCollision(unsigned int column, unsigned int row, ParticleCent
 
     //calculate if will slip
     if(  mag > PP_FRICTION_COEF * abs(f_n) ){
-        tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,-G,step);
+        tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,-G_ct,step);
         f_tang.x = - PP_FRICTION_COEF * f_n * t.x;
         f_tang.y = - PP_FRICTION_COEF * f_n * t.y;
         f_tang.z = - PP_FRICTION_COEF * f_n * t.z;
@@ -1779,7 +1783,7 @@ void ellipsoidEllipsoidCollision(unsigned int column, unsigned int row, Particle
             tang_index = startCollision(pc_i->collision,row,false,dfloat3(0,0,0),step);
             tang_disp = G_ct;
         }else{ //collision is still ongoing
-            tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,G,step);
+            tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,G_ct,step);
         }
     }
 
@@ -1793,7 +1797,7 @@ void ellipsoidEllipsoidCollision(unsigned int column, unsigned int row, Particle
 
     //calculate if will slip
     if(  mag > PP_FRICTION_COEF * abs(f_n) ){
-        tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,-G,step);
+        tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,-G_ct,step);
         f_tang = - PP_FRICTION_COEF * f_n * t;
     }
 
