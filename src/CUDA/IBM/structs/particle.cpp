@@ -1342,7 +1342,8 @@ void Particle::makeCapsule(dfloat diameter, dfloat3 point1, dfloat3 point2, bool
 
 
     this->pCenter.collision.shape = CAPSULE;
-    this->pCenter.collision.semiAxis = point1 - center;
+    this->pCenter.collision.semiAxis = point1; 
+    this->pCenter.collision.semiAxis2 = point2; 
     for(int i = 0; i <MAX_ACTIVE_COLLISIONS;i++){
         this->pCenter.collision.collisionPartnerIDs[i] = -1;
         this->pCenter.collision.tangentialDisplacements[i] = dfloat3(0,0,0);

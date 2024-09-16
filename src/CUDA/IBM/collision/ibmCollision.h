@@ -80,9 +80,6 @@ Wall determineCircularWall(dfloat3 pos_i, dfloat R, dfloat dir);
 *   @brief Check for collisions between a particle and walls based on the particle's shape.
 *   @param pc_i: Pointer to the `ParticleCenter` structure containing particle information.
 *   @param step: The current time step for collision checking.
-*   This function determines the type of the particle (sphere, capsule, or ellipsoid) and
-*   calls the appropriate function to check for collisions with walls based on the particle's shape.
-*   If the shape is unknown, no action is taken.
 */
 __device__
 void checkCollisionWalls(ParticleCenter* pc_i, unsigned int step);
@@ -90,8 +87,6 @@ void checkCollisionWalls(ParticleCenter* pc_i, unsigned int step);
 *   @brief Check for collisions between a sphere and walls.
 *   @param pc_i: Pointer to the `ParticleCenter` structure containing sphere information.
 *   @param step: The current time step for collision checking.
-*   This function checks for collisions between a sphere and walls. It uses the particle's
-*   properties (such as position and radius) to determine if there is an intersection with any walls.
 */
 __device__
 void checkCollisionWallsSphere(ParticleCenter* pc_i, unsigned int step);
@@ -100,8 +95,6 @@ void checkCollisionWallsSphere(ParticleCenter* pc_i, unsigned int step);
 *   @brief Check for collisions between a capsule and walls.
 *   @param pc_i: Pointer to the `ParticleCenter` structure containing capsule information.
 *   @param step: The current time step for collision checking.
-*   This function checks for collisions between a capsule and walls. It uses the particle's
-*   properties (such as the radius and endpoints of the capsule) to determine if there is an intersection with any walls.
 */
 __device__
 void checkCollisionWallsCapsule(ParticleCenter* pc_i, unsigned int step);
@@ -121,8 +114,6 @@ void checkCollisionWallsElipsoid(ParticleCenter* pc_i, unsigned int step);
 *   @param wallData: The data structure representing the wall.
 *   @param displacement: The displacement value representing how far the sphere has moved.
 *   @param step: The current time step for collision processing.
-*   This function calculates and processes the collision between a sphere and a wall. It uses
-*   the sphere's position and displacement to determine and handle the interaction with the wall.
 */
 __device__
 void sphereWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displacement,int step);
@@ -134,11 +125,19 @@ void sphereWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displacement,
 *   @param displacement: The displacement value for the capsule's end cap.
 *   @param endpoint: The endpoint of the capsule's end cap.
 *   @param step: The current time step for collision processing.
-*   This function calculates and processes the collision between a capsule's end cap and a wall.
-*   It uses the end cap's position and displacement to determine and handle the interaction with the wall.
 */
 __device__
 void capsuleWallCollisionCap(ParticleCenter* pc_i,Wall wallData,dfloat displacement,dfloat3 endpoint, int step);
+
+/**
+*   @brief Handle collision mechanics between capsule and inner duct.
+*   @param pc_i: Pointer to the `ParticleCenter` structure containing information about the capsule.
+*   @param closestOnA: Closest point in the axis of particle i.
+*   @param closestOnB: Closest point in the axis of inner duct.
+*   @param step: The current time step for collision processing.
+*/
+__device__
+void capsuleInnerDuctCollision(ParticleCenter* pc_i, dfloat3 closestOnA[1], dfloat3 closestOnB[1], int step);
 /**
 *   @brief Handle collision mechanics between an ellipsoid particle and a wall.
 *   @param pc_i: Pointer to the ParticleCenter structure representing the ellipsoid particle.
@@ -156,8 +155,6 @@ void ellipsoidWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displaceme
 *   @param pc_i: Pointer to the `ParticleCenter` structure containing information about the first sphere.
 *   @param pc_j: Pointer to the `ParticleCenter` structure containing information about the second sphere.
 *   @return The distance between the surfaces of the two spheres.
-*   This function calculates the gap between two spheres based on their positions and radii. The result is
-*   the distance between the surfaces of the two spheres, which can be used to determine if a collision has occurred.
 */
 __device__
 dfloat sphereSphereGap(ParticleCenter*  pc_i, ParticleCenter*  pc_j);
@@ -209,7 +206,7 @@ dfloat segment_segment_closest_points(dfloat3 p1, dfloat3 q1, dfloat3 p2, dfloat
 *   @return The shortest distance between the two segments.
 */
 __device__
-dfloat segment_segment_closest_points_periodic(dfloat3 p1, dfloat3 q1, dfloat3 p2, dfloat3 q2, dfloat3 closestOnAB[1], dfloat3 closestOnCD);
+dfloat segment_segment_closest_points_periodic(dfloat3 p1, dfloat3 q1, dfloat3 p2, dfloat3 q2, dfloat3 closestOnAB[1], dfloat3 closestOnCD[1]);
 
 
 //ellipsoid functions
@@ -296,11 +293,11 @@ void sphereSphereCollision(unsigned int column, unsigned int row, ParticleCenter
 
 
 /**
-*   @brief Handle collision mechanics between two spheres.
+*   @brief Handle collision mechanics between two capsules.
 *   @param column: The column index in a grid or matrix representing the particles' positions.
 *   @param row: The row index in a grid or matrix representing the particles' positions.
-*   @param pc_i: Pointer to the `ParticleCenter` structure containing information about the first sphere.
-*   @param pc_j: Pointer to the `ParticleCenter` structure containing information about the second sphere.
+*   @param pc_i: Pointer to the `ParticleCenter` structure containing information about the first capsule.
+*   @param pc_j: Pointer to the `ParticleCenter` structure containing information about the second capsule.
 *   @param closestOnA: Closest point in the axis of particle i.
 *   @param closestOnB: Closest point in the axis of particle j.
 *   @param step: The current time step for collision processing.

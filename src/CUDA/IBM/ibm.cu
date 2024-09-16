@@ -974,17 +974,17 @@ void gpuParticleMovement(
     pc->collision.semiAxis.y =  pc->pos.y + 2 * ( ((qi*qj) + (q0*qk))*x_vec +   (tq0m1 + (qj*qj))*y_vec + ((qj*qk) - (q0*qi))*z_vec);
     pc->collision.semiAxis.z =  pc->pos.z + 2 * ( ((qi*qj) - (q0*qj))*x_vec + ((qj*qk) + (q0*qi))*y_vec +   (tq0m1 + (qk*qk))*z_vec);
 
-          x_vec = pc->collision.semiAxis2.x - pc->pos_old.x;
-          y_vec = pc->collision.semiAxis2.y - pc->pos_old.y;
-          z_vec = pc->collision.semiAxis2.z - pc->pos_old.z;
+    x_vec = pc->collision.semiAxis2.x - pc->pos_old.x;
+    y_vec = pc->collision.semiAxis2.y - pc->pos_old.y;
+    z_vec = pc->collision.semiAxis2.z - pc->pos_old.z;
 
     pc->collision.semiAxis2.x = pc->pos.x +  2 * (   (tq0m1 + (qi*qi))*x_vec + ((qi*qj) - (q0*qk))*y_vec + ((qi*qk) + (q0*qj))*z_vec);
     pc->collision.semiAxis2.y = pc->pos.y +  2 * ( ((qi*qj) + (q0*qk))*x_vec +   (tq0m1  + (qj*qj))*y_vec + ((qj*qk) - (q0*qi))*z_vec);
     pc->collision.semiAxis2.z = pc->pos.z +  2 * ( ((qi*qj) - (q0*qj))*x_vec + ((qj*qk) + (q0*qi))*y_vec +   (tq0m1  + (qk*qk))*z_vec);
 
-          x_vec = pc->collision.semiAxis3.x - pc->pos_old.x;
-          y_vec = pc->collision.semiAxis3.y - pc->pos_old.y;
-          z_vec = pc->collision.semiAxis3.z - pc->pos_old.z;
+    x_vec = pc->collision.semiAxis3.x - pc->pos_old.x;
+    y_vec = pc->collision.semiAxis3.y - pc->pos_old.y;
+    z_vec = pc->collision.semiAxis3.z - pc->pos_old.z;
 
     pc->collision.semiAxis3.x = pc->pos.x +  2 * (   (tq0m1 + (qi*qi))*x_vec + ((qi*qj) - (q0*qk))*y_vec + ((qi*qk) + (q0*qj))*z_vec);
     pc->collision.semiAxis3.y = pc->pos.y +  2 * ( ((qi*qj) + (q0*qk))*x_vec +   (tq0m1  + (qj*qj))*y_vec + ((qj*qk) - (q0*qi))*z_vec);

@@ -6,10 +6,20 @@ __device__
 int calculateWallIndex(const dfloat3 &n) {
     // Calculate the index based on the normal vector
     return 7 + (1 - (int)n.x) - 2 * (1 - (int)n.y) - 3 * (1 - (int)n.z);
+    /*
+    n.x n.y n.z index
+    1   0   0   2
+    -1  0   0   4
+    0   1   0   5
+    0   -1  0   1
+    0   0   1   6
+    0   0   -1  0
+    0   0   0   3 -> external duct, since normal will be reduced to 0,0,0 when convert to integer
+    */
 }
 __device__ 
 int getCollisionIndexByPartnerID(const CollisionData &collisionData, int partnerID, int currentTimeStep) {
-    for (int i = 6; i < MAX_ACTIVE_COLLISIONS ; i++) {
+    for (int i = 7; i < MAX_ACTIVE_COLLISIONS ; i++) {
         if (collisionData.collisionPartnerIDs[i] == partnerID &&
             currentTimeStep - collisionData.lastCollisionStep[i] <= 1) {
             return i; // Found the collision index for a particle
@@ -28,7 +38,7 @@ int startCollision(CollisionData &collisionData, int partnerID, bool isWall, con
         collisionData.tangentialDisplacements[index] = {0.0, 0.0, 0.0};
         collisionData.lastCollisionStep[index] = currentTimeStep;
     } else {
-        for (int i = 6; i < MAX_ACTIVE_COLLISIONS + 6; i++) {
+        for (int i = 7; i < MAX_ACTIVE_COLLISIONS; i++) {
             if (collisionData.lastCollisionStep[i] == -1) { // Check for an unused slot
                 collisionData.collisionPartnerIDs[i] = partnerID;
                 collisionData.tangentialDisplacements[i] = {0.0, 0.0, 0.0};
@@ -50,12 +60,12 @@ dfloat3 updateTangentialDisplacement(CollisionData &collisionData, int index, co
 }
 __device__ 
 void endCollision(CollisionData &collisionData, int index, int currentTimeStep) {
-    // Check if index is valid for wall collisions (0 to 5)
-    if (index >= 0 && index < 6) {
+    // Check if index is valid for wall collisions (0 to 6)
+    if (index >= 0 && index <= 6) {
         collisionData.lastCollisionStep[index] = -1;
     }
     // Check if index is valid for particle collisions 
-    else if (index >= 6 && index < MAX_ACTIVE_COLLISIONS ) {
+    else if (index >= 7 && index < MAX_ACTIVE_COLLISIONS ) {
         if (currentTimeStep - collisionData.lastCollisionStep[index] > 1) {
             collisionData.tangentialDisplacements[index] = {0.0, 0.0, 0.0};
             collisionData.lastCollisionStep[index] = -1; // Indicate the slot is available
@@ -104,6 +114,11 @@ void checkCollisionWalls(ParticleCenter* pc_i, unsigned int step){
         dfloat dist;
         dfloat distanceWall1;
         dfloat distanceWall2;
+        dfloat3 endpoint1;
+        dfloat3 endpoint2;
+        dfloat3 closestOnA[1];
+        dfloat3 closestOnB[1];
+        
         #ifdef EXTERNAL_DUCT_BC
             switch (pc_i->collision.shape) {
             case SPHERE:
@@ -114,12 +129,19 @@ void checkCollisionWalls(ParticleCenter* pc_i, unsigned int step){
                 }
                 break;
             case CAPSULE:
-                dfloat distanceWall1 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x + pc_i->collision.semiAxis.x,pc_i->pos.y + pc_i->collision.semiAxis.y);
-                dfloat distanceWall2 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x - pc_i->collision.semiAxis.x,pc_i->pos.y - pc_i->collision.semiAxis.y);
-                if(distanceWall1 < EXTERNAL_DUCT_BC_RADIUS + pc_i->radius)
-                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos + pc_i->collision.semiAxis,EXTERNAL_DUCT_BC_RADIUS,-1),pc_i->radius - distanceWall1,step);
-                if(distanceWall2 < EXTERNAL_DUCT_BC_RADIUS + pc_i->radius)
-                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos + pc_i->collision.semiAxis,EXTERNAL_DUCT_BC_RADIUS,-1),pc_i->radius - distanceWall2,step);
+                endpoint1 = pc_i->collision.semiAxis;
+                distanceWall1 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,endpoint1.x,endpoint1.y);
+                if(EXTERNAL_DUCT_BC_RADIUS - distanceWall1 < pc_i->radius){
+                    wallData = determineCircularWall(endpoint1,EXTERNAL_DUCT_BC_RADIUS,-1);
+                    capsuleWallCollisionCap(pc_i,wallData,EXTERNAL_DUCT_BC_RADIUS - (pc_i->radius + distanceWall1),endpoint1,step);
+                }
+
+                endpoint2 = pc_i->collision.semiAxis2;
+                distanceWall2 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,endpoint2.x,endpoint2.y);
+                if(EXTERNAL_DUCT_BC_RADIUS - distanceWall2 < pc_i->radius){
+                    wallData = determineCircularWall(endpoint2,EXTERNAL_DUCT_BC_RADIUS,-1);
+                    capsuleWallCollisionCap(pc_i,wallData,EXTERNAL_DUCT_BC_RADIUS - (pc_i->radius + distanceWall2),endpoint2,step);
+                }
                 break;
             case ELLIPSOID:
                 //TODO: THIS IS NOT TRIVIAL DEPENDING ON THE SITUATION IT CAN HAVE MORE THAN 1 CONTACT POINT
@@ -140,12 +162,9 @@ void checkCollisionWalls(ParticleCenter* pc_i, unsigned int step){
                 }                    
                 break;
             case CAPSULE:
-                dfloat distanceWall1 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x + pc_i->collision.semiAxis.x,pc_i->pos.y + pc_i->collision.semiAxis.y);
-                dfloat distanceWall2 = distPoints2D(DUCT_CENTER_X,DUCT_CENTER_Y,pc_i->pos.x - pc_i->collision.semiAxis.x,pc_i->pos.y - pc_i->collision.semiAxis.y);
-                if(distanceWall1 < INTERNAL_DUCT_BC + pc_i->radius)
-                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos + pc_i->collision.semiAxis,INTERNAL_DUCT_BC,1),pc_i->radius - distanceWall1,step);
-                if(distanceWall2 < INTERNAL_DUCT_BC + pc_i->radius)
-                    sphereWallCollision(pc_i,determineCircularWall(pc_i->pos + pc_i->collision.semiAxis,INTERNAL_DUCT_BC,1),pc_i->radius - distanceWall2,step);
+                if(segment_segment_closest_points_periodic(pc_i->collision.semiAxis,pc_i->collision.semiAxis2, dfloat3(DUCT_CENTER_X,DUCT_CENTER_Y,-INTERNAL_DUCT_BC_RADIUS), dfloat3(DUCT_CENTER_X,DUCT_CENTER_Y,NZ_TOTAL + INTERNAL_DUCT_BC_RADIUS), closestOnA, closestOnB) <  pc_i->radius + INTERNAL_DUCT_BC_RADIUS){
+                    capsuleInnerDuctCollision(pc_i,closestOnA,closestOnB,step);
+                }           
                 break;
             case ELLIPSOID:
                 //printf("its a ellipsoid \n");
@@ -226,13 +245,12 @@ void checkCollisionWallsSphere(ParticleCenter* pc_i,unsigned int step){
 } 
 __device__
 void checkCollisionWallsCapsule(ParticleCenter* pc_i,unsigned int step){
-    const dfloat3 pos_i = pc_i->pos;
     const dfloat halfLength = vector_length(pc_i->collision.semiAxis);
     const dfloat radius = pc_i->radius;
 
     // Calculate capsule endpoints using the orientation vector
-    dfloat3 endpoint1 = pos_i + pc_i->collision.semiAxis;
-    dfloat3 endpoint2 = pos_i - pc_i->collision.semiAxis;
+    dfloat3 endpoint1 = pc_i->collision.semiAxis;
+    dfloat3 endpoint2 = pc_i->collision.semiAxis2;
 
     Wall wallData = wall(dfloat3(0, 0, 0), 0);
     dfloat distanceWall1 = 0;
@@ -315,15 +333,11 @@ void checkCollisionWallsCapsule(ParticleCenter* pc_i,unsigned int step){
 }
 __device__
 void checkCollisionWallsElipsoid(ParticleCenter* pc_i, unsigned int step){
-    const dfloat3 pos_i = pc_i->pos; // Ellipsoid center position
-    const dfloat3 radius = pc_i->collision.semiAxis; // Ellipsoid semi-axes
-    const dfloat4 q = pc_i->q_pos; // Ellipsoid orientation quaternion
 
     Wall wallData;
     dfloat distanceWall = 0;
     dfloat3 intersectionPoint;
     dfloat3 contactPoint2[1];
-    dfloat dist = 0;
     
     dfloat cr[1];
 
@@ -592,6 +606,178 @@ void capsuleWallCollisionCap(ParticleCenter* pc_i,Wall wallData,dfloat displacem
     atomicAdd(&(pc_i->M.z), m_dirs.z);
     
 
+}
+
+__device__
+void capsuleInnerDuctCollision(ParticleCenter* pc_i, dfloat3 closestOnA[1], dfloat3 closestOnB[1], int step){
+    // Particle i info (column)
+    const dfloat3 pos_i = closestOnA[0];
+    const dfloat3 pos_c_i = pc_i->pos;
+    const dfloat r_i = pc_i->radius;
+    const dfloat m_i = pc_i ->volume * pc_i ->density;
+    const dfloat3 v_i = pc_i->vel;
+    const dfloat3 w_i = pc_i->w;
+   
+    // Particle j info (row)
+    const dfloat3 pos_j = closestOnB[0];
+    const dfloat r_j = INTERNAL_DUCT_BC_RADIUS;
+    const dfloat3 v_j = 0.0; //WALL VELOCITY
+    const dfloat3 w_j = 0.0;
+
+
+
+    //first check if they will collide
+    const dfloat3 diff_pos = dfloat3(
+        #ifdef IBM_BC_X_WALL
+            pos_i.x - pos_j.x
+        #endif //IBM_BC_X_WALL
+        #ifdef IBM_BC_X_PERIODIC 
+        abs(pos_i.x - pos_j.x) > ((IBM_BC_X_E - IBM_BC_X_0) / 2.0) ? 
+        (pos_i.x < pos_j.x ?
+            (pos_i.x + (IBM_BC_X_E - IBM_BC_X_0) - pos_j.x)
+            : 
+            (pos_i.x - (IBM_BC_X_E - IBM_BC_X_0) - pos_j.x)
+        )
+        : pos_i.x - pos_j.x
+        #endif //IBM_BC_X_PERIODIC
+        ,
+        #ifdef IBM_BC_Y_WALL
+            pos_i.y - pos_j.y
+        #endif //IBM_BC_Y_WALL
+        #ifdef IBM_BC_Y_PERIODIC
+        abs(pos_i.y - pos_j.y) > ((IBM_BC_Y_E - IBM_BC_Y_0) / 2.0) ? 
+        (pos_i.y < pos_j.y ?
+            (pos_i.y + (IBM_BC_Y_E - IBM_BC_Y_0) - pos_j.y)
+            : 
+            (pos_i.y - (IBM_BC_Y_E - IBM_BC_Y_0) - pos_j.y)
+        )
+        : pos_i.y - pos_j.y
+        #endif //IBM_BC_Y_PERIODIC
+        ,
+        #ifdef IBM_BC_Z_WALL
+            pos_i.z - pos_j.z
+        #endif //IBM_BC_Z_WALL
+        #ifdef IBM_BC_Z_PERIODIC
+            abs(pos_i.z - pos_j.z) > ((IBM_BC_Z_E - IBM_BC_Z_0) / 2.0) ? 
+            (pos_i.z < pos_j.z ?
+                (pos_i.z + (IBM_BC_Z_E - IBM_BC_Z_0) - pos_j.z)
+                : 
+                (pos_i.z - (IBM_BC_Z_E - IBM_BC_Z_0) - pos_j.z)
+            )
+            : pos_i.z - pos_j.z
+        #endif //IBM_BC_Z_PERIODIC
+    );
+
+    const dfloat mag_dist = sqrt(
+          diff_pos.x*diff_pos.x
+        + diff_pos.y*diff_pos.y
+        + diff_pos.z*diff_pos.z);
+
+    if(mag_dist > r_i+r_j) //they dont collide
+        return;
+
+    //but if they collide, we can do some calculations
+
+    //normal collision vector
+    const dfloat3 n = dfloat3(diff_pos.x/mag_dist,diff_pos.y/mag_dist,diff_pos.z/mag_dist);
+
+    //normal deformation
+    dfloat displacement = r_i + r_j - mag_dist;
+    // relative velocity vector
+    dfloat3 G = v_i-v_j;
+
+    //HERTZ CONTACT THEORY
+
+    dfloat effective_radius = 1.0/r_i;
+    dfloat effective_mass = 1.0/m_i;
+
+    const dfloat STIFFNESS_NORMAL = SPHERE_WALL_STIFFNESS_NORMAL_CONST * sqrt(effective_radius);
+    const dfloat STIFFNESS_TANGENTIAL = SPHERE_WALL_STIFFNESS_TANGENTIAL_CONST * sqrt(effective_radius) * sqrt (abs(displacement));
+    const dfloat damping_const = (- 2.0 * log(PW_REST_COEF)  / (sqrt(M_PI*M_PI + log(PW_REST_COEF)*log(PW_REST_COEF)))); //TODO FIND A WAY TO PROCESS IN COMPILE TIME
+    const dfloat DAMPING_NORMAL = damping_const * sqrt (effective_mass * STIFFNESS_NORMAL );
+    const dfloat DAMPING_TANGENTIAL = damping_const * sqrt (effective_mass * STIFFNESS_TANGENTIAL);
+
+    //normal force
+    dfloat f_kn = -STIFFNESS_NORMAL * sqrt(abs(displacement*displacement*displacement));
+    dfloat3 f_normal;
+    f_normal.x = f_kn * n.x - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.x * POW_FUNCTION(abs(displacement),0.25);
+    f_normal.y = f_kn * n.y - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.y * POW_FUNCTION(abs(displacement),0.25);
+    f_normal.z = f_kn * n.z - DAMPING_NORMAL * (G.x*n.x + G.y*n.y + G.z*n.z)*n.z * POW_FUNCTION(abs(displacement),0.25);
+    dfloat f_n;
+    f_n = sqrt(f_normal.x*f_normal.x + f_normal.y*f_normal.y + f_normal.z*f_normal.z);
+
+    //tangential force
+    dfloat3 G_ct;       
+    G_ct.x = G.x + r_i*(w_i.y*n.z - w_i.z*n.y) + r_j*(w_j.y*n.z - w_j.z*n.y) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.x;
+    G_ct.y = G.y + r_i*(w_i.z*n.x - w_i.x*n.z) + r_j*(w_j.z*n.x - w_j.x*n.z) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.y;
+    G_ct.z = G.z + r_i*(w_i.x*n.y - w_i.y*n.x) + r_j*(w_j.x*n.y - w_j.y*n.x) - (G.x*n.x + G.y*n.y + G.z*n.z) * n.z;
+
+    dfloat mag = G_ct.x*G_ct.x+G_ct.y*G_ct.y+G_ct.z*G_ct.z;
+    mag=sqrt(mag);
+
+    //calculate tangential vector
+    dfloat3 t;
+    if (mag != 0){
+        //tangential vector
+        t.x = G_ct.x/mag;
+        t.y = G_ct.y/mag;
+        t.z = G_ct.z/mag;
+    }else{
+        t.x = 0.0;
+        t.y = 0.0;
+        t.z = 0.0;
+    }
+
+    //retrive stored displacedment 
+    //TODO: FIXING IT ON LAST SLOT
+    dfloat3 tang_disp; //total tangential displacement
+    int tang_index = getCollisionIndexByPartnerID(pc_i->collision,MAX_ACTIVE_COLLISIONS-1,step);
+    if(tang_index == -1){ //no previous collision was detected
+        tang_index = startCollision(pc_i->collision,MAX_ACTIVE_COLLISIONS-1,false,dfloat3(0,0,0),step);
+        tang_disp = G_ct;
+    }else{
+        //check if the collision already exited in the past
+        if(step - pc_i->collision.lastCollisionStep[tang_index] > 1){ //already existed but ended
+            endCollision(pc_i->collision,tang_index,step); //end current one
+            tang_index = startCollision(pc_i->collision,MAX_ACTIVE_COLLISIONS-1,false,dfloat3(0,0,0),step);
+            tang_disp = G_ct;
+        }else{ //collision is still ongoing
+            tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,G,step);
+        }
+    }
+
+    dfloat3 f_tang;
+    f_tang.x = - STIFFNESS_TANGENTIAL * tang_disp.x - DAMPING_TANGENTIAL * G_ct.x* POW_FUNCTION(abs(tang_disp.x) ,0.25);
+    f_tang.y = - STIFFNESS_TANGENTIAL * tang_disp.y - DAMPING_TANGENTIAL * G_ct.y* POW_FUNCTION(abs(tang_disp.y) ,0.25);
+    f_tang.z = - STIFFNESS_TANGENTIAL * tang_disp.z - DAMPING_TANGENTIAL * G_ct.z* POW_FUNCTION(abs(tang_disp.z) ,0.25);
+
+    mag = sqrt(f_tang.x*f_tang.x + f_tang.y*f_tang.y + f_tang.z*f_tang.z);
+
+    //calculate if will slip
+    if(  mag > PP_FRICTION_COEF * abs(f_n) ){
+        tang_disp = updateTangentialDisplacement(pc_i->collision,tang_index,-G_ct,step);
+        f_tang.x = - PP_FRICTION_COEF * f_n * t.x;
+        f_tang.y = - PP_FRICTION_COEF * f_n * t.y;
+        f_tang.z = - PP_FRICTION_COEF * f_n * t.z;
+    }
+
+    //FINAL FORCE RESULTS
+
+    //printf("pp  step %d fny %f fnt %f fnz %f \n",step,f_normal.x,f_tang.y, f_normal.z);
+
+    // Force in each direction
+    dfloat3 f_dirs = f_normal + f_tang;
+    //Torque in each direction
+    dfloat3 m_dirs_i = cross_product((pos_i-pos_c_i) + (-n*r_i) ,-f_dirs);
+    
+    // Force positive in particle i (column)
+    atomicAdd(&(pc_i->f.x), -f_dirs.x);
+    atomicAdd(&(pc_i->f.y), -f_dirs.y);
+    atomicAdd(&(pc_i->f.z), -f_dirs.z);
+
+    atomicAdd(&(pc_i->M.x), m_dirs_i.x);
+    atomicAdd(&(pc_i->M.y), m_dirs_i.y);
+    atomicAdd(&(pc_i->M.z), m_dirs_i.z);
 }
 /* IN PROGRESS
 __device__
@@ -897,7 +1083,6 @@ dfloat3 ellipsoid_intersection(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 line
     dfloat3 p0, p0_rotated, d_rotated;
     dfloat A, B, C;
     dfloat DELTA;
-    dfloat t1, t2;
     dfloat3 t;
 
     dfloat3 center = pc_i->pos;
@@ -1207,7 +1392,6 @@ dfloat ellipsoidEllipsoidCollisionDistance( ParticleCenter* pc_i, ParticleCenter
 __device__
 void checkCollisionBetweenParticles( unsigned int column,unsigned int row,ParticleCenter* pc_i,  ParticleCenter* pc_j,int step){
 
-    int collisionType = 0;
     //printf("shape %d %d \n",pc_i->collision.shape,pc_j->collision.shape);
     switch (pc_i->collision.shape) {
         case SPHERE:
@@ -1240,7 +1424,7 @@ void checkCollisionBetweenParticles( unsigned int column,unsigned int row,Partic
                 break;
             case CAPSULE:
                 //printf("cap - cap col \n");
-                capsuleCapsuleCollisionCheck(column,row,pc_i,pc_j, step, pc_i->pos + pc_i->collision.semiAxis, pc_i->pos - pc_i->collision.semiAxis, pc_i->radius, pc_j->pos + pc_j->collision.semiAxis, pc_j->pos - pc_j->collision.semiAxis, pc_j->radius);
+                capsuleCapsuleCollisionCheck(column,row,pc_i,pc_j, step, pc_i->collision.semiAxis,pc_i->collision.semiAxis2, pc_i->radius,pc_j->collision.semiAxis, pc_j->collision.semiAxis2, pc_j->radius);
             case ELLIPSOID:
                 //printf("cap - eli col \n");
                 //collision capsule-ellipsoid
@@ -1866,10 +2050,10 @@ void capsuleSphereCollisionCheck(unsigned int column,unsigned int row, ParticleC
     dfloat3 closestOnAB[1];
 
     if(pc_i->collision.shape == SPHERE){
-        if(point_to_segment_distance(pc_i->pos, pc_j->pos + pc_j->collision.semiAxis, pc_j->pos - pc_j->collision.semiAxis,closestOnAB) < pc_i->radius + pc_j->radius)
+        if(point_to_segment_distance(pc_i->pos, pc_j->collision.semiAxis, pc_j->collision.semiAxis2,closestOnAB) < pc_i->radius + pc_j->radius)
             capsuleCapsuleCollision(column,row,pc_i,pc_j,&pc_i->pos,closestOnAB,step);
     }else{
-        if(point_to_segment_distance(pc_j->pos, pc_i->pos + pc_i->collision.semiAxis, pc_i->pos - pc_i->collision.semiAxis,closestOnAB) < pc_i->radius + pc_j->radius)
+        if(point_to_segment_distance(pc_j->pos, pc_i->collision.semiAxis, pc_i->collision.semiAxis2,closestOnAB) < pc_i->radius + pc_j->radius)
             capsuleCapsuleCollision(column,row,pc_i,pc_j,&pc_j->pos,closestOnAB,step);
     }
     
