@@ -1065,9 +1065,22 @@ dfloat sphereSphereGap(ParticleCenter*  pc_i, ParticleCenter*  pc_j) {
     dfloat r1 = pc_i->radius;
     dfloat r2 = pc_j->radius;
 
-    dfloat dist = sqrtf((p1.x - p2.x) * (p1.x - p2.x) +
-                    (p1.y - p2.y) * (p1.y - p2.y) +
-                    (p1.z - p2.z) * (p1.z - p2.z));
+    dfloat3 delta = p1 - p2;
+
+    #ifdef IBM_BC_X_PERIODIC
+        if(delta.x > NX / 2.0) delta.x -= NX;
+        if(delta.x < -NX / 2.0) delta.x += NX;
+    #endif
+    #ifdef IBM_BC_Y_PERIODIC
+        if(delta.y > NY / 2.0) delta.y -= NY;
+        if(delta.y < -NY / 2.0) delta.y += NY;
+    #endif
+    #ifdef IBM_BC_Z_PERIODIC
+        if(delta.z > NZ / 2.0) delta.z -= NZ;
+        if(delta.z < -NZ / 2.0) delta.z += NZ;
+    #endif
+
+    dfloat dist = sqrtf(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
     
     return dist - (r1 + r2);
 }
@@ -1667,8 +1680,9 @@ void checkCollisionBetweenParticles( unsigned int column,unsigned int row,Partic
             case SPHERE:
             //printf("sph - sph col \n");
                 //printf("collision between spheres \n");
-                if(sphereSphereGap( pc_i, pc_j)<0)
+                if(sphereSphereGap( pc_i, pc_j)<0){
                     sphereSphereCollision(column,row, pc_i, pc_j,step);
+                }
                 break;
             case CAPSULE:
             //printf("sphe - cap col \n");
