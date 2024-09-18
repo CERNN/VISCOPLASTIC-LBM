@@ -149,6 +149,20 @@ void capsuleInnerDuctCollision(ParticleCenter* pc_i, dfloat3 closestOnA[1], dflo
 */
 __device__
 void ellipsoidWallCollision(ParticleCenter* pc_i,Wall wallData,dfloat displacement,dfloat3 endpoint, dfloat cr[1],int step);
+/**
+*   @brief Process the collision between an ellipsoid and a cylinder ducts
+*   @param pc_i: Pointer to the `ParticleCenter` structure containing information about the ellipsoid.
+*   @param displacement: The displacement between the ellipsoid and the cylinder during the collision.
+*   @param endpoint: The point where the collision occurs on the ellipsoid surface.
+*   @param cr: contact radius in the ellipsoid surface
+*   @param P1: The first endpoint of the cylindrical segment.
+*   @param P2: The second endpoint of the cylindrical segment.
+*   @param cRadius: The radius of the cylinder/duct.
+*   @param cyDir: The direction of the cylinder along its axis -1 for external 1 for internal.
+*   @param step: The current simulation time step for processing the collision.
+*/
+__device__
+void ellipsoidCylinderCollision(ParticleCenter* pc_i,dfloat displacement,dfloat3 endpoint, dfloat cr[1], dfloat3 P1, dfloat3 P2, dfloat cRadius, int cyDir, int step);
 //sphere functions
 /**
 *   @brief Compute the gap between two spheres.
@@ -279,6 +293,35 @@ __device__ void computeContactPoints(ParticleCenter *pc_i, dfloat3 dir, dfloat3 
 */
 __device__
 dfloat ellipsoidEllipsoidCollisionDistance( ParticleCenter* pc_i, ParticleCenter* pc_j, dfloat3 contactPoint1[1], dfloat3 contactPoint2[1], dfloat cr1[1], dfloat cr2[1], unsigned int step);
+
+
+/**
+*   @brief Project a point onto a cylinder segment defined by two endpoints.
+*   @param P: The point to be projected.
+*   @param P1: The first endpoint of the cylinder segment.
+*   @param P2: The second endpoint of the cylinder segment.
+*   @param cRadius: The radius of the cylinder.
+*   @param cyDir: The direction of the cylinder surface: -1 if the point is inside the cylinder, 1 if is outside.
+*   @return The projection of the point onto the surface of the cylinder segment.
+*/
+__device__
+dfloat3 segmentProjection(dfloat3 P, dfloat3 P1, dfloat3 P2, dfloat cRadius,int cyDir);
+/**
+*   @brief Compute the distance between an ellipsoid and a cylindrical segment, and determine the contact points on both surfaces.
+*   @param pc_i: Pointer to the `ParticleCenter` structure containing information about the ellipsoid.
+*   @param P1: The first endpoint of the cylindrical segment.
+*   @param P2: The second endpoint of the cylindrical segment.
+*   @param cRadius: The radius of the cylindrical segment.
+*   @param contactPoint1: Array to store the contact point on the cylindrical segment surface.
+*   @param contactPoint2: Array to store the contact point on the ellipsoid surface.
+*   @param cr: Array to store the contact radius on the ellipsoid.
+*   @param cyDir: The direction of the cylinder surface: -1 if the point is inside the cylinder, 1 if is outside
+*   @param step: The current time step for collision detection.
+*   @return The distance between the ellipsoid and the cylindrical segment at the closest points.
+*/
+__device__
+dfloat ellipsoidSegmentCollisionDistance( ParticleCenter* pc_i, dfloat3 P1, dfloat3 P2, dfloat cRadius ,dfloat3 contactPoint1[1], dfloat3 contactPoint2[1], dfloat cr[1], int cyDir, unsigned int step);
+
 
 /**
 *   @brief Handle collision mechanics between two spheres.
