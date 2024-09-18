@@ -1096,6 +1096,58 @@ dfloat point_to_segment_distance(dfloat3 p, dfloat3 segA, dfloat3 segB, dfloat3 
     closestOnAB[0] = segA + ab*t;
     return vector_length(p - closestOnAB[0]);
 }
+
+__device__
+dfloat point_to_segment_distance_periodic(dfloat3 p, dfloat3 segA, dfloat3 segB, dfloat3 closestOnAB[1]) {
+    dfloat minDist = 1E+37;  // Initialize to a large value
+    dfloat3 bestClosestOnAB;
+    int dx = 0, dy = 0, dz = 0;
+
+    // Loop over periodic offsets in x, y, and z if periodic boundary conditions are enabled
+    #ifdef IBM_BC_X_PERIODIC
+    for (dx = -1; dx <= 1; dx++) {
+    #endif
+        #ifdef IBM_BC_Y_PERIODIC
+        for (dy = -1; dy <= 1; dy++) {
+        #endif
+            #ifdef IBM_BC_Z_PERIODIC
+            for (dz = -1; dz <= 1; dz++) {
+            #endif
+                // Translate the segment by the periodic offsets
+                dfloat3 segA_translated = segA + dfloat3(dx * NX, dy * NY, dz * NZ);
+                dfloat3 segB_translated = segB + dfloat3(dx * NX, dy * NY, dz * NZ);
+
+                // Compute the closest point on the translated segment
+                dfloat3 ab = segB_translated - segA_translated;
+                dfloat3 ap = p - segA_translated;
+                dfloat t = dot_product(ap, ab) / dot_product(ab, ab);
+                t = myMax(0, myMin(1, t));  // Clamp t to [0, 1]
+
+                dfloat3 tempClosestOnAB = segA_translated + ab * t;
+                dfloat dist = vector_length(p - tempClosestOnAB);
+
+                // Update the minimum distance and store the closest point
+                if (dist < minDist) {
+                    minDist = dist;
+                    bestClosestOnAB = tempClosestOnAB;
+                }
+
+            #ifdef IBM_BC_Z_PERIODIC
+            } // End Z loop
+            #endif
+        #ifdef IBM_BC_Y_PERIODIC
+        } // End Y loop
+        #endif
+    #ifdef IBM_BC_X_PERIODIC
+    } // End X loop
+    #endif
+
+    // Store the closest point on the segment
+    closestOnAB[0] = bestClosestOnAB;
+
+    // Return the minimum distance
+    return minDist;
+}
 // Project a point onto a segment and constrain it within the segment
 __device__
 dfloat3 constrain_to_segment(dfloat3 point, dfloat3 segStart, dfloat3 segEnd) {
@@ -2332,10 +2384,10 @@ void capsuleSphereCollisionCheck(unsigned int column,unsigned int row, ParticleC
     dfloat3 closestOnAB[1];
 
     if(pc_i->collision.shape == SPHERE){
-        if(point_to_segment_distance(pc_i->pos, pc_j->collision.semiAxis, pc_j->collision.semiAxis2,closestOnAB) < pc_i->radius + pc_j->radius)
+        if(point_to_segment_distance_periodic(pc_i->pos, pc_j->collision.semiAxis, pc_j->collision.semiAxis2,closestOnAB) < pc_i->radius + pc_j->radius)
             capsuleCapsuleCollision(column,row,pc_i,pc_j,&pc_i->pos,closestOnAB,step);
     }else{
-        if(point_to_segment_distance(pc_j->pos, pc_i->collision.semiAxis, pc_i->collision.semiAxis2,closestOnAB) < pc_i->radius + pc_j->radius)
+        if(point_to_segment_distance_periodic(pc_j->pos, pc_i->collision.semiAxis, pc_i->collision.semiAxis2,closestOnAB) < pc_i->radius + pc_j->radius)
             capsuleCapsuleCollision(column,row,pc_i,pc_j,&pc_j->pos,closestOnAB,step);
     }
     

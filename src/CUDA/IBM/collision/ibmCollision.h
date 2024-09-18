@@ -186,6 +186,17 @@ __device__
 dfloat point_to_segment_distance(dfloat3 point, dfloat3 segStart, dfloat3 segEnd, dfloat3* closestPoint);
 
 /**
+*   @brief Compute the shortest distance from a point to a segment considering periodic conditions.
+*   @param point: The point in 3D space.
+*   @param segStart: The start point of the segment.
+*   @param segEnd: The end point of the segment.
+*   @param closestPoint: Output for the closest point on the segment.
+*   @return The shortest distance between the point and the segment.
+*/
+__device__
+dfloat point_to_segment_distance_periodic(dfloat3 p, dfloat3 segA, dfloat3 segB, dfloat3 closestOnAB[1]);
+
+/**
 *   @brief Constrain a point to lie within a given segment.
 *   @param point: The point to be constrained.
 *   @param segStart: The start point of the segment.
