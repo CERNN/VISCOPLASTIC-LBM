@@ -244,7 +244,7 @@ dfloat segment_segment_closest_points_periodic(dfloat3 p1, dfloat3 q1, dfloat3 p
 *   @return The normal vector at the specified point on the ellipsoid's surface.
 */
 __device__
-dfloat3 ellipsoid_normal(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 point, dfloat radius[1]);
+dfloat3 ellipsoid_normal(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 point, dfloat radius[1],dfloat3 translation);
 /**
 *   @brief Compute the intersection point between a line and the ellipsoid.
 *   @param pc_i: Pointer to the ParticleCenter structure representing the ellipsoid particle.
@@ -254,7 +254,7 @@ dfloat3 ellipsoid_normal(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 point, dfl
 *   @return The intersection parameter between the line and the ellipsoid on .x and .y; ;.z is trash
 */
 __device__
-dfloat3 ellipsoid_intersection(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 line_origin, dfloat3 line_dir);
+dfloat3 ellipsoid_intersection(ParticleCenter* pc_i, dfloat R[3][3],dfloat3 line_origin, dfloat3 line_dir,dfloat3 translation);
 
 /**
 *   @brief Calculate the distance between an ellipsoid particle and a wall, and find the contact point.
@@ -303,7 +303,7 @@ __device__ void computeContactPoints(ParticleCenter *pc_i, dfloat3 dir, dfloat3 
 *   @return The computed distance between the two ellipsoids at the contact points.
 */
 __device__
-dfloat ellipsoidEllipsoidCollisionDistance( ParticleCenter* pc_i, ParticleCenter* pc_j, dfloat3 contactPoint1[1], dfloat3 contactPoint2[1], dfloat cr1[1], dfloat cr2[1], unsigned int step);
+dfloat ellipsoidEllipsoidCollisionDistance( ParticleCenter* pc_i, ParticleCenter* pc_j, dfloat3 contactPoint1[1], dfloat3 contactPoint2[1], dfloat cr1[1], dfloat cr2[1], dfloat3 translation, unsigned int step);
 
 
 /**
@@ -373,7 +373,7 @@ void capsuleCapsuleCollision(unsigned int column, unsigned int row, ParticleCent
 *   @param step: The current simulation time step for collision processing.
 */
 __device__
-void ellipsoidEllipsoidCollision(unsigned int column, unsigned int row, ParticleCenter*  pc_i, ParticleCenter*  pc_j,dfloat3 closestOnA[1], dfloat3 closestOnB[1], dfloat dist,  dfloat cr1[1], dfloat cr2[1], int step);
+void ellipsoidEllipsoidCollision(unsigned int column, unsigned int row, ParticleCenter*  pc_i, ParticleCenter*  pc_j,dfloat3 closestOnA[1], dfloat3 closestOnB[1], dfloat dist,  dfloat cr1[1], dfloat cr2[1], dfloat3 translation, int step);
 
 /**
 *   @brief Handle collision type between two capsules.
