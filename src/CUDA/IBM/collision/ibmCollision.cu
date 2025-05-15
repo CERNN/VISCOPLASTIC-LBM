@@ -1200,6 +1200,9 @@ dfloat segment_segment_closest_points_periodic(dfloat3 p1, dfloat3 q1, dfloat3 p
     int dx = 0;
     int dy = 0;
     int dz = 0;
+
+    //TODO: PERFORMANCE UPDATE: INT THE CASE OF DOUBLE OR TRIPLE PERIODIC DOMAIN IS CHECKING SOME CASES WHICH ARE NOT NECESSARY,
+    // since the particle cant be closest to two points at same time (hypotenuse is always bigger than a leg)
     #ifdef IBM_BC_X_PERIODIC
     for ( dx = -1; dx <= 1; dx++) {
     #endif

@@ -75,7 +75,7 @@
 
 //collision schemes
 #define SOFT_SPHERE 
-#define MAX_ACTIVE_COLLISIONS 18
+#define MAX_ACTIVE_COLLISIONS 13 // kissing number +1
 
 
 // Soft sphere
